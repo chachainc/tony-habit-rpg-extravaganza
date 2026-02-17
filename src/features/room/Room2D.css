@@ -1,0 +1,16 @@
+.room-2d-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 100%;
+    min-height: 600px;
+    background: var(--bg-base);
+    padding: var(--space-xl);
+}
+
+.room-canvas {
+    border: 2px solid rgba(255, 255, 255, 0.1);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-2xl);
+    background: #0f172a;
+}

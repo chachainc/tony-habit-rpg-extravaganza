@@ -1,0 +1,750 @@
+/* Walkable Room - 2D Grid Navigation */
+
+.walkable-room {
+    width: 100%;
+    height: 100%;
+    min-height: calc(100vh - 40px);
+    /* Account for compact TopBar */
+    overflow: hidden;
+    position: relative;
+    background: transparent;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Exit button */
+.room-exit-btn {
+    position: absolute;
+    top: 1rem;
+    left: 2rem;
+    z-index: 100;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1.5rem;
+    background: rgba(239, 68, 68, 0.9);
+    border: 2px solid #dc2626;
+    border-radius: var(--radius);
+    color: white;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.room-exit-btn:hover {
+    background: #dc2626;
+    transform: scale(1.05);
+}
+
+/* Room grid container */
+.room-grid {
+    position: relative;
+    border: 3px solid rgba(255, 255, 255, 0.15);
+    border-radius: var(--radius);
+    background: rgba(10, 10, 20, 0.4);
+    box-shadow:
+        0 20px 60px rgba(0, 0, 0, 0.5),
+        inset 0 0 30px rgba(0, 0, 0, 0.3);
+    backdrop-filter: blur(2px);
+}
+
+/* Ground tiles */
+.room-tile {
+    position: absolute;
+    background: rgba(60, 40, 30, 0.3);
+    border: 1px solid rgba(255, 255, 255, 0.03);
+    transition: background 0.3s;
+}
+
+.room-tile:nth-child(even) {
+    background: rgba(50, 35, 25, 0.25);
+}
+
+/* Player */
+.room-player {
+    position: absolute;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 20;
+    filter: drop-shadow(0 4px 12px rgba(59, 130, 246, 0.6));
+    transition: left 0.15s, top 0.15s;
+}
+
+.room-player .player-sprite {
+    width: 100%;
+    height: auto;
+    max-height: 200%;
+    object-fit: contain;
+    transform: translateY(-25%);
+    image-rendering: pixelated;
+    filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.6));
+}
+
+/* Pet follower */
+.room-pet-follower {
+    position: absolute;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    z-index: 15;
+    transition: left 0.2s, top 0.2s;
+}
+
+.pet-emoji {
+    font-size: 2.5rem;
+    filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.4));
+}
+
+.pet-name-tag {
+    font-size: 0.65rem;
+    color: white;
+    background: rgba(0, 0, 0, 0.6);
+    padding: 0.15rem 0.4rem;
+    border-radius: 4px;
+    margin-top: 0.25rem;
+}
+
+/* Furniture items */
+.room-furniture {
+    position: absolute;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background: rgba(60, 50, 40, 0.6);
+    border: 2px solid rgba(255, 255, 255, 0.15);
+    border-radius: 8px;
+    z-index: 10;
+    transition: all 0.3s;
+}
+
+.room-furniture.nearby {
+    border-color: rgba(251, 191, 36, 0.6);
+    box-shadow: 0 0 20px rgba(251, 191, 36, 0.3);
+}
+
+.furniture-icon {
+    font-size: 2rem;
+    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.4));
+}
+
+.furniture-count {
+    position: absolute;
+    bottom: 2px;
+    right: 2px;
+    font-size: 0.6rem;
+    background: rgba(0, 0, 0, 0.7);
+    color: #fbbf24;
+    padding: 0.1rem 0.3rem;
+    border-radius: 4px;
+    font-weight: 600;
+}
+
+/* Trophy pedestal */
+.room-trophy-pedestal {
+    position: absolute;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, rgba(139, 92, 246, 0.4), rgba(168, 85, 247, 0.3));
+    border: 3px solid rgba(168, 85, 247, 0.5);
+    border-radius: 12px;
+    z-index: 10;
+}
+
+.room-trophy-pedestal.nearby {
+    border-color: rgba(168, 85, 247, 0.9);
+    box-shadow: 0 0 30px rgba(168, 85, 247, 0.5);
+}
+
+.pedestal-base {
+    font-size: 2.5rem;
+    filter: drop-shadow(0 4px 12px rgba(251, 191, 36, 0.6));
+}
+
+.trophy-tier {
+    font-size: 0.7rem;
+    color: #c4b5fd;
+    font-weight: 600;
+}
+
+.books-count {
+    font-size: 0.6rem;
+    color: rgba(255, 255, 255, 0.6);
+}
+
+/* Item interaction prompt */
+.room-item-prompt {
+    position: absolute;
+    bottom: 6rem;
+    left: 50%;
+    transform: translateX(-50%);
+    padding: 1rem 2rem;
+    background: rgba(251, 191, 36, 0.95);
+    border: 2px solid #fbbf24;
+    border-radius: var(--radius);
+    color: #1a1a2e;
+    font-weight: 600;
+    font-size: 1rem;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+    z-index: 50;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.room-item-prompt.trophy-prompt {
+    background: rgba(139, 92, 246, 0.95);
+    border-color: #8b5cf6;
+    color: white;
+}
+
+.item-icon {
+    font-size: 1.2rem;
+}
+
+/* Controls hint */
+.room-controls-hint {
+    position: absolute;
+    bottom: 2rem;
+    left: 50%;
+    transform: translateX(-50%);
+    padding: 0.75rem 1.5rem;
+    background: rgba(20, 20, 30, 0.9);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: var(--radius);
+    color: rgba(255, 255, 255, 0.7);
+    font-size: 0.9rem;
+    z-index: 40;
+}
+
+.room-controls-hint kbd {
+    display: inline-block;
+    padding: 0.25rem 0.5rem;
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 4px;
+    font-family: monospace;
+    font-weight: 600;
+    margin: 0 0.25rem;
+}
+
+/* Responsive adjustments */
+@media (max-width: 1400px) {
+    .room-grid {
+        transform: scale(0.8);
+    }
+}
+
+@media (max-width: 1000px) {
+    .room-grid {
+        transform: scale(0.6);
+    }
+}
+
+/* ==================== TROPHY CASE ==================== */
+.room-trophy-case {
+    position: absolute;
+    z-index: 5;
+    border-radius: 12px;
+    overflow: hidden;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.room-trophy-case.nearby {
+    cursor: pointer;
+}
+
+.trophy-case-image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    opacity: 0.85;
+    transition: opacity 0.3s;
+}
+
+.room-trophy-case.nearby .trophy-case-image {
+    opacity: 1;
+}
+
+.trophy-case-overlay {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    padding: 0.75rem;
+    background: linear-gradient(transparent, rgba(0, 0, 0, 0.9));
+    text-align: center;
+}
+
+.trophy-current {
+    font-size: 1.5rem;
+    filter: drop-shadow(0 2px 8px rgba(251, 191, 36, 0.6));
+}
+
+.trophy-label {
+    font-size: 0.7rem;
+    font-weight: 600;
+    color: #c4b5fd;
+    margin-top: 0.25rem;
+}
+
+.trophy-books {
+    font-size: 0.6rem;
+    color: rgba(255, 255, 255, 0.5);
+}
+
+/* ==================== BOOKSHELF ==================== */
+.room-bookshelf {
+    position: absolute;
+    z-index: 5;
+    border-radius: 12px;
+    overflow: hidden;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.room-bookshelf.nearby {
+    cursor: pointer;
+}
+
+.bookshelf-image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    opacity: 0.85;
+    transition: opacity 0.3s;
+}
+
+.room-bookshelf.nearby .bookshelf-image {
+    opacity: 1;
+}
+
+.bookshelf-overlay {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    padding: 0.75rem;
+    background: linear-gradient(transparent, rgba(0, 0, 0, 0.9));
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.25rem;
+}
+
+.bookshelf-overlay svg {
+    color: #d4a574;
+}
+
+.bookshelf-label {
+    font-size: 0.7rem;
+    font-weight: 600;
+    color: #d4a574;
+}
+
+.bookshelf-count {
+    font-size: 0.6rem;
+    color: rgba(255, 255, 255, 0.5);
+}
+
+/* Bookshelf prompt */
+.room-item-prompt.bookshelf-prompt {
+    background: rgba(180, 140, 100, 0.95);
+    border-color: #d4a574;
+    color: white;
+}
+
+/* Closet Object */
+.room-closet {
+    position: absolute;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-end;
+    cursor: pointer;
+    z-index: 10;
+    transition: all 0.3s ease;
+}
+
+.room-closet.nearby {
+    filter: drop-shadow(0 0 10px rgba(167, 139, 250, 0.6));
+}
+
+.closet-icon {
+    font-size: 3rem;
+    filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.3));
+}
+
+.closet-label {
+    background: rgba(15, 23, 42, 0.8);
+    color: #a78bfa;
+    font-size: 0.7rem;
+    font-weight: 700;
+    padding: 2px 8px;
+    border-radius: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    border: 1px solid rgba(167, 139, 250, 0.3);
+    margin-top: -5px;
+}
+
+/* Closet Modal specific styles */
+.room-closet-modal {
+    max-width: 650px;
+    background: linear-gradient(135deg, #1e1b4b 0%, #0f172a 100%);
+    border: 2px solid rgba(167, 139, 250, 0.4);
+}
+
+.closet-tabs {
+    display: flex;
+    gap: 0.5rem;
+    margin: 1.5rem 0;
+    padding: 4px;
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 12px;
+    overflow-x: auto;
+}
+
+.closet-tabs button {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1rem;
+    border: none;
+    background: transparent;
+    color: #94a3b8;
+    font-weight: 600;
+    font-size: 0.9rem;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    white-space: nowrap;
+}
+
+.closet-tabs button.active {
+    background: rgba(167, 139, 250, 0.2);
+    color: #fff;
+    box-shadow: 0 0 15px rgba(167, 139, 250, 0.2);
+}
+
+.closet-tabs button:hover:not(.active) {
+    background: rgba(255, 255, 255, 0.05);
+    color: #cbd5e1;
+}
+
+.closet-selection-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    gap: 1rem;
+    max-height: 400px;
+    overflow-y: auto;
+    padding-right: 0.5rem;
+}
+
+.closet-selection-grid::-webkit-scrollbar {
+    width: 6px;
+}
+
+.closet-selection-grid::-webkit-scrollbar-thumb {
+    background: rgba(167, 139, 250, 0.3);
+    border-radius: 10px;
+}
+
+.selection-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 1rem;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 16px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    position: relative;
+    text-align: center;
+}
+
+.selection-item:hover {
+    background: rgba(167, 139, 250, 0.1);
+    border-color: rgba(167, 139, 250, 0.3);
+    transform: translateY(-2px);
+}
+
+.selection-item.equipped {
+    background: rgba(167, 139, 250, 0.2);
+    border-color: #a78bfa;
+    box-shadow: 0 0 20px rgba(167, 139, 250, 0.2);
+}
+
+.selection-item .item-icon {
+    font-size: 2rem;
+}
+
+.selection-item span {
+    font-weight: 600;
+    font-size: 0.85rem;
+    color: #e2e8f0;
+}
+
+.item-color-preview {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    border: 3px solid rgba(255, 255, 255, 0.2);
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
+}
+
+.aura-preview-dot {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    box-shadow: 0 0 8px currentColor;
+}
+
+.bonus-tag {
+    font-size: 0.7rem;
+    color: #10b981;
+    font-weight: 700;
+    background: rgba(16, 185, 129, 0.1);
+    padding: 2px 6px;
+    border-radius: 4px;
+    margin-top: 4px;
+}
+
+/* Player Visuals */
+.player-aura-effect {
+    position: absolute;
+    inset: -20px;
+    border-radius: 50%;
+    z-index: -1;
+    pointer-events: none;
+}
+
+.player-title-tag {
+    position: absolute;
+    top: -25px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(15, 23, 42, 0.8);
+    color: #fbbf24;
+    font-size: 0.65rem;
+    font-weight: 800;
+    padding: 1px 8px;
+    border-radius: 4px;
+    white-space: nowrap;
+    border: 1px solid rgba(251, 191, 36, 0.3);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+/* ==================== MODAL OVERLAYS ==================== */
+.room-modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.85);
+    backdrop-filter: blur(8px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+}
+
+.room-modal {
+    position: relative;
+    width: 90%;
+    max-width: 800px;
+    height: auto;
+    max-height: 85vh;
+    border-radius: 24px;
+    overflow: hidden;
+    color: white;
+    padding: 2rem;
+    display: flex;
+    flex-direction: column;
+}
+
+.modal-close-btn {
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
+    z-index: 10;
+    background: rgba(0, 0, 0, 0.6);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 8px;
+    padding: 0.5rem;
+    color: white;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.modal-close-btn:hover {
+    background: rgba(255, 255, 255, 0.2);
+    transform: scale(1.1);
+}
+
+.modal-bg-image {
+    width: 100%;
+    height: 200px;
+    object-fit: cover;
+    object-position: top;
+}
+
+.modal-content {
+    padding: 1.5rem;
+    max-height: calc(85vh - 200px);
+    overflow-y: auto;
+}
+
+.modal-content h2 {
+    margin: 0 0 0.5rem 0;
+    font-size: 1.5rem;
+    color: white;
+}
+
+/* Trophy modal */
+.room-trophy-modal .modal-content h2 {
+    color: #c4b5fd;
+}
+
+.trophy-current-tier {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 1rem;
+    background: linear-gradient(135deg, rgba(139, 92, 246, 0.2), rgba(168, 85, 247, 0.1));
+    border: 1px solid rgba(139, 92, 246, 0.3);
+    border-radius: 12px;
+    margin-bottom: 1rem;
+}
+
+.tier-icon {
+    font-size: 2.5rem;
+}
+
+.tier-name {
+    font-size: 1.2rem;
+    font-weight: 700;
+    color: #c4b5fd;
+}
+
+.tier-description {
+    color: rgba(255, 255, 255, 0.7);
+    font-size: 0.9rem;
+    margin-bottom: 1rem;
+    font-style: italic;
+}
+
+.trophy-stats {
+    display: flex;
+    gap: 1rem;
+}
+
+.trophy-stat {
+    flex: 1;
+    padding: 0.75rem;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 8px;
+    text-align: center;
+}
+
+.trophy-stat .stat-label {
+    display: block;
+    font-size: 0.65rem;
+    color: rgba(255, 255, 255, 0.5);
+    text-transform: uppercase;
+    margin-bottom: 0.25rem;
+}
+
+.trophy-stat .stat-value {
+    font-size: 1.2rem;
+    font-weight: 700;
+    color: #fbbf24;
+}
+
+/* Bookshelf modal */
+.room-bookshelf-modal .modal-content h2 {
+    color: #d4a574;
+}
+
+.library-subtitle {
+    color: rgba(255, 255, 255, 0.6);
+    font-size: 0.9rem;
+    margin: 0 0 1rem 0;
+}
+
+.books-by-year {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.year-section {
+    background: rgba(255, 255, 255, 0.03);
+    border-radius: 8px;
+    padding: 0.75rem;
+}
+
+.year-header {
+    font-size: 0.9rem;
+    font-weight: 700;
+    color: #d4a574;
+    margin: 0 0 0.5rem 0;
+    border-bottom: 1px solid rgba(212, 165, 116, 0.2);
+    padding-bottom: 0.25rem;
+}
+
+.book-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+}
+
+.book-entry {
+    display: flex;
+    flex-direction: column;
+    padding: 0.4rem 0.5rem;
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 4px;
+    border-left: 3px solid #d4a574;
+}
+
+.book-title {
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: white;
+}
+
+.book-author {
+    font-size: 0.65rem;
+    color: rgba(255, 255, 255, 0.5);
+}
+
+.empty-library {
+    text-align: center;
+    padding: 2rem;
+    color: rgba(255, 255, 255, 0.5);
+}
+
+.empty-library p {
+    margin: 0.5rem 0;
+}

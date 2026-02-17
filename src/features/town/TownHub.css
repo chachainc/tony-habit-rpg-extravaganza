@@ -1,0 +1,241 @@
+.town-hub {
+    position: relative;
+    width: 100%;
+    height: 100vh;
+    overflow: hidden;
+}
+
+/* === PARALLAX BACKGROUND === */
+.town-hub__bg {
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    overflow: hidden;
+}
+
+/* Gradient orbs */
+.town-hub__bg-layer {
+    position: absolute;
+    inset: 0;
+}
+
+.town-hub__bg-layer--1 {
+    background: radial-gradient(circle at 30% 40%, rgba(96, 108, 220, 0.2), transparent 50%);
+}
+
+.town-hub__bg-layer--2 {
+    background: radial-gradient(circle at 70% 60%, rgba(168, 85, 247, 0.15), transparent 50%);
+}
+
+.town-hub__bg-layer--3 {
+    background: radial-gradient(circle at 50% 80%, rgba(245, 158, 11, 0.1), transparent 60%);
+}
+
+/* Grid pattern */
+.town-hub__bg::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-image:
+        linear-gradient(rgba(96, 108, 220, 0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(96, 108, 220, 0.03) 1px, transparent 1px);
+    background-size: 50px 50px;
+    pointer-events: none;
+    opacity: 0.5;
+}
+
+/* Floating particles */
+.town-hub__bg::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+}
+
+.town-hub__vignette {
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(circle at center, transparent 0%, rgba(10, 10, 15, 0.6) 100%);
+    pointer-events: none;
+}
+
+/* === CONTENT === */
+.town-hub__content {
+    position: relative;
+    z-index: 1;
+    height: 100%;
+    overflow-y: auto;
+    padding: var(--space-2xl) var(--space-xl);
+}
+
+.town-hub__header {
+    text-align: center;
+    margin-bottom: var(--space-2xl);
+}
+
+.town-hub__header h1 {
+    font-family: var(--font-display);
+    font-size: 3rem;
+    font-weight: 900;
+    margin: 0 0 var(--space-md) 0;
+    background: linear-gradient(135deg, var(--color-primary-500), var(--color-accent-500));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.town-hub__subtitle {
+    font-size: 1.125rem;
+    color: var(--text-secondary);
+    margin: 0;
+}
+
+/* === BUILDINGS GRID === */
+.town-hub__buildings {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: var(--space-lg);
+    max-width: 1400px;
+    margin: 0 auto;
+}
+
+/* === BUILDING CARD === */
+.building-card {
+    position: relative;
+    text-align: center;
+    padding: var(--space-xl);
+    transition: all var(--duration-normal) var(--easing);
+    overflow: hidden;
+}
+
+.building-card__glow {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 120%;
+    height: 120%;
+    border-radius: 50%;
+    opacity: 0;
+    filter: blur(40px);
+    transition: opacity var(--duration-normal) var(--easing);
+    pointer-events: none;
+}
+
+.building-card:hover .building-card__glow {
+    opacity: 0.15;
+}
+
+.building-card--locked {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.building-card--locked:hover {
+    transform: none;
+}
+
+/* === NOTIFICATION DOT === */
+.building-card__notification {
+    position: absolute;
+    top: var(--space-md);
+    right: var(--space-md);
+    width: 12px;
+    height: 12px;
+    background: var(--color-error);
+    border-radius: 50%;
+    box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.3);
+    animation: pulse-notification 2s infinite;
+}
+
+@keyframes pulse-notification {
+
+    0%,
+    100% {
+        transform: scale(1);
+        opacity: 1;
+    }
+
+    50% {
+        transform: scale(1.2);
+        opacity: 0.7;
+    }
+}
+
+/* === LOCK OVERLAY === */
+.building-card__lock {
+    position: absolute;
+    top: var(--space-md);
+    left: var(--space-md);
+    display: flex;
+    align-items: center;
+    gap: var(--space-xs);
+    padding: var(--space-xs) var(--space-sm);
+    background: rgba(0, 0, 0, 0.6);
+    border-radius: var(--radius-md);
+    font-size: 0.875rem;
+    font-weight: 600;
+}
+
+.building-card__lock-text {
+    color: var(--color-warning);
+}
+
+/* === ICON === */
+.building-card__icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto var(--space-lg) auto;
+    width: 80px;
+    height: 80px;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: var(--radius-xl);
+    transition: all var(--duration-normal) var(--easing);
+}
+
+.building-card:hover .building-card__icon {
+    transform: translateY(-4px) scale(1.1);
+    background: rgba(255, 255, 255, 0.1);
+}
+
+/* === TEXT === */
+.building-card__name {
+    font-family: var(--font-display);
+    font-size: 1.5rem;
+    font-weight: 700;
+    margin: 0 0 var(--space-sm) 0;
+    color: var(--text-primary);
+}
+
+.building-card__description {
+    font-size: 0.875rem;
+    color: var(--text-secondary);
+    margin: 0;
+    line-height: 1.5;
+}
+
+/* === RESPONSIVE === */
+@media (max-width: 768px) {
+    .town-hub__content {
+        padding: var(--space-xl) var(--space-md);
+    }
+
+    .town-hub__header h1 {
+        font-size: 2rem;
+    }
+
+    .town-hub__buildings {
+        grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+        gap: var(--space-md);
+    }
+
+    .building-card {
+        padding: var(--space-lg);
+    }
+
+    .building-card__icon {
+        width: 60px;
+        height: 60px;
+    }
+}

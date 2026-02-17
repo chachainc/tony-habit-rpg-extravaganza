@@ -1,0 +1,128 @@
+.sidebar {
+    width: 240px;
+    background-color: var(--bg-secondary);
+    border-right: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    padding: var(--space-4);
+    transition: width 0.3s ease;
+}
+
+.logo-area {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    padding: var(--space-4) var(--space-2);
+    margin-bottom: var(--space-8);
+}
+
+.logo-icon {
+    width: 32px;
+    height: 32px;
+    background: linear-gradient(135deg, var(--primary), var(--secondary));
+    border-radius: var(--radius-md);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    color: white;
+    box-shadow: var(--shadow-glow);
+}
+
+.logo-text {
+    font-weight: 700;
+    font-size: 1.1rem;
+    letter-spacing: -0.02em;
+}
+
+.nav-menu {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+}
+
+.nav-item {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    padding: var(--space-3) var(--space-4);
+    border-radius: var(--radius-md);
+    color: var(--text-secondary);
+    transition: all 0.2s ease;
+    font-weight: 500;
+}
+
+.nav-item:hover {
+    background-color: rgba(255, 255, 255, 0.03);
+    color: var(--text-primary);
+}
+
+.nav-item.active {
+    background-color: rgba(139, 92, 246, 0.1);
+    /* Primary with opacity */
+    color: var(--primary);
+    box-shadow: inset 2px 0 0 0 var(--primary);
+    /* Left border indicator */
+}
+
+/* ─── Mobile: Bottom Tab Bar ──────────────── */
+@media (max-width: 768px) {
+    .sidebar {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        width: 100%;
+        height: 60px;
+        flex-direction: row;
+        padding: 0;
+        border-right: none;
+        border-top: 1px solid var(--border);
+        z-index: 1000;
+        background-color: var(--bg-secondary);
+    }
+
+    .logo-area {
+        display: none;
+    }
+
+    .nav-menu {
+        flex-direction: row;
+        gap: 0;
+        width: 100%;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: none;
+    }
+
+    .nav-menu::-webkit-scrollbar {
+        display: none;
+    }
+
+    .nav-item {
+        flex-direction: column;
+        gap: 2px;
+        padding: 6px 8px;
+        min-width: 52px;
+        min-height: 44px;
+        justify-content: center;
+        align-items: center;
+        font-size: 0.65rem;
+        flex-shrink: 0;
+    }
+
+    .nav-item .nav-label {
+        font-size: 0.6rem;
+        white-space: nowrap;
+    }
+
+    .nav-item.active {
+        box-shadow: inset 0 -2px 0 0 var(--primary);
+        background-color: rgba(139, 92, 246, 0.15);
+    }
+
+    .nav-item svg {
+        width: 18px;
+        height: 18px;
+    }
+}

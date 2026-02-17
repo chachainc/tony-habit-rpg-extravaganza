@@ -1,0 +1,867 @@
+/* Gacha Machine - Premium Summoning UI */
+
+.gacha-overlay {
+    background: rgba(0, 0, 0, 0.85);
+    backdrop-filter: blur(8px);
+}
+
+.gacha-modal {
+    max-width: 700px;
+    width: 95%;
+    max-height: 90vh;
+    overflow-y: auto;
+    padding: 0;
+}
+
+.gacha-modal.glassmorphism {
+    background: rgba(30, 30, 45, 0.9);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 16px;
+    box-shadow:
+        0 0 40px rgba(139, 92, 246, 0.3),
+        0 8px 32px rgba(0, 0, 0, 0.5);
+}
+
+/* Tabs */
+.gacha-tabs {
+    display: flex;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.gacha-tab {
+    flex: 1;
+    padding: 1rem;
+    background: transparent;
+    border: none;
+    color: var(--text-secondary);
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    transition: all 0.3s ease;
+}
+
+.gacha-tab:hover {
+    background: rgba(255, 255, 255, 0.05);
+    color: var(--text-primary);
+}
+
+.gacha-tab.active {
+    color: var(--primary);
+    background: rgba(139, 92, 246, 0.15);
+    border-bottom: 2px solid var(--primary);
+}
+
+/* Standby State */
+.gacha-standby {
+    padding: 2rem;
+    text-align: center;
+}
+
+.gacha-standby h2 {
+    font-size: 1.75rem;
+    margin-bottom: 1rem;
+    background: linear-gradient(135deg, #8b5cf6, #06b6d4);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.gacha-orb-container {
+    margin: 1.5rem auto;
+}
+
+.gacha-orb {
+    font-size: 4rem;
+    animation: float 3s ease-in-out infinite;
+}
+
+@keyframes float {
+
+    0%,
+    100% {
+        transform: translateY(0);
+    }
+
+    50% {
+        transform: translateY(-10px);
+    }
+}
+
+/* Drop Rates */
+.drop-rates {
+    display: flex;
+    justify-content: center;
+    gap: 1rem;
+    margin: 1rem 0;
+    flex-wrap: wrap;
+}
+
+.drop-rates .rate {
+    padding: 0.25rem 0.75rem;
+    border-radius: 12px;
+    font-size: 0.75rem;
+    font-weight: 600;
+}
+
+.rate.common {
+    background: rgba(156, 163, 175, 0.2);
+    color: #9ca3af;
+}
+
+.rate.rare {
+    background: rgba(59, 130, 246, 0.2);
+    color: #3b82f6;
+}
+
+.rate.epic {
+    background: rgba(168, 85, 247, 0.2);
+    color: #a855f7;
+}
+
+/* Pity Counter */
+.pity-counter {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    color: var(--text-secondary);
+    font-size: 0.875rem;
+    margin: 1rem 0;
+}
+
+.pity-hint {
+    opacity: 0.7;
+}
+
+/* Pull Options */
+.pull-options {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.75rem;
+    margin: 1.5rem 0;
+}
+
+.pull-btn {
+    padding: 0.875rem 2rem;
+    border-radius: 12px;
+    font-size: 1rem;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    border: none;
+}
+
+.pull-btn.ticket {
+    background: linear-gradient(135deg, #8b5cf6, #6366f1);
+    color: white;
+    box-shadow: 0 4px 15px rgba(139, 92, 246, 0.4);
+}
+
+.pull-btn.ticket:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(139, 92, 246, 0.6);
+}
+
+.pull-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.ticket-count {
+    font-size: 0.875rem;
+    color: var(--text-secondary);
+}
+
+.essence-counter {
+    margin-top: 0.5rem;
+    color: #f59e0b;
+    font-size: 0.875rem;
+}
+
+/* Owned Items Section */
+.owned-items-section {
+    margin-top: 2rem;
+    text-align: left;
+}
+
+.owned-items-section h4 {
+    margin-bottom: 1rem;
+    color: var(--text-secondary);
+    font-size: 0.875rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.owned-items-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+    gap: 0.75rem;
+    max-height: 200px;
+    overflow-y: auto;
+    padding: 0.5rem;
+}
+
+/* Item Cards - Glassmorphism */
+.item-card {
+    position: relative;
+    padding: 0.75rem;
+    border-radius: 12px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    overflow: hidden;
+}
+
+.item-card.glassmorphism {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(10px);
+}
+
+.item-card:hover {
+    transform: translateY(-2px);
+    border-color: rgba(255, 255, 255, 0.2);
+}
+
+.item-card.equipped {
+    border-color: var(--primary);
+    background: rgba(139, 92, 246, 0.15);
+}
+
+/* Rarity Glow Effects */
+.item-glow {
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    pointer-events: none;
+}
+
+.item-card:hover .item-glow {
+    opacity: 1;
+}
+
+.glow-common {
+    box-shadow: inset 0 0 20px rgba(156, 163, 175, 0.3);
+}
+
+.glow-rare {
+    box-shadow: inset 0 0 20px rgba(59, 130, 246, 0.4);
+}
+
+.glow-epic {
+    box-shadow: inset 0 0 20px rgba(168, 85, 247, 0.5);
+}
+
+.glow-legendary {
+    box-shadow: inset 0 0 25px rgba(251, 191, 36, 0.6);
+}
+
+/* Rarity Border Colors */
+.item-card.common {
+    border-color: rgba(156, 163, 175, 0.3);
+}
+
+.item-card.rare {
+    border-color: rgba(59, 130, 246, 0.5);
+}
+
+.item-card.epic {
+    border-color: rgba(168, 85, 247, 0.5);
+}
+
+.item-card.legendary {
+    border-color: rgba(251, 191, 36, 0.6);
+    animation: legendaryPulse 2s ease-in-out infinite;
+}
+
+@keyframes legendaryPulse {
+
+    0%,
+    100% {
+        box-shadow: 0 0 10px rgba(251, 191, 36, 0.3);
+    }
+
+    50% {
+        box-shadow: 0 0 20px rgba(251, 191, 36, 0.6);
+    }
+}
+
+.item-icon {
+    font-size: 2rem;
+    margin-bottom: 0.25rem;
+}
+
+.item-name {
+    font-size: 0.75rem;
+    font-weight: 600;
+    margin-bottom: 0.25rem;
+}
+
+.item-stats {
+    display: flex;
+    flex-direction: column;
+    gap: 0.125rem;
+    font-size: 0.625rem;
+}
+
+.stat-atk {
+    color: #f97316;
+}
+
+.stat-def {
+    color: #3b82f6;
+}
+
+.stat-hp {
+    color: #ef4444;
+}
+
+.item-bonus {
+    font-size: 0.625rem;
+    color: var(--text-secondary);
+}
+
+.equipped-badge {
+    position: absolute;
+    top: 4px;
+    right: 4px;
+    background: var(--primary);
+    color: white;
+    font-size: 0.5rem;
+    padding: 0.125rem 0.375rem;
+    border-radius: 4px;
+    font-weight: 600;
+}
+
+.empty-message {
+    grid-column: 1 / -1;
+    color: var(--text-secondary);
+    text-align: center;
+    padding: 1rem;
+}
+
+/* Summoning Animation */
+.summon-animation {
+    padding: 4rem 2rem;
+    text-align: center;
+    min-height: 300px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+
+.summon-orb {
+    font-size: 5rem;
+    position: relative;
+    display: inline-block;
+}
+
+.summon-orb.shaking {
+    animation: shake 0.3s infinite;
+}
+
+@keyframes shake {
+
+    0%,
+    100% {
+        transform: translateX(0) rotate(0);
+    }
+
+    25% {
+        transform: translateX(-5px) rotate(-3deg);
+    }
+
+    75% {
+        transform: translateX(5px) rotate(3deg);
+    }
+}
+
+.orb-glow {
+    position: absolute;
+    inset: -20px;
+    background: radial-gradient(circle, rgba(139, 92, 246, 0.6) 0%, transparent 70%);
+    animation: pulse 0.5s infinite;
+    border-radius: 50%;
+}
+
+@keyframes pulse {
+
+    0%,
+    100% {
+        transform: scale(1);
+        opacity: 0.5;
+    }
+
+    50% {
+        transform: scale(1.2);
+        opacity: 1;
+    }
+}
+
+.summon-orb.bursting {
+    animation: burst 0.5s forwards;
+}
+
+@keyframes burst {
+    0% {
+        transform: scale(1);
+        opacity: 1;
+    }
+
+    50% {
+        transform: scale(2);
+        opacity: 0.5;
+    }
+
+    100% {
+        transform: scale(0);
+        opacity: 0;
+    }
+}
+
+.summon-orb.bursting.glow-rare .orb-glow {
+    background: radial-gradient(circle, rgba(59, 130, 246, 0.8) 0%, transparent 70%);
+}
+
+.summon-orb.bursting.glow-epic .orb-glow {
+    background: radial-gradient(circle, rgba(168, 85, 247, 0.8) 0%, transparent 70%);
+}
+
+.summon-orb.bursting.glow-legendary .orb-glow {
+    background: radial-gradient(circle, rgba(251, 191, 36, 1) 0%, transparent 70%);
+}
+
+.burst-particles {
+    position: absolute;
+    inset: -30px;
+    background: radial-gradient(circle, rgba(255, 255, 255, 0.8) 0%, transparent 50%);
+    animation: particleBurst 0.5s forwards;
+}
+
+@keyframes particleBurst {
+    0% {
+        transform: scale(0);
+        opacity: 1;
+    }
+
+    100% {
+        transform: scale(3);
+        opacity: 0;
+    }
+}
+
+.summon-text {
+    margin-top: 1.5rem;
+    font-size: 1.25rem;
+    color: var(--text-secondary);
+    animation: textPulse 0.5s infinite;
+}
+
+@keyframes textPulse {
+
+    0%,
+    100% {
+        opacity: 0.5;
+    }
+
+    50% {
+        opacity: 1;
+    }
+}
+
+/* Result Card */
+.summon-result {
+    padding: 2rem;
+    display: flex;
+    justify-content: center;
+}
+
+.result-card {
+    position: relative;
+    padding: 2rem;
+    text-align: center;
+    max-width: 280px;
+    overflow: hidden;
+}
+
+.result-card.glassmorphism {
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 16px;
+    backdrop-filter: blur(15px);
+}
+
+/* Rarity styling for result */
+.result-card.rare {
+    border-color: rgba(59, 130, 246, 0.6);
+}
+
+.result-card.epic {
+    border-color: rgba(168, 85, 247, 0.6);
+}
+
+.result-card.legendary {
+    border-color: rgba(251, 191, 36, 0.8);
+    box-shadow: 0 0 30px rgba(251, 191, 36, 0.4);
+}
+
+.result-glow {
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    pointer-events: none;
+}
+
+.result-glow.glow-rare {
+    background: radial-gradient(circle at center, rgba(59, 130, 246, 0.2) 0%, transparent 70%);
+}
+
+.result-glow.glow-epic {
+    background: radial-gradient(circle at center, rgba(168, 85, 247, 0.3) 0%, transparent 70%);
+}
+
+.result-glow.glow-legendary {
+    background: radial-gradient(circle at center, rgba(251, 191, 36, 0.3) 0%, transparent 70%);
+}
+
+/* Shimmer Effect */
+.shimmer-effect {
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 50%;
+    height: 100%;
+    background: linear-gradient(90deg,
+            transparent,
+            rgba(255, 255, 255, 0.2),
+            transparent);
+    animation: shimmer 2s infinite;
+}
+
+@keyframes shimmer {
+    0% {
+        left: -100%;
+    }
+
+    100% {
+        left: 200%;
+    }
+}
+
+.result-icon {
+    font-size: 4rem;
+    margin-bottom: 0.75rem;
+    position: relative;
+    z-index: 1;
+}
+
+.result-card h3 {
+    font-size: 1.25rem;
+    margin-bottom: 0.5rem;
+    position: relative;
+    z-index: 1;
+}
+
+.rarity-tag {
+    display: inline-block;
+    padding: 0.25rem 0.75rem;
+    border-radius: 12px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    margin-bottom: 0.75rem;
+}
+
+.rarity-tag.common {
+    background: rgba(156, 163, 175, 0.3);
+    color: #9ca3af;
+}
+
+.rarity-tag.rare {
+    background: rgba(59, 130, 246, 0.3);
+    color: #60a5fa;
+}
+
+.rarity-tag.epic {
+    background: rgba(168, 85, 247, 0.3);
+    color: #c084fc;
+}
+
+.rarity-tag.legendary {
+    background: rgba(251, 191, 36, 0.3);
+    color: #fbbf24;
+}
+
+.result-stats {
+    display: flex;
+    justify-content: center;
+    gap: 0.75rem;
+    margin-bottom: 0.75rem;
+    flex-wrap: wrap;
+}
+
+.result-stats .stat {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    font-size: 0.875rem;
+    font-weight: 600;
+}
+
+.result-stats .stat:nth-child(1) {
+    color: #f97316;
+}
+
+.result-stats .stat:nth-child(2) {
+    color: #3b82f6;
+}
+
+.result-stats .stat:nth-child(3) {
+    color: #ef4444;
+}
+
+.result-description {
+    font-size: 0.875rem;
+    color: var(--text-secondary);
+    margin-bottom: 1rem;
+}
+
+.duplicate-notice,
+.new-item-notice {
+    padding: 0.75rem;
+    border-radius: 8px;
+    margin-bottom: 1rem;
+}
+
+.duplicate-notice {
+    background: rgba(251, 191, 36, 0.15);
+    color: #fbbf24;
+}
+
+.new-item-notice {
+    background: rgba(34, 197, 94, 0.15);
+    color: #22c55e;
+}
+
+.equip-btn {
+    margin-top: 0.5rem;
+    padding: 0.5rem 1rem;
+    background: var(--primary);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 600;
+    transition: all 0.2s ease;
+}
+
+.equip-btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(139, 92, 246, 0.4);
+}
+
+.pull-again-btn {
+    width: 100%;
+    padding: 0.75rem;
+    background: rgba(255, 255, 255, 0.1);
+    color: var(--text-primary);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 600;
+    transition: all 0.2s ease;
+}
+
+.pull-again-btn:hover {
+    background: rgba(255, 255, 255, 0.15);
+}
+
+/* Close Button */
+.close-corner {
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.1);
+    border: none;
+    color: var(--text-secondary);
+    font-size: 1.25rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    z-index: 10;
+}
+
+.close-corner:hover {
+    background: rgba(255, 255, 255, 0.2);
+    color: var(--text-primary);
+}
+
+/* 10-Pull Multi Button */
+.pull-btn.multi {
+    background: linear-gradient(135deg, #f59e0b, #ef4444);
+    color: white;
+    box-shadow: 0 4px 15px rgba(245, 158, 11, 0.4);
+}
+
+.pull-btn.multi:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 25px rgba(245, 158, 11, 0.6);
+}
+
+/* Skip Button */
+.skip-btn {
+    margin-top: 1.5rem;
+    padding: 0.75rem 2rem;
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    border-radius: 8px;
+    color: white;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    animation: skipPulse 1s infinite;
+}
+
+.skip-btn:hover {
+    background: rgba(255, 255, 255, 0.2);
+    transform: scale(1.05);
+}
+
+@keyframes skipPulse {
+
+    0%,
+    100% {
+        opacity: 0.8;
+    }
+
+    50% {
+        opacity: 1;
+    }
+}
+
+/* Multi-Pull Results Container */
+.multi-results-container {
+    padding: 2rem;
+    text-align: center;
+}
+
+.multi-results-container h3 {
+    font-size: 1.75rem;
+    background: linear-gradient(135deg, #f59e0b, #ef4444);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin-bottom: 1.5rem;
+}
+
+/* Multi-Pull Results Grid */
+.multi-results-grid {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 0.75rem;
+    margin-bottom: 1.5rem;
+}
+
+@media (max-width: 600px) {
+    .multi-results-grid {
+        grid-template-columns: repeat(3, 1fr);
+    }
+}
+
+.multi-result-card {
+    position: relative;
+    padding: 0.75rem;
+    border-radius: 12px;
+    text-align: center;
+    overflow: hidden;
+}
+
+.multi-result-card.glassmorphism {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(10px);
+}
+
+.multi-result-card.rare {
+    border-color: rgba(59, 130, 246, 0.5);
+}
+
+.multi-result-card.epic {
+    border-color: rgba(168, 85, 247, 0.5);
+    box-shadow: 0 0 15px rgba(168, 85, 247, 0.3);
+}
+
+.multi-result-card.legendary {
+    border-color: rgba(251, 191, 36, 0.6);
+    box-shadow: 0 0 20px rgba(251, 191, 36, 0.4);
+    animation: legendaryPulse 2s ease-in-out infinite;
+}
+
+.multi-result-card .result-icon {
+    font-size: 2rem;
+    margin-bottom: 0.25rem;
+}
+
+.multi-result-card .result-name {
+    font-size: 0.65rem;
+    font-weight: 600;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* Rarity Badge (corner indicator) */
+.rarity-badge {
+    position: absolute;
+    top: 4px;
+    right: 4px;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    font-size: 0.6rem;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.rarity-badge.common {
+    background: rgba(156, 163, 175, 0.5);
+    color: white;
+}
+
+.rarity-badge.rare {
+    background: #3b82f6;
+    color: white;
+}
+
+.rarity-badge.epic {
+    background: #a855f7;
+    color: white;
+}
+
+.rarity-badge.legendary {
+    background: linear-gradient(135deg, #fbbf24, #f59e0b);
+    color: #000;
+    box-shadow: 0 0 8px rgba(251, 191, 36, 0.6);
+}
+
+.rarity-badge.mythic {
+    background: linear-gradient(135deg, #ec4899, #8b5cf6);
+    color: white;
+    box-shadow: 0 0 10px rgba(236, 72, 153, 0.6);
+}

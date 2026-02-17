@@ -1,0 +1,254 @@
+.home-modal {
+    min-width: 600px;
+    max-width: 800px;
+}
+
+/* Room Container */
+.room-container {
+    margin-bottom: var(--space-4);
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+    border: 2px solid var(--border);
+}
+
+.room-floor {
+    background: linear-gradient(180deg, #3f3f46 0%, #52525b 100%);
+    min-height: 200px;
+    position: relative;
+    padding: var(--space-4);
+
+    /* Floor pattern */
+    background-image:
+        linear-gradient(180deg, #3f3f46 0%, #52525b 100%),
+        repeating-linear-gradient(90deg,
+            transparent,
+            transparent 40px,
+            rgba(0, 0, 0, 0.1) 40px,
+            rgba(0, 0, 0, 0.1) 80px);
+}
+
+/* Furniture Grid */
+.furniture-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-3);
+    min-height: 100px;
+}
+
+.empty-room-msg {
+    color: var(--text-muted);
+    font-style: italic;
+    width: 100%;
+    text-align: center;
+    padding: var(--space-6);
+}
+
+.placed-furniture {
+    width: 60px;
+    height: 60px;
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: var(--radius-md);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.furniture-icon {
+    font-size: 2rem;
+}
+
+.furniture-count {
+    position: absolute;
+    bottom: 2px;
+    right: 4px;
+    font-size: 0.65rem;
+    background: rgba(0, 0, 0, 0.7);
+    padding: 1px 4px;
+    border-radius: var(--radius-sm);
+    color: white;
+}
+
+/* Pet in Room */
+.room-pet {
+    position: absolute;
+    bottom: var(--space-4);
+    right: var(--space-6);
+    text-align: center;
+}
+
+.pet-sprite {
+    font-size: 4rem;
+    animation: pet-idle 2s ease-in-out infinite;
+}
+
+@keyframes pet-idle {
+
+    0%,
+    100% {
+        transform: translateY(0);
+    }
+
+    50% {
+        transform: translateY(-5px);
+    }
+}
+
+.pet-name {
+    display: block;
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+    margin-top: -8px;
+}
+
+/* Stats Panel */
+.stats-panel {
+    display: flex;
+    gap: var(--space-6);
+    margin-bottom: var(--space-4);
+    padding: var(--space-3);
+    background: var(--bg-secondary);
+    border-radius: var(--radius-md);
+}
+
+.player-hp {
+    flex: 1;
+}
+
+.player-hp span {
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+    display: block;
+    margin-bottom: 4px;
+}
+
+.hp-bar-mini {
+    height: 16px;
+    background: #333;
+    border-radius: var(--radius-full);
+    overflow: hidden;
+    position: relative;
+}
+
+.hp-bar-mini .hp-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #22c55e, #4ade80);
+    transition: width 0.3s;
+}
+
+.hp-bar-mini span {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 0.65rem;
+    font-weight: bold;
+    color: white;
+    text-shadow: 0 1px 2px black;
+}
+
+.pet-stats {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.stat-row {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+}
+
+.stat-bar {
+    flex: 1;
+    height: 8px;
+    background: #333;
+    border-radius: var(--radius-full);
+    overflow: hidden;
+}
+
+.stat-bar .fill {
+    height: 100%;
+    transition: width 0.3s;
+}
+
+.fill.red {
+    background: #ef4444;
+}
+
+.fill.orange {
+    background: #f97316;
+}
+
+.fill.blue {
+    background: #3b82f6;
+}
+
+.fill.yellow {
+    background: #eab308;
+}
+
+.icon-red {
+    color: #ef4444;
+}
+
+.icon-orange {
+    color: #f97316;
+}
+
+.icon-blue {
+    color: #3b82f6;
+}
+
+.icon-yellow {
+    color: #eab308;
+}
+
+/* Inventory Section */
+.inventory-section h3 {
+    font-size: 0.9rem;
+    margin-bottom: var(--space-2);
+    color: var(--text-secondary);
+}
+
+.inventory-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+}
+
+.empty-text {
+    color: var(--text-muted);
+    font-size: 0.85rem;
+}
+
+.inv-item-btn {
+    width: 50px;
+    height: 50px;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-md);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.inv-item-btn:hover {
+    background: var(--primary);
+    border-color: var(--primary);
+    transform: scale(1.05);
+}
+
+.inv-icon {
+    font-size: 1.5rem;
+}
+
+.inv-count {
+    font-size: 0.6rem;
+    color: var(--text-secondary);
+}

@@ -1,0 +1,80 @@
+:root {
+  /* ========================================
+     DARK SOULS / BERSERK / ELDEN RING THEME
+     Black + Blood Red + Ash Gray
+     ======================================== */
+
+  /* Core Backgrounds - Deep Black */
+  --bg-primary: #050505;
+  --bg-secondary: #0a0a0a;
+  --bg-card: #0f0f0f;
+  --bg-elevated: #151515;
+
+  /* Blood Red Accents */
+  --primary: #8b0000;
+  /* Dark blood red */
+  --primary-light: #b91c1c;
+  /* Crimson */
+  --primary-dark: #5c0000;
+  /* Dried blood */
+  --primary-glow: rgba(139, 0, 0, 0.5);
+
+  /* Secondary - Ember Orange */
+  --secondary: #d97706;
+  /* Bonfire ember */
+  --secondary-glow: rgba(217, 119, 6, 0.4);
+
+  /* Accent - Pale Silver/Ash */
+  --accent: #9ca3af;
+  /* Ash gray */
+  --accent-gold: #b8860b;
+  /* Dark gold (souls) */
+
+  /* Text Colors - Parchment/Bone */
+  --text-primary: #e5e5e5;
+  --text-secondary: #9ca3af;
+  --text-muted: #4b5563;
+  --text-blood: #dc2626;
+  /* For damage/warnings */
+
+  /* Borders - Charred */
+  --border: #1f1f1f;
+  --border-subtle: #171717;
+  --border-blood: rgba(139, 0, 0, 0.3);
+
+  /* Status Colors - Grimdark */
+  --success: #065f46;
+  /* Dark emerald */
+  --warning: #92400e;
+  /* Burnt amber */
+  --danger: #991b1b;
+  /* Blood */
+  --info: #1e3a5f;
+  /* Midnight blue */
+
+  /* Typography */
+  --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+
+  /* Spacing */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-12: 48px;
+
+  /* Radius - Rough/Medieval feel */
+  --radius-sm: 2px;
+  --radius-md: 4px;
+  --radius-lg: 8px;
+  --radius-full: 9999px;
+
+  /* Shadows - Deep and ominous */
+  --shadow-sm: 0 1px 3px 0 rgb(0 0 0 / 0.5);
+  --shadow-md: 0 4px 8px -1px rgb(0 0 0 / 0.6), 0 2px 4px -2px rgb(0 0 0 / 0.4);
+  --shadow-lg: 0 10px 20px -3px rgb(0 0 0 / 0.7), 0 4px 8px -4px rgb(0 0 0 / 0.5);
+  --shadow-glow: 0 0 20px var(--primary-glow);
+  --shadow-blood: 0 0 15px rgba(139, 0, 0, 0.4);
+  --shadow-ember: 0 0 10px rgba(217, 119, 6, 0.3);
+}

@@ -1,0 +1,800 @@
+/* Monopoly Board - RPG Overworld Map Style */
+
+/* ==================== OVERLAY & MODAL ==================== */
+.walkable-board-overlay {
+    background: rgba(0, 0, 0, 0.9);
+    backdrop-filter: blur(12px);
+}
+
+.walkable-board-modal {
+    width: 95vw;
+    max-width: 920px;
+    height: auto;
+    max-height: 92vh;
+    background: #0c1117;
+    border: 2px solid rgba(101, 163, 13, 0.35);
+    border-radius: 14px;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    box-shadow:
+        0 0 80px rgba(34, 197, 94, 0.08),
+        inset 0 1px 0 rgba(255, 255, 255, 0.04);
+}
+
+/* ==================== HEADER ==================== */
+.walkable-board-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.6rem 1rem;
+    background: linear-gradient(180deg, rgba(20, 30, 18, 0.95) 0%, rgba(12, 22, 12, 0.9) 100%);
+    border-bottom: 1px solid rgba(101, 163, 13, 0.25);
+}
+
+.header-left {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.header-icon {
+    font-size: 1.3rem;
+}
+
+.walkable-board-header h2 {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: #a3e635;
+    margin: 0;
+    text-shadow: 0 0 12px rgba(163, 230, 53, 0.3);
+    letter-spacing: 0.5px;
+}
+
+.header-center {
+    display: flex;
+    align-items: center;
+}
+
+.ticket-display {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.35rem 0.75rem;
+    background: rgba(163, 230, 53, 0.08);
+    border: 1px solid rgba(163, 230, 53, 0.25);
+    border-radius: 20px;
+}
+
+.ticket-display .ticket-icon {
+    font-size: 0.95rem;
+}
+
+.ticket-display .ticket-count {
+    font-size: 1rem;
+    font-weight: 700;
+    color: #a3e635;
+}
+
+.ticket-display .ticket-label {
+    font-size: 0.7rem;
+    color: rgba(163, 230, 53, 0.5);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.walkable-board-header .close-btn {
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 8px;
+    padding: 0.35rem;
+    color: rgba(255, 255, 255, 0.6);
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.walkable-board-header .close-btn:hover {
+    background: rgba(255, 255, 255, 0.12);
+    color: white;
+}
+
+/* ==================== MAP CONTAINER ==================== */
+.walkable-board-container {
+    flex: 1;
+    padding: 0.75rem;
+    overflow: auto;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    /* RPG parchment / grass terrain background */
+    background:
+        /* subtle grid pattern */
+        repeating-linear-gradient(0deg, rgba(101, 163, 13, 0.03) 0px, transparent 1px, transparent 40px),
+        repeating-linear-gradient(90deg, rgba(101, 163, 13, 0.03) 0px, transparent 1px, transparent 40px),
+        /* terrain gradient */
+        radial-gradient(ellipse at 30% 40%, rgba(34, 120, 34, 0.12) 0%, transparent 60%),
+        radial-gradient(ellipse at 70% 60%, rgba(101, 163, 13, 0.08) 0%, transparent 50%),
+        radial-gradient(ellipse at center, rgba(20, 35, 20, 0.9) 0%, rgba(12, 18, 12, 1) 100%);
+}
+
+/* Fog of war edge vignette */
+.walkable-board-container::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(ellipse at center, transparent 40%, rgba(0, 0, 0, 0.5) 100%);
+    pointer-events: none;
+    z-index: 2;
+}
+
+/* ==================== PATH GRID ==================== */
+.walkable-path-grid {
+    display: grid;
+    grid-template-columns: repeat(10, 1fr);
+    grid-template-rows: repeat(4, 1fr);
+    gap: 4px;
+    width: 100%;
+    max-width: 820px;
+    position: relative;
+    z-index: 1;
+}
+
+/* ==================== RPG PATH TILES ==================== */
+.path-tile {
+    position: relative;
+    aspect-ratio: 1;
+    min-width: 48px;
+    max-width: 78px;
+    border-radius: 6px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.25s ease;
+    cursor: default;
+
+    /* Base dirt road tile */
+    background:
+        linear-gradient(145deg, rgba(60, 55, 45, 0.7) 0%, rgba(40, 38, 32, 0.8) 100%);
+    border: 1.5px solid rgba(100, 90, 70, 0.35);
+    box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.04),
+        0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+.path-tile::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: 6px;
+    background:
+        radial-gradient(circle at 30% 30%, rgba(255, 255, 255, 0.03) 0%, transparent 50%);
+    pointer-events: none;
+}
+
+.path-tile:hover {
+    border-color: rgba(163, 230, 53, 0.4);
+    transform: translateY(-1px);
+    box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.06),
+        0 4px 8px rgba(0, 0, 0, 0.4),
+        0 0 8px rgba(163, 230, 53, 0.1);
+}
+
+/* ---- Tile Type: GO (Shrine / Waypoint) ---- */
+.path-tile.go {
+    background:
+        radial-gradient(circle at center, rgba(34, 197, 94, 0.2) 0%, transparent 70%),
+        linear-gradient(145deg, rgba(20, 80, 40, 0.7) 0%, rgba(15, 60, 30, 0.8) 100%);
+    border-color: rgba(34, 197, 94, 0.5);
+    box-shadow:
+        inset 0 0 12px rgba(34, 197, 94, 0.1),
+        0 0 15px rgba(34, 197, 94, 0.15),
+        0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+.path-tile.go::before {
+    content: '';
+    position: absolute;
+    inset: -2px;
+    border-radius: 8px;
+    background: conic-gradient(from 0deg, transparent, rgba(34, 197, 94, 0.15), transparent, rgba(34, 197, 94, 0.1), transparent);
+    animation: shrineGlow 6s linear infinite;
+    pointer-events: none;
+    z-index: -1;
+}
+
+/* ---- Tile Type: Gold (Treasure) ---- */
+.path-tile.gold {
+    background:
+        radial-gradient(circle at center, rgba(251, 191, 36, 0.15) 0%, transparent 70%),
+        linear-gradient(145deg, rgba(80, 60, 20, 0.7) 0%, rgba(55, 42, 15, 0.8) 100%);
+    border-color: rgba(251, 191, 36, 0.45);
+    box-shadow:
+        inset 0 0 10px rgba(251, 191, 36, 0.08),
+        0 0 10px rgba(251, 191, 36, 0.1),
+        0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+/* ---- Tile Type: Ticket (Mysterious) ---- */
+.path-tile.ticket {
+    background:
+        radial-gradient(circle at center, rgba(139, 92, 246, 0.2) 0%, transparent 70%),
+        linear-gradient(145deg, rgba(50, 30, 80, 0.7) 0%, rgba(35, 20, 60, 0.8) 100%);
+    border-color: rgba(139, 92, 246, 0.5);
+    box-shadow:
+        inset 0 0 12px rgba(139, 92, 246, 0.1),
+        0 0 12px rgba(139, 92, 246, 0.15),
+        0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+/* ---- Tile Type: Empty (Grass/Path) ---- */
+.path-tile.empty {
+    background:
+        linear-gradient(145deg, rgba(35, 40, 30, 0.6) 0%, rgba(25, 30, 22, 0.7) 100%);
+    border-color: rgba(60, 70, 50, 0.3);
+    opacity: 0.85;
+}
+
+/* ---- Current tile the player is on ---- */
+.path-tile.current {
+    border-color: #a3e635 !important;
+    box-shadow:
+        0 0 20px rgba(163, 230, 53, 0.35),
+        0 0 40px rgba(163, 230, 53, 0.1),
+        inset 0 0 15px rgba(163, 230, 53, 0.08) !important;
+    z-index: 5;
+    transform: scale(1.04);
+}
+
+.path-tile.current::before {
+    content: '';
+    position: absolute;
+    inset: -3px;
+    border-radius: 8px;
+    border: 1px solid rgba(163, 230, 53, 0.3);
+    animation: currentPulse 2s ease-in-out infinite;
+    pointer-events: none;
+}
+
+@keyframes currentPulse {
+
+    0%,
+    100% {
+        opacity: 0.4;
+        transform: scale(1);
+    }
+
+    50% {
+        opacity: 1;
+        transform: scale(1.02);
+    }
+}
+
+@keyframes shrineGlow {
+    from {
+        transform: rotate(0deg);
+    }
+
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+/* ---- Tile Icon ---- */
+.tile-icon {
+    font-size: 1.15rem;
+    filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.4));
+    line-height: 1;
+}
+
+.path-tile.empty .tile-icon {
+    font-size: 0.6rem;
+    opacity: 0.35;
+}
+
+/* ---- Tile Label ---- */
+.tile-label {
+    font-size: 0.45rem;
+    color: rgba(255, 255, 255, 0.55);
+    text-align: center;
+    line-height: 1.1;
+    margin-top: 1px;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    font-weight: 600;
+}
+
+/* ==================== PLAYER TOKEN ==================== */
+.player-token {
+    position: absolute;
+    top: -10px;
+    right: -6px;
+    font-size: 1.3rem;
+    filter: drop-shadow(0 2px 6px rgba(163, 230, 53, 0.4));
+    z-index: 10;
+}
+
+/* ==================== CONTROLS ==================== */
+.walkable-controls {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.75rem;
+    padding: 0.6rem 1rem;
+    background: linear-gradient(180deg, rgba(12, 22, 12, 0.9) 0%, rgba(20, 30, 18, 0.95) 100%);
+    border-top: 1px solid rgba(101, 163, 13, 0.2);
+    flex-wrap: wrap;
+}
+
+.roll-btn {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.55rem 1.4rem;
+    background: linear-gradient(135deg, #22c55e, #16a34a);
+    border: 2px solid rgba(34, 197, 94, 0.6);
+    border-radius: 10px;
+    color: white;
+    font-size: 0.95rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+    box-shadow: 0 4px 12px rgba(34, 197, 94, 0.25);
+}
+
+.roll-btn:hover:not(:disabled) {
+    transform: translateY(-1px) scale(1.03);
+    box-shadow: 0 6px 20px rgba(34, 197, 94, 0.4);
+}
+
+.roll-btn:disabled {
+    opacity: 0.35;
+    cursor: not-allowed;
+    filter: saturate(0.3);
+}
+
+.rewards-info-toggle {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    padding: 0.35rem 0.7rem;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 6px;
+    color: rgba(255, 255, 255, 0.45);
+    font-size: 0.7rem;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.rewards-info-toggle:hover {
+    background: rgba(255, 255, 255, 0.08);
+    color: rgba(255, 255, 255, 0.8);
+}
+
+/* ==================== ROLLING DISPLAY ==================== */
+.rolling-display {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.dice-rolling {
+    font-size: 1.8rem;
+    filter: drop-shadow(0 0 8px rgba(163, 230, 53, 0.3));
+}
+
+.rng-display {
+    background: rgba(0, 0, 0, 0.7);
+    border: 1px solid rgba(163, 230, 53, 0.25);
+    border-radius: 8px;
+    padding: 0.4rem 0.8rem;
+    text-align: center;
+    min-width: 170px;
+}
+
+.rng-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.3rem;
+    padding-bottom: 0.25rem;
+    border-bottom: 1px solid rgba(163, 230, 53, 0.12);
+}
+
+.rng-label {
+    font-size: 0.65rem;
+    font-weight: 600;
+    color: #a3e635;
+}
+
+.rng-target {
+    font-size: 0.6rem;
+    color: rgba(255, 255, 255, 0.4);
+}
+
+.rng-target strong {
+    color: #22c55e;
+    font-size: 0.8rem;
+}
+
+.rng-number {
+    font-size: 1.3rem;
+    font-weight: 800;
+    font-family: 'Courier New', monospace;
+    padding: 0.2rem 0.4rem;
+    border-radius: 4px;
+}
+
+.rng-number.spinning {
+    color: #a3e635;
+    animation: rngPulse 0.2s ease-in-out infinite;
+}
+
+.rng-number.miss {
+    color: #ef4444;
+}
+
+.rng-number.jackpot {
+    color: #22c55e;
+    text-shadow: 0 0 15px rgba(34, 197, 94, 0.8);
+    animation: jackpotGlow 0.5s ease-in-out infinite;
+}
+
+@keyframes rngPulse {
+
+    0%,
+    100% {
+        opacity: 1;
+    }
+
+    50% {
+        opacity: 0.6;
+    }
+}
+
+@keyframes jackpotGlow {
+
+    0%,
+    100% {
+        box-shadow: 0 0 15px rgba(34, 197, 94, 0.5);
+    }
+
+    50% {
+        box-shadow: 0 0 30px rgba(34, 197, 94, 0.9);
+    }
+}
+
+.rng-odds {
+    font-size: 0.55rem;
+    color: rgba(255, 255, 255, 0.3);
+    margin-top: 0.2rem;
+}
+
+/* ==================== NO TICKETS ==================== */
+.no-tickets {
+    text-align: center;
+    color: rgba(255, 255, 255, 0.5);
+}
+
+.no-tickets p {
+    margin: 0;
+    font-size: 0.85rem;
+}
+
+.no-tickets .comeback {
+    font-size: 0.7rem;
+    color: rgba(255, 255, 255, 0.3);
+    margin-top: 0.2rem;
+}
+
+/* ==================== REWARDS INFO DROPDOWN ==================== */
+.rewards-info-dropdown {
+    padding: 0.6rem 1rem;
+    background: rgba(0, 0, 0, 0.5);
+    border-top: 1px solid rgba(101, 163, 13, 0.1);
+    overflow: hidden;
+}
+
+.rewards-row {
+    display: flex;
+    justify-content: center;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+    margin-bottom: 0.4rem;
+}
+
+.rewards-info-dropdown .reward-info-item {
+    display: flex;
+    gap: 0.3rem;
+    font-size: 0.65rem;
+    color: rgba(255, 255, 255, 0.6);
+    padding: 0.2rem 0.4rem;
+    background: rgba(255, 255, 255, 0.03);
+    border-radius: 4px;
+}
+
+.ticket-display.lifetime-rolls {
+    background: rgba(100, 200, 255, 0.1);
+    border: 1px solid rgba(100, 200, 255, 0.3);
+    margin-left: 0.5rem;
+}
+
+.ticket-count.small {
+    font-size: 1rem;
+    color: #aaddff;
+}
+
+.ticket-icon {
+    background: rgba(255, 255, 255, 0.03);
+    border-radius: 4px;
+}
+
+.luck-rolls-row {
+    display: flex;
+    justify-content: center;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+    font-size: 0.6rem;
+    color: rgba(255, 255, 255, 0.4);
+}
+
+/* ==================== LUCK EVENT POPUP ==================== */
+.luck-event-popup {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    padding: 1.75rem;
+    background: linear-gradient(135deg, rgba(12, 18, 12, 0.98), rgba(20, 28, 20, 0.98));
+    border: 3px solid;
+    border-radius: 16px;
+    text-align: center;
+    z-index: 1000;
+    min-width: 280px;
+    overflow: hidden;
+}
+
+.luck-event-popup.insane {
+    border-color: #a855f7;
+    box-shadow: 0 0 60px rgba(168, 85, 247, 0.4), inset 0 0 30px rgba(168, 85, 247, 0.05);
+}
+
+.luck-event-popup.godly {
+    border-color: #f59e0b;
+    box-shadow: 0 0 70px rgba(245, 158, 11, 0.5), inset 0 0 30px rgba(245, 158, 11, 0.05);
+}
+
+.luck-event-popup.universe {
+    border-color: #38bdf8;
+    box-shadow: 0 0 90px rgba(56, 189, 248, 0.6), inset 0 0 40px rgba(56, 189, 248, 0.05);
+}
+
+.luck-rays {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 400%;
+    height: 400%;
+    transform: translate(-50%, -50%);
+    background: conic-gradient(from 0deg, transparent 0deg, rgba(255, 255, 255, 0.03) 10deg, transparent 20deg);
+    animation: spinRays 10s linear infinite;
+    pointer-events: none;
+}
+
+.cosmic-bg {
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(circle at center, rgba(56, 189, 248, 0.15), transparent 70%);
+    pointer-events: none;
+}
+
+@keyframes spinRays {
+    from {
+        transform: translate(-50%, -50%) rotate(0deg);
+    }
+
+    to {
+        transform: translate(-50%, -50%) rotate(360deg);
+    }
+}
+
+.luck-icon {
+    font-size: 2.5rem;
+    margin-bottom: 0.75rem;
+    position: relative;
+    z-index: 1;
+}
+
+.luck-event-popup h2 {
+    font-size: 1.3rem;
+    font-weight: 800;
+    background: linear-gradient(90deg, #fbbf24, #f59e0b);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin: 0 0 0.4rem;
+    position: relative;
+    z-index: 1;
+}
+
+.luck-message {
+    color: rgba(255, 255, 255, 0.7);
+    font-size: 0.8rem;
+    margin-bottom: 0.75rem;
+    position: relative;
+    z-index: 1;
+}
+
+.luck-rewards {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    margin-bottom: 1.25rem;
+    position: relative;
+    z-index: 1;
+}
+
+.luck-xp {
+    display: flex;
+    justify-content: center;
+    gap: 0.5rem;
+    font-size: 0.95rem;
+    color: #22c55e;
+}
+
+.pet-unlock {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.4rem;
+}
+
+.pet-preview {
+    font-size: 2.5rem;
+    animation: float 2s ease-in-out infinite;
+}
+
+@keyframes float {
+
+    0%,
+    100% {
+        transform: translateY(0);
+    }
+
+    50% {
+        transform: translateY(-10px);
+    }
+}
+
+.luck-continue-btn {
+    padding: 0.6rem 1.75rem;
+    background: linear-gradient(135deg, #22c55e, #16a34a);
+    border: 2px solid rgba(34, 197, 94, 0.6);
+    border-radius: 10px;
+    color: white;
+    font-size: 0.9rem;
+    font-weight: 700;
+    cursor: pointer;
+    position: relative;
+    z-index: 1;
+    transition: all 0.2s;
+    box-shadow: 0 4px 12px rgba(34, 197, 94, 0.25);
+}
+
+.luck-continue-btn:hover {
+    transform: scale(1.05);
+    box-shadow: 0 6px 20px rgba(34, 197, 94, 0.4);
+}
+
+/* ==================== REWARD POPUP ==================== */
+.reward-popup {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    padding: 1.25rem 1.75rem;
+    background: rgba(12, 18, 12, 0.98);
+    border: 2px solid rgba(163, 230, 53, 0.3);
+    border-radius: 14px;
+    text-align: center;
+    z-index: 500;
+    min-width: 240px;
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.7);
+}
+
+.reward-glow {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 200%;
+    height: 200%;
+    transform: translate(-50%, -50%);
+    background: radial-gradient(circle at center, rgba(163, 230, 53, 0.06), transparent 50%);
+    pointer-events: none;
+}
+
+.dice-result {
+    font-size: 0.8rem;
+    color: rgba(255, 255, 255, 0.4);
+    margin-bottom: 0.4rem;
+}
+
+.reward-popup h3 {
+    font-size: 1.1rem;
+    color: white;
+    margin: 0 0 0.75rem;
+}
+
+.reward-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+    margin-bottom: 0.75rem;
+}
+
+.reward-item {
+    display: flex;
+    justify-content: space-between;
+    padding: 0.35rem 0.7rem;
+    background: rgba(163, 230, 53, 0.05);
+    border: 1px solid rgba(163, 230, 53, 0.1);
+    border-radius: 6px;
+    font-size: 0.8rem;
+}
+
+.reward-value {
+    color: #22c55e;
+    font-weight: 700;
+}
+
+.reward-item.empty {
+    color: rgba(255, 255, 255, 0.35);
+    justify-content: center;
+    border-color: transparent;
+}
+
+.continue-btn {
+    padding: 0.5rem 1.3rem;
+    background: linear-gradient(135deg, #3b82f6, #2563eb);
+    border: 2px solid rgba(59, 130, 246, 0.5);
+    border-radius: 8px;
+    color: white;
+    font-size: 0.85rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.2);
+}
+
+.continue-btn:hover {
+    transform: translateY(-1px) scale(1.03);
+}
+
+/* ==================== RESPONSIVE ==================== */
+@media (max-width: 600px) {
+    .walkable-path-grid {
+        gap: 2px;
+    }
+
+    .path-tile {
+        min-width: 28px;
+    }
+
+    .tile-icon {
+        font-size: 0.85rem;
+    }
+
+    .tile-label {
+        display: none;
+    }
+
+    .player-token {
+        font-size: 1rem;
+        top: -6px;
+        right: -3px;
+    }
+}

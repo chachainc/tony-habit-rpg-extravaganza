@@ -1,0 +1,101 @@
+.progress-bar-container {
+    width: 100%;
+}
+
+.progress-bar__label {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: var(--space-xs);
+    font-size: 0.875rem;
+    color: var(--text-secondary);
+}
+
+.progress-bar__numbers {
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.progress-bar {
+    position: relative;
+    background: var(--bg-base);
+    border-radius: var(--radius-full);
+    overflow: hidden;
+    box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+/* === SIZES === */
+.progress-bar--sm .progress-bar {
+    height: 12px;
+}
+
+.progress-bar--md .progress-bar {
+    height: 20px;
+}
+
+.progress-bar--lg .progress-bar {
+    height: 28px;
+}
+
+/* === FILL === */
+.progress-bar__fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--color-primary-600), var(--color-primary-500));
+    box-shadow: 0 0 10px rgba(96, 108, 220, 0.5);
+    position: relative;
+    overflow: hidden;
+}
+
+.progress-bar__fill::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(90deg,
+            transparent 0%,
+            rgba(255, 255, 255, 0.3) 50%,
+            transparent 100%);
+    animation: shimmer 2s infinite;
+}
+
+/* === VARIANTS === */
+.progress-bar--success .progress-bar__fill {
+    background: linear-gradient(90deg, #16a34a, #22c55e);
+    box-shadow: 0 0 10px rgba(34, 197, 94, 0.5);
+}
+
+.progress-bar--warning .progress-bar__fill {
+    background: linear-gradient(90deg, var(--color-accent-600), var(--color-accent-500));
+    box-shadow: 0 0 10px rgba(245, 158, 11, 0.5);
+}
+
+.progress-bar--rare .progress-bar__fill {
+    background: linear-gradient(90deg, #2563eb, #3b82f6);
+    box-shadow: 0 0 12px rgba(59, 130, 246, 0.6);
+}
+
+.progress-bar--epic .progress-bar__fill {
+    background: linear-gradient(90deg, #9333ea, #a855f7);
+    box-shadow: 0 0 15px rgba(168, 85, 247, 0.7);
+}
+
+.progress-bar--legendary .progress-bar__fill {
+    background: linear-gradient(90deg, #d97706, #f59e0b);
+    box-shadow: 0 0 18px rgba(245, 158, 11, 0.8);
+}
+
+/* === TEXT === */
+.progress-bar__text {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: white;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8);
+    z-index: 1;
+    white-space: nowrap;
+}

@@ -1,0 +1,51 @@
+.app-layout {
+    display: flex;
+    height: 100vh;
+    height: 100dvh;
+    width: 100vw;
+    background-color: var(--bg-primary);
+    color: var(--text-primary);
+    overflow: hidden;
+}
+
+.main-wrapper {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    position: relative;
+}
+
+.content-area {
+    flex: 1;
+    overflow-y: auto;
+    padding: var(--space-6);
+    scroll-behavior: smooth;
+}
+
+/* Scrollbar Styling */
+.content-area::-webkit-scrollbar {
+    width: 8px;
+}
+
+.content-area::-webkit-scrollbar-track {
+    background: var(--bg-primary);
+}
+
+.content-area::-webkit-scrollbar-thumb {
+    background-color: var(--border);
+    border-radius: var(--radius-full);
+}
+
+/* ─── Mobile Layout ───────────────────────── */
+@media (max-width: 768px) {
+    .app-layout {
+        flex-direction: column;
+    }
+
+    .content-area {
+        padding: var(--space-4) var(--space-3);
+        padding-bottom: 72px;
+        /* Space for bottom nav */
+    }
+}

@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256">
+  <defs>
+    <radialGradient id="bg" cx="50%" cy="50%" r="50%"><stop offset="0%" stop-color="#4a1a0a"/><stop offset="100%" stop-color="#1a1a2e"/></radialGradient>
+    <filter id="glow"><feGaussianBlur stdDeviation="4" result="blur"/><feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+  </defs>
+  <rect width="256" height="256" fill="url(#bg)"/>
+  <ellipse cx="128" cy="205" rx="50" ry="12" fill="#1a1a1a" opacity="0.5"/>
+  <!-- Massive body -->
+  <rect x="95" y="90" width="66" height="90" rx="10" fill="#8a3a2a" stroke="#5a2a1a" stroke-width="2"/>
+  <!-- Head -->
+  <circle cx="128" cy="68" r="28" fill="#9a4a3a" stroke="#6a2a1a" stroke-width="2"/>
+  <!-- Angry eyes -->
+  <path d="M108 55 L120 60 L108 63" fill="#ff3300" filter="url(#glow)"/>
+  <path d="M148 55 L136 60 L148 63" fill="#ff3300" filter="url(#glow)"/>
+  <!-- Snarling mouth -->
+  <path d="M115 78 L120 73 L125 78 L130 73 L135 78 L140 73" fill="none" stroke="#ffcc66" stroke-width="2"/>
+  <!-- Horns -->
+  <path d="M105 50 Q95 30 90 20" fill="none" stroke="#6a3a2a" stroke-width="4" stroke-linecap="round"/>
+  <path d="M151 50 Q161 30 166 20" fill="none" stroke="#6a3a2a" stroke-width="4" stroke-linecap="round"/>
+  <!-- Muscular arms -->
+  <rect x="60" y="95" width="35" height="18" rx="8" fill="#8a3a2a" stroke="#5a2a1a" stroke-width="1.5" transform="rotate(-10 78 104)"/>
+  <rect x="161" y="95" width="35" height="18" rx="8" fill="#8a3a2a" stroke="#5a2a1a" stroke-width="1.5" transform="rotate(10 178 104)"/>
+  <!-- Fists -->
+  <circle cx="58" cy="108" r="10" fill="#9a4a3a" stroke="#5a2a1a" stroke-width="1.5"/>
+  <circle cx="198" cy="108" r="10" fill="#9a4a3a" stroke="#5a2a1a" stroke-width="1.5"/>
+  <!-- Fire aura -->
+  <path d="M90 85 Q85 70 92 60" fill="none" stroke="#ff4400" stroke-width="2" opacity="0.6"/>
+  <path d="M166 85 Q171 70 164 60" fill="none" stroke="#ff4400" stroke-width="2" opacity="0.6"/>
+  <path d="M128 40 Q125 25 130 15" fill="none" stroke="#ff6600" stroke-width="2" opacity="0.5"/>
+  <text x="128" y="240" text-anchor="middle" fill="#ff4400" font-family="sans-serif" font-size="12" font-weight="bold">RAGE BERSERKER</text>
+</svg>

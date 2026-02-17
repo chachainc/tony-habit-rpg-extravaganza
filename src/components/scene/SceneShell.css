@@ -1,0 +1,191 @@
+/* ================================================================
+   SceneShell - Layered Scene Wrapper Styles
+   ================================================================ */
+
+.scene-shell {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+}
+
+/* Base layer styling */
+.scene-layer {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+}
+
+/* Layer 0: Background */
+.scene-layer--background {
+    z-index: 0;
+    background-repeat: no-repeat;
+}
+
+/* Layer 1: Vignette Overlay */
+.scene-layer--vignette {
+    z-index: 1;
+    background: radial-gradient(ellipse 80% 70% at 50% 50%,
+            transparent 0%,
+            rgba(0, 0, 0, 0.3) 60%,
+            rgba(0, 0, 0, 0.7) 100%);
+}
+
+/* Layer 2: Fog Animation */
+.scene-layer--fog {
+    z-index: 2;
+}
+
+.fog {
+    position: absolute;
+    width: 200%;
+    height: 100%;
+    background: linear-gradient(90deg,
+            transparent 0%,
+            rgba(180, 180, 200, 0.05) 20%,
+            rgba(180, 180, 200, 0.08) 50%,
+            rgba(180, 180, 200, 0.05) 80%,
+            transparent 100%);
+    animation: fog-drift linear infinite;
+}
+
+.fog--1 {
+    animation-duration: 60s;
+    opacity: 0.6;
+}
+
+.fog--2 {
+    animation-duration: 45s;
+    animation-direction: reverse;
+    opacity: 0.4;
+    top: 20%;
+}
+
+@keyframes fog-drift {
+    0% {
+        transform: translateX(-50%);
+    }
+
+    100% {
+        transform: translateX(0%);
+    }
+}
+
+/* Layer 3: Content */
+.scene-layer--content {
+    z-index: 10;
+    pointer-events: auto;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Layer 4: Ember Particles */
+.scene-layer--embers {
+    z-index: 20;
+}
+
+.ember {
+    position: absolute;
+    bottom: 0;
+    width: 4px;
+    height: 4px;
+    background: radial-gradient(circle,
+            #ff8c00 0%,
+            #ff4500 40%,
+            transparent 100%);
+    border-radius: 50%;
+    opacity: 0;
+    animation: ember-rise ease-out infinite;
+    filter: blur(0.5px);
+}
+
+@keyframes ember-rise {
+    0% {
+        opacity: 0;
+        transform: translateY(0) scale(1);
+    }
+
+    10% {
+        opacity: 1;
+    }
+
+    80% {
+        opacity: 0.6;
+    }
+
+    100% {
+        opacity: 0;
+        transform: translateY(-100vh) scale(0.3);
+    }
+}
+
+/* Layer 5: Glow Points */
+.scene-layer--glows {
+    z-index: 15;
+}
+
+.glow-point {
+    position: absolute;
+    width: 100px;
+    height: 100px;
+    transform: translate(-50%, -50%);
+    background: radial-gradient(circle,
+            var(--glow-color, #fbbf24) 0%,
+            transparent 70%);
+    opacity: calc(0.3 * var(--glow-intensity, 1));
+    filter: blur(20px);
+    animation: glow-pulse 3s ease-in-out infinite;
+}
+
+@keyframes glow-pulse {
+
+    0%,
+    100% {
+        opacity: calc(0.3 * var(--glow-intensity, 1));
+        transform: translate(-50%, -50%) scale(1);
+    }
+
+    50% {
+        opacity: calc(0.45 * var(--glow-intensity, 1));
+        transform: translate(-50%, -50%) scale(1.1);
+    }
+}
+
+/* ================================================================
+   Additional Atmosphere Utilities
+   ================================================================ */
+
+/* Dark overlay for modals on top of scene */
+.scene-dark-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.7);
+    z-index: 100;
+}
+
+/* Scanlines effect (optional retro feel) */
+.scene-scanlines {
+    position: absolute;
+    inset: 0;
+    z-index: 3;
+    background: repeating-linear-gradient(0deg,
+            transparent,
+            transparent 2px,
+            rgba(0, 0, 0, 0.03) 2px,
+            rgba(0, 0, 0, 0.03) 4px);
+    pointer-events: none;
+}
+
+/* Subtle noise texture overlay */
+.scene-noise {
+    position: absolute;
+    inset: 0;
+    z-index: 4;
+    opacity: 0.02;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+    pointer-events: none;
+}

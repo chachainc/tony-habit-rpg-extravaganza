@@ -1,0 +1,354 @@
+/* === BACKGROUND LAYERS === */
+.stats-page {
+    position: relative;
+    width: 100%;
+    min-height: 100vh;
+    overflow-y: auto;
+}
+
+.stats-bg {
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none;
+}
+
+/* AI-Generated Background Image */
+.stats-bg__image {
+    position: absolute;
+    inset: 0;
+    background-image: url('../../assets/backgrounds/stats_background.png');
+    background-size: cover;
+    background-position: center;
+    opacity: 0.45;
+    filter: brightness(0.75) saturate(1.3);
+}
+
+/* Vignette Overlay */
+.stats-bg__vignette {
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(ellipse at center,
+            transparent 15%,
+            rgba(0, 0, 0, 0.35) 55%,
+            rgba(0, 0, 0, 0.85) 100%);
+}
+
+/* Fog Animation Container */
+.stats-bg__fog {
+    position: absolute;
+    inset: 0;
+    overflow: hidden;
+}
+
+.stats-bg__fog .fog {
+    position: absolute;
+    width: 200%;
+    height: 100%;
+    background: linear-gradient(90deg,
+            transparent 0%,
+            rgba(139, 92, 246, 0.04) 25%,
+            rgba(59, 130, 246, 0.04) 50%,
+            rgba(139, 92, 246, 0.04) 75%,
+            transparent 100%);
+}
+
+.stats-bg__fog .fog--1 {
+    top: 0;
+    left: -50%;
+    animation: statsFogDrift1 35s linear infinite;
+}
+
+.stats-bg__fog .fog--2 {
+    top: 40%;
+    left: -100%;
+    animation: statsFogDrift2 45s linear infinite;
+    opacity: 0.6;
+}
+
+@keyframes statsFogDrift1 {
+    0% {
+        transform: translateX(0);
+    }
+
+    100% {
+        transform: translateX(50%);
+    }
+}
+
+@keyframes statsFogDrift2 {
+    0% {
+        transform: translateX(0);
+    }
+
+    100% {
+        transform: translateX(50%);
+    }
+}
+
+/* Magic Sparkles */
+.stats-bg__sparkles {
+    position: absolute;
+    inset: 0;
+    overflow: hidden;
+}
+
+.sparkle {
+    position: absolute;
+    width: 3px;
+    height: 3px;
+    background: #a855f7;
+    border-radius: 50%;
+    box-shadow: 0 0 6px #a855f7, 0 0 12px #8b5cf6;
+    animation: sparkleFloat 4s ease-in-out infinite;
+    opacity: 0;
+}
+
+@keyframes sparkleFloat {
+
+    0%,
+    100% {
+        opacity: 0;
+        transform: scale(0) translateY(0);
+    }
+
+    50% {
+        opacity: 1;
+        transform: scale(1) translateY(-30px);
+    }
+}
+
+/* === CONTENT === */
+.stats-content-wrapper {
+    position: relative;
+    z-index: 1;
+    padding: 2rem;
+    max-width: 1400px;
+    margin: 0 auto;
+}
+
+.page-header {
+    margin-bottom: 2rem;
+}
+
+.page-header h1 {
+    font-size: 2.2rem;
+    margin-bottom: 0.5rem;
+    background: linear-gradient(135deg, var(--primary), var(--accent));
+    background-clip: text;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+.subtitle {
+    color: var(--text-secondary);
+    font-size: 1.05rem;
+}
+
+.stats-content {
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
+}
+
+/* Global Level Card */
+.global-level-card {
+    padding: 2rem;
+}
+
+.global-level-header {
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+    margin-bottom: 1.5rem;
+}
+
+.global-level-header h2 {
+    font-size: 1.4rem;
+    color: var(--text-primary);
+    margin: 0;
+}
+
+.level-number {
+    font-size: 2.5rem;
+    font-weight: 700;
+    background: linear-gradient(135deg, var(--primary), var(--accent));
+    background-clip: text;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    margin: 0;
+}
+
+.xp-text {
+    margin-top: 1rem;
+    color: var(--text-secondary);
+    text-align: center;
+}
+
+/* Combat Stats */
+.combat-stats-row {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1.5rem;
+}
+
+.combat-stat-card {
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+    padding: 1.5rem;
+}
+
+.combat-stat-info {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.combat-stat-label {
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.combat-stat-value {
+    font-size: 1.8rem;
+    font-weight: 700;
+    color: var(--text-primary);
+}
+
+/* Skills Section */
+.skills-section {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+.section-title {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    font-size: 1.6rem;
+    color: var(--text-primary);
+}
+
+.skills-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    grid-auto-rows: auto;
+    /* Ensure rows size to content */
+    gap: 1.5rem;
+    align-items: start;
+    /* Allow items to be natural height, don't stretch */
+}
+
+.skill-card {
+    padding: 2rem 2rem 3rem 2rem;
+    /* Increased bottom padding */
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    /* Changed from space-between to allow natural flow */
+    gap: 1.5rem;
+    height: auto;
+    /* Force auto height */
+    min-height: 0;
+    /* Remove min-height constraint */
+    overflow: visible;
+    /* Prevent clipping */
+    transition: all 0.2s;
+}
+
+.skill-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.25);
+    z-index: 10;
+}
+
+.skill-header {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.skill-icon {
+    font-size: 2rem;
+    transform: scale(0.3);
+    /* Aggressive shrink for emojis */
+    transform-origin: center;
+    display: inline-block;
+    line-height: 1;
+}
+
+.skill-info {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.skill-name {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin: 0;
+}
+
+.skill-level {
+    font-size: 0.9rem;
+    color: var(--accent);
+    font-weight: 600;
+}
+
+.daily-xp-info {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.75rem;
+    background: var(--bg-tertiary);
+    border-radius: var(--radius);
+}
+
+.daily-label {
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+    font-weight: 500;
+}
+
+.daily-value {
+    font-size: 0.85rem;
+    color: var(--text-primary);
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.capped-badge {
+    background: var(--accent);
+    color: var(--bg-primary);
+    padding: 0.25rem 0.5rem;
+    border-radius: 12px;
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+}
+
+.total-xp-text {
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+    text-align: center;
+    margin: 0;
+}
+
+.icon-primary {
+    color: var(--primary);
+}
+
+.icon-red {
+    color: #ef4444;
+}
+
+.icon-blue {
+    color: #3b82f6;
+}

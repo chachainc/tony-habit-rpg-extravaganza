@@ -1,0 +1,484 @@
+.wake-overlay {
+    background: linear-gradient(135deg, rgba(30, 58, 138, 0.9), rgba(0, 0, 0, 0.9));
+}
+
+.wake-modal {
+    text-align: center;
+    min-width: 400px;
+    max-width: 600px;
+    background: linear-gradient(180deg, #1e3a5f, #0f172a);
+    border: 2px solid #3b82f6;
+}
+
+.wake-header {
+    margin-bottom: var(--space-6);
+}
+
+.sun-icon {
+    color: #facc15;
+    filter: drop-shadow(0 0 20px rgba(250, 204, 21, 0.5));
+    animation: pulse 2s ease-in-out infinite;
+}
+
+@keyframes pulse {
+
+    0%,
+    100% {
+        transform: scale(1);
+    }
+
+    50% {
+        transform: scale(1.1);
+    }
+}
+
+.wake-header h2 {
+    font-size: 2rem;
+    margin: var(--space-4) 0 var(--space-2);
+}
+
+.time-display {
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+}
+
+.sleep-input {
+    margin: var(--space-6) 0;
+}
+
+.sleep-input label {
+    display: block;
+    margin-bottom: var(--space-3);
+    color: var(--text-secondary);
+}
+
+.slider-row {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+}
+
+.slider-row input[type="range"] {
+    flex: 1;
+    height: 8px;
+    border-radius: var(--radius-full);
+    background: #334155;
+    -webkit-appearance: none;
+}
+
+.slider-row input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: #3b82f6;
+    cursor: pointer;
+    box-shadow: 0 0 10px rgba(59, 130, 246, 0.5);
+}
+
+.score-value {
+    font-size: 1.5rem;
+    font-weight: bold;
+    width: 50px;
+    color: #3b82f6;
+}
+
+.xp-preview {
+    margin-top: var(--space-3);
+    padding: var(--space-2) var(--space-4);
+    background: rgba(59, 130, 246, 0.1);
+    border-radius: var(--radius-md);
+    color: #60a5fa;
+    font-weight: 500;
+}
+
+.start-day-btn {
+    background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+    color: white;
+    font-size: 1.2rem;
+    font-weight: bold;
+    padding: var(--space-3) var(--space-8);
+    border-radius: var(--radius-full);
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+    box-shadow: 0 4px 0 #1e40af;
+    transition: transform 0.1s;
+}
+
+.start-day-btn:active {
+    transform: translateY(4px);
+    box-shadow: none;
+}
+
+.xp-result {
+    padding: var(--space-6);
+}
+
+.xp-result p:first-child {
+    font-size: 2rem;
+    font-weight: bold;
+    color: #22c55e;
+}
+
+.hp-msg {
+    color: #ef4444;
+    margin-top: var(--space-2);
+}
+
+/* ================================================================
+   EMBEDDED DAILY CHECK-IN (inside WakeUp modal)
+   ================================================================ */
+
+.wake-checkin {
+    padding: var(--space-2) 0;
+}
+
+.wake-checkin__header {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    justify-content: center;
+    margin-bottom: 1rem;
+    color: var(--primary);
+}
+
+.wake-checkin__header h3 {
+    margin: 0;
+    font-size: 1.5rem;
+}
+
+.wake-checkin__streak {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.75rem;
+    padding: 0.75rem 1rem;
+    background: linear-gradient(135deg, rgba(255, 107, 53, 0.1), rgba(255, 167, 38, 0.1));
+    border-radius: 10px;
+    margin-bottom: 1rem;
+}
+
+.wake-checkin__flame {
+    color: #ff6b35;
+    animation: flicker 2s infinite;
+}
+
+@keyframes flicker {
+
+    0%,
+    100% {
+        opacity: 1;
+        transform: scale(1);
+    }
+
+    50% {
+        opacity: 0.8;
+        transform: scale(1.1);
+    }
+}
+
+.wake-checkin__streak-info {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.wake-checkin__streak-count {
+    font-size: 2rem;
+    font-weight: bold;
+    background: linear-gradient(135deg, #ff6b35, #ffa726);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.wake-checkin__streak-label {
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.wake-checkin__warning {
+    background: rgba(255, 193, 7, 0.1);
+    border: 1px solid rgba(255, 193, 7, 0.3);
+    border-radius: 8px;
+    padding: 0.5rem 0.75rem;
+    margin-bottom: 0.75rem;
+    text-align: center;
+    color: #ffc107;
+    font-size: 0.85rem;
+}
+
+/* Compact 7-day calendar grid */
+.wake-checkin__calendar {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+}
+
+@media (max-width: 480px) {
+    .wake-checkin__calendar {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+.wake-checkin__day {
+    background: rgba(255, 255, 255, 0.04);
+    border: 1.5px solid rgba(255, 255, 255, 0.08);
+    border-radius: 8px;
+    padding: 0.5rem;
+    text-align: center;
+    transition: all 0.2s ease;
+}
+
+.wake-checkin__day.current {
+    border-color: var(--primary);
+    background: rgba(96, 108, 220, 0.1);
+    box-shadow: 0 0 12px rgba(96, 108, 220, 0.25);
+}
+
+.wake-checkin__day.claimed {
+    opacity: 0.55;
+    border-color: rgba(76, 175, 80, 0.4);
+    background: rgba(76, 175, 80, 0.08);
+}
+
+.wake-checkin__day-num {
+    font-size: 0.65rem;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 0.2rem;
+}
+
+.wake-checkin__day-icon {
+    font-size: 1.3rem;
+    margin: 0.15rem 0;
+}
+
+.wake-checkin__day-rewards {
+    display: flex;
+    flex-direction: column;
+    gap: 0.1rem;
+    font-size: 0.6rem;
+    color: var(--text-secondary);
+}
+
+.wake-checkin__buff,
+.wake-checkin__ticket {
+    font-size: 0.6rem;
+    font-weight: bold;
+    color: var(--primary);
+}
+
+.wake-checkin__ticket {
+    color: #ffc107;
+}
+
+/* Check-in action button */
+.wake-checkin__btn {
+    width: 100%;
+    padding: 0.75rem 1.5rem;
+    background: linear-gradient(135deg, var(--primary), #5a67d8);
+    border: none;
+    border-radius: 10px;
+    color: white;
+    font-size: 1rem;
+    font-weight: bold;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    transition: all 0.2s ease;
+}
+
+.wake-checkin__btn:hover {
+    box-shadow: 0 6px 20px rgba(96, 108, 220, 0.4);
+}
+
+.wake-checkin__claimed {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    padding: 0.75rem;
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+}
+
+.wake-checkin__claimed svg {
+    color: var(--success);
+}
+
+.wake-checkin__skip {
+    display: block;
+    margin: 0.75rem auto 0;
+    background: transparent;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    color: var(--text-secondary);
+    font-size: 0.85rem;
+    cursor: pointer;
+    padding: 0.5rem 1.5rem;
+    border-radius: var(--radius-full);
+    transition: all 0.2s;
+}
+
+.wake-checkin__skip:hover {
+    color: var(--text-primary);
+    border-color: rgba(255, 255, 255, 0.3);
+}
+
+/* Reward overlay (inside the modal) */
+.wake-checkin__reward-overlay {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: linear-gradient(135deg, rgba(30, 30, 40, 0.98), rgba(20, 20, 30, 0.98));
+    border: 2px solid var(--primary);
+    border-radius: 14px;
+    padding: 1.5rem;
+    text-align: center;
+    z-index: 10;
+    min-width: 300px;
+    box-shadow: 0 16px 48px rgba(0, 0, 0, 0.5);
+}
+
+.wake-checkin__reward-glow {
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: radial-gradient(circle, rgba(96, 108, 220, 0.2) 0%, transparent 70%);
+    animation: pulse 2s infinite;
+    pointer-events: none;
+}
+
+.wake-checkin__reward-overlay h3 {
+    margin: 0 0 1rem 0;
+    font-size: 1.3rem;
+    color: var(--primary);
+}
+
+.wake-checkin__reward-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+}
+
+.wake-checkin__reward-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.5rem 0.75rem;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 6px;
+    font-size: 0.9rem;
+}
+
+.wake-checkin__reward-item--special {
+    background: linear-gradient(135deg, rgba(255, 193, 7, 0.1), rgba(255, 167, 38, 0.1));
+    border: 1px solid rgba(255, 193, 7, 0.3);
+}
+
+.wake-checkin__reward-value {
+    font-weight: bold;
+    color: var(--primary);
+    font-size: 1rem;
+}
+
+.wake-checkin__reward-continue {
+    width: 100%;
+    padding: 0.6rem;
+    background: var(--primary);
+    border: none;
+    border-radius: 8px;
+    color: white;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.wake-checkin__reward-continue:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(96, 108, 220, 0.3);
+}
+
+/* ================================================================
+   TASK PROMPT (Stage 4)
+   ================================================================ */
+
+.task-prompt {
+    padding: var(--space-4) var(--space-2);
+    text-align: center;
+}
+
+.task-prompt__icon {
+    color: #3b82f6;
+    margin-bottom: var(--space-3);
+    filter: drop-shadow(0 0 12px rgba(59, 130, 246, 0.5));
+}
+
+.task-prompt__title {
+    font-size: 1.4rem;
+    font-weight: 700;
+    margin-bottom: var(--space-2);
+    background: linear-gradient(90deg, #60a5fa, #a78bfa);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.task-prompt__subtitle {
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+    margin-bottom: var(--space-6);
+}
+
+.task-prompt__go-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+    background: linear-gradient(135deg, #3b82f6, #6366f1);
+    color: white;
+    font-size: 1.1rem;
+    font-weight: 700;
+    padding: var(--space-3) var(--space-6);
+    border-radius: var(--radius-full);
+    box-shadow: 0 4px 0 #3730a3, 0 0 20px rgba(99, 102, 241, 0.3);
+    transition: transform 0.1s, box-shadow 0.1s;
+    cursor: pointer;
+    width: 100%;
+    justify-content: center;
+}
+
+.task-prompt__go-btn:hover {
+    box-shadow: 0 4px 0 #3730a3, 0 0 30px rgba(99, 102, 241, 0.5);
+}
+
+.task-prompt__go-btn:active {
+    transform: translateY(4px);
+    box-shadow: none;
+}
+
+.task-prompt__skip-btn {
+    display: block;
+    margin: var(--space-4) auto 0;
+    background: transparent;
+    border: none;
+    color: var(--text-secondary);
+    font-size: 0.85rem;
+    cursor: pointer;
+    padding: var(--space-2) var(--space-4);
+    transition: color 0.2s;
+}
+
+.task-prompt__skip-btn:hover {
+    color: var(--text-primary);
+}

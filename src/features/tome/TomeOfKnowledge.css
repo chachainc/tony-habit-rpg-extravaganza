@@ -1,0 +1,501 @@
+/* Tome of Fate - Bestiary & Lore System */
+
+.tome-page {
+    padding: 2rem;
+    max-width: 1200px;
+    margin: 0 auto;
+    min-height: 100vh;
+}
+
+.tome-header {
+    text-align: center;
+    margin-bottom: 2rem;
+}
+
+.tome-icon {
+    color: #f59e0b;
+    filter: drop-shadow(0 0 15px rgba(245, 158, 11, 0.6));
+    margin-bottom: 1rem;
+}
+
+.tome-header h1 {
+    font-size: 2.5rem;
+    background: linear-gradient(to right, #f59e0b, #fbbf24, #f59e0b);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    margin-bottom: 0.5rem;
+}
+
+.tome-subtitle {
+    color: #94a3b8;
+    font-size: 1.1rem;
+}
+
+.bestiary-bonus {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-top: 1rem;
+    padding: 0.5rem 1rem;
+    background: linear-gradient(135deg, rgba(34, 197, 94, 0.2), rgba(16, 185, 129, 0.1));
+    border: 1px solid rgba(34, 197, 94, 0.3);
+    border-radius: 20px;
+    color: #22c55e;
+    font-weight: 600;
+}
+
+/* Sections */
+.tome-section {
+    background: rgba(30, 41, 59, 0.8);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 16px;
+    padding: 2rem;
+    margin-bottom: 2rem;
+    backdrop-filter: blur(8px);
+}
+
+.tome-section h2 {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    font-size: 1.5rem;
+    margin-bottom: 0.5rem;
+    color: #f8fafc;
+}
+
+.tome-section h2 svg {
+    color: #a855f7;
+}
+
+.section-desc {
+    color: #94a3b8;
+    margin-bottom: 1.5rem;
+}
+
+/* Bestiary Grid */
+.bestiary-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 1rem;
+}
+
+.bestiary-card {
+    background: rgba(0, 0, 0, 0.4);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    padding: 1rem;
+    transition: all 0.3s ease;
+}
+
+.bestiary-card:hover {
+    border-color: rgba(139, 92, 246, 0.4);
+    box-shadow: 0 0 20px rgba(139, 92, 246, 0.2);
+}
+
+.bestiary-card.mastered {
+    border-color: rgba(34, 197, 94, 0.4);
+    background: linear-gradient(135deg, rgba(34, 197, 94, 0.1), rgba(0, 0, 0, 0.4));
+}
+
+.bestiary-card.boss {
+    border-color: rgba(239, 68, 68, 0.4);
+    background: linear-gradient(135deg, rgba(239, 68, 68, 0.1), rgba(0, 0, 0, 0.4));
+}
+
+.bestiary-card.boss.mastered {
+    border-color: #fbbf24;
+    box-shadow: 0 0 25px rgba(251, 191, 36, 0.3);
+}
+
+.bestiary-header {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 1rem;
+}
+
+.enemy-icon {
+    font-size: 2rem;
+    width: 50px;
+    height: 50px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 10px;
+}
+
+.enemy-info {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+.enemy-name {
+    font-weight: 700;
+    color: #f8fafc;
+}
+
+.enemy-floor {
+    font-size: 0.75rem;
+    color: #64748b;
+}
+
+.element-badge {
+    padding: 0.25rem 0.5rem;
+    border-radius: 6px;
+    font-size: 1rem;
+}
+
+.element-badge.fire {
+    background: rgba(239, 68, 68, 0.2);
+}
+
+.element-badge.water {
+    background: rgba(59, 130, 246, 0.2);
+}
+
+.element-badge.nature {
+    background: rgba(34, 197, 94, 0.2);
+}
+
+.element-badge.electric {
+    background: rgba(234, 179, 8, 0.2);
+}
+
+.element-badge.neutral {
+    background: rgba(148, 163, 184, 0.2);
+}
+
+.bestiary-stats {
+    display: flex;
+    gap: 0.75rem;
+    margin-bottom: 1rem;
+    flex-wrap: wrap;
+}
+
+.bestiary-stats .stat {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    font-size: 0.8rem;
+    color: #cbd5e1;
+    padding: 0.25rem 0.5rem;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 4px;
+}
+
+.locked-stats,
+.locked-lore {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: #64748b;
+    font-size: 0.8rem;
+    font-style: italic;
+}
+
+.bestiary-lore {
+    min-height: 60px;
+    margin-bottom: 1rem;
+}
+
+.bestiary-lore p {
+    color: #94a3b8;
+    font-size: 0.85rem;
+    line-height: 1.4;
+    margin: 0.5rem 0;
+}
+
+.lore-icon {
+    color: #a855f7;
+}
+
+.mastery-bonus {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    font-size: 0.75rem;
+    color: #22c55e;
+    background: rgba(34, 197, 94, 0.1);
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+}
+
+.bestiary-progress {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.progress-bar {
+    flex: 1;
+    height: 6px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 3px;
+    overflow: hidden;
+}
+
+.progress-fill {
+    height: 100%;
+    background: linear-gradient(to right, #a855f7, #22c55e);
+    border-radius: 3px;
+    transition: width 0.3s ease;
+}
+
+.progress-text {
+    font-size: 0.75rem;
+    color: #94a3b8;
+    min-width: 40px;
+    text-align: right;
+}
+
+/* Formula Card */
+.formula-card {
+    background: linear-gradient(135deg, rgba(139, 92, 246, 0.2), rgba(59, 130, 246, 0.2));
+    border: 1px solid rgba(139, 92, 246, 0.3);
+    border-radius: 12px;
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+}
+
+.formula-title {
+    font-weight: 700;
+    color: #a855f7;
+    margin-bottom: 0.5rem;
+    text-transform: uppercase;
+    font-size: 0.8rem;
+    letter-spacing: 1px;
+}
+
+.formula code {
+    display: block;
+    font-size: 1.3rem;
+    font-weight: 700;
+    color: #fbbf24;
+    padding: 1rem;
+    background: rgba(0, 0, 0, 0.4);
+    border-radius: 8px;
+    text-align: center;
+    font-family: 'Courier New', monospace;
+}
+
+/* Mechanics Grid */
+.mechanics-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1rem;
+}
+
+.mechanic-card {
+    background: rgba(0, 0, 0, 0.3);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    border-radius: 12px;
+    padding: 1.25rem;
+    text-align: center;
+    transition: all 0.2s ease;
+}
+
+.mechanic-card:hover {
+    transform: translateY(-2px);
+    border-color: rgba(139, 92, 246, 0.3);
+}
+
+.mechanic-icon {
+    font-size: 2rem;
+    margin-bottom: 0.5rem;
+}
+
+.mechanic-card h3 {
+    font-size: 0.9rem;
+    color: #f8fafc;
+    margin-bottom: 0.25rem;
+}
+
+.mechanic-card p {
+    font-size: 0.75rem;
+    color: #94a3b8;
+    line-height: 1.3;
+}
+
+@media (max-width: 900px) {
+    .mechanics-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (max-width: 600px) {
+    .bestiary-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .mechanics-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* Tower Expansion: Bestiary Details */
+.bestiary-stats .stat.weakness {
+    color: #4ade80;
+}
+
+.bestiary-stats .stat.affinity {
+    color: #f87171;
+}
+
+.lore-header-row {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 0.25rem;
+}
+
+.personality-tag {
+    font-size: 0.7rem;
+    font-weight: 800;
+    color: #a78bfa;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.behavior-hint {
+    font-size: 0.75rem;
+    color: #94a3b8;
+    font-style: italic;
+    margin: 0.5rem 0;
+    padding-left: 0.5rem;
+    border-left: 2px solid rgba(168, 85, 247, 0.3);
+}
+
+/* =================================
+   ARCANE CONNECTIONS TABLE
+   ================================= */
+
+.connections-table {
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 12px;
+    overflow: hidden;
+    margin-bottom: 1.5rem;
+}
+
+.connection-row {
+    display: grid;
+    grid-template-columns: 1.5fr 1fr 1.5fr;
+    gap: 1rem;
+    padding: 0.75rem 1rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    align-items: center;
+}
+
+.connection-row:last-child {
+    border-bottom: none;
+}
+
+.connection-row.header {
+    background: linear-gradient(90deg, rgba(139, 92, 246, 0.2), rgba(59, 130, 246, 0.1));
+    font-weight: 700;
+    color: #e0e7ff;
+    text-transform: uppercase;
+    font-size: 0.75rem;
+    letter-spacing: 1px;
+}
+
+.connection-row:not(.header):hover {
+    background: rgba(255, 255, 255, 0.03);
+}
+
+.connection-row span:first-child {
+    color: #f8fafc;
+}
+
+.connection-row span:nth-child(2) {
+    color: #94a3b8;
+    font-weight: 500;
+}
+
+/* Stat color badges */
+.stat-atk {
+    color: #f59e0b;
+    font-weight: 600;
+}
+
+.stat-def {
+    color: #6b7280;
+    font-weight: 600;
+}
+
+.stat-mp {
+    color: #8b5cf6;
+    font-weight: 600;
+}
+
+.stat-spd {
+    color: #3b82f6;
+    font-weight: 600;
+}
+
+.stat-crit {
+    color: #ef4444;
+    font-weight: 600;
+}
+
+/* Magic Power Card */
+.magic-power-card {
+    background: linear-gradient(135deg, rgba(139, 92, 246, 0.15), rgba(59, 130, 246, 0.1));
+    border: 1px solid rgba(139, 92, 246, 0.3);
+    border-radius: 12px;
+    padding: 1.5rem;
+}
+
+.magic-power-header {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 1rem;
+}
+
+.magic-power-header .magic-icon {
+    font-size: 2rem;
+}
+
+.magic-power-header h3 {
+    font-size: 1.2rem;
+    color: #a78bfa;
+    margin: 0;
+}
+
+.magic-power-card p {
+    color: #94a3b8;
+    font-size: 0.9rem;
+    margin-bottom: 0.75rem;
+}
+
+.magic-power-card p strong {
+    color: #f8fafc;
+}
+
+.magic-bonuses {
+    display: flex;
+    gap: 1.5rem;
+    margin-bottom: 0.75rem;
+}
+
+.bonus-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 1rem;
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 8px;
+    font-weight: 600;
+    color: #e0e7ff;
+}
+
+.magic-tip {
+    color: #60a5fa !important;
+    font-size: 0.85rem !important;
+    padding-top: 0.5rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    margin-bottom: 0 !important;
+}

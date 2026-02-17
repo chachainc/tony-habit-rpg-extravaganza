@@ -1,0 +1,66 @@
+.pet-shop {
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
+}
+
+.store-section {
+    background: rgba(16, 185, 129, 0.05);
+    padding: 1.5rem;
+    border-radius: 12px;
+    border: 1px solid rgba(16, 185, 129, 0.2);
+}
+
+.section-title {
+    margin: 0 0 0.5rem 0;
+    font-size: 1.4rem;
+    color: #fff;
+    font-weight: 600;
+}
+
+.section-description {
+    margin: 0 0 1rem 0;
+    color: rgba(255, 255, 255, 0.7);
+    font-size: 0.95rem;
+    line-height: 1.5;
+}
+
+.player-stats {
+    margin-bottom: 1.5rem;
+    display: flex;
+    gap: 1rem;
+    flex-wrap: wrap;
+}
+
+.stat-badge {
+    background: rgba(16, 185, 129, 0.2);
+    padding: 0.5rem 1rem;
+    border-radius: 8px;
+    color: #6ee7b7;
+    font-weight: 600;
+    font-size: 0.9rem;
+    border: 1px solid rgba(16, 185, 129, 0.3);
+}
+
+.items-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 1.2rem;
+}
+
+.accessories-section {
+    background: rgba(5, 150, 105, 0.05);
+    border-color: rgba(5, 150, 105, 0.2);
+}
+
+.accessories-section .stat-badge {
+    background: rgba(5, 150, 105, 0.2);
+    color: #6ee7b7;
+    border-color: rgba(5, 150, 105, 0.3);
+}
+
+@media (max-width: 768px) {
+    .items-grid {
+        grid-template-columns: 1fr;
+    }
+}

@@ -1,0 +1,210 @@
+/* ==================== TROPHY PEDESTAL ==================== */
+.trophy-pedestal {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1rem;
+    padding: 1.5rem 2rem;
+    background: linear-gradient(135deg, rgba(0, 0, 0, 0.4), rgba(0, 0, 0, 0.2));
+    border-radius: 16px;
+    border: 2px solid rgba(255, 215, 0, 0.3);
+    min-width: 250px;
+}
+
+/* ==================== BOOKS COUNTER ==================== */
+.books-counter {
+    position: absolute;
+    top: -1rem;
+    right: -0.5rem;
+    padding: 0.35rem 0.75rem;
+    background: linear-gradient(135deg, #8b5cf6, #6366f1);
+    border-radius: 20px;
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: white;
+    box-shadow: 0 4px 12px rgba(139, 92, 246, 0.4);
+}
+
+/* ==================== TROPHY DISPLAY ==================== */
+.trophy-display {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100px;
+    height: 100px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(255, 215, 0, 0.1), transparent);
+}
+
+.trophy-glow {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(255, 215, 0, 0.3), transparent);
+    animation: glow-pulse 2s ease-in-out infinite;
+}
+
+.trophy-icon {
+    font-size: 4rem;
+    filter: drop-shadow(0 4px 12px rgba(255, 215, 0, 0.5));
+    z-index: 1;
+}
+
+/* Rarity-based glow colors */
+.trophy-display.rarity-common .trophy-glow {
+    background: radial-gradient(circle, rgba(180, 180, 180, 0.3), transparent);
+}
+
+.trophy-display.rarity-uncommon .trophy-glow {
+    background: radial-gradient(circle, rgba(34, 197, 94, 0.3), transparent);
+}
+
+.trophy-display.rarity-rare .trophy-glow {
+    background: radial-gradient(circle, rgba(59, 130, 246, 0.4), transparent);
+}
+
+.trophy-display.rarity-epic .trophy-glow {
+    background: radial-gradient(circle, rgba(168, 85, 247, 0.5), transparent);
+}
+
+.trophy-display.rarity-legendary .trophy-glow {
+    background: radial-gradient(circle, rgba(255, 215, 0, 0.5), transparent);
+    animation: legendary-glow 2s ease-in-out infinite;
+}
+
+@keyframes glow-pulse {
+
+    0%,
+    100% {
+        transform: scale(1);
+        opacity: 0.5;
+    }
+
+    50% {
+        transform: scale(1.1);
+        opacity: 1;
+    }
+}
+
+@keyframes legendary-glow {
+
+    0%,
+    100% {
+        transform: scale(1);
+        opacity: 0.6;
+        filter: hue-rotate(0deg);
+    }
+
+    50% {
+        transform: scale(1.2);
+        opacity: 1;
+        filter: hue-rotate(30deg);
+    }
+}
+
+/* ==================== TROPHY INFO ==================== */
+.trophy-info {
+    text-align: center;
+}
+
+.trophy-name {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: #fbbf24;
+    margin: 0 0 0.25rem 0;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+}
+
+.trophy-description {
+    font-size: 0.8rem;
+    color: rgba(255, 255, 255, 0.7);
+    margin: 0;
+    font-style: italic;
+    max-width: 200px;
+    line-height: 1.4;
+}
+
+/* ==================== TROPHY BONUSES ==================== */
+.trophy-bonuses {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 0.5rem;
+    margin-top: 0.5rem;
+}
+
+.bonus-item {
+    padding: 0.25rem 0.6rem;
+    background: rgba(16, 185, 129, 0.2);
+    border: 1px solid rgba(16, 185, 129, 0.4);
+    border-radius: 12px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: #10b981;
+}
+
+.bonus-item.special {
+    background: linear-gradient(90deg, rgba(168, 85, 247, 0.2), rgba(236, 72, 153, 0.2));
+    border-color: rgba(168, 85, 247, 0.4);
+    color: #d946ef;
+    animation: special-pulse 2s ease-in-out infinite;
+}
+
+@keyframes special-pulse {
+
+    0%,
+    100% {
+        box-shadow: 0 0 0 0 rgba(168, 85, 247, 0.4);
+    }
+
+    50% {
+        box-shadow: 0 0 10px 2px rgba(168, 85, 247, 0.3);
+    }
+}
+
+/* ==================== NEXT TROPHY PROGRESS ==================== */
+.next-trophy-progress {
+    width: 100%;
+    margin-top: 0.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+}
+
+.progress-label {
+    font-size: 0.7rem;
+    color: rgba(255, 255, 255, 0.5);
+}
+
+.progress-bar {
+    width: 100%;
+    height: 6px;
+    background: rgba(0, 0, 0, 0.4);
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #8b5cf6, #ec4899);
+    border-radius: 4px;
+    transition: width 0.5s ease;
+}
+
+.progress-text {
+    font-size: 0.7rem;
+    color: rgba(255, 255, 255, 0.6);
+    text-align: right;
+}
+
+/* ==================== PEDESTAL BASE ==================== */
+.pedestal-base {
+    width: 80%;
+    height: 12px;
+    background: linear-gradient(180deg, #5a4a3a 0%, #3d2e1e 100%);
+    border-radius: 4px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.4);
+}

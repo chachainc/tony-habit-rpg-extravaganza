@@ -1,0 +1,146 @@
+.shop-modal {
+    min-width: 500px;
+    max-width: 700px;
+}
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-bottom: var(--space-4);
+    border-bottom: 1px solid var(--border-subtle);
+    margin-bottom: var(--space-4);
+}
+
+.header-actions {
+    display: flex;
+    gap: var(--space-2);
+    align-items: center;
+}
+
+.tab-btn {
+    padding: var(--space-1) var(--space-3);
+    border-radius: var(--radius-md);
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+    background: transparent;
+}
+
+.tab-btn:hover {
+    color: var(--text-primary);
+}
+
+.tab-btn.active {
+    background: var(--primary);
+    color: white;
+}
+
+.shop-balance {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    font-size: 1.2rem;
+    font-weight: bold;
+    color: #facc15;
+    margin-bottom: var(--space-4);
+}
+
+.shop-grid {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+.shop-item {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    padding: var(--space-3);
+    background: var(--bg-secondary);
+    border-radius: var(--radius-md);
+    border: 1px solid var(--border-subtle);
+    transition: all 0.2s;
+}
+
+.shop-item:hover {
+    border-color: var(--primary);
+}
+
+.shop-item.rarity-common {
+    border-left: 3px solid #9ca3af;
+}
+
+.shop-item.rarity-rare {
+    border-left: 3px solid #60a5fa;
+}
+
+.shop-item.rarity-epic {
+    border-left: 3px solid #c084fc;
+}
+
+.shop-item.rarity-legendary {
+    border-left: 3px solid #facc15;
+}
+
+.item-icon {
+    font-size: 2rem;
+    width: 50px;
+    text-align: center;
+}
+
+.item-details {
+    flex: 1;
+}
+
+.item-details h3 {
+    font-size: 1rem;
+    margin-bottom: 2px;
+}
+
+.item-effect {
+    font-size: 0.8rem;
+    color: var(--secondary);
+}
+
+.item-desc {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    margin-top: 4px;
+}
+
+.item-actions {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1);
+}
+
+.buy-btn {
+    background: var(--primary);
+    color: white;
+    padding: var(--space-1) var(--space-3);
+    border-radius: var(--radius-md);
+    font-size: 0.85rem;
+    display: flex;
+    align-items: center;
+    gap: var(--space-1);
+}
+
+.buy-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.equip-btn {
+    background: var(--secondary);
+    color: white;
+    padding: var(--space-1) var(--space-2);
+    border-radius: var(--radius-md);
+    font-size: 0.7rem;
+}
+
+.equip-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}

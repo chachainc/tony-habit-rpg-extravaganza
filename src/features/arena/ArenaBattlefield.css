@@ -1,0 +1,411 @@
+/* ArenaBattlefield.css */
+
+.battlefield-layout {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    background-color: #0f0f13;
+    display: grid;
+    grid-template-rows: auto 1fr auto;
+    /* Header, Field, Controls */
+}
+
+/* --- Background Layer --- */
+.battlefield-background {
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    overflow: hidden;
+}
+
+.bg-layer {
+    position: absolute;
+    inset: 0;
+    background-size: cover;
+    background-position: center bottom;
+    transition: transform 0.1s ease-out;
+}
+
+.bg-layer.far {
+    z-index: 1;
+    transform: scale(1.1);
+    /* Slight zoom for parallax feel */
+}
+
+.bg-overlay {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(to bottom, rgba(0, 0, 0, 0.3) 0%, rgba(0, 0, 0, 0) 50%, rgba(0, 0, 0, 0.6) 100%);
+    z-index: 2;
+    pointer-events: none;
+}
+
+/* --- Header Layer --- */
+.battlefield-header {
+    position: relative;
+    z-index: 10;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 1rem;
+    pointer-events: none;
+    /* Let clicks pass through to field if needed */
+}
+
+.vs-badge {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 1rem;
+    background: linear-gradient(90deg, rgba(0, 0, 0, 0) 0%, rgba(0, 0, 0, 0.8) 20%, rgba(0, 0, 0, 0.8) 80%, rgba(0, 0, 0, 0) 100%);
+    padding: 0.5rem 2rem;
+}
+
+.vs-text {
+    font-size: 2.5rem;
+    font-weight: 900;
+    font-style: italic;
+    color: #ef4444;
+    text-shadow: 0 0 10px rgba(239, 68, 68, 0.8), 2px 2px 0px rgba(0, 0, 0, 0.8);
+    margin: 0 1rem;
+}
+
+.turn-counter {
+    position: absolute;
+    top: 5rem;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(0, 0, 0, 0.6);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    padding: 0.2rem 0.8rem;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    color: #94a3b8;
+    font-weight: 600;
+}
+
+.combatant-name-header {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: white;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.8);
+}
+
+.combatant-name-header.enemy {
+    color: #ef4444;
+    text-align: right;
+}
+
+.combatant-name-header.ally {
+    color: #3b82f6;
+    text-align: left;
+}
+
+
+/* --- Field Layer (The Stage) --- */
+.battlefield-stage {
+    position: relative;
+    z-index: 5;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    /* Align units to "ground" roughly */
+    padding: 0 5% 8%;
+    /* Bottom padding lifts them from very bottom */
+    width: 100%;
+    max-width: 1200px;
+    margin: 0 auto;
+    perspective: 1000px;
+}
+
+.squad-zone {
+    display: flex;
+    align-items: flex-end;
+    gap: 2rem;
+    position: relative;
+    min-width: 200px;
+}
+
+.squad-zone.allies {
+    justify-content: flex-end;
+    /* Push towards center */
+    padding-right: 2rem;
+}
+
+.squad-zone.enemies {
+    justify-content: flex-start;
+    /* Push towards center */
+    padding-left: 2rem;
+}
+
+/* Unit Entity Container */
+.unit-entity {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+/* Shadow underneath */
+.unit-shadow {
+    position: absolute;
+    bottom: 5px;
+    width: 60%;
+    height: 15px;
+    background: rgba(0, 0, 0, 0.6);
+    border-radius: 50%;
+    filter: blur(4px);
+    transform: scaleY(0.5);
+    z-index: 0;
+}
+
+/* Sprite wrapper */
+.unit-sprite {
+    position: relative;
+    z-index: 10;
+    filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.4));
+    transition: filter 0.2s;
+}
+
+.unit-sprite img {
+    height: 250px;
+    /* Base height, adjustable */
+    width: auto;
+    object-fit: contain;
+}
+
+.unit-sprite.player img {
+    height: 220px;
+    transform: scaleX(-1);
+    /* Face right if sprite faces left naturally */
+}
+
+/* Hit Flash Animation */
+.unit-entity.hit .unit-sprite {
+    filter: brightness(10) sepia(1) hue-rotate(-50deg) saturate(5);
+    animation: shake 0.4s cubic-bezier(.36, .07, .19, .97) both;
+}
+
+@keyframes shake {
+
+    10%,
+    90% {
+        transform: translate3d(-1px, 0, 0);
+    }
+
+    20%,
+    80% {
+        transform: translate3d(2px, 0, 0);
+    }
+
+    30%,
+    50%,
+    70% {
+        transform: translate3d(-4px, 0, 0);
+    }
+
+    40%,
+    60% {
+        transform: translate3d(4px, 0, 0);
+    }
+}
+
+/* Attack Animation (Lunging) */
+.unit-entity.attacking.ally {
+    animation: lungeRight 0.4s ease-in-out;
+}
+
+.unit-entity.attacking.enemy {
+    animation: lungeLeft 0.4s ease-in-out;
+}
+
+@keyframes lungeRight {
+    0% {
+        transform: translateX(0);
+    }
+
+    50% {
+        transform: translateX(40px);
+    }
+
+    100% {
+        transform: translateX(0);
+    }
+}
+
+@keyframes lungeLeft {
+    0% {
+        transform: translateX(0);
+    }
+
+    50% {
+        transform: translateX(-40px);
+    }
+
+    100% {
+        transform: translateX(0);
+    }
+}
+
+/* --- Floating UI --- */
+.floating-ui {
+    position: absolute;
+    top: -40px;
+    /* Float above head */
+    left: 50%;
+    transform: translateX(-50%);
+    width: 140px;
+    z-index: 20;
+    pointer-events: none;
+    text-align: center;
+}
+
+.unit-name {
+    font-size: 0.8rem;
+    color: white;
+    text-shadow: 0 1px 2px black;
+    margin-bottom: 2px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.hp-bar-frame {
+    width: 100%;
+    height: 8px;
+    background: rgba(0, 0, 0, 0.8);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 4px;
+    overflow: hidden;
+    position: relative;
+}
+
+.hp-bar-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #ef4444, #f87171);
+    transition: width 0.3s ease-out;
+}
+
+.hp-bar-fill.ally {
+    background: linear-gradient(90deg, #3b82f6, #60a5fa);
+}
+
+.hp-text {
+    font-size: 0.65rem;
+    color: white;
+    text-shadow: 0 1px 2px black;
+    margin-top: 1px;
+}
+
+/* Status Icons */
+.status-chips {
+    display: flex;
+    justify-content: center;
+    gap: 2px;
+    margin-top: 2px;
+}
+
+.status-chip {
+    width: 16px;
+    height: 16px;
+    background: rgba(0, 0, 0, 0.6);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 10px;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+/* --- Floating Numbers --- */
+.floating-number-container {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    z-index: 50;
+    overflow: hidden;
+    /* Keep numbers inside arena */
+}
+
+.floating-number {
+    position: absolute;
+    font-weight: 900;
+    font-size: 1.5rem;
+    text-shadow: 0 2px 0 #000;
+    animation: floatUp 1s ease-out forwards;
+}
+
+.floating-number.damage {
+    color: white;
+    -webkit-text-stroke: 1px #ef4444;
+}
+
+.floating-number.crit {
+    font-size: 2.5rem;
+    color: #fbbf24;
+    -webkit-text-stroke: 1px #b45309;
+    animation: critPop 1s ease-out forwards;
+}
+
+.floating-number.heal {
+    color: #4ade80;
+    -webkit-text-stroke: 1px #15803d;
+}
+
+@keyframes floatUp {
+    0% {
+        transform: translateY(0) scale(0.5);
+        opacity: 0;
+    }
+
+    20% {
+        transform: translateY(-20px) scale(1.2);
+        opacity: 1;
+    }
+
+    100% {
+        transform: translateY(-100px) scale(1);
+        opacity: 0;
+    }
+}
+
+@keyframes critPop {
+    0% {
+        transform: translateY(0) scale(0.5);
+        opacity: 0;
+    }
+
+    10% {
+        transform: translateY(-10px) scale(1.5) rotate(-5deg);
+        opacity: 1;
+    }
+
+    100% {
+        transform: translateY(-80px) scale(1) rotate(0deg);
+        opacity: 0;
+    }
+}
+
+/* --- Responsive Helpers --- */
+@media (max-width: 768px) {
+    .battlefield-stage {
+        padding: 0 1rem 30%;
+        /* More bottom padding for mobile controls */
+        align-items: center;
+        /* Center vertically on mobile maybe? */
+    }
+
+    .unit-sprite img {
+        height: 160px;
+    }
+
+    .vs-text {
+        font-size: 1.5rem;
+    }
+
+    .combatant-name-header {
+        font-size: 0.9rem;
+    }
+}

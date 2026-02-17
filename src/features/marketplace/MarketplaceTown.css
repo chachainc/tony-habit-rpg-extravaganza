@@ -1,0 +1,283 @@
+.marketplace-town {
+    width: 100vw;
+    height: 100vh;
+    overflow: hidden;
+    position: relative;
+    background: #1a1a2e;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* When wrapped in SceneShell, make container transparent */
+.marketplace-town--with-shell {
+    background: transparent;
+}
+
+/* Background layers - LEGACY (replaced by SceneShell) */
+.marketplace-bg {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 0;
+}
+
+.marketplace-bg-layer {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    background-size: cover;
+    background-position: center;
+}
+
+.marketplace-bg-layer--1 {
+    background: linear-gradient(180deg, #0f1419 0%, #1a1a2e 50%, #16213e 100%);
+    opacity: 0.8;
+}
+
+.marketplace-bg-layer--2 {
+    background-image:
+        repeating-linear-gradient(0deg, rgba(255, 255, 255, 0.03) 0px, transparent 1px, transparent 64px, rgba(255, 255, 255, 0.03) 65px),
+        repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.03) 0px, transparent 1px, transparent 64px, rgba(255, 255, 255, 0.03) 65px);
+    opacity: 0.2;
+}
+
+/* Exit button */
+.marketplace-exit-btn {
+    position: absolute;
+    top: 2rem;
+    left: 2rem;
+    z-index: 100;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1.5rem;
+    background: rgba(239, 68, 68, 0.9);
+    border: 2px solid #dc2626;
+    border-radius: var(--radius);
+    color: white;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.marketplace-exit-btn:hover {
+    background: #dc2626;
+    transform: scale(1.05);
+}
+
+/* Town grid container */
+.marketplace-grid {
+    position: relative;
+    border: 3px solid rgba(255, 255, 255, 0.15);
+    border-radius: var(--radius);
+    background: rgba(10, 10, 20, 0.4);
+    box-shadow:
+        0 20px 60px rgba(0, 0, 0, 0.5),
+        inset 0 0 30px rgba(0, 0, 0, 0.3);
+    backdrop-filter: blur(2px);
+}
+
+/* Ground tiles - more transparent to show background */
+.marketplace-tile {
+    position: absolute;
+    background: rgba(30, 30, 50, 0.3);
+    border: 1px solid rgba(255, 255, 255, 0.03);
+    transition: background 0.3s;
+}
+
+.marketplace-tile:nth-child(even) {
+    background: rgba(25, 25, 45, 0.25);
+}
+
+/* Store buildings */
+.marketplace-building {
+    position: absolute;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, rgba(60, 60, 90, 0.9), rgba(40, 40, 70, 0.9));
+    border: 3px solid rgba(255, 255, 255, 0.2);
+    border-radius: var(--radius);
+    cursor: pointer;
+    transition: all 0.3s;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+    z-index: 10;
+}
+
+.marketplace-building:hover {
+    transform: scale(1.05);
+    border-color: rgba(255, 255, 255, 0.4);
+}
+
+.marketplace-building--nearby {
+    border-width: 4px;
+    box-shadow: 0 0 30px var(--glow-color), 0 8px 24px rgba(0, 0, 0, 0.6);
+    animation: pulse-glow 1.5s infinite;
+}
+
+@keyframes pulse-glow {
+
+    0%,
+    100% {
+        box-shadow: 0 0 20px var(--glow-color), 0 8px 24px rgba(0, 0, 0, 0.6);
+    }
+
+    50% {
+        box-shadow: 0 0 40px var(--glow-color), 0 8px 24px rgba(0, 0, 0, 0.6);
+    }
+}
+
+.building-emoji {
+    font-size: 4rem;
+    margin-bottom: 0.5rem;
+    filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.4));
+}
+
+.building-signboard {
+    width: 90%;
+    height: auto;
+    max-height: 70%;
+    object-fit: contain;
+    margin-bottom: 0.25rem;
+    filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.6));
+}
+
+.building-name {
+    font-size: 0.9rem;
+    font-weight: 700;
+    color: white;
+    text-align: center;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.8);
+    padding: 0 0.5rem;
+}
+
+.building-glow {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 140%;
+    height: 140%;
+    border-radius: var(--radius);
+    opacity: 0.15;
+    filter: blur(20px);
+    z-index: -1;
+    pointer-events: none;
+}
+
+/* Obstacles */
+.marketplace-obstacle {
+    position: absolute;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2.5rem;
+    background: rgba(100, 150, 200, 0.2);
+    border-radius: 50%;
+    filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.3));
+    z-index: 5;
+}
+
+/* Player */
+.marketplace-player {
+    position: absolute;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 20;
+    filter: drop-shadow(0 4px 12px rgba(59, 130, 246, 0.6));
+    transition: left 0.15s, top 0.15s;
+}
+
+.player-sprite {
+    width: 100%;
+    height: auto;
+    max-height: 200%;
+    object-fit: contain;
+    transform: translateY(-25%);
+    image-rendering: pixelated;
+    filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.6));
+}
+
+/* Interaction prompt */
+.interaction-prompt {
+    position: absolute;
+    bottom: 6rem;
+    left: 50%;
+    transform: translateX(-50%);
+    padding: 1rem 2rem;
+    background: rgba(59, 130, 246, 0.95);
+    border: 2px solid #3b82f6;
+    border-radius: var(--radius);
+    color: white;
+    font-weight: 600;
+    font-size: 1.1rem;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+    z-index: 50;
+}
+
+.interaction-prompt kbd {
+    display: inline-block;
+    padding: 0.25rem 0.5rem;
+    background: rgba(255, 255, 255, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    border-radius: 4px;
+    font-family: monospace;
+    font-weight: 700;
+    margin: 0 0.25rem;
+}
+
+.interaction-prompt strong {
+    color: #fbbf24;
+}
+
+/* Controls hint */
+.controls-hint {
+    position: absolute;
+    bottom: 2rem;
+    left: 50%;
+    transform: translateX(-50%);
+    padding: 0.75rem 1.5rem;
+    background: rgba(20, 20, 30, 0.9);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: var(--radius);
+    color: rgba(255, 255, 255, 0.7);
+    font-size: 0.9rem;
+    z-index: 40;
+}
+
+.controls-hint kbd {
+    display: inline-block;
+    padding: 0.25rem 0.5rem;
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 4px;
+    font-family: monospace;
+    font-weight: 600;
+    margin: 0 0.25rem;
+}
+
+/* Responsive adjustments */
+@media (max-width: 1400px) {
+    .marketplace-grid {
+        transform: scale(0.8);
+    }
+}
+
+@media (max-width: 1000px) {
+    .marketplace-grid {
+        transform: scale(0.6);
+    }
+
+    .building-emoji {
+        font-size: 3rem;
+    }
+
+    .building-name {
+        font-size: 0.75rem;
+    }
+}

@@ -1,0 +1,173 @@
+/* Premium Font - Inter for professional AAA look */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;900&display=swap');
+
+:root {
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  line-height: 1.5;
+  font-weight: 400;
+
+  /* ========================================
+     DARK SOULS / BERSERK / ELDEN RING THEME
+     Abyss Black + Blood Red + Ember Orange
+     ======================================== */
+
+  /* Core Backgrounds - Abyss Black */
+  --bg-primary: #030303;
+  --bg-secondary: #0a0a0a;
+  --bg-card: rgba(15, 15, 15, 0.9);
+  --bg-glass: rgba(10, 10, 10, 0.85);
+
+  /* Text - Bone/Parchment */
+  --text-primary: #e5e5e5;
+  --text-secondary: #9ca3af;
+
+  /* Accents - Blood & Ember */
+  --accent-gold: #b8860b;
+  /* Dark gold (souls) */
+  --accent-purple: #8b0000;
+  /* Blood red (replaces purple) */
+  --accent-blue: #1e3a5f;
+  /* Midnight blue */
+  --accent-red: #991b1b;
+  /* Deep blood */
+  --accent-green: #065f46;
+  /* Dark emerald */
+  --accent-ember: #d97706;
+  /* Bonfire ember */
+
+  /* Premium Shadows - Deep & Ominous */
+  --shadow-card: 0 4px 20px rgba(0, 0, 0, 0.8);
+  --shadow-glow: 0 0 25px rgba(139, 0, 0, 0.4);
+  --shadow-gold: 0 0 25px rgba(184, 134, 11, 0.5);
+  --shadow-blood: 0 0 20px rgba(139, 0, 0, 0.5);
+
+  /* Radius - Rough Medieval Feel */
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 10px;
+  --radius-xl: 16px;
+
+  color-scheme: dark;
+  color: var(--text-primary);
+  background-color: var(--bg-primary);
+
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Base Elements */
+a {
+  font-weight: 500;
+  color: var(--accent-ember);
+  text-decoration: inherit;
+}
+
+a:hover {
+  color: #f59e0b;
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+  min-height: 100vh;
+  /* Abyss black gradient - no more navy */
+  background: linear-gradient(135deg, #030303 0%, #0a0a0a 50%, #050505 100%);
+}
+
+h1 {
+  font-size: 2.5em;
+  line-height: 1.1;
+  font-weight: 700;
+}
+
+h2 {
+  font-size: 1.5em;
+  font-weight: 600;
+}
+
+/* Premium Button Styling - Blood Red Accents */
+button {
+  border-radius: var(--radius-md);
+  border: 1px solid rgba(139, 0, 0, 0.3);
+  padding: 0.6em 1.2em;
+  font-size: 1em;
+  font-weight: 600;
+  font-family: inherit;
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: var(--shadow-card);
+}
+
+button:hover {
+  border-color: var(--accent-red);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-blood);
+}
+
+button:focus,
+button:focus-visible {
+  outline: 2px solid var(--accent-red);
+  outline-offset: 2px;
+}
+
+button:active {
+  transform: translateY(0);
+}
+
+/* Premium Card Class */
+.card,
+.panel,
+.modal-content {
+  background: var(--bg-card);
+  border-radius: var(--radius-md);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: var(--shadow-card);
+  backdrop-filter: blur(8px);
+}
+
+/* Glassmorphism Utility */
+.glass {
+  background: var(--bg-glass);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* Premium Scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--bg-primary);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--bg-secondary);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #334155;
+}
+
+/* Gold Accent Text */
+.text-gold {
+  background: linear-gradient(to right, #f59e0b, #fbbf24);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+/* Glow Effects */
+.glow-gold {
+  box-shadow: var(--shadow-gold);
+}
+
+.glow-purple {
+  box-shadow: var(--shadow-glow);
+}

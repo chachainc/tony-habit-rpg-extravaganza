@@ -1,0 +1,480 @@
+/* === BACKGROUND LAYERS === */
+.pet-page {
+    position: relative;
+    width: 100%;
+    min-height: 100vh;
+    overflow-y: auto;
+}
+
+.pet-bg {
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none;
+}
+
+/* AI-Generated Background Image */
+.pet-bg__image {
+    position: absolute;
+    inset: 0;
+    background-image: url('../../assets/backgrounds/pet_background.png');
+    background-size: cover;
+    background-position: center;
+    opacity: 0.5;
+    filter: brightness(0.75) saturate(1.2);
+}
+
+/* Vignette Overlay */
+.pet-bg__vignette {
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(ellipse at center,
+            transparent 15%,
+            rgba(0, 0, 0, 0.35) 55%,
+            rgba(0, 0, 0, 0.85) 100%);
+}
+
+/* Fog Animation Container */
+.pet-bg__fog {
+    position: absolute;
+    inset: 0;
+    overflow: hidden;
+}
+
+.pet-bg__fog .fog {
+    position: absolute;
+    width: 200%;
+    height: 100%;
+    background: linear-gradient(90deg,
+            transparent 0%,
+            rgba(34, 197, 94, 0.03) 25%,
+            rgba(16, 185, 129, 0.04) 50%,
+            rgba(34, 197, 94, 0.03) 75%,
+            transparent 100%);
+}
+
+.pet-bg__fog .fog--1 {
+    top: 0;
+    left: -50%;
+    animation: petFogDrift1 40s linear infinite;
+}
+
+.pet-bg__fog .fog--2 {
+    top: 50%;
+    left: -100%;
+    animation: petFogDrift2 50s linear infinite;
+    opacity: 0.6;
+}
+
+@keyframes petFogDrift1 {
+    0% {
+        transform: translateX(0);
+    }
+
+    100% {
+        transform: translateX(50%);
+    }
+}
+
+@keyframes petFogDrift2 {
+    0% {
+        transform: translateX(0);
+    }
+
+    100% {
+        transform: translateX(50%);
+    }
+}
+
+/* Fireflies */
+.pet-bg__fireflies {
+    position: absolute;
+    inset: 0;
+    overflow: hidden;
+}
+
+.firefly {
+    position: absolute;
+    width: 4px;
+    height: 4px;
+    background: #a3e635;
+    border-radius: 50%;
+    box-shadow: 0 0 8px #a3e635, 0 0 16px #84cc16, 0 0 24px #65a30d;
+    animation: fireflyFloat 6s ease-in-out infinite;
+    opacity: 0;
+}
+
+@keyframes fireflyFloat {
+
+    0%,
+    100% {
+        opacity: 0;
+        transform: translate(0, 0) scale(0.5);
+    }
+
+    20% {
+        opacity: 1;
+        transform: translate(10px, -20px) scale(1);
+    }
+
+    50% {
+        opacity: 0.8;
+        transform: translate(-15px, -40px) scale(0.8);
+    }
+
+    80% {
+        opacity: 0.6;
+        transform: translate(5px, -60px) scale(0.6);
+    }
+}
+
+/* === CONTENT WRAPPER === */
+.pet-content-wrapper {
+    position: relative;
+    z-index: 1;
+    padding: 2rem;
+    max-width: 1400px;
+    margin: 0 auto;
+}
+
+.page-header {
+    margin-bottom: 2rem;
+}
+
+.page-header h1 {
+    font-size: 2.5rem;
+    margin-bottom: 0.5rem;
+    background: linear-gradient(135deg, var(--primary), var(--accent));
+    background-clip: text;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+.subtitle {
+    color: var(--text-secondary);
+    font-size: 1.1rem;
+}
+
+/* === MAIN GRID LAYOUT === */
+.pet-content {
+    display: grid;
+    grid-template-columns: 350px 1fr 350px;
+    /* Left | Middle | Right */
+    gap: 1.5rem;
+    grid-template-areas:
+        "profile stats player"
+        "inventory inventory inventory";
+    align-items: start;
+}
+
+/* === COLUMNS === */
+.pet-column-profile {
+    grid-area: profile;
+    display: flex;
+    flex-direction: column;
+}
+
+.pet-column-stats {
+    grid-area: stats;
+    display: flex;
+    flex-direction: column;
+}
+
+.pet-column-player {
+    grid-area: player;
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+    /* Spacing between HP and Ability */
+}
+
+/* === CARDS === */
+.pet-display-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 3rem 2rem;
+    text-align: center;
+    height: 100%;
+}
+
+.pet-sprite-large {
+    font-size: 8rem;
+    margin-bottom: 1rem;
+    animation: petFloat 3s ease-in-out infinite;
+}
+
+@keyframes petFloat {
+
+    0%,
+    100% {
+        transform: translateY(0);
+    }
+
+    50% {
+        transform: translateY(-10px);
+    }
+}
+
+.pet-name {
+    font-size: 1.8rem;
+    color: var(--text-primary);
+    margin: 0;
+}
+
+.pet-type {
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+    margin-top: 0.5rem;
+}
+
+.pet-stats-card {
+    padding: 1.5rem;
+    height: 100%;
+}
+
+.pet-stats-card h3 {
+    margin: 0 0 1.5rem 0;
+    color: var(--text-primary);
+}
+
+.stat-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+    /* Consistent spacing */
+}
+
+.stat-item {
+    display: grid;
+    grid-template-columns: 100px 1fr 50px;
+    /* Icon/Label | Bar | % */
+    align-items: center;
+    gap: 1rem;
+}
+
+.stat-header {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    font-size: 0.95rem;
+}
+
+.stat-bar {
+    height: 12px;
+    background: var(--bg-tertiary);
+    border-radius: 6px;
+    overflow: hidden;
+    position: relative;
+    width: 100%;
+}
+
+.stat-bar .fill {
+    height: 100%;
+    transition: width 0.3s ease;
+    border-radius: 6px;
+}
+
+.fill.red {
+    background: linear-gradient(90deg, #ef4444, #dc2626);
+}
+
+.fill.orange {
+    background: linear-gradient(90deg, #f97316, #ea580c);
+}
+
+.fill.blue {
+    background: linear-gradient(90deg, #3b82f6, #2563eb);
+}
+
+.fill.yellow {
+    background: linear-gradient(90deg, #fbbf24, #f59e0b);
+}
+
+.stat-value {
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+    text-align: right;
+    font-weight: 600;
+}
+
+/* === ABILITY CARD === */
+.ability-card {
+    padding: 1.5rem;
+}
+
+.ability-card h3 {
+    margin: 0 0 1rem 0;
+    color: var(--text-primary);
+    font-size: 1.1rem;
+}
+
+.pet-passive {
+    background: var(--bg-tertiary);
+    border-radius: 8px;
+    padding: 1rem;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.passive-label {
+    color: var(--accent);
+    font-weight: 700;
+    display: block;
+    margin-bottom: 0.25rem;
+    font-size: 0.95rem;
+}
+
+.passive-desc {
+    color: var(--text-secondary);
+    margin: 0;
+    font-size: 0.85rem;
+    line-height: 1.4;
+}
+
+.player-hp-card {
+    padding: 1.5rem;
+}
+
+.player-hp-card h3 {
+    margin: 0 0 1rem 0;
+    color: var(--text-primary);
+}
+
+.hp-display {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.hp-bar-large {
+    height: 24px;
+    background: var(--bg-tertiary);
+    border-radius: 12px;
+    overflow: hidden;
+    position: relative;
+}
+
+.hp-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #10b981, #059669);
+    transition: width 0.3s ease;
+    border-radius: 12px;
+}
+
+.hp-text {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    text-align: center;
+    margin-top: 0.25rem;
+}
+
+/* === INVENTORY === */
+.inventory-card {
+    grid-area: inventory;
+    padding: 1.5rem;
+    margin-top: 0.5rem;
+}
+
+.inventory-card h3 {
+    margin: 0 0 1.5rem 0;
+    color: var(--text-primary);
+}
+
+.inventory-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    gap: 1rem;
+}
+
+.inv-item-btn {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 1rem;
+    background: var(--bg-secondary);
+    border: 2px solid var(--border);
+    border-radius: var(--radius);
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.inv-item-btn:hover {
+    background: var(--bg-tertiary);
+    border-color: var(--primary);
+    transform: translateY(-2px);
+}
+
+.inv-icon {
+    font-size: 2rem;
+}
+
+.inv-name {
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+    text-align: center;
+}
+
+.inv-count {
+    font-size: 0.8rem;
+    color: var(--accent);
+    font-weight: 600;
+}
+
+.empty-text {
+    color: var(--text-secondary);
+    text-align: center;
+    padding: 2rem;
+}
+
+.icon-red {
+    color: #ef4444;
+}
+
+.icon-orange {
+    color: #f97316;
+}
+
+.icon-blue {
+    color: #3b82f6;
+}
+
+.icon-yellow {
+    color: #fbbf24;
+}
+
+/* === RESPONSIVE === */
+@media (max-width: 1024px) {
+    .pet-content {
+        grid-template-columns: 1fr 1fr;
+        grid-template-areas:
+            "profile player"
+            "stats stats"
+            "inventory inventory";
+    }
+}
+
+@media (max-width: 768px) {
+    .pet-content {
+        grid-template-columns: 1fr;
+        grid-template-areas:
+            "profile"
+            "player"
+            /* HP + Ability */
+            "stats"
+            "inventory";
+    }
+
+    .pet-stats-card {
+        padding: 1.5rem;
+    }
+
+    .stat-item {
+        grid-template-columns: 90px 1fr 40px;
+        gap: 0.75rem;
+    }
+}

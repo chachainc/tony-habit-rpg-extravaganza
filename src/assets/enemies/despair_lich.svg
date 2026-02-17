@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256">
+  <defs>
+    <radialGradient id="bg" cx="50%" cy="50%" r="50%"><stop offset="0%" stop-color="#2a1a4a"/><stop offset="100%" stop-color="#1a1a2e"/></radialGradient>
+    <filter id="glow"><feGaussianBlur stdDeviation="5" result="blur"/><feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+    <linearGradient id="robe" x1="0%" y1="0%" x2="0%" y2="100%"><stop offset="0%" stop-color="#3a2a5a"/><stop offset="100%" stop-color="#1a0a3a"/></linearGradient>
+  </defs>
+  <rect width="256" height="256" fill="url(#bg)"/>
+  <ellipse cx="128" cy="210" rx="45" ry="10" fill="#1a1a1a" opacity="0.5"/>
+  <!-- Flowing robe -->
+  <path d="M100 80 Q85 120 80 170 Q78 200 90 210 Q128 220 166 210 Q178 200 176 170 Q171 120 156 80Z" fill="url(#robe)" stroke="#4a3a6a" stroke-width="1.5"/>
+  <!-- Hood -->
+  <path d="M100 80 Q105 50 128 42 Q151 50 156 80 Q140 75 128 72 Q116 75 100 80Z" fill="#2a1a4a" stroke="#4a3a6a" stroke-width="1.5"/>
+  <!-- Skull face inside hood -->
+  <circle cx="128" cy="70" r="18" fill="#c8b8a0" opacity="0.7"/>
+  <circle cx="120" cy="65" r="6" fill="#9944ff" filter="url(#glow)"/>
+  <circle cx="136" cy="65" r="6" fill="#9944ff" filter="url(#glow)"/>
+  <path d="M122 78 L128 82 L134 78" fill="none" stroke="#4a3a2a" stroke-width="1.5"/>
+  <!-- Staff -->
+  <line x1="170" y1="45" x2="170" y2="200" stroke="#6a5a3a" stroke-width="4"/>
+  <circle cx="170" cy="42" r="10" fill="none" stroke="#9944ff" stroke-width="2" filter="url(#glow)"/>
+  <circle cx="170" cy="42" r="4" fill="#bb66ff" filter="url(#glow)"/>
+  <!-- Skeletal hands -->
+  <path d="M105 130 L90 125 L85 118" fill="none" stroke="#c8b8a0" stroke-width="2"/>
+  <path d="M151 130 L160 128 L165 125" fill="none" stroke="#c8b8a0" stroke-width="2"/>
+  <!-- Magic runes floating -->
+  <text x="80" y="100" fill="#9944ff" font-size="12" opacity="0.4" filter="url(#glow)">✦</text>
+  <text x="175" y="90" fill="#9944ff" font-size="10" opacity="0.3" filter="url(#glow)">✦</text>
+  <text x="95" y="160" fill="#bb66ff" font-size="8" opacity="0.3">⚡</text>
+  <text x="128" y="240" text-anchor="middle" fill="#9944ff" font-family="sans-serif" font-size="13" font-weight="bold">DESPAIR LICH</text>
+</svg>

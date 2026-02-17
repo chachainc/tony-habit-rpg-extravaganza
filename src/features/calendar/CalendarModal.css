@@ -1,0 +1,204 @@
+.calendar-modal {
+    max-width: 600px;
+    width: 90vw;
+}
+
+.header-title {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.header-title h2 {
+    margin: 0;
+    font-size: 1.5rem;
+}
+
+.calendar-body {
+    padding: 2rem;
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
+}
+
+/* Month Display */
+.month-display {
+    text-align: center;
+}
+
+.month-display h3 {
+    font-size: 1.8rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin: 0;
+}
+
+/* Progress Section */
+.progress-section {
+    background: var(--bg-tertiary);
+    padding: 1.5rem;
+    border-radius: var(--radius);
+}
+
+.progress-info {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+}
+
+.progress-label {
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+    font-weight: 600;
+}
+
+.progress-count {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--primary);
+}
+
+.progress-bar-container {
+    height: 12px;
+    background: var(--bg-secondary);
+    border-radius: 6px;
+    overflow: hidden;
+}
+
+.progress-bar-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--primary), var(--accent));
+    transition: width 0.3s ease;
+    border-radius: 6px;
+}
+
+/* Check-in Section */
+.checkin-section {
+    display: flex;
+    justify-content: center;
+}
+
+/* Calendar Grid */
+.calendar-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 0.5rem;
+}
+
+.calendar-weekday {
+    text-align: center;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+    padding: 0.5rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.calendar-day {
+    aspect-ratio: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background: var(--bg-secondary);
+    border-radius: var(--radius);
+    border: 2px solid var(--border);
+    position: relative;
+    transition: all 0.2s;
+}
+
+.calendar-day--empty {
+    background: transparent;
+    border: none;
+}
+
+.calendar-day--today {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 2px var(--primary) inset;
+}
+
+.calendar-day--checked {
+    background: linear-gradient(135deg, var(--primary), var(--accent));
+    border-color: var(--primary);
+}
+
+.calendar-day:not(.calendar-day--empty):hover {
+    transform: scale(1.05);
+}
+
+.day-number {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.calendar-day--checked .day-number {
+    color: white;
+}
+
+.check-icon {
+    position: absolute;
+    bottom: 4px;
+    right: 4px;
+    color: white;
+}
+
+/* Reward Section */
+.reward-section {
+    background: linear-gradient(135deg, rgba(59, 130, 246, 0.1), rgba(139, 92, 246, 0.1));
+    border: 2px solid var(--primary);
+    border-radius: var(--radius);
+    padding: 1.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.reward-info {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.gift-icon {
+    color: var(--accent);
+    flex-shrink: 0;
+}
+
+.reward-text h4 {
+    margin: 0 0 0.5rem 0;
+    font-size: 1.1rem;
+    color: var(--text-primary);
+}
+
+.reward-text p {
+    margin: 0;
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+}
+
+.reward-text strong {
+    color: var(--primary);
+}
+
+/* Responsive */
+@media (max-width: 600px) {
+    .calendar-modal {
+        width: 95vw;
+    }
+
+    .calendar-body {
+        padding: 1rem;
+        gap: 1.5rem;
+    }
+
+    .calendar-grid {
+        gap: 0.25rem;
+    }
+
+    .day-number {
+        font-size: 0.75rem;
+    }
+}

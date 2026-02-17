@@ -1,0 +1,109 @@
+.btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-sm);
+    font-family: var(--font-sans);
+    font-weight: 600;
+    border: none;
+    border-radius: var(--radius-lg);
+    cursor: pointer;
+    transition: all var(--duration-fast) var(--easing);
+    position: relative;
+    overflow: hidden;
+}
+
+.btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* === SIZES === */
+.btn--sm {
+    padding: var(--space-sm) var(--space-md);
+    font-size: 0.875rem;
+}
+
+.btn--md {
+    padding: var(--space-md) var(--space-lg);
+    font-size: 1rem;
+}
+
+.btn--lg {
+    padding: var(--space-lg) var(--space-xl);
+    font-size: 1.125rem;
+}
+
+.btn--full {
+    width: 100%;
+}
+
+/* === VARIANTS === */
+.btn--primary {
+    background: linear-gradient(135deg, var(--color-primary-500), var(--color-primary-700));
+    color: white;
+    box-shadow: var(--shadow-md);
+}
+
+.btn--primary:hover:not(:disabled) {
+    box-shadow: var(--shadow-lg), var(--glow-primary);
+}
+
+.btn--secondary {
+    background: var(--bg-elevated);
+    color: var(--text-primary);
+    border: 2px solid var(--color-primary-500);
+    box-shadow: var(--shadow-sm);
+}
+
+.btn--secondary:hover:not(:disabled) {
+    background: var(--bg-hover);
+    box-shadow: var(--shadow-md), var(--glow-primary);
+}
+
+.btn--success {
+    background: linear-gradient(135deg, #22c55e, #16a34a);
+    color: white;
+    box-shadow: var(--shadow-md);
+}
+
+.btn--success:hover:not(:disabled) {
+    box-shadow: var(--shadow-lg), 0 0 20px rgba(34, 197, 94, 0.5);
+}
+
+.btn--warning {
+    background: linear-gradient(135deg, var(--color-accent-500), var(--color-accent-600));
+    color: white;
+    box-shadow: var(--shadow-md);
+}
+
+.btn--warning:hover:not(:disabled) {
+    box-shadow: var(--shadow-lg), var(--glow-accent);
+}
+
+.btn--ghost {
+    background: transparent;
+    color: var(--text-primary);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.btn--ghost:hover:not(:disabled) {
+    background: var(--bg-elevated);
+    border-color: var(--color-primary-500);
+}
+
+/* === ICON === */
+.btn__icon {
+    display: flex;
+    align-items: center;
+    font-size: 1.25em;
+}
+
+.btn__text {
+    white-space: nowrap;
+}
+
+/* === PRESS EFFECT === */
+.btn:active:not(:disabled) {
+    transform: translateY(1px);
+}

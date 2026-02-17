@@ -1,0 +1,343 @@
+/* ==================== COMPACT DARK BLOOD-RED TOPBAR ==================== */
+
+.top-bar {
+    position: sticky;
+    top: 0;
+    z-index: var(--z-sticky, 100);
+    background: linear-gradient(180deg, #0a0a0a 0%, #050505 100%);
+    border-bottom: 1px solid rgba(139, 0, 0, 0.3);
+    padding: 0.35rem 1rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 0.75rem;
+    box-shadow:
+        0 2px 8px rgba(0, 0, 0, 0.8),
+        inset 0 -1px 0 rgba(139, 0, 0, 0.2);
+    min-height: 36px;
+}
+
+.top-bar__section {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+/* Items - Compact pill style */
+.top-bar__item {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    padding: 0.2rem 0.5rem;
+    background: rgba(20, 20, 20, 0.8);
+    border-radius: 4px;
+    border: 1px solid rgba(60, 60, 60, 0.3);
+    transition: all 0.15s ease;
+}
+
+.top-bar__item:hover {
+    background: rgba(40, 40, 40, 0.9);
+    border-color: rgba(139, 0, 0, 0.3);
+}
+
+/* === VARIANTS - Dark blood red theme === */
+.top-bar__item--level {
+    background: rgba(139, 0, 0, 0.15);
+    border: 1px solid rgba(139, 0, 0, 0.3);
+}
+
+.top-bar__item--level:hover {
+    background: rgba(139, 0, 0, 0.25);
+    box-shadow: 0 0 8px rgba(139, 0, 0, 0.3);
+}
+
+.top-bar__item--gold {
+    background: rgba(180, 140, 100, 0.1);
+    border: 1px solid rgba(180, 140, 100, 0.25);
+}
+
+.top-bar__item--timer {
+    background: rgba(100, 100, 100, 0.1);
+    border: 1px solid rgba(100, 100, 100, 0.2);
+}
+
+/* === ICONS - Small === */
+.top-bar__icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.85rem;
+    color: #9ca3af;
+}
+
+.top-bar__item--level .top-bar__icon {
+    color: #dc2626;
+}
+
+.top-bar__item--gold .top-bar__icon {
+    color: #b8860b;
+}
+
+.top-bar__item--timer .top-bar__icon {
+    color: #6b7280;
+}
+
+/* === CONTENT === */
+.top-bar__content {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 0.25rem;
+}
+
+.top-bar__label {
+    font-size: 0.55rem;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    color: #6b7280;
+    font-weight: 500;
+}
+
+.top-bar__value {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: #e5e5e5;
+}
+
+.top-bar__value--timer {
+    font-size: 0.7rem;
+    color: #6b7280;
+}
+
+/* === COMBAT STATS - Minimal inline === */
+.top-bar__section--stats {
+    gap: 0.35rem;
+}
+
+.top-bar__stat {
+    display: flex;
+    align-items: center;
+    gap: 0.2rem;
+    padding: 0.15rem 0.4rem;
+    background: rgba(20, 20, 20, 0.6);
+    border-radius: 3px;
+    font-size: 0.7rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    border: 1px solid transparent;
+}
+
+.top-bar__stat:hover {
+    transform: translateY(-1px);
+    background: rgba(40, 40, 40, 0.8);
+}
+
+.top-bar__stat svg {
+    width: 12px;
+    height: 12px;
+}
+
+/* HP - Blood Red */
+.top-bar__stat--hp {
+    color: #dc2626;
+    border-color: rgba(220, 38, 38, 0.2);
+}
+
+.top-bar__stat--hp svg {
+    fill: #dc2626;
+    color: #dc2626;
+}
+
+/* MP - Muted Blue */
+.top-bar__stat--mp {
+    color: #6b7280;
+    border-color: rgba(107, 114, 128, 0.2);
+}
+
+.top-bar__stat--mp svg {
+    fill: #6b7280;
+    color: #6b7280;
+}
+
+/* ATK - Ember */
+.top-bar__stat--atk {
+    color: #b8860b;
+    border-color: rgba(184, 134, 11, 0.2);
+}
+
+.top-bar__stat--atk svg {
+    color: #b8860b;
+}
+
+/* DEF - Ash Gray */
+.top-bar__stat--def {
+    color: #9ca3af;
+    border-color: rgba(156, 163, 175, 0.15);
+}
+
+.top-bar__stat--def svg {
+    color: #9ca3af;
+}
+
+/* Magic ATK - Dim Purple (blood undertone) */
+.top-bar__stat--magic {
+    color: #7c3aed;
+    border-color: rgba(124, 58, 237, 0.2);
+}
+
+.top-bar__stat--magic svg {
+    color: #7c3aed;
+}
+
+/* Clickable styles */
+.top-bar__item--clickable,
+.top-bar__stat--clickable {
+    cursor: pointer;
+    user-select: none;
+}
+
+.top-bar__item--clickable:hover,
+.top-bar__stat--clickable:hover {
+    transform: translateY(-1px);
+}
+
+.top-bar__item--clickable:active,
+.top-bar__stat--clickable:active {
+    transform: scale(0.97);
+}
+
+/* Pulse animation for stat changes */
+@keyframes statPulse {
+    0% {
+        transform: scale(1);
+    }
+
+    50% {
+        transform: scale(1.05);
+        box-shadow: 0 0 8px currentColor;
+    }
+
+    100% {
+        transform: scale(1);
+    }
+}
+
+.top-bar__stat.pulse {
+    animation: statPulse 0.4s ease;
+}
+
+/* === RESPONSIVE - Even more compact === */
+@media (max-width: 1024px) {
+    .top-bar {
+        padding: 0.25rem 0.5rem;
+        gap: 0.4rem;
+    }
+
+    .top-bar__section {
+        gap: 0.3rem;
+    }
+
+    .top-bar__item {
+        padding: 0.15rem 0.35rem;
+    }
+
+    .top-bar__label {
+        display: none;
+    }
+
+    .top-bar__value {
+        font-size: 0.7rem;
+    }
+
+    .top-bar__stat {
+        font-size: 0.65rem;
+        padding: 0.1rem 0.3rem;
+    }
+}
+
+@media (max-width: 768px) {
+    .top-bar {
+        flex-wrap: wrap;
+        justify-content: center;
+        padding: 0.2rem 0.4rem;
+    }
+
+    .top-bar__section--stats {
+        order: -1;
+        width: 100%;
+        justify-content: center;
+        padding-bottom: 0.25rem;
+        border-bottom: 1px solid rgba(139, 0, 0, 0.15);
+        margin-bottom: 0.25rem;
+    }
+}
+
+/* ==================== QUICK NAV BUTTONS ==================== */
+.top-bar__nav-buttons {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    margin-left: 0.5rem;
+    padding-left: 0.5rem;
+    border-left: 1px solid rgba(139, 0, 0, 0.3);
+}
+
+.top-bar__nav-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    padding: 0;
+    background: rgba(30, 30, 30, 0.8);
+    border: 1px solid rgba(80, 80, 80, 0.3);
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.top-bar__nav-btn:hover {
+    transform: translateY(-1px);
+    background: rgba(50, 50, 50, 0.9);
+}
+
+/* Home - Blue */
+.top-bar__nav-btn--home {
+    color: #60a5fa;
+}
+
+.top-bar__nav-btn--home:hover {
+    border-color: rgba(96, 165, 250, 0.4);
+    box-shadow: 0 0 8px rgba(96, 165, 250, 0.3);
+}
+
+/* Arena - Red */
+.top-bar__nav-btn--arena {
+    color: #f87171;
+}
+
+.top-bar__nav-btn--arena:hover {
+    border-color: rgba(248, 113, 113, 0.4);
+    box-shadow: 0 0 8px rgba(248, 113, 113, 0.3);
+}
+
+/* Marketplace - Gold */
+.top-bar__nav-btn--marketplace {
+    color: #fbbf24;
+}
+
+.top-bar__nav-btn--marketplace:hover {
+    border-color: rgba(251, 191, 36, 0.4);
+    box-shadow: 0 0 8px rgba(251, 191, 36, 0.3);
+}
+
+/* Tome of Fate - Purple */
+.top-bar__nav-btn--tome {
+    color: #a78bfa;
+}
+
+.top-bar__nav-btn--tome:hover {
+    border-color: rgba(167, 139, 250, 0.4);
+    box-shadow: 0 0 8px rgba(167, 139, 250, 0.3);
+}

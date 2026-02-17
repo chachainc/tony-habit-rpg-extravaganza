@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256">
+  <defs>
+    <radialGradient id="bg" cx="50%" cy="50%" r="50%"><stop offset="0%" stop-color="#3a3a1a"/><stop offset="100%" stop-color="#1a1a2e"/></radialGradient>
+    <filter id="glow"><feGaussianBlur stdDeviation="3" result="blur"/><feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+  </defs>
+  <rect width="256" height="256" fill="url(#bg)"/>
+  <ellipse cx="128" cy="195" rx="60" ry="12" fill="#1a1a1a" opacity="0.5"/>
+  <!-- Scorpion body -->
+  <ellipse cx="128" cy="145" rx="40" ry="20" fill="#5a4a2a" stroke="#7a6a3a" stroke-width="2"/>
+  <!-- Head -->
+  <circle cx="128" cy="115" r="20" fill="#6a5a3a" stroke="#7a6a3a" stroke-width="2"/>
+  <!-- Multiple eyes -->
+  <circle cx="118" cy="108" r="5" fill="#ffcc00" filter="url(#glow)"/>
+  <circle cx="138" cy="108" r="5" fill="#ffcc00" filter="url(#glow)"/>
+  <circle cx="123" cy="100" r="3" fill="#ffcc00" filter="url(#glow)"/>
+  <circle cx="133" cy="100" r="3" fill="#ffcc00" filter="url(#glow)"/>
+  <!-- Pincers -->
+  <path d="M95 130 Q75 115 70 100 Q68 90 78 95 Q85 100 90 120" fill="#5a4a2a" stroke="#7a6a3a" stroke-width="1.5"/>
+  <path d="M161 130 Q181 115 186 100 Q188 90 178 95 Q171 100 166 120" fill="#5a4a2a" stroke="#7a6a3a" stroke-width="1.5"/>
+  <!-- Tail/stinger -->
+  <path d="M128 160 Q128 130 140 100 Q145 85 150 75 Q155 65 148 70" fill="none" stroke="#5a4a2a" stroke-width="4"/>
+  <circle cx="148" cy="70" r="5" fill="#ffcc00" filter="url(#glow)"/>
+  <!-- Legs -->
+  <line x1="100" y1="140" x2="75" y2="170" stroke="#5a4a2a" stroke-width="2.5"/>
+  <line x1="95" y1="150" x2="70" y2="180" stroke="#5a4a2a" stroke-width="2.5"/>
+  <line x1="156" y1="140" x2="181" y2="170" stroke="#5a4a2a" stroke-width="2.5"/>
+  <line x1="161" y1="150" x2="186" y2="180" stroke="#5a4a2a" stroke-width="2.5"/>
+  <!-- Lightning crackling -->
+  <path d="M108 90 L105 80 L112 85 L110 72" fill="none" stroke="#ffcc00" stroke-width="1.5" opacity="0.7"/>
+  <text x="128" y="240" text-anchor="middle" fill="#ffcc00" font-family="sans-serif" font-size="13" font-weight="bold">DOUBT CRAWLER</text>
+</svg>

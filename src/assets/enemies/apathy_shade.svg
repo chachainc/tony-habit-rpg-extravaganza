@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256">
+  <defs>
+    <radialGradient id="bg" cx="50%" cy="50%" r="50%"><stop offset="0%" stop-color="#1a2a4a"/><stop offset="100%" stop-color="#1a1a2e"/></radialGradient>
+    <linearGradient id="body" x1="0%" y1="0%" x2="0%" y2="100%"><stop offset="0%" stop-color="#6a7a9a" stop-opacity="0.8"/><stop offset="100%" stop-color="#3a4a6a" stop-opacity="0.3"/></linearGradient>
+    <filter id="glow"><feGaussianBlur stdDeviation="4" result="blur"/><feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+  </defs>
+  <rect width="256" height="256" fill="url(#bg)"/>
+  <!-- Ghostly body -->
+  <path d="M128 50 Q90 70 85 130 Q80 180 95 200 Q105 210 110 195 Q115 210 125 195 Q130 210 140 195 Q145 210 155 195 Q165 210 170 200 Q180 180 175 130 Q170 70 128 50Z" fill="url(#body)" stroke="#8a9aba" stroke-width="1" opacity="0.85"/>
+  <!-- Face - hollow eyes -->
+  <ellipse cx="112" cy="100" rx="12" ry="15" fill="#1a2a4a"/>
+  <ellipse cx="144" cy="100" rx="12" ry="15" fill="#1a2a4a"/>
+  <!-- Dim eye glow -->
+  <circle cx="112" cy="102" r="4" fill="#4488cc" filter="url(#glow)" opacity="0.5"/>
+  <circle cx="144" cy="102" r="4" fill="#4488cc" filter="url(#glow)" opacity="0.5"/>
+  <!-- Mouth - sad, empty -->
+  <ellipse cx="128" cy="130" rx="10" ry="6" fill="#1a2a4a" opacity="0.6"/>
+  <!-- Wispy tendrils -->
+  <path d="M100 170 Q85 190 90 210" fill="none" stroke="#6a7a9a" stroke-width="2" opacity="0.4"/>
+  <path d="M155 170 Q170 190 165 210" fill="none" stroke="#6a7a9a" stroke-width="2" opacity="0.4"/>
+  <text x="128" y="240" text-anchor="middle" fill="#6a9aca" font-family="sans-serif" font-size="13" font-weight="bold">APATHY SHADE</text>
+</svg>

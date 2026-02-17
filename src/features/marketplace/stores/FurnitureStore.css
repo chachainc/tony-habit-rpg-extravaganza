@@ -1,0 +1,117 @@
+.furniture-store {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.store-section {
+    padding: 1rem;
+    border-radius: 12px;
+    border: 1px solid rgba(245, 158, 11, 0.2);
+}
+
+.hygiene-section {
+    background: rgba(6, 182, 212, 0.05);
+    border-color: rgba(6, 182, 212, 0.2);
+}
+
+.sleep-section {
+    background: rgba(139, 92, 246, 0.05);
+    border-color: rgba(139, 92, 246, 0.2);
+}
+
+.section-title {
+    margin: 0 0 0.25rem 0;
+    font-size: 1.2rem;
+    color: #fff;
+    font-weight: 600;
+}
+
+.section-description {
+    margin: 0 0 0.75rem 0;
+    color: rgba(255, 255, 255, 0.7);
+    font-size: 0.85rem;
+    line-height: 1.4;
+}
+
+.player-stats {
+    margin-bottom: 1rem;
+    display: flex;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+}
+
+.hygiene-section .stat-badge {
+    background: rgba(6, 182, 212, 0.2);
+    padding: 0.35rem 0.75rem;
+    border-radius: 8px;
+    color: #67e8f9;
+    font-weight: 600;
+    font-size: 0.85rem;
+    border: 1px solid rgba(6, 182, 212, 0.3);
+}
+
+.sleep-section .stat-badge {
+    background: rgba(139, 92, 246, 0.2);
+    padding: 0.35rem 0.75rem;
+    border-radius: 8px;
+    color: #c4b5fd;
+    font-weight: 600;
+    font-size: 0.85rem;
+    border: 1px solid rgba(139, 92, 246, 0.3);
+}
+
+.items-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    gap: 0.8rem;
+}
+
+.store-info {
+    background: rgba(245, 158, 11, 0.03);
+    padding: 1.5rem;
+    border-radius: 12px;
+    border: 1px solid rgba(245, 158, 11, 0.15);
+}
+
+.info-card h4 {
+    margin: 0 0 0.75rem 0;
+    color: #fbbf24;
+    font-size: 1.1rem;
+}
+
+.info-card p {
+    margin: 0 0 0.5rem 0;
+    color: rgba(255, 255, 255, 0.8);
+    font-size: 0.9rem;
+}
+
+.info-card ul {
+    margin: 0.5rem 0;
+    padding-left: 1.5rem;
+    color: rgba(255, 255, 255, 0.7);
+}
+
+.info-card li {
+    margin: 0.3rem 0;
+    font-size: 0.9rem;
+}
+
+.info-card li strong {
+    color: #fbbf24;
+}
+
+.tip {
+    background: rgba(245, 158, 11, 0.1);
+    padding: 0.75rem;
+    border-radius: 6px;
+    color: #fbbf24;
+    border: 1px solid rgba(245, 158, 11, 0.2);
+    margin-top: 1rem;
+}
+
+@media (max-width: 768px) {
+    .items-grid {
+        grid-template-columns: 1fr;
+    }
+}

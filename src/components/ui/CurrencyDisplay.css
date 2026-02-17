@@ -1,0 +1,251 @@
+/* Premium Gacha-Style Currency Display */
+
+.currency-display {
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+    padding: 0.75rem 1rem;
+    background: linear-gradient(135deg, rgba(20, 20, 35, 0.95), rgba(15, 15, 30, 0.98));
+    border-radius: 12px;
+    border: 1px solid rgba(139, 92, 246, 0.3);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+    backdrop-filter: blur(10px);
+}
+
+.currency-display--compact {
+    gap: 0.75rem;
+    padding: 0.5rem 0.75rem;
+}
+
+.stat-group {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.stat-group--combat {
+    gap: 0.75rem;
+}
+
+.stat-group--currency {
+    gap: 1rem;
+}
+
+.currency-display--compact .stat-group {
+    gap: 0.5rem;
+}
+
+.stat-divider {
+    width: 1px;
+    height: 24px;
+    background: linear-gradient(180deg, transparent, rgba(139, 92, 246, 0.5), transparent);
+    opacity: 0.8;
+}
+
+.stat-divider--vertical {
+    height: 36px;
+}
+
+.currency-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.25rem 0.5rem;
+    border-radius: 8px;
+    transition: all 0.3s ease;
+}
+
+.currency-item:hover {
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.currency-item--large {
+    gap: 0.75rem;
+}
+
+.currency-info {
+    display: flex;
+    flex-direction: column;
+    gap: 0.125rem;
+}
+
+.currency-label {
+    font-size: 0.7rem;
+    color: rgba(255, 255, 255, 0.5);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    font-weight: 500;
+}
+
+.currency-value {
+    font-size: 1rem;
+    font-weight: 700;
+    color: #fff;
+    transition: all 0.3s ease;
+}
+
+.currency-item--large .currency-value {
+    font-size: 1.25rem;
+}
+
+.hp-percent {
+    font-size: 0.7rem;
+    color: rgba(255, 255, 255, 0.5);
+    margin-left: 0.25rem;
+}
+
+/* ========================================
+   NEON GLOW ICON EFFECTS
+   ======================================== */
+
+.currency-icon {
+    transition: all 0.3s ease;
+}
+
+/* HP - Red Neon */
+.currency-icon--hp {
+    color: #ff4d6d;
+    filter: drop-shadow(0 0 4px #ff4d6d) drop-shadow(0 0 8px rgba(255, 77, 109, 0.5));
+    animation: pulseHP 2s ease-in-out infinite;
+}
+
+@keyframes pulseHP {
+
+    0%,
+    100% {
+        filter: drop-shadow(0 0 4px #ff4d6d) drop-shadow(0 0 8px rgba(255, 77, 109, 0.5));
+    }
+
+    50% {
+        filter: drop-shadow(0 0 6px #ff4d6d) drop-shadow(0 0 12px rgba(255, 77, 109, 0.7));
+    }
+}
+
+/* Attack - Orange Neon */
+.currency-icon--attack {
+    color: #ff8c00;
+    filter: drop-shadow(0 0 4px #ff8c00) drop-shadow(0 0 8px rgba(255, 140, 0, 0.5));
+    animation: pulseATK 2s ease-in-out infinite;
+    animation-delay: 0.3s;
+}
+
+@keyframes pulseATK {
+
+    0%,
+    100% {
+        filter: drop-shadow(0 0 4px #ff8c00) drop-shadow(0 0 8px rgba(255, 140, 0, 0.5));
+    }
+
+    50% {
+        filter: drop-shadow(0 0 6px #ff8c00) drop-shadow(0 0 12px rgba(255, 140, 0, 0.7));
+    }
+}
+
+/* Defense - Blue Neon */
+.currency-icon--defense {
+    color: #00b4ff;
+    filter: drop-shadow(0 0 4px #00b4ff) drop-shadow(0 0 8px rgba(0, 180, 255, 0.5));
+    animation: pulseDEF 2s ease-in-out infinite;
+    animation-delay: 0.6s;
+}
+
+@keyframes pulseDEF {
+
+    0%,
+    100% {
+        filter: drop-shadow(0 0 4px #00b4ff) drop-shadow(0 0 8px rgba(0, 180, 255, 0.5));
+    }
+
+    50% {
+        filter: drop-shadow(0 0 6px #00b4ff) drop-shadow(0 0 12px rgba(0, 180, 255, 0.7));
+    }
+}
+
+/* Gold - Yellow Neon */
+.currency-icon--gold {
+    color: #ffd700;
+    filter: drop-shadow(0 0 4px #ffd700) drop-shadow(0 0 8px rgba(255, 215, 0, 0.5));
+    animation: pulseGold 2s ease-in-out infinite;
+}
+
+@keyframes pulseGold {
+
+    0%,
+    100% {
+        filter: drop-shadow(0 0 4px #ffd700) drop-shadow(0 0 8px rgba(255, 215, 0, 0.5));
+    }
+
+    50% {
+        filter: drop-shadow(0 0 6px #ffd700) drop-shadow(0 0 12px rgba(255, 215, 0, 0.7));
+    }
+}
+
+/* Tickets - Purple Neon */
+.currency-icon--tickets {
+    color: #a855f7;
+    filter: drop-shadow(0 0 4px #a855f7) drop-shadow(0 0 8px rgba(168, 85, 247, 0.5));
+    animation: pulseTickets 2s ease-in-out infinite;
+    animation-delay: 0.3s;
+}
+
+@keyframes pulseTickets {
+
+    0%,
+    100% {
+        filter: drop-shadow(0 0 4px #a855f7) drop-shadow(0 0 8px rgba(168, 85, 247, 0.5));
+    }
+
+    50% {
+        filter: drop-shadow(0 0 6px #a855f7) drop-shadow(0 0 12px rgba(168, 85, 247, 0.7));
+    }
+}
+
+/* Diamonds - Cyan Neon */
+.currency-icon--diamonds {
+    color: #06d6d6;
+    filter: drop-shadow(0 0 4px #06d6d6) drop-shadow(0 0 8px rgba(6, 214, 214, 0.5));
+    animation: pulseDiamonds 2s ease-in-out infinite;
+    animation-delay: 0.6s;
+}
+
+@keyframes pulseDiamonds {
+
+    0%,
+    100% {
+        filter: drop-shadow(0 0 4px #06d6d6) drop-shadow(0 0 8px rgba(6, 214, 214, 0.5));
+    }
+
+    50% {
+        filter: drop-shadow(0 0 6px #06d6d6) drop-shadow(0 0 12px rgba(6, 214, 214, 0.7));
+    }
+}
+
+/* Hover amplification */
+.currency-item:hover .currency-icon--hp {
+    filter: drop-shadow(0 0 8px #ff4d6d) drop-shadow(0 0 16px rgba(255, 77, 109, 0.8));
+}
+
+.currency-item:hover .currency-icon--attack {
+    filter: drop-shadow(0 0 8px #ff8c00) drop-shadow(0 0 16px rgba(255, 140, 0, 0.8));
+}
+
+.currency-item:hover .currency-icon--defense {
+    filter: drop-shadow(0 0 8px #00b4ff) drop-shadow(0 0 16px rgba(0, 180, 255, 0.8));
+}
+
+.currency-item:hover .currency-icon--gold {
+    filter: drop-shadow(0 0 8px #ffd700) drop-shadow(0 0 16px rgba(255, 215, 0, 0.8));
+}
+
+.currency-item:hover .currency-icon--tickets {
+    filter: drop-shadow(0 0 8px #a855f7) drop-shadow(0 0 16px rgba(168, 85, 247, 0.8));
+}
+
+.currency-item:hover .currency-icon--diamonds {
+    filter: drop-shadow(0 0 8px #06d6d6) drop-shadow(0 0 16px rgba(6, 214, 214, 0.8));
+}
+
+.currency-item:hover .currency-value {
+    transform: scale(1.05);
+    text-shadow: 0 0 8px rgba(255, 255, 255, 0.3);
+}
