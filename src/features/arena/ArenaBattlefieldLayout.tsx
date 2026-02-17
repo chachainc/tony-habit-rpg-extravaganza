@@ -127,7 +127,7 @@ return (
         </div>
     </div>
 );
-};
+
 
 // Need access to ITEM_DATABASE for pet icon, simple import
-import { ITEM_DATABASE } from '../../data/items';
+
