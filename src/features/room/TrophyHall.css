@@ -292,3 +292,28 @@
     font-weight: 700;
     color: #7fff7f;
 }
+
+/* Empty Trophy State */
+.trophy-hall-empty {
+    grid-column: 1 / -1;
+    text-align: center;
+    padding: 2.5rem 1rem;
+    color: #64748b;
+}
+
+.trophy-hall-empty__icon {
+    font-size: 3rem;
+    display: block;
+    margin-bottom: 0.75rem;
+    opacity: 0.4;
+}
+
+.trophy-hall-empty p {
+    margin: 0 0 0.25rem;
+    font-size: 1rem;
+}
+
+.trophy-hall-empty__hint {
+    font-size: 0.8rem;
+    color: #475569;
+}

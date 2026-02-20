@@ -891,3 +891,28 @@
     border-color: rgba(139, 92, 246, 0.3);
     color: #a78bfa;
 }
+
+/* ─── Chess Piece Solid Colors ───────────── */
+.chess-piece-white {
+    color: #ffffff;
+    text-shadow:
+        0 0 1px #000,
+        0 0 2px rgba(0, 0, 0, 0.5),
+        1px 1px 1px rgba(0, 0, 0, 0.4);
+    -webkit-text-stroke: 0.5px rgba(0, 0, 0, 0.3);
+}
+
+.chess-piece-black {
+    color: #1a1a1a;
+    text-shadow:
+        0 0 1px rgba(255, 255, 255, 0.3),
+        0 0 2px rgba(255, 255, 255, 0.2);
+    -webkit-text-stroke: 0.5px rgba(255, 255, 255, 0.15);
+}
+
+.chess-dot {
+    color: #22c55e;
+    font-size: 0.6rem;
+    margin-left: 0.2rem;
+    animation: pulse 2s infinite;
+}

@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Trophy, BookOpen, Shirt, Sword, Sparkles, Star } from 'lucide-react';
+import { X, Trophy, BookOpen, Shirt, Sword, Sparkles, Star, ArrowUp, ArrowDown, ArrowLeft, ArrowRight } from 'lucide-react';
 import { useRoomStore } from '../../store/useRoomStore';
 import { useInventoryStore, ITEM_DB } from '../../store/useInventoryStore';
 import { usePetStore } from '../../store/usePetStore';
@@ -165,6 +165,25 @@ export const WalkableRoom = () => {
     const nearTrophy = Math.abs(trophyPosition.x - playerPosition.x) + Math.abs(trophyPosition.y - playerPosition.y) <= 1;
     const nearBookshelf = Math.abs(bookshelfPosition.x - playerPosition.x) + Math.abs(bookshelfPosition.y - playerPosition.y) <= 1;
     const nearCloset = Math.abs(closetPosition.x - playerPosition.x) + Math.abs(closetPosition.y - playerPosition.y) <= 1;
+
+    // Touch D-pad handlers
+    const handleDpadDown = (direction: string) => {
+        keysPressed.current.add(direction);
+    };
+
+    const handleDpadUp = (direction: string) => {
+        keysPressed.current.delete(direction);
+    };
+
+    // Contextual interact
+    const handleInteract = () => {
+        if (nearTrophy) setShowTrophyCase(true);
+        else if (nearBookshelf) navigate('/library');
+        else if (nearCloset) setShowCloset(true);
+    };
+
+    const showInteractButton = nearTrophy || nearBookshelf || nearCloset;
+    const interactLabel = nearTrophy ? 'Trophy Hall' : nearBookshelf ? 'Library' : nearCloset ? 'Closet' : '';
 
     // Active Aura info
     const activeAura = useMemo(() => AURAS.find(a => a.id === activeAuraId), [activeAuraId]);
@@ -421,6 +440,69 @@ export const WalkableRoom = () => {
                     <div className="room-controls-hint">
                         <div>Use <kbd>WASD</kbd> or <kbd>Arrow Keys</kbd> to move</div>
                     </div>
+
+                    {/* Mobile D-Pad */}
+                    <div className="room-dpad">
+                        <button
+                            className="dpad-btn dpad-up"
+                            onTouchStart={(e) => { e.preventDefault(); handleDpadDown('arrowup'); }}
+                            onTouchEnd={() => handleDpadUp('arrowup')}
+                            onMouseDown={() => handleDpadDown('arrowup')}
+                            onMouseUp={() => handleDpadUp('arrowup')}
+                            onMouseLeave={() => handleDpadUp('arrowup')}
+                        >
+                            <ArrowUp size={20} />
+                        </button>
+                        <div className="dpad-middle-row">
+                            <button
+                                className="dpad-btn dpad-left"
+                                onTouchStart={(e) => { e.preventDefault(); handleDpadDown('arrowleft'); }}
+                                onTouchEnd={() => handleDpadUp('arrowleft')}
+                                onMouseDown={() => handleDpadDown('arrowleft')}
+                                onMouseUp={() => handleDpadUp('arrowleft')}
+                                onMouseLeave={() => handleDpadUp('arrowleft')}
+                            >
+                                <ArrowLeft size={20} />
+                            </button>
+                            <div className="dpad-center" />
+                            <button
+                                className="dpad-btn dpad-right"
+                                onTouchStart={(e) => { e.preventDefault(); handleDpadDown('arrowright'); }}
+                                onTouchEnd={() => handleDpadUp('arrowright')}
+                                onMouseDown={() => handleDpadDown('arrowright')}
+                                onMouseUp={() => handleDpadUp('arrowright')}
+                                onMouseLeave={() => handleDpadUp('arrowright')}
+                            >
+                                <ArrowRight size={20} />
+                            </button>
+                        </div>
+                        <button
+                            className="dpad-btn dpad-down"
+                            onTouchStart={(e) => { e.preventDefault(); handleDpadDown('arrowdown'); }}
+                            onTouchEnd={() => handleDpadUp('arrowdown')}
+                            onMouseDown={() => handleDpadDown('arrowdown')}
+                            onMouseUp={() => handleDpadUp('arrowdown')}
+                            onMouseLeave={() => handleDpadUp('arrowdown')}
+                        >
+                            <ArrowDown size={20} />
+                        </button>
+                    </div>
+
+                    {/* Mobile interact button */}
+                    <AnimatePresence>
+                        {showInteractButton && (
+                            <motion.button
+                                className="room-interact-btn"
+                                initial={{ opacity: 0, scale: 0.8 }}
+                                animate={{ opacity: 1, scale: 1 }}
+                                exit={{ opacity: 0, scale: 0.8 }}
+                                onClick={handleInteract}
+                            >
+                                {nearTrophy ? <Trophy size={18} /> : nearBookshelf ? <BookOpen size={18} /> : <Shirt size={18} />}
+                                {interactLabel}
+                            </motion.button>
+                        )}
+                    </AnimatePresence>
                 </div>
             </SceneShell>
 
