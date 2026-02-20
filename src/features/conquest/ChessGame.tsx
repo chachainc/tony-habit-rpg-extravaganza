@@ -515,7 +515,7 @@ export const ChessGame = ({ onComplete, onClose, canPlay }: ChessGameProps) => {
                                     className={`chess-cell ${isLight ? 'light' : 'dark'} ${isSelected ? 'selected' : ''} ${isValidMove && !isCapture ? 'valid-move' : ''} ${isCapture ? 'valid-capture' : ''}`}
                                     onClick={() => handleCellClick(r, c)}
                                 >
-                                    {cell && PIECE_UNICODE[`${cell.color}${cell.type}`]}
+                                    {cell && <span className={cell.color === 'w' ? 'chess-piece-white' : 'chess-piece-black'}>{PIECE_UNICODE[`${cell.color}${cell.type}`]}</span>}
                                 </div>
                             );
                         })

@@ -298,11 +298,11 @@ export const Conquest = () => {
                 <button className={`cq-nav-btn ${view === 'soldiers' ? 'active' : ''}`} onClick={() => setView('soldiers')}>
                     <Users size={16} /> Army
                 </button>
-                <button className="cq-nav-btn" onClick={() => setShowStore(true)}>
-                    <Package size={16} /> Store
-                </button>
                 <button className="cq-nav-btn" onClick={() => setShowChess(true)}>
                     <Star size={16} /> Chess {strategy.canPlayChessToday() && <span className="chess-dot">●</span>}
+                </button>
+                <button className="cq-nav-btn" onClick={() => setShowStore(true)}>
+                    <Package size={16} /> Store
                 </button>
                 <div className="cq-nav-sigils">
                     <Crown size={14} /> {conquest.sigils}

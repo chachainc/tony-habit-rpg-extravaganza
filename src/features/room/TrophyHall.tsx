@@ -176,9 +176,19 @@ export const TrophyHall = () => {
             )}
 
             <div className="trophy-grid">
-                {skillTrophies.map((trophy) => (
-                    <TrophyDisplay key={trophy.category} {...trophy} />
-                ))}
+                {skillTrophies.filter(t => t.currentTrophy.statBonus > 0 || (t.category === 'books' && t.currentValue > 0)).length === 0 ? (
+                    <div className="trophy-hall-empty">
+                        <span className="trophy-hall-empty__icon">🏆</span>
+                        <p>No trophies earned yet</p>
+                        <p className="trophy-hall-empty__hint">Train, read, and rest to unlock trophy bonuses!</p>
+                    </div>
+                ) : (
+                    skillTrophies
+                        .filter(t => t.currentTrophy.statBonus > 0 || (t.category === 'books' && t.currentValue > 0))
+                        .map((trophy) => (
+                            <TrophyDisplay key={trophy.category} {...trophy} />
+                        ))
+                )}
             </div>
 
             {/* Total Bonuses Summary */}
