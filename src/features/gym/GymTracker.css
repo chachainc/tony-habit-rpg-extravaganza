@@ -6,7 +6,7 @@
 /* ── Main Container ─────────────────────────────────────────── */
 .gym-tracker {
     padding: 1rem;
-    min-height: 100vh;
+    min-height: 100dvh;
 }
 
 .gym-header {
@@ -95,7 +95,7 @@
 /* ── Daily Log ──────────────────────────────────────────────── */
 .daily-log {
     padding: 1rem;
-    min-height: 100vh;
+    min-height: 100dvh;
 }
 
 .daily-log__header {

@@ -363,6 +363,18 @@ const PET_ITEMS: Item[] = [
         rarity: 'legendary',
     },
     {
+        id: 'golden_goldfish',
+        name: 'Golden Goldfish',
+        description: '🐠 Ultra-Rare Aquatic Fortune! Won from the 1 in 25,000 Luck Roll! Grants +5% Hygiene XP and golden blessings.',
+        icon: '🐠',
+        type: 'pet',
+        category: 'social',
+        unlockRequirement: {}, // Unlocked via luck roll only
+        cost: {}, // Cannot be purchased, only won
+        stats: { bonusXp: { Hygiene: 5 } },
+        rarity: 'legendary',
+    },
+    {
         id: 'spirit_fox', // Was pet_fox
         name: 'Spirit Fox',
         description: 'An ethereal fox attuned to agility',

@@ -41,6 +41,7 @@ const SKILL_STAT_GAINS: Record<SkillName, string> = {
 interface LevelUpData {
     skill: SkillName;
     newLevel: number;
+    milestone?: any; // From getMilestoneForSkill currentTier
 }
 
 interface Props {
@@ -150,7 +151,21 @@ export const LevelUpModal = ({ levelUpData, onClose }: Props) => {
                 </motion.div>
 
                 {/* Milestone Bonus */}
-                {isMilestone && (
+                {levelUpData.milestone ? (
+                    <motion.div
+                        className="milestone-bonus"
+                        initial={{ opacity: 0, scale: 0.8 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        transition={{ delay: 0.7 }}
+                    >
+                        <div className="milestone-label">🎉 TIER UNLOCKED: {levelUpData.milestone.name.toUpperCase()}!</div>
+                        <div className="milestone-rewards">
+                            <span>✨ {levelUpData.milestone.reward}</span>
+                            <span>🎫 +{levelUpData.milestone.ticketReward} Ticket{levelUpData.milestone.ticketReward > 1 ? 's' : ''}</span>
+                            <span>🪙 +{levelUpData.milestone.goldReward} Gold</span>
+                        </div>
+                    </motion.div>
+                ) : isMilestone && (
                     <motion.div
                         className="milestone-bonus"
                         initial={{ opacity: 0, scale: 0.8 }}

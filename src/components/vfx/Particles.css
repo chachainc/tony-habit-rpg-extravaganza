@@ -1,0 +1,4 @@
+.gacha-particles {
+    /* Let mix-blend-mode give it that glowing ember effect against dark backgrounds */
+    mix-blend-mode: screen;
+}

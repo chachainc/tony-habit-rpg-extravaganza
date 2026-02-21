@@ -13,6 +13,8 @@ import { TrophyPedestal } from './TrophyPedestal';
 import { TrophyHall } from './TrophyHall';
 import { SleepLog } from './SleepLog';
 import { SceneShell } from '../../components/scene';
+import { Panel } from '../../components/ui/Panel';
+import { GachaButton } from '../../components/ui/GachaButton';
 import homeCampBg from '../../assets/backgrounds/home_camp.png';
 import './PlayerRoom.css';
 
@@ -139,11 +141,11 @@ export const PlayerRoom = ({ onClose }: Props) => {
                 showEmbers={timeOfDay === 'night' || timeOfDay === 'evening'}
                 glowPoints={fireplaceGlows}
             >
-                <motion.div
+                <Panel
+                    variant="glass"
+                    padding="none"
                     className={`player-room room-theme-${roomTheme} room-with-scene`}
-                    onClick={(e) => e.stopPropagation()}
-                    initial={{ y: 50, opacity: 0 }}
-                    animate={{ y: 0, opacity: 1 }}
+                    onClick={(e: React.MouseEvent) => e.stopPropagation()}
                 >
                     {/* Fixed Stats Header */}
                     <div className="room-stats-header">
@@ -157,36 +159,43 @@ export const PlayerRoom = ({ onClose }: Props) => {
 
                         {/* Tab Toggle */}
                         <div className="room-tab-toggle">
-                            <button
-                                className={`tab-btn ${!showTrophyHall ? 'active' : ''}`}
+                            <GachaButton
+                                variant={!showTrophyHall ? 'primary' : 'ghost'}
+                                size="sm"
                                 onClick={() => setShowTrophyHall(false)}
                             >
                                 🏠 Room
-                            </button>
-                            <button
-                                className={`tab-btn ${showTrophyHall ? 'active' : ''}`}
+                            </GachaButton>
+                            <GachaButton
+                                variant={showTrophyHall ? 'primary' : 'ghost'}
+                                size="sm"
                                 onClick={() => setShowTrophyHall(true)}
                             >
                                 <Trophy size={14} /> Trophies
-                            </button>
-                            <button
-                                className="tab-btn"
+                            </GachaButton>
+                            <GachaButton
+                                variant="ghost"
+                                size="sm"
                                 onClick={() => setShowSleepLog(true)}
                             >
                                 💤 Sleep Log
-                            </button>
-                            <button
-                                className="tab-btn enter-room-btn"
+                            </GachaButton>
+                            <GachaButton
+                                variant="secondary"
+                                size="sm"
+                                className="enter-room-btn"
                                 onClick={() => navigate('/walkable-room')}
                             >
                                 <DoorOpen size={14} /> Enter Room
-                            </button>
-                            <button
-                                className="tab-btn tab-btn--gym"
+                            </GachaButton>
+                            <GachaButton
+                                variant="danger"
+                                size="sm"
+                                className="tab-btn--gym"
                                 onClick={() => navigate('/gym')}
                             >
                                 <Dumbbell size={14} /> Gym
-                            </button>
+                            </GachaButton>
                         </div>
 
                         <div className="room-stats-bar">
@@ -306,17 +315,17 @@ export const PlayerRoom = ({ onClose }: Props) => {
                                 </div>
 
                                 {/* Rest Button */}
-                                <motion.button
+                                <GachaButton
                                     className={`rest-button ${isResting ? 'resting' : ''}`}
                                     onClick={handleRest}
                                     disabled={isResting || currentMP >= maxMP}
-                                    whileHover={{ scale: 1.05 }}
-                                    whileTap={{ scale: 0.95 }}
+                                    variant="primary"
+                                    size="lg"
                                 >
                                     <BedDouble size={20} />
                                     <span>Rest</span>
                                     <span className="rest-amount">+{restMPWithAura} MP</span>
-                                </motion.button>
+                                </GachaButton>
 
                                 {/* Resting Animation */}
                                 <AnimatePresence>
@@ -362,7 +371,7 @@ export const PlayerRoom = ({ onClose }: Props) => {
                             </div>
                         </>
                     )}
-                </motion.div>
+                </Panel>
             </SceneShell>
 
             {/* Sleep Log Modal */}

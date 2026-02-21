@@ -62,6 +62,12 @@ export const Conquest = () => {
     const renderMap = () => {
         if (!region) return <div className="conquest-empty">Loading regions...</div>;
 
+        // Find the army position (rightmost conquered node index)
+        const conqueredIndices = region.nodes
+            .map((n, i) => (n.conquered ? i : -1))
+            .filter(i => i >= 0);
+        const armyIndex = conqueredIndices.length > 0 ? Math.max(...conqueredIndices) : -1;
+
         return (
             <div className="conquest-map-view">
                 <div className="conquest-map-header">
@@ -87,35 +93,69 @@ export const Conquest = () => {
                     </div>
                 </div>
 
-                <div className="conquest-node-grid">
-                    {region.nodes.map((node) => {
-                        const isAccessible = !node.conquered && (
-                            node.id === conquest.currentNodeId ||
-                            node.connections.some(c => {
-                                const cn = region.nodes.find(n => n.id === c);
-                                return cn?.conquered;
-                            }) ||
-                            (conquest.currentNodeId === null && region.nodes.indexOf(node) === 0)
-                        );
+                {/* Horizontal Scrolling Path */}
+                <div className="conquest-path-scroll">
+                    <div className="conquest-path-track">
+                        {/* SVG connecting line */}
+                        <svg className="conquest-path-line" preserveAspectRatio="none">
+                            <line
+                                x1="0" y1="50%"
+                                x2="100%" y2="50%"
+                                stroke="rgba(139,92,246,0.25)"
+                                strokeWidth="3"
+                                strokeDasharray="8,6"
+                            />
+                            {/* Conquered progress line */}
+                            {armyIndex >= 0 && (
+                                <line
+                                    x1="0" y1="50%"
+                                    x2={`${((armyIndex + 1) / region.nodes.length) * 100}%`} y2="50%"
+                                    stroke="rgba(34,197,94,0.6)"
+                                    strokeWidth="3"
+                                />
+                            )}
+                        </svg>
 
-                        return (
-                            <motion.div
-                                key={node.id}
-                                className={`conquest-node ${node.type} ${node.conquered ? 'conquered' : ''} ${isAccessible ? 'accessible' : ''} ${selectedNode?.id === node.id ? 'selected' : ''}`}
-                                whileHover={isAccessible ? { scale: 1.05 } : {}}
-                                onClick={() => isAccessible && setSelectedNode(node)}
-                            >
-                                <div className="node-type-icon">{NODE_TYPE_ICONS[node.type]}</div>
-                                <div className="node-name">{node.name}</div>
-                                <div className="node-terrain">{TERRAIN_ICONS[node.terrain]} {node.terrain}</div>
-                                {!node.conquered && (
-                                    <div className="node-force">⚔️ {node.enemyForce}</div>
-                                )}
-                                {node.conquered && <div className="node-conquered-badge">✅</div>}
-                                {!node.conquered && !isAccessible && <div className="node-locked">🔒</div>}
-                            </motion.div>
-                        );
-                    })}
+                        {region.nodes.map((node, idx) => {
+                            const isAccessible = !node.conquered && (
+                                node.id === conquest.currentNodeId ||
+                                node.connections.some(c => {
+                                    const cn = region.nodes.find(n => n.id === c);
+                                    return cn?.conquered;
+                                }) ||
+                                (conquest.currentNodeId === null && idx === 0)
+                            );
+                            const isArmy = idx === armyIndex;
+
+                            return (
+                                <motion.div
+                                    key={node.id}
+                                    className={`conquest-path-node ${node.type} ${node.conquered ? 'conquered' : ''} ${isAccessible ? 'accessible' : ''} ${selectedNode?.id === node.id ? 'selected' : ''} ${node.isBoss ? 'boss-node' : ''}`}
+                                    whileHover={isAccessible ? { scale: 1.12, y: -4 } : {}}
+                                    onClick={() => isAccessible && setSelectedNode(node)}
+                                >
+                                    {/* Army marker */}
+                                    {isArmy && (
+                                        <motion.div
+                                            className="army-marker"
+                                            animate={{ y: [0, -4, 0] }}
+                                            transition={{ duration: 1.5, repeat: Infinity }}
+                                        >
+                                            ⚔️
+                                        </motion.div>
+                                    )}
+                                    <div className="path-node-icon">{NODE_TYPE_ICONS[node.type]}</div>
+                                    <div className="path-node-name">{node.name}</div>
+                                    <div className="path-node-terrain">{TERRAIN_ICONS[node.terrain]}</div>
+                                    {!node.conquered && (
+                                        <div className="path-node-force">⚔️ {node.enemyForce}</div>
+                                    )}
+                                    {node.conquered && <div className="path-node-check">✅</div>}
+                                    {!node.conquered && !isAccessible && <div className="path-node-lock">🔒</div>}
+                                </motion.div>
+                            );
+                        })}
+                    </div>
                 </div>
 
                 {/* Selected Node Detail */}

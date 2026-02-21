@@ -1,0 +1,233 @@
+.char-create-container {
+    width: 100vw;
+    height: 100vh;
+    position: absolute;
+    top: 0;
+    left: 0;
+    background: radial-gradient(ellipse at 50% 50%, #1c1c2e 0%, #050510 100%);
+    color: var(--gacha-text-primary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+    padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+}
+
+.char-create-content {
+    position: relative;
+    z-index: 10;
+    width: 100%;
+    max-width: 900px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.cc-title {
+    margin-bottom: var(--space-6);
+    font-size: var(--text-3xl);
+    font-family: var(--font-family-heading);
+    text-transform: uppercase;
+    letter-spacing: 4px;
+    text-shadow: 0 4px 8px rgba(0, 0, 0, 0.8);
+}
+
+.cc-panel {
+    width: 100%;
+    max-height: 80vh;
+    overflow-y: auto;
+}
+
+.cc-panel h2 {
+    text-align: center;
+    margin-bottom: var(--space-2);
+    font-family: var(--font-family-heading);
+}
+
+.cc-panel .text-muted {
+    text-align: center;
+    margin-bottom: var(--space-6);
+}
+
+.archetype-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: var(--space-4);
+    margin-bottom: var(--space-6);
+}
+
+.archetype-card {
+    background: rgba(0, 0, 0, 0.4);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-md);
+    padding: var(--space-3);
+    cursor: pointer;
+    transition: var(--transition-fast);
+    text-align: center;
+}
+
+.archetype-card:hover {
+    background: rgba(255, 255, 255, 0.05);
+    transform: translateY(-2px);
+}
+
+.archetype-card.selected {
+    border-color: var(--gacha-primary);
+    box-shadow: 0 0 15px rgba(242, 166, 58, 0.3), inset 0 0 10px rgba(242, 166, 58, 0.1);
+}
+
+.arch-img-frame {
+    height: 200px;
+    width: 100%;
+    background: radial-gradient(circle, rgba(255, 255, 255, 0.1) 0%, transparent 70%);
+    margin-bottom: var(--space-3);
+    border-radius: var(--radius-sm);
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.arch-img-frame img {
+    height: 120%;
+    /* Scale up slightly for dramatic effect */
+    object-fit: contain;
+    object-position: top;
+}
+
+.archetype-card h3 {
+    font-family: var(--font-family-heading);
+    color: var(--gacha-primary);
+    font-size: var(--text-md);
+    margin-bottom: var(--space-2);
+}
+
+.archetype-card p {
+    font-size: var(--text-xs);
+    color: var(--gacha-text-secondary);
+    line-height: 1.4;
+}
+
+.cc-actions {
+    display: flex;
+    justify-content: center;
+}
+
+.cc-actions.spaced {
+    justify-content: space-between;
+}
+
+/* Step 2 Appearance */
+.appearance-layout {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-6);
+    align-items: center;
+    margin-bottom: var(--space-6);
+}
+
+@media (min-width: 600px) {
+    .appearance-layout {
+        flex-direction: row;
+        justify-content: space-around;
+    }
+}
+
+.appearance-preview {
+    height: 300px;
+    width: 250px;
+    border-radius: var(--radius-md);
+    background: rgba(0, 0, 0, 0.5);
+    border: 1px solid var(--border-subtle);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+}
+
+.appearance-preview img {
+    height: 100%;
+    object-fit: contain;
+    transition: filter 0.2s linear;
+}
+
+.appearance-controls {
+    flex: 1;
+    max-width: 300px;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-4);
+}
+
+.control-group label {
+    display: block;
+    font-size: var(--text-sm);
+    color: var(--gacha-text-secondary);
+    margin-bottom: var(--space-2);
+}
+
+.control-group input[type=range] {
+    width: 100%;
+    accent-color: var(--gacha-primary);
+}
+
+/* Step 3 Health */
+.health-options {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-4);
+}
+
+.health-card {
+    background: rgba(0, 0, 0, 0.4);
+    border: 1px solid var(--border-subtle);
+    padding: var(--space-4);
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    transition: var(--transition-fast);
+}
+
+.health-card:hover {
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.health-card.selected {
+    border-color: var(--gacha-primary);
+    background: rgba(242, 166, 58, 0.1);
+}
+
+.health-card h3 {
+    font-family: var(--font-family-heading);
+    color: var(--gacha-primary);
+    margin-bottom: var(--space-1);
+}
+
+.health-card p {
+    color: var(--gacha-text-secondary);
+    font-size: var(--text-sm);
+}
+
+.mb-4 {
+    margin-bottom: var(--space-4);
+}
+
+.mt-4 {
+    margin-top: var(--space-4);
+}
+
+/* Animation Utils */
+.animation-slide-up {
+    animation: slideUpFade 0.4s var(--easing-standard) forwards;
+}
+
+@keyframes slideUpFade {
+    0% {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+
+    100% {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}

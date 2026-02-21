@@ -39,6 +39,49 @@ export const MarketplaceTown = () => {
     // Movement keys state
     const keysPressed = useRef<Set<string>>(new Set());
 
+    // Touch-drag panning state
+    const dragRef = useRef<{ startX: number; startY: number; dragging: boolean } | null>(null);
+    const DRAG_THRESHOLD = 8;   // px to distinguish tap from drag
+    const DRAG_STEP = 40;       // px of drag per 1 grid step
+
+    const handlePointerDown = (e: React.PointerEvent) => {
+        if (activeStore) return;
+        dragRef.current = { startX: e.clientX, startY: e.clientY, dragging: false };
+    };
+
+    const handlePointerMove = (e: React.PointerEvent) => {
+        if (!dragRef.current || activeStore) return;
+        const dx = e.clientX - dragRef.current.startX;
+        const dy = e.clientY - dragRef.current.startY;
+
+        if (!dragRef.current.dragging && (Math.abs(dx) > DRAG_THRESHOLD || Math.abs(dy) > DRAG_THRESHOLD)) {
+            dragRef.current.dragging = true;
+        }
+
+        if (dragRef.current.dragging) {
+            // Move player in the drag direction, one grid step per DRAG_STEP px
+            let gridDx = 0;
+            let gridDy = 0;
+            if (Math.abs(dx) >= DRAG_STEP) gridDx = dx > 0 ? 1 : -1;
+            if (Math.abs(dy) >= DRAG_STEP) gridDy = dy > 0 ? 1 : -1;
+
+            if (gridDx !== 0 || gridDy !== 0) {
+                const newX = playerPosition.x + gridDx;
+                const newY = playerPosition.y + gridDy;
+                if (isWalkable(newX, newY, MARKETPLACE_LAYOUT)) {
+                    setPlayerPosition(newX, newY);
+                }
+                // Reset drag origin for continuous movement
+                dragRef.current.startX = e.clientX;
+                dragRef.current.startY = e.clientY;
+            }
+        }
+    };
+
+    const handlePointerUp = () => {
+        dragRef.current = null;
+    };
+
     // Handle keyboard movement
     useEffect(() => {
         const handleKeyDown = (e: KeyboardEvent) => {
@@ -140,7 +183,14 @@ export const MarketplaceTown = () => {
                 showEmbers={false}
                 glowPoints={glowPoints}
             >
-                <div className="marketplace-town marketplace-town--with-shell">
+                <div
+                    className="marketplace-town marketplace-town--with-shell"
+                    onPointerDown={handlePointerDown}
+                    onPointerMove={handlePointerMove}
+                    onPointerUp={handlePointerUp}
+                    onPointerCancel={handlePointerUp}
+                    style={{ touchAction: 'none' }}
+                >
 
                     {/* Exit button */}
                     <button className="marketplace-exit-btn" onClick={handleExit}>

@@ -19,6 +19,8 @@
 .content-area {
     flex: 1;
     overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
     padding: var(--space-6);
     scroll-behavior: smooth;
 }
@@ -45,7 +47,7 @@
 
     .content-area {
         padding: var(--space-4) var(--space-3);
-        padding-bottom: 72px;
-        /* Space for bottom nav */
+        padding-bottom: calc(72px + env(safe-area-inset-bottom, 0px));
+        /* Space for bottom nav + iOS safe area */
     }
 }

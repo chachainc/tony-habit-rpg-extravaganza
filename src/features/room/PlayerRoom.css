@@ -4,7 +4,7 @@
     top: 0;
     left: 0;
     width: 100vw;
-    height: 100vh;
+    height: 100dvh;
     background: rgba(0, 0, 0, 0.8);
     backdrop-filter: blur(8px);
     display: flex;
@@ -37,10 +37,10 @@
     max-width: 1400px;
     height: 90vh;
     max-height: 900px;
-    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
-    border-radius: 16px;
-    border: 2px solid rgba(255, 255, 255, 0.1);
-    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+    background: var(--gacha-bg-deep);
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--border-subtle);
+    box-shadow: var(--shadow-xl);
     display: flex;
     flex-direction: column;
     overflow: hidden;
@@ -48,12 +48,10 @@
 
 /* When wrapped in SceneShell, make room transparent to show AI background */
 .player-room.room-with-scene {
-    background: rgba(15, 15, 30, 0.7);
+    background: var(--gacha-bg-panel);
     backdrop-filter: blur(8px);
-    border: 2px solid rgba(255, 255, 255, 0.15);
-    box-shadow:
-        0 20px 60px rgba(0, 0, 0, 0.5),
-        inset 0 0 40px rgba(0, 0, 0, 0.3);
+    border: 1px solid var(--border-light);
+    box-shadow: var(--shadow-lg);
 }
 
 .player-room.room-with-scene .room-scene {
@@ -77,10 +75,11 @@
 }
 
 .room-header-left h2 {
-    font-size: 1.5rem;
-    font-weight: 700;
-    color: white;
+    font-size: var(--text-2xl);
+    font-weight: 900;
+    color: var(--gacha-text-primary);
     margin: 0;
+    font-family: var(--font-family-heading);
 }
 
 .time-indicator {
@@ -135,11 +134,11 @@
 }
 
 .stat-fill.hp-fill {
-    background: linear-gradient(90deg, #ef4444, #f87171);
+    background: var(--gacha-danger);
 }
 
 .stat-fill.mp-fill {
-    background: linear-gradient(90deg, #3b82f6, #60a5fa);
+    background: var(--gacha-secondary);
 }
 
 .stat-icon {
@@ -147,9 +146,9 @@
 }
 
 .stat-value {
-    font-size: 0.9rem;
-    font-weight: 600;
-    color: white;
+    font-size: var(--text-sm);
+    font-weight: 700;
+    color: var(--gacha-text-primary);
 }
 
 .bonus-indicator {
@@ -379,28 +378,6 @@
     position: absolute;
     bottom: 2rem;
     right: 2rem;
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    padding: 0.75rem 1.25rem;
-    background: linear-gradient(135deg, #667eea, #764ba2);
-    border: none;
-    border-radius: 12px;
-    color: white;
-    font-weight: 600;
-    cursor: pointer;
-    transition: all 0.3s ease;
-    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
-}
-
-.rest-button:hover:not(:disabled) {
-    transform: translateY(-2px);
-    box-shadow: 0 6px 20px rgba(102, 126, 234, 0.5);
-}
-
-.rest-button:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
 }
 
 .rest-button.resting {
@@ -582,7 +559,7 @@
 
 .room-comfort-meter .comfort-fill {
     height: 100%;
-    background: linear-gradient(90deg, #fbbf24, #f59e0b);
+    background: var(--gacha-primary);
     border-radius: 4px;
     transition: width 0.3s ease;
 }

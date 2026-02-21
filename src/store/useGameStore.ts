@@ -34,7 +34,7 @@ interface GameState {
     lastXpResetDate: string | null;
     lastDefenseDecayDate: string | null;
     defenseDecayAmount: number; // Accumulated decay percentage
-    pendingLevelUp: { skill: SkillName; newLevel: number } | null; // For level-up modal
+    pendingLevelUp: { skill: SkillName; newLevel: number; milestone?: any } | null; // For level-up modal
     cumulativeLogs: Record<SkillName, number>; // Cumulative times logged (for pet evolution)
 
     // Actions
@@ -289,6 +289,16 @@ export const useGameStore = create<GameState>()(
                     // Set pending level-up for modal (only if not already showing one)
                     if (didLevelUp && !s.pendingLevelUp) {
                         updates.pendingLevelUp = { skill: skillName, newLevel };
+                        // Asynchronously fetch milestone to avoid circular dependency
+                        import('./useCombatFormulas').then(({ getMilestoneForSkill }) => {
+                            const info = getMilestoneForSkill(skillName, newLevel);
+                            if (info.currentTier && info.currentTier.level === newLevel) {
+                                set(st => st.pendingLevelUp?.skill === skillName
+                                    ? { pendingLevelUp: { ...st.pendingLevelUp, milestone: info.currentTier } }
+                                    : {}
+                                );
+                            }
+                        }).catch(() => { });
                     }
 
                     return updates;

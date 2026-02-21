@@ -22,6 +22,8 @@ import { GymTracker } from './features/gym/GymTracker';
 import { Conquest } from './features/conquest/Conquest';
 import { SecurityPage } from './features/security/SecurityPage';
 import { LoginScreen } from './features/auth/LoginScreen';
+import { CharacterCreation } from './features/onboarding/CharacterCreation';
+import { UIShowcase } from './features/showcase/UIShowcase';
 import { ToastContainer } from './components/ui/Toast';
 import { ErrorBoundary } from './components/ui/ErrorBoundary';
 import { LevelUpModal } from './components/ui/LevelUpModal';
@@ -55,7 +57,7 @@ const PlayerRoomPage = () => {
 function App() {
   const { isNewDay } = useDayStore();
   const { pendingLevelUp, clearLevelUp } = useGameStore();
-  const { isLoggedIn } = useProfileStore();
+  const { isLoggedIn, characterArchetype } = useProfileStore();
   const [showWakeUp, setShowWakeUp] = useState(false);
 
   useEffect(() => {
@@ -100,6 +102,15 @@ function App() {
   // If not logged in, show login screen
   if (!isLoggedIn) {
     return <LoginScreen />;
+  }
+
+  // If no character selected, force onboarding
+  if (isLoggedIn && !characterArchetype) {
+    return (
+      <Router>
+        <CharacterCreation />
+      </Router>
+    );
   }
 
   return (
@@ -148,6 +159,7 @@ function App() {
           <Route path="social" element={<Room2D />} />
           <Route path="achievements" element={<div>Achievements coming soon!</div>} />
           <Route path="settings" element={<div>Settings coming soon!</div>} />
+          <Route path="showcase" element={<UIShowcase />} />
         </Route>
       </Routes>
     </Router>

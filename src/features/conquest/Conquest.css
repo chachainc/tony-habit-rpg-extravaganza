@@ -140,7 +140,157 @@
     color: #94a3b8;
 }
 
-/* ─── Node Grid ───────────────────────────── */
+/* ─── Horizontal Path Layout ─────────────── */
+.conquest-path-scroll {
+    overflow-x: auto;
+    overflow-y: hidden;
+    -webkit-overflow-scrolling: touch;
+    padding: 1.5rem 0;
+    margin: 0 -1.5rem;
+    padding-left: 1.5rem;
+    padding-right: 1.5rem;
+}
+
+.conquest-path-scroll::-webkit-scrollbar {
+    height: 4px;
+}
+
+.conquest-path-scroll::-webkit-scrollbar-thumb {
+    background: rgba(139, 92, 246, 0.3);
+    border-radius: 2px;
+}
+
+.conquest-path-track {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    position: relative;
+    min-width: max-content;
+    padding: 2rem 0;
+}
+
+.conquest-path-line {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: 0;
+}
+
+.conquest-path-node {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.25rem;
+    padding: 0.75rem;
+    min-width: 90px;
+    background: rgba(30, 41, 59, 0.6);
+    border: 2px solid rgba(255, 255, 255, 0.08);
+    border-radius: 14px;
+    cursor: default;
+    transition: all 0.2s ease;
+    flex-shrink: 0;
+}
+
+.conquest-path-node.accessible {
+    cursor: pointer;
+    border-color: rgba(139, 92, 246, 0.35);
+    background: rgba(139, 92, 246, 0.08);
+    box-shadow: 0 0 12px rgba(139, 92, 246, 0.15);
+}
+
+.conquest-path-node.accessible:hover {
+    background: rgba(139, 92, 246, 0.15);
+    border-color: rgba(139, 92, 246, 0.5);
+}
+
+.conquest-path-node.selected {
+    border-color: #a78bfa;
+    background: rgba(139, 92, 246, 0.18);
+    box-shadow: 0 0 20px rgba(139, 92, 246, 0.3);
+}
+
+.conquest-path-node.conquered {
+    opacity: 0.55;
+    border-color: rgba(34, 197, 94, 0.3);
+    background: rgba(34, 197, 94, 0.06);
+}
+
+.conquest-path-node.boss-node {
+    min-width: 110px;
+    transform: scale(1.15);
+    border-color: rgba(245, 158, 11, 0.4);
+    background: rgba(245, 158, 11, 0.08);
+    box-shadow: 0 0 16px rgba(245, 158, 11, 0.15);
+}
+
+.conquest-path-node.boss-node.conquered {
+    opacity: 0.55;
+}
+
+.conquest-path-node.elite {
+    border-color: rgba(239, 68, 68, 0.25);
+    background: rgba(239, 68, 68, 0.05);
+}
+
+.conquest-path-node.stronghold {
+    border-color: rgba(59, 130, 246, 0.25);
+    background: rgba(59, 130, 246, 0.05);
+}
+
+.conquest-path-node.resource {
+    border-color: rgba(34, 197, 94, 0.25);
+    background: rgba(34, 197, 94, 0.05);
+}
+
+/* Path node sub-elements */
+.path-node-icon {
+    font-size: 1.4rem;
+}
+
+.path-node-name {
+    font-weight: 700;
+    font-size: 0.7rem;
+    color: #e2e8f0;
+    text-align: center;
+    max-width: 80px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.path-node-terrain {
+    font-size: 0.75rem;
+}
+
+.path-node-force {
+    font-size: 0.65rem;
+    color: #ef4444;
+    font-weight: 700;
+}
+
+.path-node-check {
+    font-size: 0.85rem;
+}
+
+.path-node-lock {
+    font-size: 0.75rem;
+    opacity: 0.4;
+}
+
+/* Army marker */
+.army-marker {
+    position: absolute;
+    top: -1.5rem;
+    font-size: 1.1rem;
+    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.5));
+}
+
+/* Keep old node grid + node classes for backwards compat */
 .conquest-node-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
@@ -155,49 +305,6 @@
     cursor: default;
     position: relative;
     transition: all 0.2s;
-}
-
-.conquest-node.accessible {
-    cursor: pointer;
-    border-color: rgba(139, 92, 246, 0.2);
-}
-
-.conquest-node.accessible:hover {
-    background: rgba(139, 92, 246, 0.08);
-    border-color: rgba(139, 92, 246, 0.4);
-    transform: translateY(-2px);
-}
-
-.conquest-node.selected {
-    border-color: #a78bfa;
-    background: rgba(139, 92, 246, 0.12);
-    box-shadow: 0 0 15px rgba(139, 92, 246, 0.2);
-}
-
-.conquest-node.conquered {
-    opacity: 0.5;
-    border-color: rgba(34, 197, 94, 0.2);
-    background: rgba(34, 197, 94, 0.05);
-}
-
-.conquest-node.boss {
-    border-color: rgba(245, 158, 11, 0.3);
-    background: rgba(245, 158, 11, 0.06);
-}
-
-.conquest-node.elite {
-    border-color: rgba(239, 68, 68, 0.2);
-    background: rgba(239, 68, 68, 0.04);
-}
-
-.conquest-node.stronghold {
-    border-color: rgba(59, 130, 246, 0.2);
-    background: rgba(59, 130, 246, 0.04);
-}
-
-.conquest-node.resource {
-    border-color: rgba(34, 197, 94, 0.2);
-    background: rgba(34, 197, 94, 0.04);
 }
 
 .node-type-icon {

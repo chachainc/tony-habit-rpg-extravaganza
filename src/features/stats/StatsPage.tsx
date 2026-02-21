@@ -1,4 +1,5 @@
 import { useGameStore, type SkillName } from '../../store/useGameStore';
+import { getMilestoneForSkill } from '../../store/useCombatFormulas';
 import { BarChart2, TrendingUp, Shield, Sword } from 'lucide-react';
 import { Card } from '../../components/ui/Card';
 import { ProgressBar } from '../../components/ui/ProgressBar';
@@ -153,6 +154,27 @@ export const StatsPage = () => {
                                             </span>
                                         </div>
 
+                                        {(() => {
+                                            const milestoneInfo = getMilestoneForSkill(skillName, skill.level);
+                                            if (!milestoneInfo.nextTier) return null;
+
+                                            // progressToNext is a 0..1 ratio
+                                            const progressPct = Math.floor(milestoneInfo.progressToNext * 100);
+
+                                            return (
+                                                <div className="milestone-tracker">
+                                                    <div className="milestone-label-row">
+                                                        <span className="milestone-name">Next: {milestoneInfo.nextTier.name} (Lv.{milestoneInfo.nextTier.level})</span>
+                                                    </div>
+                                                    <div className="milestone-bar-bg">
+                                                        <div className="milestone-bar-fill" style={{ width: `${progressPct}%` }} />
+                                                    </div>
+                                                    <div className="milestone-reward-preview">
+                                                        ✨ {milestoneInfo.nextTier.reward} | 🪙 {milestoneInfo.nextTier.goldReward}
+                                                    </div>
+                                                </div>
+                                            );
+                                        })()}
 
                                     </Card>
                                 );
