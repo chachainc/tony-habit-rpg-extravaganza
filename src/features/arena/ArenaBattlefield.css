@@ -5,10 +5,10 @@
     width: 100%;
     height: 100%;
     overflow: hidden;
-    background-color: #0f0f13;
+    background-color: var(--gacha-bg-deep);
     display: grid;
     grid-template-rows: auto 1fr auto;
-    /* Header, Field, Controls */
+    font-family: var(--font-family-heading);
 }
 
 /* --- Background Layer --- */
@@ -48,9 +48,9 @@
     display: flex;
     justify-content: center;
     align-items: center;
-    padding: 1rem;
+    padding: var(--space-4);
     pointer-events: none;
-    /* Let clicks pass through to field if needed */
+    text-transform: uppercase;
 }
 
 .vs-badge {
@@ -86,10 +86,10 @@
 }
 
 .combatant-name-header {
-    font-size: 1.1rem;
-    font-weight: 700;
-    color: white;
-    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.8);
+    font-size: var(--text-lg);
+    font-weight: 800;
+    color: var(--gacha-text-primary);
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.8), 0 0 10px rgba(0, 0, 0, 0.5);
 }
 
 .combatant-name-header.enemy {
@@ -98,7 +98,7 @@
 }
 
 .combatant-name-header.ally {
-    color: #3b82f6;
+    color: var(--gacha-secondary);
     text-align: left;
 }
 
@@ -263,39 +263,44 @@
 }
 
 .unit-name {
-    font-size: 0.8rem;
-    color: white;
-    text-shadow: 0 1px 2px black;
-    margin-bottom: 2px;
+    font-size: var(--text-xs);
+    font-weight: 700;
+    color: var(--gacha-text-primary);
+    text-shadow: 0 1px 2px black, 0 0 4px rgba(0, 0, 0, 0.8);
+    margin-bottom: 4px;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+    text-transform: uppercase;
 }
 
 .hp-bar-frame {
     width: 100%;
-    height: 8px;
-    background: rgba(0, 0, 0, 0.8);
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    border-radius: 4px;
+    height: 10px;
+    background: rgba(0, 0, 0, 0.6);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-pill);
     overflow: hidden;
     position: relative;
+    box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.5);
+    margin-bottom: 2px;
 }
 
 .hp-bar-fill {
     height: 100%;
-    background: linear-gradient(90deg, #ef4444, #f87171);
+    background: var(--gacha-danger);
     transition: width 0.3s ease-out;
 }
 
 .hp-bar-fill.ally {
-    background: linear-gradient(90deg, #3b82f6, #60a5fa);
+    background: var(--gacha-success);
 }
 
 .hp-text {
-    font-size: 0.65rem;
-    color: white;
-    text-shadow: 0 1px 2px black;
+    font-size: var(--text-xs);
+    font-weight: 800;
+    color: var(--gacha-text-primary);
+    text-shadow: 0 1px 2px black, 0 0 4px rgba(0, 0, 0, 0.8);
     margin-top: 1px;
 }
 

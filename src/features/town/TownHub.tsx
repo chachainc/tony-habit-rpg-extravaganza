@@ -10,7 +10,8 @@ import {
     Calendar,
     Award
 } from 'lucide-react';
-import { Card } from '../../components/ui';
+import { Panel } from '../../components/ui/Panel';
+import { Particles } from '../../components/vfx/Particles';
 import { useGameStore } from '../../store/useGameStore';
 import './TownHub.css';
 
@@ -133,29 +134,7 @@ export const TownHub: React.FC<TownHubProps> = ({ onNavigate }) => {
                     transition={{ duration: 40, repeat: Infinity, ease: 'linear' }}
                 />
 
-                {/* Floating particles */}
-                {[...Array(9)].map((_, i) => (
-                    <motion.div
-                        key={i}
-                        className="particle"
-                        style={{
-                            left: `${10 + i * 10}%`,
-                            background: i % 2 === 0 ? 'rgba(96, 108, 220, 0.6)' : 'rgba(245, 158, 11, 0.6)',
-                        }}
-                        animate={{
-                            y: [0, -1000],
-                            x: [0, 20],
-                            opacity: [0, 1, 1, 0],
-                        }}
-                        transition={{
-                            duration: 15 + i * 2,
-                            repeat: Infinity,
-                            delay: i * 2,
-                            ease: 'linear',
-                        }}
-                    />
-                ))}
-
+                <Particles count={60} color="rgba(100, 150, 255, 0.4)" speed={0.5} />
                 <div className="town-hub__vignette" />
             </div>
 
@@ -191,7 +170,7 @@ export const TownHub: React.FC<TownHubProps> = ({ onNavigate }) => {
                                 delay: index * 0.05,
                             }}
                         >
-                            <Card
+                            <Panel
                                 variant="glass"
                                 onClick={building.locked ? undefined : building.onClick}
                                 className={`building-card ${building.locked ? 'building-card--locked' : ''}`}
@@ -221,7 +200,7 @@ export const TownHub: React.FC<TownHubProps> = ({ onNavigate }) => {
 
                                 <h3 className="building-card__name">{building.name}</h3>
                                 <p className="building-card__description">{building.description}</p>
-                            </Card>
+                            </Panel>
                         </motion.div>
                     ))}
                 </div>

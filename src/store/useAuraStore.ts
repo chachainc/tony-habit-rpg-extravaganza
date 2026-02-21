@@ -66,6 +66,43 @@ export const AURAS: Aura[] = [
         description: 'Eternal radiance of a master.',
         unlockCondition: 'Reach Floor 50',
         bonus: { type: 'xp', value: 0.05 },
+    },
+    // New Skill-Level Auras
+    {
+        id: 'awakening_spark',
+        name: 'Awakening Spark',
+        icon: '💫',
+        color: 'rgba(56, 182, 255, 0.4)',
+        description: 'A faint blue glow of potential.',
+        unlockCondition: 'Total Skill Level 25',
+        bonus: { type: 'xp', value: 0.01 },
+    },
+    {
+        id: 'rising_force',
+        name: 'Rising Force',
+        icon: '🌪️',
+        color: 'rgba(34, 197, 94, 0.5)',
+        description: 'Green energy swirling with purpose.',
+        unlockCondition: 'Total Skill Level 50',
+        bonus: { type: 'atk', value: 0.02 },
+    },
+    {
+        id: 'tempest_soul',
+        name: 'Tempest Soul',
+        icon: '🌩️',
+        color: 'rgba(147, 51, 234, 0.6)',
+        description: 'A purple storm of focused intent.',
+        unlockCondition: 'Total Skill Level 100',
+        bonus: { type: 'crit', value: 0.03 },
+    },
+    {
+        id: 'transcendent',
+        name: 'Transcendent',
+        icon: '⚡',
+        color: 'rgba(250, 204, 21, 0.8)',
+        description: 'Golden lightning of pure mastery.',
+        unlockCondition: 'Total Skill Level 200',
+        bonus: { type: 'atk', value: 0.05 },
     }
 ];
 
@@ -77,6 +114,7 @@ interface AuraState {
     unlockAura: (auraId: string) => void;
     setActiveAura: (auraId: string) => void;
     checkAndUnlockAuras: (highestFloor: number) => string[];
+    checkSkillLevelAuras: (totalSkillLevel: number) => string[];
     getActiveAura: () => Aura | undefined;
 }
 
@@ -101,6 +139,20 @@ export const useAuraStore = create<AuraState>()(
                 if (highestFloor >= 20 && !get().unlockedAuras.includes('dragon_fire')) newlyUnlocked.push('dragon_fire');
                 if (highestFloor >= 30 && !get().unlockedAuras.includes('void_essence')) newlyUnlocked.push('void_essence');
                 if (highestFloor >= 50 && !get().unlockedAuras.includes('celestial_light')) newlyUnlocked.push('celestial_light');
+
+                if (newlyUnlocked.length > 0) {
+                    set({ unlockedAuras: [...get().unlockedAuras, ...newlyUnlocked] });
+                }
+                return newlyUnlocked;
+            },
+
+            checkSkillLevelAuras: (totalSkillLevel) => {
+                const newlyUnlocked: string[] = [];
+
+                if (totalSkillLevel >= 25 && !get().unlockedAuras.includes('awakening_spark')) newlyUnlocked.push('awakening_spark');
+                if (totalSkillLevel >= 50 && !get().unlockedAuras.includes('rising_force')) newlyUnlocked.push('rising_force');
+                if (totalSkillLevel >= 100 && !get().unlockedAuras.includes('tempest_soul')) newlyUnlocked.push('tempest_soul');
+                if (totalSkillLevel >= 200 && !get().unlockedAuras.includes('transcendent')) newlyUnlocked.push('transcendent');
 
                 if (newlyUnlocked.length > 0) {
                     set({ unlockedAuras: [...get().unlockedAuras, ...newlyUnlocked] });

@@ -6,6 +6,7 @@ import { usePetStore } from './usePetStore';
 import { useMagicStore, SPELL_DB } from './useMagicStore';
 import { useRoomStore } from './useRoomStore';
 import { useCampaignStore } from './useCampaignStore';
+import { getSkillSynergyBonus } from './useCombatFormulas';
 
 export interface Combatant {
     id: string;
@@ -176,6 +177,10 @@ export const useBattleStore = create<BattleState>()((set, get) => ({
         playerAtk = Math.round(playerAtk * (1 + roomBonuses.atkPercent / 100));
         playerDef = Math.round(playerDef * (1 + roomBonuses.defPercent / 100));
         playerSpd = Math.round(playerSpd * (1 + roomBonuses.spdPercent / 100));
+
+        // Apply Cardio↔Strength synergy bonus
+        const synergy = getSkillSynergyBonus();
+        playerAtk = Math.round(playerAtk * synergy.bonusMultiplier);
 
         const playerMaxMana = Math.round(50 + (gameStore.skills.Housemaid.level * 5));
         const playerManaRegen = Math.round(5 + (gameStore.skills.Cardio.level * 0.5));

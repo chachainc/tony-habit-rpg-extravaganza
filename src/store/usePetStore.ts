@@ -612,6 +612,52 @@ export const PET_DATABASE: Record<string, PetDefinition> = {
         resistScaling: { stat: 'Hygiene', factor: 1.5 },
         spellScaling: { stat: 'Intelligence', factor: 0.8 },
     },
+
+    'golden_goldfish': {
+        id: 'golden_goldfish',
+        name: 'Golden Goldfish',
+        icon: '🐠',
+        description: 'Legendary aquatic companion! Radiates fortune and tidal power. 1 in 25,000!',
+        abilities: [
+            {
+                id: 'bubble_shield', name: 'Bubble Shield', icon: '🫧',
+                description: 'Encases you in protective bubbles, reducing damage by 35% for 2 turns.',
+                cooldown: 5, type: 'reduce_damage', buffValue: 35, buffDuration: 2,
+            },
+            {
+                id: 'tidal_wave', name: 'Tidal Wave', icon: '🌊',
+                description: 'Crashes a massive wave. Scales with Hygiene.',
+                cooldown: 4, type: 'damage', baseDamage: 18,
+                scalingStat: 'Hygiene', scalingFactor: 1.8,
+            },
+        ],
+        passive: {
+            id: 'fortune_fins', name: 'Fortune Fins', icon: '🐠',
+            description: '+3% bonus gold per 7-day streak.',
+            effect: { type: 'xp_bonus', value: 0.03, skillBonus: 'Hygiene' },
+        },
+        ultimate: {
+            id: 'golden_tsunami', name: 'Golden Tsunami', icon: '🐠🌊',
+            description: 'Summons a golden tidal wave that devastates enemies and showers coins.',
+            streakRequired: 20, baseDamage: 65,
+            scalingStat: 'Hygiene', scalingFactor: 3.2,
+            healPercent: 0.25,
+        },
+        evolution: {
+            evolvedPetId: 'abyssal_koi',
+            evolvedName: 'Abyssal Koi',
+            requiredSkill: 'Hygiene',
+            requiredLogs: 30,
+            scalingBonus: 0.30,
+            newPassiveDescription: '+5% gold per streak + 8% resistance + minor heal on hit.',
+        },
+        damageScaling: { stat: 'Hygiene', factor: 1.5 },
+        speedScaling: { stat: 'Cardio', factor: 1.0 },
+        dodgeScaling: { stat: 'Flexibility', factor: 0.4 },
+        critScaling: { stat: 'Sleep', factor: 0.5 },
+        resistScaling: { stat: 'Hygiene', factor: 1.5 },
+        spellScaling: { stat: 'Intelligence', factor: 1.2 },
+    },
 };
 
 // ── Pet Combat Stat Calculator ─────────────────────────────────

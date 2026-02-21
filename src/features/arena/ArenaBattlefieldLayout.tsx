@@ -29,6 +29,7 @@ import despairLichImg from '../../assets/enemies/despair_lich.svg';
 import shadowTitanImg from '../../assets/bosses/shadow_titan.png';
 import generalInertiaImg from '../../assets/bosses/general_inertia.png';
 import flickerBurnoutImg from '../../assets/bosses/flicker_burnout.png';
+import { Particles } from '../../components/vfx/Particles';
 import './ArenaBattlefield.css';
 
 const ENEMY_IMAGES: Record<string, string> = {
@@ -74,7 +75,7 @@ const UnitEntity = ({ combatant, isAlly, isActive, isHit, imageSrc }: { combatan
         <div className="hp-bar-frame">
           <div className={`hp-bar-fill ${isAlly ? 'ally' : ''}`} style={{ width: `${hpPercent}%` }} />
         </div>
-        <div className="hp-text">{Math.max(0, Math.ceil(combatant.hp))}/{combatant.maxHp}</div>
+        <div className="hp-text">{Math.max(0, Math.ceil(combatant.hp))}/{Math.round(combatant.maxHp)}</div>
       </div>
     </div>
   );
@@ -130,6 +131,7 @@ export const ArenaBattlefieldLayout = () => {
     <div className="battlefield-layout">
       <div className="battlefield-background">
         <div className="bg-layer far" style={{ backgroundImage: `url(${bgImage})` }} />
+        <Particles count={40} color="rgba(255, 100, 100, 0.4)" speed={2} className="battlefield-particles" />
         <div className="bg-overlay" />
       </div>
 

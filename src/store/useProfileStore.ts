@@ -10,6 +10,11 @@ interface ProfileState {
     lastSyncError: string | null;
     serverVersion: number;
 
+    // Character Onboarding
+    characterArchetype: 'vanguard' | 'ranger' | 'duelist' | 'mystic' | null;
+    appearance: { hairHue: number; skinHue: number };
+    healthTrackingMode: 'sleep' | 'readiness' | 'none' | null;
+
     // Actions
     createProfile: (name?: string) => Promise<string | null>;
     login: (code: string) => Promise<boolean>;
@@ -17,6 +22,11 @@ interface ProfileState {
     syncToServer: () => Promise<void>;
     exportSave: () => void;
     importSave: (json: string) => Promise<boolean>;
+
+    // Onboarding Actions
+    setCharacterArchetype: (archetype: ProfileState['characterArchetype']) => void;
+    setAppearance: (appearance: ProfileState['appearance']) => void;
+    setHealthTrackingMode: (mode: ProfileState['healthTrackingMode']) => void;
 }
 
 /**
@@ -97,6 +107,10 @@ export const useProfileStore = create<ProfileState>()(
             lastSyncError: null,
             serverVersion: 0,
 
+            characterArchetype: null,
+            appearance: { hairHue: 0, skinHue: 0 },
+            healthTrackingMode: null,
+
             createProfile: async (name?: string) => {
                 const { data, error } = await profileApi.create(name);
                 if (error || !data) {
@@ -154,6 +168,9 @@ export const useProfileStore = create<ProfileState>()(
                     isSyncing: false,
                     lastSyncError: null,
                     serverVersion: 0,
+                    characterArchetype: null,
+                    appearance: { hairHue: 0, skinHue: 0 },
+                    healthTrackingMode: null,
                 });
             },
 
@@ -223,6 +240,11 @@ export const useProfileStore = create<ProfileState>()(
                     return false;
                 }
             },
+
+            // Onboarding Setters
+            setCharacterArchetype: (archetype) => set({ characterArchetype: archetype }),
+            setAppearance: (appearance) => set({ appearance }),
+            setHealthTrackingMode: (mode) => set({ healthTrackingMode: mode }),
         }),
         {
             name: 'gl-profile-storage',

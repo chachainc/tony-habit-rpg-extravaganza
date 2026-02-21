@@ -1,0 +1,94 @@
+.gacha-btn {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-family: var(--font-family-heading);
+    font-weight: 700;
+    border-radius: var(--radius-sm);
+    border: none;
+    cursor: pointer;
+    overflow: hidden;
+    transition: var(--transition-fast);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.gacha-btn.w-full {
+    width: 100%;
+}
+
+.gacha-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    filter: grayscale(100%);
+}
+
+/* Base button animations */
+.gacha-btn:active:not(:disabled) {
+    transform: scale(0.96);
+}
+
+/* INNER TEXT */
+.gacha-btn-inner {
+    position: relative;
+    z-index: 2;
+    text-align: center;
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+}
+
+/* PRIMARY */
+.gacha-btn.variant-primary {
+    background: var(--gacha-gradient-primary);
+    color: #fff;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    box-shadow: var(--shadow-md), var(--glow-primary);
+}
+
+.gacha-btn.variant-primary:hover:not(:disabled) {
+    filter: brightness(1.2);
+}
+
+/* SECONDARY */
+.gacha-btn.variant-secondary {
+    background: var(--gacha-bg-panel);
+    color: var(--gacha-text-primary);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: var(--shadow-sm);
+    backdrop-filter: blur(8px);
+}
+
+.gacha-btn.variant-secondary:hover:not(:disabled) {
+    border-color: rgba(255, 255, 255, 0.3);
+    background: rgba(255, 255, 255, 0.1);
+}
+
+/* DANGER */
+.gacha-btn.variant-danger {
+    background: linear-gradient(135deg, var(--gacha-danger), #a31d27);
+    color: #fff;
+    box-shadow: var(--shadow-md);
+}
+
+.gacha-btn.variant-danger:hover:not(:disabled) {
+    filter: brightness(1.2);
+}
+
+/* SIZES */
+.gacha-btn.size-sm {
+    padding: var(--space-1) var(--space-3);
+    font-size: var(--text-xs);
+}
+
+.gacha-btn.size-md {
+    padding: var(--space-2) var(--space-4);
+    font-size: var(--text-sm);
+}
+
+.gacha-btn.size-lg {
+    padding: var(--space-3) var(--space-6);
+    font-size: var(--text-md);
+    min-height: 48px;
+}

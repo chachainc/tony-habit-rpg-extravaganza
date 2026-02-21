@@ -1,9 +1,9 @@
 .checkin-modal {
     width: 100%;
-    height: 100vh;
+    height: 100dvh;
     /* Full viewport height if it's a page */
-    /* Or calc(100vh - 60px) if header is outside */
-    max-height: 100vh;
+    /* Or calc(100dvh - 60px) if header is outside */
+    max-height: 100dvh;
     max-width: none;
     border-radius: 0;
     padding: 1rem;

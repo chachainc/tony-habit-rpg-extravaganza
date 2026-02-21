@@ -1,0 +1,92 @@
+.gacha-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 2px 8px;
+    border-radius: var(--radius-pill);
+    font-size: var(--text-xs);
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    line-height: 1.2;
+}
+
+.badge-icon {
+    display: flex;
+    align-items: center;
+    font-size: 1.1em;
+}
+
+/* FILLED */
+.gacha-badge.variant-filled.rarity-common {
+    background: var(--gradient-common);
+    color: #fff;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+}
+
+.gacha-badge.variant-filled.rarity-uncommon {
+    background: var(--gradient-uncommon);
+    color: #fff;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+}
+
+.gacha-badge.variant-filled.rarity-rare {
+    background: var(--gradient-rare);
+    color: #fff;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+}
+
+.gacha-badge.variant-filled.rarity-epic {
+    background: var(--gradient-epic);
+    color: #fff;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+}
+
+.gacha-badge.variant-filled.rarity-legendary {
+    background: var(--gradient-legendary);
+    color: #fff;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+}
+
+.gacha-badge.variant-filled.rarity-mythic {
+    background: linear-gradient(135deg, var(--rarity-mythic), #be123c);
+    color: #fff;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+}
+
+/* OUTLINE */
+.gacha-badge.variant-outline {
+    background: rgba(0, 0, 0, 0.4);
+    backdrop-filter: blur(4px);
+    border: 1px solid;
+}
+
+.gacha-badge.variant-outline.rarity-common {
+    border-color: var(--rarity-common);
+    color: var(--rarity-common);
+}
+
+.gacha-badge.variant-outline.rarity-uncommon {
+    border-color: var(--rarity-uncommon);
+    color: var(--rarity-uncommon);
+}
+
+.gacha-badge.variant-outline.rarity-rare {
+    border-color: var(--rarity-rare);
+    color: var(--rarity-rare);
+}
+
+.gacha-badge.variant-outline.rarity-epic {
+    border-color: var(--rarity-epic);
+    color: var(--rarity-epic);
+}
+
+.gacha-badge.variant-outline.rarity-legendary {
+    border-color: var(--rarity-legendary);
+    color: var(--rarity-legendary);
+}
+
+.gacha-badge.variant-outline.rarity-mythic {
+    border-color: var(--rarity-mythic);
+    color: var(--rarity-mythic);
+}

@@ -101,7 +101,7 @@ export const YEARLY_READING_TROPHIES: AchievementTrophy[] = [
     },
 ];
 
-// JACKPOT TROPHY
+// JACKPOT TROPHIES
 export const JACKPOT_TROPHY: AchievementTrophy = {
     id: 'ethereal_cow_jackpot',
     name: 'Ethereal Bovine Blessing',
@@ -109,6 +109,15 @@ export const JACKPOT_TROPHY: AchievementTrophy = {
     icon: '🐮✨',
     category: 'jackpot',
     requirement: 1, // Just need to hit it once
+};
+
+export const GOLDEN_GOLDFISH_TROPHY: AchievementTrophy = {
+    id: 'golden_goldfish_jackpot',
+    name: 'Fortune of the Deep',
+    description: 'Hit the 1 in 25,000 luck roll and unlocked the Golden Goldfish!',
+    icon: '🐠✨',
+    category: 'jackpot',
+    requirement: 1,
 };
 
 // SLEEP STREAK TROPHIES
@@ -136,6 +145,7 @@ export const ALL_ACHIEVEMENT_TROPHIES: AchievementTrophy[] = [
     ...LIFETIME_READING_TROPHIES,
     ...YEARLY_READING_TROPHIES,
     JACKPOT_TROPHY,
+    GOLDEN_GOLDFISH_TROPHY,
     ...SLEEP_TROPHIES,
 ];
 
@@ -152,6 +162,7 @@ interface AchievementTrophyState {
     unlockTrophy: (trophyId: string) => void;
     checkReadingProgress: (totalBooksRead: number, booksReadThisYear: number) => void;
     unlockEtherealCowTrophy: () => void;
+    unlockGoldenGoldfishTrophy: () => void;
     recordSleepScore: (score: number) => void;
 
     // Getters
@@ -202,6 +213,13 @@ export const useAchievementTrophyStore = create<AchievementTrophyState>()(
                 const { unlockTrophy, isTrophyUnlocked } = get();
                 if (!isTrophyUnlocked(JACKPOT_TROPHY.id)) {
                     unlockTrophy(JACKPOT_TROPHY.id);
+                }
+            },
+
+            unlockGoldenGoldfishTrophy: () => {
+                const { unlockTrophy, isTrophyUnlocked } = get();
+                if (!isTrophyUnlocked(GOLDEN_GOLDFISH_TROPHY.id)) {
+                    unlockTrophy(GOLDEN_GOLDFISH_TROPHY.id);
                 }
             },
 

@@ -1,0 +1,75 @@
+.gacha-resource-bar {
+    display: flex;
+    gap: var(--space-3);
+    align-items: center;
+    pointer-events: auto;
+    /* Usually rests on a pointer-events: none header area */
+}
+
+.resource-pill {
+    display: flex;
+    align-items: center;
+    height: 32px;
+    background: rgba(0, 0, 0, 0.4);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-pill);
+    padding: 0 4px 0 8px;
+    box-shadow: var(--shadow-sm);
+    backdrop-filter: blur(8px);
+    color: var(--gacha-text-primary);
+    font-family: var(--font-family-heading);
+    min-width: 100px;
+}
+
+.resource-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.2rem;
+    margin-right: 6px;
+    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.5));
+}
+
+.resource-value {
+    flex: 1;
+    font-weight: 700;
+    font-size: var(--text-sm);
+    text-align: right;
+    margin-right: 8px;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8);
+}
+
+.resource-add-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    background: var(--gacha-gradient-primary);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    color: #fff;
+    font-weight: 900;
+    font-size: 16px;
+    cursor: pointer;
+    box-shadow: var(--shadow-sm);
+    transition: var(--transition-fast);
+    padding: 0;
+    line-height: 1;
+}
+
+.resource-add-btn:hover {
+    transform: scale(1.1);
+    filter: brightness(1.2);
+    box-shadow: var(--glow-primary);
+}
+
+.resource-add-btn:active {
+    transform: scale(0.95);
+}
+
+/* SOLID VARIANT */
+.gacha-resource-bar.variant-solid .resource-pill {
+    background: var(--gacha-bg-panel-solid);
+    border-color: rgba(255, 255, 255, 0.05);
+}

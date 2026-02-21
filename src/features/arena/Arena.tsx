@@ -12,6 +12,9 @@ import { usePetStore, PET_DATABASE } from '../../store/usePetStore';
 import { useMagicStore } from '../../store/useMagicStore';
 import { ITEM_DATABASE } from '../../data/items';
 import { ArenaBattlefieldLayout } from './ArenaBattlefieldLayout';
+import { getDetailedCombatBreakdown, type StatBreakdown } from '../../store/useCombatFormulas';
+import { Panel } from '../../components/ui/Panel';
+import { GachaButton } from '../../components/ui/GachaButton';
 import './Arena.css';
 
 const USE_BATTLEFIELD_LAYOUT = true;
@@ -190,6 +193,7 @@ export const Arena = ({ onClose }: { onClose: () => void }) => {
 
     const [view, setView] = useState<'map' | 'battle'>('map');
     const [autoAttack, setAutoAttack] = useState(false);
+    const [showPowerDetails, setShowPowerDetails] = useState(false);
 
     // Auto-attack timer ref - MUST use ref so cleanup works properly
     const autoTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -301,7 +305,7 @@ export const Arena = ({ onClose }: { onClose: () => void }) => {
                 className={`health-fill ${type}`}
                 style={{ width: `${Math.max(0, (current / max) * 100)}%` }}
             />
-            <span className="health-text">{current}/{max}</span>
+            <span className="health-text">{Math.round(current)}/{Math.round(max)}</span>
         </div>
     );
 
@@ -454,7 +458,8 @@ export const Arena = ({ onClose }: { onClose: () => void }) => {
                             <div className="prep-scrollable">
                                 <div className="prep-layout">
                                     {/* LEFT: Enemy Card */}
-                                    <div className="prep-profile-card enemy-card">
+                                    <Panel variant="glass" padding="md" className="prep-enemy-panel">
+                                        <div className="prep-panel-header">TARGET INTEL</div>
                                         <div className="profile-header">
                                             <span className="personality-tag">Target: {enemyDef.name}</span>
                                             <div className="prep-portrait">
@@ -489,10 +494,11 @@ export const Arena = ({ onClose }: { onClose: () => void }) => {
                                                 </div>
                                             </div>
                                         </div>
-                                    </div>
+                                    </Panel>
 
                                     {/* RIGHT: Player Card */}
-                                    <div className="prep-profile-card hero-card">
+                                    <Panel variant="glass" padding="md" className="prep-hero-panel">
+                                        <div className="prep-panel-header">YOUR LOADOUT</div>
                                         <div className="profile-header">
                                             <span className="personality-tag">Your Loadout</span>
                                             <div className="prep-portrait">
@@ -522,6 +528,52 @@ export const Arena = ({ onClose }: { onClose: () => void }) => {
                                                     <span className="intel-status">✨ neutral</span>
                                                 </div>
                                             </div>
+
+                                            {/* Power Details Panel */}
+                                            <div className="power-details-toggle">
+                                                <button
+                                                    className={`power-details-btn ${showPowerDetails ? 'active' : ''}`}
+                                                    onClick={() => setShowPowerDetails(!showPowerDetails)}
+                                                >
+                                                    📊 {showPowerDetails ? 'HIDE' : 'SHOW'} POWER BREAKDOWN
+                                                    {showPowerDetails ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+                                                </button>
+                                            </div>
+
+                                            {showPowerDetails && (() => {
+                                                const breakdown = getDetailedCombatBreakdown();
+                                                const renderStat = (label: string, stat: StatBreakdown, unit: string = '') => (
+                                                    <div className="breakdown-stat" key={label}>
+                                                        <div className="breakdown-stat-header">
+                                                            <span className="breakdown-stat-name">{label}</span>
+                                                            <span className="breakdown-stat-total">{stat.total}{unit}</span>
+                                                        </div>
+                                                        <div className="breakdown-sources">
+                                                            {stat.sources.map((s, i) => (
+                                                                <span key={i} className={`breakdown-source ${s.value < 0 ? 'negative' : ''}`}>
+                                                                    {s.label}: {s.value > 0 ? '+' : ''}{s.value}{unit}
+                                                                </span>
+                                                            ))}
+                                                        </div>
+                                                    </div>
+                                                );
+                                                return (
+                                                    <div className="power-details-panel">
+                                                        {renderStat('⚔️ ATK', breakdown.atk)}
+                                                        {renderStat('🛡️ DEF', breakdown.def)}
+                                                        {renderStat('✨ MATK', breakdown.matk)}
+                                                        {renderStat('❤️ HP', breakdown.hp)}
+                                                        {renderStat('💨 SPD', breakdown.spd)}
+                                                        {renderStat('🎯 CRIT', breakdown.critChance, '%')}
+                                                        {renderStat('💎 MP', breakdown.mp)}
+                                                        {breakdown.synergy.active && (
+                                                            <div className="synergy-banner">
+                                                                🔗 {breakdown.synergy.description}
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                );
+                                            })()}
 
                                             {/* Active Pet */}
                                             <div className="active-pet-section">
@@ -557,17 +609,25 @@ export const Arena = ({ onClose }: { onClose: () => void }) => {
                                                 </div>
                                             )}
                                         </div>
-                                    </div>
+                                    </Panel>
                                 </div>
-                            </div>
 
-                            <div className="prep-buttons">
-                                <button className="prep-back-btn" onClick={() => setView('map')}>
-                                    Run Away
-                                </button>
-                                <button className="prep-start-btn" onClick={startBattle}>
-                                    ⚔️ BEGIN BATTLE
-                                </button>
+                                <div className="prep-buttons">
+                                    <GachaButton
+                                        onClick={() => setView('map')}
+                                        variant="secondary"
+                                        size="md"
+                                    >
+                                        Run Away
+                                    </GachaButton>
+                                    <GachaButton
+                                        onClick={startBattle}
+                                        variant="primary"
+                                        size="md"
+                                    >
+                                        ⚔️ BEGIN BATTLE
+                                    </GachaButton>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -807,14 +867,16 @@ export const Arena = ({ onClose }: { onClose: () => void }) => {
                             {player && (
                                 <div className="action-buttons">
                                     {/* Auto-Attack Toggle */}
-                                    <button
-                                        className={`command-btn auto ${autoAttack ? 'active' : ''}`}
+                                    <GachaButton
+                                        className={`auto ${autoAttack ? 'active' : ''}`}
                                         onClick={() => setAutoAttack(!autoAttack)}
+                                        variant={autoAttack ? "primary" : "secondary"}
+                                        size="sm"
                                     >
                                         <div className="btn-icon">⚡</div>
                                         <div className="btn-label">AUTO</div>
                                         <div className="auto-status">{autoAttack ? 'ON' : 'OFF'}</div>
-                                    </button>
+                                    </GachaButton>
 
                                     {/* 1. Basic Strike */}
                                     <button
@@ -856,7 +918,7 @@ export const Arena = ({ onClose }: { onClose: () => void }) => {
                                             >
                                                 <div className="btn-icon"><Sparkles /></div>
                                                 <div className="btn-label">Spells</div>
-                                                <div className="mp-display">{currentMP}/{battleMaxMP} MP</div>
+                                                <div className="mp-display">{Math.round(currentMP)}/{Math.round(battleMaxMP)} MP</div>
                                             </button>
 
                                             {/* Spell Menu */}
@@ -966,6 +1028,30 @@ export const Arena = ({ onClose }: { onClose: () => void }) => {
                                                 <span>+{ENEMY_DB[enemy!.id].xpReward}</span>
                                             </div>
                                         </div>
+                                        {(() => {
+                                            const breakdown = getDetailedCombatBreakdown();
+                                            return (
+                                                <div className="battle-report">
+                                                    <div className="report-header">📊 BATTLE REPORT</div>
+                                                    <div className="report-section">
+                                                        <div className="report-section-title">⚔️ Offense Power ({breakdown.atk.total})</div>
+                                                        <div className="report-sources">
+                                                            {breakdown.atk.sources.map((s, i) => (
+                                                                <span key={i} className="report-source">{s.label}: {s.value > 0 ? '+' : ''}{s.value}</span>
+                                                            ))}
+                                                        </div>
+                                                    </div>
+                                                    <div className="report-section">
+                                                        <div className="report-section-title">🛡️ Defense Power ({breakdown.def.total})</div>
+                                                        <div className="report-sources">
+                                                            {breakdown.def.sources.map((s, i) => (
+                                                                <span key={i} className="report-source">{s.label}: {s.value > 0 ? '+' : ''}{s.value}</span>
+                                                            ))}
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            );
+                                        })()}
                                         <button className="continue-btn" onClick={handleVictory}>CONTINUE</button>
                                     </div>
                                 </motion.div>
@@ -974,7 +1060,31 @@ export const Arena = ({ onClose }: { onClose: () => void }) => {
                                 <motion.div className="battle-result-overlay" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
                                     <div className="battle-result-card">
                                         <div className="defeat-title">DEFEAT</div>
-                                        <p style={{ marginBottom: '2rem', color: '#94a3b8' }}>The tower rejects you.</p>
+                                        <p style={{ marginBottom: '1rem', color: '#94a3b8' }}>The tower rejects you.</p>
+                                        {(() => {
+                                            const breakdown = getDetailedCombatBreakdown();
+                                            return (
+                                                <div className="battle-report">
+                                                    <div className="report-header">📊 BATTLE REPORT</div>
+                                                    <div className="report-section">
+                                                        <div className="report-section-title">⚔️ Offense Power ({breakdown.atk.total})</div>
+                                                        <div className="report-sources">
+                                                            {breakdown.atk.sources.map((s, i) => (
+                                                                <span key={i} className="report-source">{s.label}: {s.value > 0 ? '+' : ''}{s.value}</span>
+                                                            ))}
+                                                        </div>
+                                                    </div>
+                                                    <div className="report-section">
+                                                        <div className="report-section-title">🛡️ Defense Power ({breakdown.def.total})</div>
+                                                        <div className="report-sources">
+                                                            {breakdown.def.sources.map((s, i) => (
+                                                                <span key={i} className="report-source">{s.label}: {s.value > 0 ? '+' : ''}{s.value}</span>
+                                                            ))}
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            );
+                                        })()}
                                         <button className="continue-btn" style={{ background: '#ef4444' }} onClick={handleDefeat}>RETURN</button>
                                     </div>
                                 </motion.div>

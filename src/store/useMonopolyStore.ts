@@ -387,6 +387,21 @@ export const useMonopolyStore = create<MonopolyState>()(
                         useAchievementTrophyStore.getState().unlockEtherealCowTrophy();
                     });
                 }
+                // 1 in 25,000 - GOLDEN GOLDFISH
+                else if (roll < 0.00004) {
+                    result = {
+                        type: 'godly',
+                        message: '🐠✨ GOLDEN FORTUNE! You unlocked the GOLDEN GOLDFISH! 1 in 25,000!',
+                        luckXpBonus: 500,
+                        unlockedPet: 'golden_goldfish',
+                    };
+                    import('./useSkillTrophyStore').then(({ useSkillTrophyStore }) => {
+                        useSkillTrophyStore.getState().recordRareRoll(25000);
+                    });
+                    import('./useAchievementTrophyStore').then(({ useAchievementTrophyStore }) => {
+                        useAchievementTrophyStore.getState().unlockGoldenGoldfishTrophy();
+                    });
+                }
                 // 1 in 10,000 - GODLY LUCK
                 else if (roll < 0.0001) {
                     result = {

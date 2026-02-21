@@ -1,0 +1,68 @@
+.gacha-panel {
+    position: relative;
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+    box-shadow: var(--shadow-lg);
+    color: var(--gacha-text-primary);
+}
+
+.gacha-panel::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    padding: 1px;
+    background: var(--border-subtle);
+    -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+    pointer-events: none;
+}
+
+.gacha-panel.variant-glass {
+    background: var(--gacha-bg-panel);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+}
+
+.gacha-panel.variant-glass::before {
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.2) 0%, rgba(255, 255, 255, 0.05) 100%);
+}
+
+.gacha-panel.variant-solid {
+    background: var(--gacha-bg-panel-solid);
+}
+
+.gacha-panel.variant-bordered {
+    background: var(--gacha-bg-panel);
+    border: 1px solid var(--gacha-primary);
+    box-shadow: var(--shadow-lg), var(--glow-primary);
+}
+
+.gacha-panel.variant-bordered::before {
+    display: none;
+    /* Uses actual border */
+}
+
+.gacha-panel-inner {
+    position: relative;
+    z-index: 1;
+    height: 100%;
+}
+
+.gacha-panel.padding-none .gacha-panel-inner {
+    padding: 0;
+}
+
+.gacha-panel.padding-sm .gacha-panel-inner {
+    padding: var(--space-3);
+}
+
+.gacha-panel.padding-md .gacha-panel-inner {
+    padding: var(--space-4);
+}
+
+.gacha-panel.padding-lg .gacha-panel-inner {
+    padding: var(--space-6);
+}
