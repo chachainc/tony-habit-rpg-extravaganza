@@ -19,6 +19,7 @@ import { MarketplaceTown } from './features/marketplace/MarketplaceTown';
 import { TomeOfKnowledge } from './features/tome/TomeOfKnowledge';
 import { Library } from './features/library/Library';
 import { GymTracker } from './features/gym/GymTracker';
+import { HealthTracker } from './features/health/HealthTracker';
 import { Conquest } from './features/conquest/Conquest';
 import { SecurityPage } from './features/security/SecurityPage';
 import { LoginScreen } from './features/auth/LoginScreen';
@@ -145,6 +146,7 @@ function App() {
           <Route path="tome" element={<TomeOfKnowledge />} />
           <Route path="library" element={<Library />} />
           <Route path="gym" element={<GymTracker />} />
+          <Route path="health" element={<HealthTracker />} />
           <Route path="conquest" element={<Conquest />} />
           <Route path="security" element={<SecurityPage />} />
           <Route path="shop" element={<ShopModal category="general" onClose={() => window.history.back()} />} />

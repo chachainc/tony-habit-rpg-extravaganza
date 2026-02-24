@@ -1,383 +1,435 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useEffect, useRef, useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Moon, Sun, Sunrise, Sunset, BedDouble, Sparkles, Trophy, DoorOpen, Dumbbell } from 'lucide-react';
-import { usePetStore } from '../../store/usePetStore';
+import { X, Trophy, BookOpen, Shirt, ArrowUp, ArrowDown, ArrowLeft, ArrowRight, BedDouble, Store } from 'lucide-react';
+import { useRoomStore } from '../../store/useRoomStore';
 import { useInventoryStore, ITEM_DB } from '../../store/useInventoryStore';
-import { useDayStore } from '../../store/useDayStore';
-import { useGameStore } from '../../store/useGameStore';
-import { useBattleStore } from '../../store/useBattleStore';
-import { useBookTrophyStore } from '../../store/useBookTrophyStore';
+import { usePetStore } from '../../store/usePetStore';
+import { useTitleStore } from '../../store/useTitleStore';
+import { useAuraStore, AURAS } from '../../store/useAuraStore';
 import { ITEM_DATABASE } from '../../data/items';
-import { TrophyPedestal } from './TrophyPedestal';
-import { TrophyHall } from './TrophyHall';
-import { SleepLog } from './SleepLog';
 import { SceneShell } from '../../components/scene';
-import { Panel } from '../../components/ui/Panel';
-import { GachaButton } from '../../components/ui/GachaButton';
+import { WardrobePanel } from './WardrobePanel';
+import { BookshelfPanel } from './BookshelfPanel';
+import { SleepPanel } from './SleepPanel';
+import { TrophyPanel } from './TrophyPanel';
+import { ShopModal } from '../shop/ShopModal';
+
+// AI-generated assets
 import homeCampBg from '../../assets/backgrounds/home_camp.png';
-import './PlayerRoom.css';
+import trophyCaseBg from '../../assets/backgrounds/trophy_case.png';
+import bookshelfBg from '../../assets/backgrounds/bookshelf_display.png';
+import playerSprite from '../../assets/sprites/player.png';
+import './WalkableRoom.css';
+import './PlayerRoom.css'; // Use existing css alongside WalkableRoom CSS
 
-interface Props {
-    onClose: () => void;
-}
+type ActivePanel = 'wardrobe' | 'bookshelf' | 'sleep' | 'trophy' | 'store' | null;
 
-type TimeOfDay = 'morning' | 'afternoon' | 'evening' | 'night';
-
-const getTimeOfDay = (): TimeOfDay => {
-    const hour = parseInt(
-        new Date().toLocaleString('en-US', {
-            timeZone: 'America/New_York',
-            hour: 'numeric',
-            hour12: false
-        })
-    );
-    if (hour >= 6 && hour < 12) return 'morning';
-    if (hour >= 12 && hour < 18) return 'afternoon';
-    if (hour >= 18 && hour < 21) return 'evening';
-    return 'night';
+// Room layout config
+const ROOM_LAYOUT = {
+    gridSize: { width: 12, height: 10 },
+    tileSize: 64,
 };
 
-const TIME_ICONS: Record<TimeOfDay, React.ReactNode> = {
-    morning: <Sunrise size={16} />,
-    afternoon: <Sun size={16} />,
-    evening: <Sunset size={16} />,
-    night: <Moon size={16} />,
+const isWalkable = (x: number, y: number, placedFurniture: { gridX: number; gridY: number }[]): boolean => {
+    if (x < 0 || x >= ROOM_LAYOUT.gridSize.width) return false;
+    if (y < 0 || y >= ROOM_LAYOUT.gridSize.height) return false;
+    for (const furniture of placedFurniture) {
+        if (furniture.gridX === x && furniture.gridY === y) {
+            return false;
+        }
+    }
+    return true;
 };
 
-const TIME_LABELS: Record<TimeOfDay, string> = {
-    morning: 'Good Morning',
-    afternoon: 'Good Afternoon',
-    evening: 'Good Evening',
-    night: 'Good Night',
-};
-
-export const PlayerRoom = ({ onClose }: Props) => {
-    const navigate = useNavigate();
-    const [timeOfDay, setTimeOfDay] = useState<TimeOfDay>(getTimeOfDay);
-    const [isResting, setIsResting] = useState(false);
-    const [showTrophyHall, setShowTrophyHall] = useState(false);
-    const [showSleepLog, setShowSleepLog] = useState(false);
-
-    // Stores
-    const { activePet, name: petName } = usePetStore();
+export const PlayerRoom = ({ onClose }: { onClose: () => void }) => {
+    const { playerPosition, setPlayerPosition } = useRoomStore();
     const { items } = useInventoryStore();
-    const { playerCurrentHP, playerMaxHP } = useDayStore();
-    const { skills, getAttack, getDefense, getMagicAttack, getMaxMP } = useGameStore();
-    const { currentMP, restoreMP } = useBattleStore();
-    const { totalBooksRead, getIntelligenceBonus, getMaxMPBonus } = useBookTrophyStore();
+    const { activePet, name: petName } = usePetStore();
+    const { activeTitle, getUnlockedTitleDefs } = useTitleStore();
+    const { activeAuraId } = useAuraStore();
 
-    // Refresh time of day periodically
-    useEffect(() => {
-        const interval = setInterval(() => {
-            setTimeOfDay(getTimeOfDay());
-        }, 60000); // Check every minute
-        return () => clearInterval(interval);
-    }, []);
+    const [activePanel, setActivePanel] = useState<ActivePanel>(null);
+    const [tooltipSeen, setTooltipSeen] = useState(false);
+    const keysPressed = useRef<Set<string>>(new Set());
 
-    // Get active pet sprite
+    const isMobile = window.innerWidth <= 768;
+
+    // Get active aura and titles
+    const activeAura = useMemo(() => AURAS.find(a => a.id === activeAuraId), [activeAuraId]);
+    const activeTitleDef = useMemo(() => getUnlockedTitleDefs().find(t => t.id === activeTitle), [activeTitle, getUnlockedTitleDefs]);
+
+    // Pet Sprite
     const petData = ITEM_DATABASE[activePet];
     const petSprite = petData?.icon || '🐮';
 
-    // Get owned furniture
-    const ownedFurniture = Object.entries(items)
-        .filter(([id]) => ITEM_DB[id]?.type === 'furniture')
-        .map(([id, count]) => ({ ...ITEM_DB[id], count }));
+    // Parse furniture from inventory
+    const ownedFurniture = useMemo(() => {
+        return Object.entries(items)
+            .filter(([itemId]) => ITEM_DB[itemId]?.type === 'furniture')
+            .map(([itemId, count], index) => {
+                const itemData = ITEM_DB[itemId];
+                return {
+                    ...itemData,
+                    id: itemId,
+                    count,
+                    gridX: 2 + (index % 4) * 2,
+                    gridY: 3 + Math.floor(index / 4) * 2,
+                };
+            });
+    }, [items]);
 
-    // Calculate rest MP restoration
-    const sleepLevel = skills['Sleep'].level;
-    const flexLevel = skills['Flexibility'].level;
-    const restMPAmount = Math.floor(10 + ((sleepLevel + flexLevel) / 2) * 2);
-    const maxMP = getMaxMP();
+    // Keyboard Movement
+    useEffect(() => {
+        if (activePanel) return; // Disable movement when panel is open
 
-    // Check for Cleanliness Aura (Level 30+ Housemaid furniture)
-    const hasCleanlinessAura = ownedFurniture.some(f => f.id === 'celestial_chandelier');
-    const restMPWithAura = hasCleanlinessAura ? Math.floor(restMPAmount * 1.1) : restMPAmount;
+        const handleKeyDown = (e: KeyboardEvent) => {
+            const key = e.key.toLowerCase();
+            if (['w', 'a', 's', 'd', 'arrowup', 'arrowleft', 'arrowdown', 'arrowright'].includes(key)) {
+                e.preventDefault();
+                keysPressed.current.add(key);
+            }
+            if (key === 'escape') {
+                setActivePanel(null);
+            }
+            if (key === 'e') {
+                handleInteract();
+            }
+        };
 
-    // Room Comfort calculation (each furniture adds comfort)
-    const roomComfort = ownedFurniture.reduce((total, item) => total + (10 * item.count), 0);
-    const comfortBonus = Math.floor(roomComfort / 100); // +1% HP/MP regen per 100 comfort
+        const handleKeyUp = (e: KeyboardEvent) => {
+            const key = e.key.toLowerCase();
+            keysPressed.current.delete(key);
+        };
 
-    // Room background based on Housemaid level
-    const housemaidLevel = skills['Housemaid'].level;
-    const getRoomTheme = () => {
-        if (housemaidLevel >= 50) return 'arcane-sanctum';
-        if (housemaidLevel >= 25) return 'noble-manor';
-        if (housemaidLevel >= 10) return 'clean-cottage';
-        return 'dusty-cellar';
+        window.addEventListener('keydown', handleKeyDown);
+        window.addEventListener('keyup', handleKeyUp);
+        return () => {
+            window.removeEventListener('keydown', handleKeyDown);
+            window.removeEventListener('keyup', handleKeyUp);
+        };
+    }, [activePanel]);
+
+    // Movement Loop
+    useEffect(() => {
+        if (activePanel) return;
+
+        const intervalId = setInterval(() => {
+            let dx = 0;
+            let dy = 0;
+
+            if (keysPressed.current.has('w') || keysPressed.current.has('arrowup')) dy -= 1;
+            if (keysPressed.current.has('s') || keysPressed.current.has('arrowdown')) dy += 1;
+            if (keysPressed.current.has('a') || keysPressed.current.has('arrowleft')) dx -= 1;
+            if (keysPressed.current.has('d') || keysPressed.current.has('arrowright')) dx += 1;
+
+            if (dx !== 0 || dy !== 0) {
+                const newX = playerPosition.x + dx;
+                const newY = playerPosition.y + dy;
+
+                if (isWalkable(newX, newY, ownedFurniture)) {
+                    setPlayerPosition(newX, newY);
+                }
+            }
+        }, 150);
+
+        return () => clearInterval(intervalId);
+    }, [playerPosition, setPlayerPosition, ownedFurniture, activePanel]);
+
+    // Setup coordinates for interactables
+    const interactables = {
+        trophy: { x: 10, y: 1, label: 'Trophy Hall', icon: <Trophy size={18} />, panel: 'trophy' as ActivePanel },
+        bookshelf: { x: 0, y: 1, label: 'Library', icon: <BookOpen size={18} />, panel: 'bookshelf' as ActivePanel },
+        wardrobe: { x: 5, y: 0, label: 'Closet', icon: <Shirt size={18} />, panel: 'wardrobe' as ActivePanel },
+        bed: { x: 2, y: 0, label: 'Bed (Sleep Log)', icon: <BedDouble size={18} />, panel: 'sleep' as ActivePanel },
+        store: { x: 8, y: 8, label: 'Furniture Store', icon: <Store size={18} />, panel: 'store' as ActivePanel }
     };
-    const roomTheme = getRoomTheme();
 
-    const handleRest = useCallback(() => {
-        if (isResting) return;
-        setIsResting(true);
+    // Calculate distances to find closest interactable
+    const getNearbyInteractable = () => {
+        for (const obj of Object.values(interactables)) {
+            const dist = Math.abs(obj.x - playerPosition.x) + Math.abs(obj.y - playerPosition.y);
+            if (dist <= 1.5) return obj; // Using 1.5 because some sprites are 2 tiles wide
+        }
+        return null;
+    };
 
-        // Restore MP
-        restoreMP(restMPWithAura);
+    const nearbyObj = getNearbyInteractable();
 
-        // Reset resting state after animation
-        setTimeout(() => setIsResting(false), 1500);
-    }, [isResting, restMPWithAura, restoreMP]);
+    const handleInteract = () => {
+        if (nearbyObj) {
+            setActivePanel(nearbyObj.panel);
+            setTooltipSeen(true);
+        }
+    };
 
-    // Stats
-    const atk = getAttack();
-    const def = getDefense();
-    const magicAtk = getMagicAttack();
-    const intBonus = getIntelligenceBonus();
-    const mpBonus = getMaxMPBonus();
+    // Mobile D-Pad Handlers
+    const handleDpadDown = (direction: string) => keysPressed.current.add(direction);
+    const handleDpadUp = (direction: string) => keysPressed.current.delete(direction);
 
-    // Firelight glow positions for bonfire scene
-    const fireplaceGlows = [
-        { x: 50, y: 55, color: '#ff6b35', intensity: 1.5 }, // Central bonfire
-        { x: 48, y: 58, color: '#ff9500', intensity: 0.8 }, // Fire glow spread
-    ];
+    // Grid Tap-To-Move Handler
+    const handleGridTap = (e: React.MouseEvent) => {
+        if (activePanel) return;
+
+        const gridContainer = e.currentTarget;
+        const rect = gridContainer.getBoundingClientRect();
+
+        // Ensure click/tap is inside the grid
+        if (e.clientX >= rect.left && e.clientX <= rect.right && e.clientY >= rect.top && e.clientY <= rect.bottom) {
+            const scale = rect.width / (ROOM_LAYOUT.gridSize.width * ROOM_LAYOUT.tileSize);
+            const clientX = e.clientX - rect.left;
+            const clientY = e.clientY - rect.top;
+
+            const gridX = Math.floor(clientX / (ROOM_LAYOUT.tileSize * scale));
+            const gridY = Math.floor(clientY / (ROOM_LAYOUT.tileSize * scale));
+
+            const boundedX = Math.max(0, Math.min(ROOM_LAYOUT.gridSize.width - 1, gridX));
+            const boundedY = Math.max(0, Math.min(ROOM_LAYOUT.gridSize.height - 1, gridY));
+
+            if (isWalkable(boundedX, boundedY, ownedFurniture)) {
+                setPlayerPosition(boundedX, boundedY);
+            }
+        }
+    };
 
     return (
-        <div className={`player-room-overlay time-${timeOfDay}`} onClick={onClose}>
+        <div className="player-room-container">
             <SceneShell
                 backgroundImage={homeCampBg}
                 showFog={true}
                 showVignette={true}
-                showEmbers={timeOfDay === 'night' || timeOfDay === 'evening'}
-                glowPoints={fireplaceGlows}
+                showEmbers={true}
             >
-                <Panel
-                    variant="glass"
-                    padding="none"
-                    className={`player-room room-theme-${roomTheme} room-with-scene`}
-                    onClick={(e: React.MouseEvent) => e.stopPropagation()}
-                >
-                    {/* Fixed Stats Header */}
-                    <div className="room-stats-header">
-                        <div className="room-header-left">
-                            <h2>🏠 Your Room</h2>
-                            <div className="time-indicator">
-                                {TIME_ICONS[timeOfDay]}
-                                <span>{TIME_LABELS[timeOfDay]}</span>
-                            </div>
-                        </div>
-
-                        {/* Tab Toggle */}
-                        <div className="room-tab-toggle">
-                            <GachaButton
-                                variant={!showTrophyHall ? 'primary' : 'ghost'}
-                                size="sm"
-                                onClick={() => setShowTrophyHall(false)}
-                            >
-                                🏠 Room
-                            </GachaButton>
-                            <GachaButton
-                                variant={showTrophyHall ? 'primary' : 'ghost'}
-                                size="sm"
-                                onClick={() => setShowTrophyHall(true)}
-                            >
-                                <Trophy size={14} /> Trophies
-                            </GachaButton>
-                            <GachaButton
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => setShowSleepLog(true)}
-                            >
-                                💤 Sleep Log
-                            </GachaButton>
-                            <GachaButton
-                                variant="secondary"
-                                size="sm"
-                                className="enter-room-btn"
-                                onClick={() => navigate('/walkable-room')}
-                            >
-                                <DoorOpen size={14} /> Enter Room
-                            </GachaButton>
-                            <GachaButton
-                                variant="danger"
-                                size="sm"
-                                className="tab-btn--gym"
-                                onClick={() => navigate('/gym')}
-                            >
-                                <Dumbbell size={14} /> Gym
-                            </GachaButton>
-                        </div>
-
-                        <div className="room-stats-bar">
-                            <div className="stat-item stat-hp">
-                                <span className="stat-label">HP</span>
-                                <div className="stat-bar-mini">
-                                    <div
-                                        className="stat-fill hp-fill"
-                                        style={{ width: `${(playerCurrentHP / playerMaxHP) * 100}%` }}
-                                    />
-                                </div>
-                                <span className="stat-value">{playerCurrentHP}/{playerMaxHP}</span>
-                            </div>
-
-                            <div className="stat-item stat-mp">
-                                <span className="stat-label">MP</span>
-                                <div className="stat-bar-mini">
-                                    <div
-                                        className="stat-fill mp-fill"
-                                        style={{ width: `${(currentMP / maxMP) * 100}%` }}
-                                    />
-                                </div>
-                                <span className="stat-value">{currentMP}/{maxMP}</span>
-                            </div>
-
-                            <div className="stat-item">
-                                <span className="stat-icon">⚔️</span>
-                                <span className="stat-value">{atk}</span>
-                            </div>
-
-                            <div className="stat-item">
-                                <span className="stat-icon">🛡️</span>
-                                <span className="stat-value">{def}</span>
-                            </div>
-
-                            <div className="stat-item">
-                                <span className="stat-icon">✨</span>
-                                <span className="stat-value">{magicAtk}</span>
-                                {intBonus > 0 && <span className="bonus-indicator">+{intBonus}</span>}
-                            </div>
-                        </div>
-
-                        <button className="room-close-btn" onClick={onClose}>
-                            <X size={24} />
+                <div className="walkable-room">
+                    {/* Top Action Bar */}
+                    <div className="room-top-bar">
+                        <button className="room-exit-btn" onClick={onClose}>
+                            <X size={20} /> Exit Room
                         </button>
                     </div>
 
-                    {/* Conditional Tab Content */}
-                    {showTrophyHall ? (
-                        <TrophyHall />
-                    ) : (
-                        <>
-                            {/* Room Comfort Meter */}
-                            <div className="room-comfort-meter">
-                                <span className="comfort-label">🛋️ Room Comfort</span>
-                                <div className="comfort-bar">
-                                    <div
-                                        className="comfort-fill"
-                                        style={{ width: `${Math.min(100, roomComfort / 5)}%` }}
-                                    />
-                                </div>
-                                <span className="comfort-value">{roomComfort} pts (+{comfortBonus}% regen)</span>
-                            </div>
+                    {/* Floor Grid */}
+                    <div
+                        className="room-grid"
+                        onClick={handleGridTap}
+                        style={{
+                            width: ROOM_LAYOUT.gridSize.width * ROOM_LAYOUT.tileSize,
+                            height: ROOM_LAYOUT.gridSize.height * ROOM_LAYOUT.tileSize,
+                            touchAction: 'none' // Prevent pull-to-refresh on mobile while tapping
+                        }}
+                    >
+                        {/* Bed */}
+                        <motion.div
+                            className={`room-hotspot bed-hotspot ${nearbyObj?.panel === 'sleep' ? 'nearby' : ''}`}
+                            style={{
+                                left: interactables.bed.x * ROOM_LAYOUT.tileSize,
+                                top: interactables.bed.y * ROOM_LAYOUT.tileSize,
+                                width: ROOM_LAYOUT.tileSize * 1.5,
+                                height: ROOM_LAYOUT.tileSize * 2,
+                            }}
+                            onPointerUp={(e) => { e.stopPropagation(); setActivePanel('sleep'); }}
+                        >
+                            <BedDouble size={32} className="hotspot-icon" />
+                            <div className="hotspot-label">Bed</div>
+                        </motion.div>
 
-                            {/* Room View */}
-                            <div className={`room-scene time-${timeOfDay}`}>
-                                {/* Window with Day/Night */}
-                                <div className="room-window">
-                                    <div className="window-view">
-                                        {timeOfDay === 'night' && (
-                                            <>
-                                                <div className="star" style={{ top: '20%', left: '30%' }} />
-                                                <div className="star" style={{ top: '40%', left: '60%' }} />
-                                                <div className="star" style={{ top: '25%', left: '80%' }} />
-                                                <div className="moon-icon">🌙</div>
-                                            </>
-                                        )}
-                                        {timeOfDay === 'evening' && <div className="sunset-glow" />}
-                                        {timeOfDay === 'afternoon' && <div className="sun-icon">☀️</div>}
-                                        {timeOfDay === 'morning' && <div className="sunrise-glow" />}
-                                    </div>
-                                </div>
+                        {/* Wardrobe */}
+                        <motion.div
+                            className={`room-hotspot wardrobe-hotspot ${nearbyObj?.panel === 'wardrobe' ? 'nearby' : ''}`}
+                            style={{
+                                left: interactables.wardrobe.x * ROOM_LAYOUT.tileSize,
+                                top: interactables.wardrobe.y * ROOM_LAYOUT.tileSize,
+                                width: ROOM_LAYOUT.tileSize,
+                                height: ROOM_LAYOUT.tileSize * 1.5,
+                            }}
+                            onPointerUp={(e) => { e.stopPropagation(); setActivePanel('wardrobe'); }}
+                        >
+                            <Shirt size={32} className="hotspot-icon" />
+                            <div className="hotspot-label">Closet</div>
+                        </motion.div>
 
-                                {/* Fireplace (glows at night) */}
-                                <div className={`fireplace ${timeOfDay === 'night' ? 'lit' : ''}`}>
-                                    🔥
-                                </div>
+                        {/* Bookshelf */}
+                        <motion.div
+                            className={`room-hotspot bookshelf-hotspot ${nearbyObj?.panel === 'bookshelf' ? 'nearby' : ''}`}
+                            style={{
+                                left: interactables.bookshelf.x * ROOM_LAYOUT.tileSize,
+                                top: interactables.bookshelf.y * ROOM_LAYOUT.tileSize,
+                                width: ROOM_LAYOUT.tileSize * 2.5,
+                                height: ROOM_LAYOUT.gridSize.height * ROOM_LAYOUT.tileSize * 0.6,
+                            }}
+                            onPointerUp={(e) => { e.stopPropagation(); setActivePanel('bookshelf'); }}
+                        >
+                            <img src={bookshelfBg} alt="Bookshelf" className="bookshelf-image" />
+                            <div className="hotspot-label overlay-label"><BookOpen size={16} /> Library</div>
+                        </motion.div>
 
-                                {/* Trophy Pedestal - Central Feature */}
-                                <TrophyPedestal />
+                        {/* Trophy Case */}
+                        <motion.div
+                            className={`room-hotspot trophy-hotspot ${nearbyObj?.panel === 'trophy' ? 'nearby' : ''}`}
+                            style={{
+                                left: interactables.trophy.x * ROOM_LAYOUT.tileSize - ROOM_LAYOUT.tileSize,
+                                top: interactables.trophy.y * ROOM_LAYOUT.tileSize,
+                                width: ROOM_LAYOUT.tileSize * 2.5,
+                                height: ROOM_LAYOUT.gridSize.height * ROOM_LAYOUT.tileSize * 0.6,
+                            }}
+                            onPointerUp={(e) => { e.stopPropagation(); setActivePanel('trophy'); }}
+                        >
+                            <img src={trophyCaseBg} alt="Trophy Case" className="trophy-case-image" />
+                            <div className="hotspot-label overlay-label"><Trophy size={16} /> Trophy Hall</div>
+                        </motion.div>
 
-                                {/* Furniture Grid */}
-                                <div className="room-furniture">
-                                    {ownedFurniture.length === 0 ? (
-                                        <p className="empty-room-msg">Your room is empty! Visit the Furniture Store.</p>
-                                    ) : (
-                                        ownedFurniture.slice(0, 6).map((item) => (
-                                            <div key={item.id} className="placed-furniture" title={item.name}>
-                                                <span className="furniture-icon">{item.icon}</span>
-                                                {item.count > 1 && <span className="furniture-count">x{item.count}</span>}
-                                            </div>
-                                        ))
-                                    )}
-                                </div>
+                        {/* Store Kiosk */}
+                        <motion.div
+                            className={`room-hotspot store-hotspot ${nearbyObj?.panel === 'store' ? 'nearby' : ''}`}
+                            style={{
+                                left: interactables.store.x * ROOM_LAYOUT.tileSize,
+                                top: interactables.store.y * ROOM_LAYOUT.tileSize,
+                                width: ROOM_LAYOUT.tileSize,
+                                height: ROOM_LAYOUT.tileSize,
+                            }}
+                            onPointerUp={(e) => { e.stopPropagation(); setActivePanel('store'); }}
+                            animate={{ y: [0, -3, 0] }}
+                            transition={{ duration: 2, repeat: Infinity }}
+                        >
+                            <Store size={32} className="hotspot-icon" />
+                            <div className="hotspot-label">Store</div>
+                        </motion.div>
 
-                                {/* Pet Display */}
-                                <div className="room-pet">
-                                    <motion.div
-                                        className="pet-sprite"
-                                        animate={{ y: [0, -5, 0] }}
-                                        transition={{ duration: 2, repeat: Infinity }}
-                                    >
-                                        {petSprite}
-                                    </motion.div>
-                                    <span className="pet-name">{petName}</span>
-                                    <div className="pet-luck-boost">🍀 +Luck</div>
-                                </div>
-
-                                {/* Rest Button */}
-                                <GachaButton
-                                    className={`rest-button ${isResting ? 'resting' : ''}`}
-                                    onClick={handleRest}
-                                    disabled={isResting || currentMP >= maxMP}
-                                    variant="primary"
-                                    size="lg"
+                        {/* Placed Furniture */}
+                        {ownedFurniture.map((furniture) => {
+                            const isNearby = Math.abs(furniture.gridX - playerPosition.x) + Math.abs(furniture.gridY - playerPosition.y) <= 1;
+                            return (
+                                <motion.div
+                                    key={furniture.id}
+                                    className={`room-furniture ${isNearby ? 'nearby' : ''}`}
+                                    style={{
+                                        left: furniture.gridX * ROOM_LAYOUT.tileSize,
+                                        top: furniture.gridY * ROOM_LAYOUT.tileSize,
+                                        width: ROOM_LAYOUT.tileSize,
+                                        height: ROOM_LAYOUT.tileSize,
+                                    }}
                                 >
-                                    <BedDouble size={20} />
-                                    <span>Rest</span>
-                                    <span className="rest-amount">+{restMPWithAura} MP</span>
-                                </GachaButton>
-
-                                {/* Resting Animation */}
-                                <AnimatePresence>
-                                    {isResting && (
-                                        <motion.div
-                                            className="rest-effect"
-                                            initial={{ opacity: 0 }}
-                                            animate={{ opacity: 1 }}
-                                            exit={{ opacity: 0 }}
-                                        >
-                                            <Sparkles size={40} />
-                                            <span>Resting...</span>
-                                        </motion.div>
+                                    <div className="furniture-icon">{furniture.icon}</div>
+                                    {furniture.count > 1 && (
+                                        <span className="furniture-count">x{furniture.count}</span>
                                     )}
-                                </AnimatePresence>
+                                </motion.div>
+                            );
+                        })}
 
-                                {/* Cleanliness Aura Indicator */}
-                                {hasCleanlinessAura && (
-                                    <div className="cleanliness-aura">
-                                        ✨ Cleanliness Aura Active (+10% Rest Bonus)
-                                    </div>
-                                )}
-                            </div>
+                        {/* Pet */}
+                        <motion.div
+                            className="room-pet-follower"
+                            style={{
+                                left: (playerPosition.x - 1) * ROOM_LAYOUT.tileSize,
+                                top: playerPosition.y * ROOM_LAYOUT.tileSize,
+                                width: ROOM_LAYOUT.tileSize,
+                                height: ROOM_LAYOUT.tileSize,
+                            }}
+                            animate={{ y: [0, -4, 0] }}
+                            transition={{ duration: 1.5, repeat: Infinity }}
+                        >
+                            <span className="pet-emoji">{petSprite}</span>
+                            <span className="pet-name-tag">{petName}</span>
+                        </motion.div>
 
-                            {/* Trophy Info Panel */}
-                            <div className="trophy-info-panel">
-                                <div className="trophy-stat">
-                                    <span className="trophy-stat-label">📚 Books Read</span>
-                                    <span className="trophy-stat-value">{totalBooksRead}</span>
-                                </div>
-                                {intBonus > 0 && (
-                                    <div className="trophy-stat">
-                                        <span className="trophy-stat-label">🧠 INT Bonus</span>
-                                        <span className="trophy-stat-value">+{intBonus}</span>
-                                    </div>
+                        {/* Player */}
+                        <motion.div
+                            className="room-player"
+                            style={{
+                                left: playerPosition.x * ROOM_LAYOUT.tileSize,
+                                top: playerPosition.y * ROOM_LAYOUT.tileSize,
+                                width: ROOM_LAYOUT.tileSize,
+                                height: ROOM_LAYOUT.tileSize,
+                            }}
+                            animate={{ y: [0, -3, 0] }}
+                            transition={{ duration: 0.8, repeat: Infinity }}
+                        >
+                            <AnimatePresence>
+                                {activeAura && activeAura.id !== 'none' && (
+                                    <motion.div
+                                        className="player-aura-effect"
+                                        initial={{ opacity: 0, scale: 0.8 }}
+                                        animate={{
+                                            opacity: [0.4, 0.7, 0.4],
+                                            scale: [1, 1.2, 1],
+                                            background: `radial-gradient(circle, ${activeAura.color} 0%, transparent 70%)`
+                                        }}
+                                        transition={{ duration: 2, repeat: Infinity }}
+                                    />
                                 )}
-                                {mpBonus > 0 && (
-                                    <div className="trophy-stat">
-                                        <span className="trophy-stat-label">💧 Max MP Bonus</span>
-                                        <span className="trophy-stat-value">+{mpBonus}</span>
-                                    </div>
-                                )}
+                            </AnimatePresence>
+                            <img src={playerSprite} alt="Player" className="player-sprite" />
+                            {activeTitleDef && (
+                                <span className="player-title-tag">{activeTitleDef.name}</span>
+                            )}
+                        </motion.div>
+                    </div>
+
+                    {/* Proximity Interaction Prompt */}
+                    <AnimatePresence>
+                        {nearbyObj && !activePanel && (
+                            <motion.div
+                                className="room-item-prompt"
+                                initial={{ opacity: 0, y: 10 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                exit={{ opacity: 0, y: 10 }}
+                            >
+                                <span className="item-icon">{nearbyObj.icon}</span>
+                                {!isMobile && !tooltipSeen && <span className="press-key-hint">['E']</span>}
+                                {isMobile && !tooltipSeen ? <strong>Tap to Interact</strong> : <strong>{nearbyObj.label}</strong>}
+                            </motion.div>
+                        )}
+                    </AnimatePresence>
+
+                    {/* Mobile Controls */}
+                    {isMobile && !activePanel && (
+                        <div className="room-dpad" style={{ bottom: '120px' }}>
+                            <button className="dpad-btn dpad-up" onTouchStart={(e) => { e.preventDefault(); handleDpadDown('arrowup'); }} onTouchEnd={() => handleDpadUp('arrowup')}><ArrowUp size={20} /></button>
+                            <div className="dpad-middle-row">
+                                <button className="dpad-btn dpad-left" onTouchStart={(e) => { e.preventDefault(); handleDpadDown('arrowleft'); }} onTouchEnd={() => handleDpadUp('arrowleft')}><ArrowLeft size={20} /></button>
+                                <div className="dpad-center" />
+                                <button className="dpad-btn dpad-right" onTouchStart={(e) => { e.preventDefault(); handleDpadDown('arrowright'); }} onTouchEnd={() => handleDpadUp('arrowright')}><ArrowRight size={20} /></button>
                             </div>
-                        </>
+                            <button className="dpad-btn dpad-down" onTouchStart={(e) => { e.preventDefault(); handleDpadDown('arrowdown'); }} onTouchEnd={() => handleDpadUp('arrowdown')}><ArrowDown size={20} /></button>
+                        </div>
                     )}
-                </Panel>
+
+                    {/* Mobile Interact Overlay Button */}
+                    {isMobile && nearbyObj && !activePanel && (
+                        <button className="mobile-interact-btn" onClick={handleInteract} style={{ bottom: '120px' }}>
+                            {nearbyObj.icon} Interact
+                        </button>
+                    )}
+                </div>
             </SceneShell>
 
-            {/* Sleep Log Modal */}
-            {showSleepLog && (
-                <SleepLog onClose={() => setShowSleepLog(false)} />
-            )}
+            {/* Render Active Panel */}
+            <AnimatePresence>
+                {activePanel && (
+                    <motion.div
+                        className="room-modal-overlay"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        onClick={() => setActivePanel(null)}
+                    >
+                        <motion.div
+                            className="room-modal-container"
+                            initial={{ scale: 0.9, y: 30, opacity: 0 }}
+                            animate={{ scale: 1, y: 0, opacity: 1 }}
+                            exit={{ scale: 0.9, y: 30, opacity: 0 }}
+                            onClick={(e) => e.stopPropagation()}
+                        >
+                            {activePanel === 'wardrobe' && <WardrobePanel onClose={() => setActivePanel(null)} />}
+                            {activePanel === 'bookshelf' && <BookshelfPanel onClose={() => setActivePanel(null)} />}
+                            {activePanel === 'sleep' && <SleepPanel onClose={() => setActivePanel(null)} />}
+                            {activePanel === 'trophy' && <TrophyPanel onClose={() => setActivePanel(null)} />}
+                            {activePanel === 'store' && <ShopModal category="furniture" onClose={() => setActivePanel(null)} />}
+                        </motion.div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
         </div>
     );
 };

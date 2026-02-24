@@ -1,13 +1,14 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Sun, Moon, Zap, ListTodo, ArrowRight, Calendar, Gift, Flame, Trophy } from 'lucide-react';
+import { Sun, Moon, Zap, ListTodo, ArrowRight, Calendar, Gift, Flame, Trophy, Scale } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useDayStore } from '../../store/useDayStore';
 import { useGameStore } from '../../store/useGameStore';
 import { useCheckInStore, type CheckInReward } from '../../store/useCheckInStore';
+import { useHealthStore } from '../../store/useHealthStore';
 import './WakeUpModal.css';
 
-type Stage = 'sleep' | 'checkin' | 'xp_summary' | 'task_prompt';
+type Stage = 'sleep' | 'checkin' | 'weight' | 'xp_summary' | 'task_prompt';
 
 export const WakeUpModal = ({ onComplete }: { onComplete: () => void }) => {
     const navigate = useNavigate();
@@ -15,6 +16,7 @@ export const WakeUpModal = ({ onComplete }: { onComplete: () => void }) => {
     const { addSkillXp, addGlobalXp } = useGameStore();
     const { streakDay, streakCount, checkIn, getRewardForDay, getStreakStatus } = useCheckInStore();
     const { canCheckIn, missedYesterday } = getStreakStatus();
+    const { logWeight, hasLoggedWeightToday, getLastWeight } = useHealthStore();
 
     const [sleepScore, setSleepScore] = useState(75);
     const [readinessScore, setReadinessScore] = useState(75);
@@ -22,6 +24,7 @@ export const WakeUpModal = ({ onComplete }: { onComplete: () => void }) => {
     const [checkInReward, setCheckInReward] = useState<CheckInReward | null>(null);
     const [showCheckInReward, setShowCheckInReward] = useState(false);
     const [stage, setStage] = useState<Stage>('sleep');
+    const [weightInput, setWeightInput] = useState('');
 
     const handleWakeUp = () => {
         const xp = wakeUp(sleepScore, readinessScore);
@@ -53,10 +56,31 @@ export const WakeUpModal = ({ onComplete }: { onComplete: () => void }) => {
 
     const handleCheckInRewardContinue = () => {
         setShowCheckInReward(false);
-        setStage('xp_summary');
+        // Go to weight stage if not logged today
+        if (!hasLoggedWeightToday()) {
+            setStage('weight');
+        } else {
+            setStage('xp_summary');
+        }
     };
 
     const handleSkipCheckIn = () => {
+        if (!hasLoggedWeightToday()) {
+            setStage('weight');
+        } else {
+            setStage('xp_summary');
+        }
+    };
+
+    const handleLogWeight = () => {
+        const w = parseFloat(weightInput);
+        if (!isNaN(w) && w > 0) {
+            logWeight(w);
+        }
+        setStage('xp_summary');
+    };
+
+    const handleSkipWeight = () => {
         setStage('xp_summary');
     };
 
@@ -270,7 +294,66 @@ export const WakeUpModal = ({ onComplete }: { onComplete: () => void }) => {
                     )}
                 </AnimatePresence>
 
-                {/* ===== STAGE 3: XP SUMMARY ===== */}
+                {/* ===== STAGE 3: WEIGHT LOG ===== */}
+                {stage === 'weight' && (
+                    <motion.div
+                        className="wake-weight"
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.4 }}
+                    >
+                        <div className="wake-weight__header">
+                            <Scale size={28} />
+                            <h3>Daily Weigh-In</h3>
+                        </div>
+                        <p style={{ color: '#94a3b8', fontSize: '0.85rem', marginBottom: '1rem' }}>
+                            Step on the scale — track your progress!
+                        </p>
+                        {getLastWeight() && (
+                            <p style={{ color: '#475569', fontSize: '0.8rem', marginBottom: '0.5rem' }}>
+                                Last: {getLastWeight()} lbs
+                            </p>
+                        )}
+                        <div className="form-row" style={{ marginBottom: '1rem' }}>
+                            <label style={{ color: '#94a3b8', minWidth: 60 }}>Weight</label>
+                            <input
+                                type="number"
+                                value={weightInput}
+                                onChange={(e) => setWeightInput(e.target.value)}
+                                placeholder={getLastWeight() ? `${getLastWeight()}` : '180'}
+                                step="0.1"
+                                min="50"
+                                max="500"
+                                style={{
+                                    flex: 1,
+                                    background: 'rgba(15,23,42,0.6)',
+                                    border: '1px solid rgba(148,163,184,0.2)',
+                                    borderRadius: '0.5rem',
+                                    padding: '0.6rem 0.75rem',
+                                    color: '#e2e8f0',
+                                    fontSize: '0.9rem',
+                                    outline: 'none',
+                                    minHeight: '44px'
+                                }}
+                            />
+                            <span style={{ color: '#475569', fontSize: '0.8rem' }}>lbs</span>
+                        </div>
+                        <motion.button
+                            className="wake-checkin__btn"
+                            onClick={handleLogWeight}
+                            whileHover={{ scale: 1.03 }}
+                            whileTap={{ scale: 0.97 }}
+                        >
+                            <Scale size={18} />
+                            {weightInput ? 'Log Weight' : 'Skip'}
+                        </motion.button>
+                        <button className="wake-checkin__skip" onClick={handleSkipWeight}>
+                            Skip for now →
+                        </button>
+                    </motion.div>
+                )}
+
+                {/* ===== STAGE 4: XP SUMMARY ===== */}
                 {stage === 'xp_summary' && (
                     <motion.div
                         className="xp-result"
@@ -294,7 +377,7 @@ export const WakeUpModal = ({ onComplete }: { onComplete: () => void }) => {
                     </motion.div>
                 )}
 
-                {/* ===== STAGE 4: TASK BOARD PROMPT ===== */}
+                {/* ===== STAGE 5: TASK BOARD PROMPT ===== */}
                 {stage === 'task_prompt' && (
                     <motion.div
                         className="task-prompt"

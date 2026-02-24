@@ -535,7 +535,7 @@ export const Arena = ({ onClose }: { onClose: () => void }) => {
                                                     className={`power-details-btn ${showPowerDetails ? 'active' : ''}`}
                                                     onClick={() => setShowPowerDetails(!showPowerDetails)}
                                                 >
-                                                    📊 {showPowerDetails ? 'HIDE' : 'SHOW'} POWER BREAKDOWN
+                                                    📊 {showPowerDetails ? 'HIDE DETAILS' : 'POWER BREAKDOWN'}
                                                     {showPowerDetails ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
                                                 </button>
                                             </div>
@@ -561,11 +561,9 @@ export const Arena = ({ onClose }: { onClose: () => void }) => {
                                                     <div className="power-details-panel">
                                                         {renderStat('⚔️ ATK', breakdown.atk)}
                                                         {renderStat('🛡️ DEF', breakdown.def)}
-                                                        {renderStat('✨ MATK', breakdown.matk)}
                                                         {renderStat('❤️ HP', breakdown.hp)}
-                                                        {renderStat('💨 SPD', breakdown.spd)}
-                                                        {renderStat('🎯 CRIT', breakdown.critChance, '%')}
                                                         {renderStat('💎 MP', breakdown.mp)}
+                                                        {renderStat('💨 SPD', breakdown.spd)}
                                                         {breakdown.synergy.active && (
                                                             <div className="synergy-banner">
                                                                 🔗 {breakdown.synergy.description}

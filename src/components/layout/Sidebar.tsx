@@ -1,5 +1,5 @@
 import { NavLink } from 'react-router-dom';
-import { Home, House, CheckSquare, Cat, BarChart2, Settings, BookOpen, Swords, Dumbbell, Calendar, Crown, Shield } from 'lucide-react';
+import { Home, House, CheckSquare, Cat, BarChart2, Settings, BookOpen, Swords, Dumbbell, Calendar, Crown, Shield, Heart } from 'lucide-react';
 import './Sidebar.css';
 
 const NAV_ITEMS = [
@@ -11,6 +11,7 @@ const NAV_ITEMS = [
     { icon: Swords, label: 'Arena', path: '/arena' },
     { icon: Crown, label: 'Conquest', path: '/conquest' },
     { icon: Dumbbell, label: 'Gym', path: '/gym' },
+    { icon: Heart, label: 'Health', path: '/health' },
     { icon: Cat, label: 'Pet', path: '/pet' },
     { icon: BarChart2, label: 'Stats', path: '/stats' },
     { icon: Shield, label: 'Security', path: '/security' },

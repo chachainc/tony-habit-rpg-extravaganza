@@ -9,6 +9,8 @@ export interface Book {
     startedAt: string;
     completedAt: string | null;
     isComplete: boolean;
+    pagesRead?: number;
+    notes?: string;
 }
 
 interface BookState {
@@ -16,8 +18,9 @@ interface BookState {
     completedBooks: Book[];    // Finished books (permanent display)
 
     // Actions
-    addBook: (title: string, author: string) => void;
+    addBook: (title: string, author: string, pagesRead?: number, notes?: string) => void;
     completeBook: (bookId: string) => void;
+    logCompletedBook: (title: string, author: string, pagesRead?: number, notes?: string) => void;
     removeBook: (bookId: string) => void;
     getCompletedCount: () => number;
     getInProgressCount: () => number;
@@ -33,7 +36,7 @@ export const useBookStore = create<BookState>()(
             currentBooks: [],
             completedBooks: [],
 
-            addBook: (title: string, author: string) => {
+            addBook: (title: string, author: string, pagesRead?: number, notes?: string) => {
                 const now = new Date().toISOString();
                 const newBook: Book = {
                     id: `book-${Date.now()}`,
@@ -42,6 +45,8 @@ export const useBookStore = create<BookState>()(
                     startedAt: now,
                     completedAt: null,
                     isComplete: false,
+                    pagesRead,
+                    notes,
                 };
 
                 set((state) => ({
@@ -71,6 +76,29 @@ export const useBookStore = create<BookState>()(
                     currentBooks: currentBooks.filter(b => b.id !== bookId),
                     completedBooks: [...completedBooks, completedBook],
                 });
+            },
+
+            logCompletedBook: (title: string, author: string, pagesRead?: number, notes?: string) => {
+                const now = new Date().toISOString();
+                const newBook: Book = {
+                    id: `book-${Date.now()}`,
+                    title: title.trim(),
+                    author: author.trim(),
+                    startedAt: now,
+                    completedAt: now,
+                    isComplete: true,
+                    pagesRead,
+                    notes,
+                };
+
+                // Award XP
+                const gameStore = useGameStore.getState();
+                gameStore.addGlobalXp(BOOK_GLOBAL_XP_REWARD);
+                gameStore.addSkillXp('Intelligence', BOOK_INTELLIGENCE_XP_REWARD);
+
+                set((state) => ({
+                    completedBooks: [...state.completedBooks, newBook],
+                }));
             },
 
             removeBook: (bookId: string) => {

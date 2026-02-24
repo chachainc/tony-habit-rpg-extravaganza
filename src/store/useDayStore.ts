@@ -4,22 +4,26 @@ import { persist } from 'zustand/middleware';
 // Get current date string in Eastern Time
 const getEasternDateString = (): string => {
     const now = new Date();
-    // Format in Eastern Time
     const eastern = new Intl.DateTimeFormat('en-US', {
         timeZone: 'America/New_York',
         year: 'numeric',
         month: '2-digit',
         day: '2-digit',
     }).format(now);
-    // Convert MM/DD/YYYY to YYYY-MM-DD
     const [month, day, year] = eastern.split('/');
     return `${year}-${month}-${day}`;
 };
 
-export interface SleepEntry {
+export interface SleepLogEntry {
     date: string;
-    sleepScore: number;
-    readinessScore: number;
+    score: number;
+    durationMinutes?: number;
+    xpEarned: number;
+}
+
+export interface ReadinessLogEntry {
+    date: string;
+    score: number;
     xpEarned: number;
 }
 
@@ -27,15 +31,15 @@ interface DayState {
     lastWakeDate: string | null; // YYYY-MM-DD or null if never woken
     playerMaxHP: number;
     playerCurrentHP: number;
-    sleepScoreToday: number | null;
-    readinessScoreToday: number | null;
-    sleepHistory: SleepEntry[];
+    sleepLogs: SleepLogEntry[];
+    readinessLogs: ReadinessLogEntry[];
 
     isNewDay: () => boolean;
-    wakeUp: (sleepScore: number, readinessScore: number) => number; // Returns total XP earned
+    logSleep: (score: number, durationMinutes?: number) => number; // Returns total XP earned
+    logReadiness: (score: number) => number; // Returns total XP earned
+    wakeUp: (sleepScore: number, readinessScore: number) => number; // Legacy compatibility
     takeDamage: (amount: number) => void;
     heal: (amount: number) => void;
-    getSleepHistory: () => SleepEntry[];
     getEasternTime: () => string;
 }
 
@@ -54,9 +58,8 @@ export const useDayStore = create<DayState>()(
             lastWakeDate: null,
             playerMaxHP: 100,
             playerCurrentHP: 100,
-            sleepScoreToday: null,
-            readinessScoreToday: null,
-            sleepHistory: [],
+            sleepLogs: [],
+            readinessLogs: [],
 
             isNewDay: () => {
                 const today = getEasternDateString();
@@ -64,26 +67,69 @@ export const useDayStore = create<DayState>()(
                 return !last || today > last;
             },
 
-            wakeUp: (sleepScore, readinessScore) => {
+            logSleep: (score: number, durationMinutes?: number) => {
                 const today = getEasternDateString();
-                const sleepXp = calculateSleepXP(sleepScore);
-                const readinessXp = calculateSleepXP(readinessScore); // Same scale as sleep
+                const xpEarned = calculateSleepXP(score);
 
-                const newEntry: SleepEntry = {
+                const newEntry: SleepLogEntry = {
                     date: today,
-                    sleepScore,
-                    readinessScore,
-                    xpEarned: sleepXp + readinessXp
+                    score,
+                    durationMinutes,
+                    xpEarned
                 };
 
-                set((state) => ({
-                    lastWakeDate: today,
-                    playerCurrentHP: get().playerMaxHP, // Full heal on wake
-                    sleepScoreToday: sleepScore,
-                    readinessScoreToday: readinessScore,
-                    sleepHistory: [newEntry, ...state.sleepHistory].slice(0, 30), // Keep last 30 days
-                }));
+                set((state) => {
+                    const existingIndex = state.sleepLogs.findIndex((log) => log.date === today);
+                    let newLogs = [...state.sleepLogs];
 
+                    if (existingIndex >= 0) {
+                        newLogs[existingIndex] = newEntry; // Update existing
+                    } else {
+                        newLogs = [newEntry, ...state.sleepLogs].slice(0, 30); // Prepend and slice
+                    }
+
+                    return {
+                        lastWakeDate: today,
+                        playerCurrentHP: state.playerMaxHP, // Full heal on sleep log? Or maybe separate this. Legacy behavior heals on wakeUp.
+                        sleepLogs: newLogs,
+                    };
+                });
+
+                return xpEarned;
+            },
+
+            logReadiness: (score: number) => {
+                const today = getEasternDateString();
+                const xpEarned = calculateSleepXP(score);
+
+                const newEntry: ReadinessLogEntry = {
+                    date: today,
+                    score,
+                    xpEarned
+                };
+
+                set((state) => {
+                    const existingIndex = state.readinessLogs.findIndex((log) => log.date === today);
+                    let newLogs = [...state.readinessLogs];
+
+                    if (existingIndex >= 0) {
+                        newLogs[existingIndex] = newEntry; // Update existing
+                    } else {
+                        newLogs = [newEntry, ...state.readinessLogs].slice(0, 30); // Prepend and slice
+                    }
+
+                    return {
+                        readinessLogs: newLogs,
+                    };
+                });
+
+                return xpEarned;
+            },
+
+            // Legacy support
+            wakeUp: (sleepScore, readinessScore) => {
+                const sleepXp = get().logSleep(sleepScore);
+                const readinessXp = get().logReadiness(readinessScore);
                 return sleepXp + readinessXp;
             },
 
@@ -99,10 +145,6 @@ export const useDayStore = create<DayState>()(
                 }));
             },
 
-            getSleepHistory: () => {
-                return get().sleepHistory;
-            },
-
             getEasternTime: () => {
                 return new Date().toLocaleString('en-US', {
                     timeZone: 'America/New_York',
@@ -113,7 +155,7 @@ export const useDayStore = create<DayState>()(
             },
         }),
         {
-            name: 'gl-day-v2', // Version bump for new fields
+            name: 'gl-day-v3', // Version bump for new fields
         }
     )
 );

@@ -39,47 +39,29 @@ export const MarketplaceTown = () => {
     // Movement keys state
     const keysPressed = useRef<Set<string>>(new Set());
 
-    // Touch-drag panning state
-    const dragRef = useRef<{ startX: number; startY: number; dragging: boolean } | null>(null);
-    const DRAG_THRESHOLD = 8;   // px to distinguish tap from drag
-    const DRAG_STEP = 40;       // px of drag per 1 grid step
-
-    const handlePointerDown = (e: React.PointerEvent) => {
+    // Grid Tap-To-Move Handler
+    const handleGridTap = (e: React.MouseEvent) => {
         if (activeStore) return;
-        dragRef.current = { startX: e.clientX, startY: e.clientY, dragging: false };
-    };
 
-    const handlePointerMove = (e: React.PointerEvent) => {
-        if (!dragRef.current || activeStore) return;
-        const dx = e.clientX - dragRef.current.startX;
-        const dy = e.clientY - dragRef.current.startY;
+        const gridContainer = e.currentTarget;
+        const rect = gridContainer.getBoundingClientRect();
 
-        if (!dragRef.current.dragging && (Math.abs(dx) > DRAG_THRESHOLD || Math.abs(dy) > DRAG_THRESHOLD)) {
-            dragRef.current.dragging = true;
-        }
+        // Ensure click/tap is inside the grid
+        if (e.clientX >= rect.left && e.clientX <= rect.right && e.clientY >= rect.top && e.clientY <= rect.bottom) {
+            const scale = rect.width / (MARKETPLACE_LAYOUT.gridSize.width * MARKETPLACE_LAYOUT.tileSize);
+            const clientX = e.clientX - rect.left;
+            const clientY = e.clientY - rect.top;
 
-        if (dragRef.current.dragging) {
-            // Move player in the drag direction, one grid step per DRAG_STEP px
-            let gridDx = 0;
-            let gridDy = 0;
-            if (Math.abs(dx) >= DRAG_STEP) gridDx = dx > 0 ? 1 : -1;
-            if (Math.abs(dy) >= DRAG_STEP) gridDy = dy > 0 ? 1 : -1;
+            const gridX = Math.floor(clientX / (MARKETPLACE_LAYOUT.tileSize * scale));
+            const gridY = Math.floor(clientY / (MARKETPLACE_LAYOUT.tileSize * scale));
 
-            if (gridDx !== 0 || gridDy !== 0) {
-                const newX = playerPosition.x + gridDx;
-                const newY = playerPosition.y + gridDy;
-                if (isWalkable(newX, newY, MARKETPLACE_LAYOUT)) {
-                    setPlayerPosition(newX, newY);
-                }
-                // Reset drag origin for continuous movement
-                dragRef.current.startX = e.clientX;
-                dragRef.current.startY = e.clientY;
+            const boundedX = Math.max(0, Math.min(MARKETPLACE_LAYOUT.gridSize.width - 1, gridX));
+            const boundedY = Math.max(0, Math.min(MARKETPLACE_LAYOUT.gridSize.height - 1, gridY));
+
+            if (isWalkable(boundedX, boundedY, MARKETPLACE_LAYOUT)) {
+                setPlayerPosition(boundedX, boundedY);
             }
         }
-    };
-
-    const handlePointerUp = () => {
-        dragRef.current = null;
     };
 
     // Handle keyboard movement
@@ -183,14 +165,7 @@ export const MarketplaceTown = () => {
                 showEmbers={false}
                 glowPoints={glowPoints}
             >
-                <div
-                    className="marketplace-town marketplace-town--with-shell"
-                    onPointerDown={handlePointerDown}
-                    onPointerMove={handlePointerMove}
-                    onPointerUp={handlePointerUp}
-                    onPointerCancel={handlePointerUp}
-                    style={{ touchAction: 'none' }}
-                >
+                <div className="marketplace-town marketplace-town--with-shell">
 
                     {/* Exit button */}
                     <button className="marketplace-exit-btn" onClick={handleExit}>
@@ -201,9 +176,11 @@ export const MarketplaceTown = () => {
                     {/* Town grid */}
                     <div
                         className="marketplace-grid"
+                        onClick={handleGridTap}
                         style={{
                             width: MARKETPLACE_LAYOUT.gridSize.width * MARKETPLACE_LAYOUT.tileSize,
                             height: MARKETPLACE_LAYOUT.gridSize.height * MARKETPLACE_LAYOUT.tileSize,
+                            touchAction: 'none'
                         }}
                     >
                         {/* Ground tiles */}
@@ -238,7 +215,13 @@ export const MarketplaceTown = () => {
                                         height: MARKETPLACE_LAYOUT.tileSize * 2,
                                         '--glow-color': store.color,
                                     } as React.CSSProperties}
-                                    onClick={() => isNearby && openStore(store.id)}
+                                    onClick={(e) => {
+                                        // Mobile/touch interaction and desktop click
+                                        e.stopPropagation();
+                                        if (isNearby) {
+                                            openStore(store.id);
+                                        }
+                                    }}
                                     animate={isNearby ? { scale: [1, 1.05, 1] } : {}}
                                     transition={{ duration: 1, repeat: Infinity }}
                                 >
@@ -301,8 +284,13 @@ export const MarketplaceTown = () => {
                             className="interaction-prompt"
                             initial={{ opacity: 0, y: 10 }}
                             animate={{ opacity: 1, y: 0 }}
+                            onClick={(e) => { e.stopPropagation(); openStore(nearbyStoreData.id); }}
+                            onPointerUp={(e) => { e.stopPropagation(); openStore(nearbyStoreData.id); }}
+                            style={{ cursor: 'pointer', zIndex: 100 }}
                         >
-                            Press <kbd>E</kbd> to enter <strong>{nearbyStoreData.name}</strong>
+                            <span className="desktop-hint">Press <kbd>E</kbd> to enter </span>
+                            <span className="mobile-hint">Tap here to enter </span>
+                            <strong>{nearbyStoreData.name}</strong>
                         </motion.div>
                     )}
 

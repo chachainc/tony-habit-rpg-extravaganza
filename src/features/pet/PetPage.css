@@ -205,6 +205,16 @@
     animation: petFloat 3s ease-in-out infinite;
 }
 
+.pet-image-large {
+    width: 180px;
+    height: 180px;
+    object-fit: contain;
+    margin-bottom: 1rem;
+    animation: petFloat 3s ease-in-out infinite;
+    filter: drop-shadow(0 8px 24px rgba(96, 165, 250, 0.3));
+    border-radius: 1rem;
+}
+
 @keyframes petFloat {
 
     0%,

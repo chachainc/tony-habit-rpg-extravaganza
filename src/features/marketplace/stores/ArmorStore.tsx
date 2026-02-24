@@ -10,6 +10,7 @@ import { useState, useCallback } from 'react';
 import { PurchaseConfirmModal } from '../../../components/ui/PurchaseConfirmModal';
 import { PurchaseSuccessOverlay } from '../../../components/ui/PurchaseSuccessOverlay';
 import armorStoreBg from '../../../assets/backgrounds/armor_store.png';
+import { Search, Filter } from 'lucide-react';
 import './ArmorStore.css';
 
 interface Props {
@@ -37,6 +38,11 @@ export const ArmorStore = ({ onClose }: Props) => {
     const [confirmItem, setConfirmItem] = useState<Item | null>(null);
     const [successItem, setSuccessItem] = useState<Item | null>(null);
     const [showSuccess, setShowSuccess] = useState(false);
+
+    // Filter state
+    const [searchQuery, setSearchQuery] = useState('');
+    const [activeCategory, setActiveCategory] = useState<'all' | 'unowned'>('all');
+    const [showMobileFilters, setShowMobileFilters] = useState(false);
 
     // Calculate player's defense stat from skills
     const calculateDefense = () => {
@@ -84,6 +90,65 @@ export const ArmorStore = ({ onClose }: Props) => {
         setSuccessItem(null);
     }, [playSuccessSound]);
 
+    const filteredItems = ARMOR_ITEMS.filter((itemId) => {
+        const item = ITEM_DATABASE[itemId];
+        if (!item) return false;
+
+        // Search filter
+        if (searchQuery && !item.name.toLowerCase().includes(searchQuery.toLowerCase())) {
+            return false;
+        }
+
+        // Category filter
+        if (activeCategory === 'unowned' && ownsMarketplaceItem(itemId)) {
+            return false;
+        }
+
+        return true;
+    });
+
+    const topBar = (
+        <div className="store-search-bar">
+            <Search size={18} className="search-icon" />
+            <input
+                type="text"
+                placeholder="Search armor..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="store-search-input"
+            />
+            <button
+                className="mobile-filter-toggle mobile-only"
+                onClick={() => setShowMobileFilters(!showMobileFilters)}
+            >
+                <Filter size={18} />
+            </button>
+        </div>
+    );
+
+    const bottomSheet = showMobileFilters ? (
+        <div className="store-mobile-filters">
+            <div className="filter-header">
+                <h3>Filters</h3>
+                <button onClick={() => setShowMobileFilters(false)}>Done</button>
+            </div>
+            <div className="filter-options">
+                <button
+                    className={`filter-btn ${activeCategory === 'all' ? 'active' : ''}`}
+                    onClick={() => setActiveCategory('all')}
+                >
+                    All Items
+                </button>
+                <button
+                    className={`filter-btn ${activeCategory === 'unowned' ? 'active' : ''}`}
+                    onClick={() => setActiveCategory('unowned')}
+                >
+                    Unowned Only
+                </button>
+            </div>
+        </div>
+    ) : null;
+
     return (
         <>
             <StoreLayout
@@ -96,8 +161,27 @@ export const ArmorStore = ({ onClose }: Props) => {
                     { x: 30, y: 40, color: '#ff6600', intensity: 1.5 },
                     { x: 70, y: 35, color: '#ff4400', intensity: 1.2 },
                 ]}
+                topBar={topBar}
+                bottomSheet={bottomSheet}
             >
                 <div className="armor-store">
+                    <div className="store-section desktop-only">
+                        <div className="filter-tabs">
+                            <button
+                                className={`filter-tab ${activeCategory === 'all' ? 'active' : ''}`}
+                                onClick={() => setActiveCategory('all')}
+                            >
+                                All Items
+                            </button>
+                            <button
+                                className={`filter-tab ${activeCategory === 'unowned' ? 'active' : ''}`}
+                                onClick={() => setActiveCategory('unowned')}
+                            >
+                                Unowned Only
+                            </button>
+                        </div>
+                    </div>
+
                     <div className="store-section">
                         <h3 className="section-title">Protective Gear</h3>
                         <p className="section-description">
@@ -107,35 +191,39 @@ export const ArmorStore = ({ onClose }: Props) => {
                             <span className="stat-badge">🛡️ Your Defense: {playerDefense}</span>
                         </div>
 
-                        <div className="items-grid">
-                            {ARMOR_ITEMS.map((itemId) => {
-                                const item = ITEM_DATABASE[itemId];
-                                if (!item) return null;
+                        {filteredItems.length === 0 ? (
+                            <div className="empty-state">No items found matching your criteria.</div>
+                        ) : (
+                            <div className="items-grid">
+                                {filteredItems.map((itemId) => {
+                                    const item = ITEM_DATABASE[itemId];
+                                    if (!item) return null;
 
-                                const playerState = {
-                                    skills,
-                                    defense: playerDefense,
-                                    attack: 0,
-                                    ownedItems: marketplaceOwned,
-                                };
+                                    const playerState = {
+                                        skills,
+                                        defense: playerDefense,
+                                        attack: 0,
+                                        ownedItems: marketplaceOwned,
+                                    };
 
-                                const purchaseCheck = canPurchaseItem(item, playerState, currencyStore);
-                                const isOwned = ownsMarketplaceItem(itemId);
+                                    const purchaseCheck = canPurchaseItem(item, playerState, currencyStore);
+                                    const isOwned = ownsMarketplaceItem(itemId);
 
-                                return (
-                                    <ItemCard
-                                        key={itemId}
-                                        item={item}
-                                        isUnlocked={purchaseCheck.canUnlock}
-                                        isOwned={isOwned}
-                                        canAfford={purchaseCheck.missingCurrency.length === 0}
-                                        missingRequirements={purchaseCheck.missingRequirements}
-                                        missingCurrency={purchaseCheck.missingCurrency}
-                                        onPurchase={() => handlePurchaseClick(itemId)}
-                                    />
-                                );
-                            })}
-                        </div>
+                                    return (
+                                        <ItemCard
+                                            key={itemId}
+                                            item={item}
+                                            isUnlocked={purchaseCheck.canUnlock}
+                                            isOwned={isOwned}
+                                            canAfford={purchaseCheck.missingCurrency.length === 0}
+                                            missingRequirements={purchaseCheck.missingRequirements}
+                                            missingCurrency={purchaseCheck.missingCurrency}
+                                            onPurchase={() => handlePurchaseClick(itemId)}
+                                        />
+                                    );
+                                })}
+                            </div>
+                        )}
                     </div>
 
                     <div className="store-section cosmetics-section">

@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Trophy, BookOpen, Shirt, Sword, Sparkles, Star, ArrowUp, ArrowDown, ArrowLeft, ArrowRight } from 'lucide-react';
+import { X, Trophy, BookOpen, Shirt, Sword, Sparkles, Star, ArrowUp, ArrowDown, ArrowLeft, ArrowRight, Scale, ExternalLink } from 'lucide-react';
 import { useRoomStore } from '../../store/useRoomStore';
 import { useInventoryStore, ITEM_DB } from '../../store/useInventoryStore';
 import { usePetStore } from '../../store/usePetStore';
@@ -12,6 +12,7 @@ import { useEquipmentStore, EQUIPMENT_DB } from '../../store/useEquipmentStore';
 import { useAuraStore, AURAS } from '../../store/useAuraStore';
 import { useTitleStore } from '../../store/useTitleStore';
 import { ITEM_DATABASE } from '../../data/items';
+import { useHealthStore } from '../../store/useHealthStore';
 import { SceneShell } from '../../components/scene';
 import homeCampBg from '../../assets/backgrounds/home_camp.png';
 import trophyCaseBg from '../../assets/backgrounds/trophy_case.png';
@@ -59,7 +60,13 @@ export const WalkableRoom = () => {
     const [showBookshelf, setShowBookshelf] = useState(false);
     const [showTrophyCase, setShowTrophyCase] = useState(false);
     const [showCloset, setShowCloset] = useState(false);
+    const [showMirror, setShowMirror] = useState(false);
     const [closetTab, setClosetTab] = useState<'outfits' | 'weapons' | 'auras' | 'titles'>('outfits');
+    const [mirrorWeightInput, setMirrorWeightInput] = useState('');
+    const [mirrorWeightSaved, setMirrorWeightSaved] = useState(false);
+
+    // Health store
+    const { logWeight, getLastWeight, hasLoggedWeightToday } = useHealthStore();
 
     // Movement keys state
     const keysPressed = useRef<Set<string>>(new Set());
@@ -160,11 +167,13 @@ export const WalkableRoom = () => {
     const trophyPosition = { x: 10, y: 1 };
     const bookshelfPosition = { x: 0, y: 1 };
     const closetPosition = { x: 5, y: 0 }; // Top middle closet
+    const mirrorPosition = { x: 8, y: 0 }; // Top right mirror
 
     // Proximity checks
     const nearTrophy = Math.abs(trophyPosition.x - playerPosition.x) + Math.abs(trophyPosition.y - playerPosition.y) <= 1;
     const nearBookshelf = Math.abs(bookshelfPosition.x - playerPosition.x) + Math.abs(bookshelfPosition.y - playerPosition.y) <= 1;
     const nearCloset = Math.abs(closetPosition.x - playerPosition.x) + Math.abs(closetPosition.y - playerPosition.y) <= 1;
+    const nearMirror = Math.abs(mirrorPosition.x - playerPosition.x) + Math.abs(mirrorPosition.y - playerPosition.y) <= 1;
 
     // Touch D-pad handlers
     const handleDpadDown = (direction: string) => {
@@ -180,10 +189,11 @@ export const WalkableRoom = () => {
         if (nearTrophy) setShowTrophyCase(true);
         else if (nearBookshelf) navigate('/library');
         else if (nearCloset) setShowCloset(true);
+        else if (nearMirror) setShowMirror(true);
     };
 
-    const showInteractButton = nearTrophy || nearBookshelf || nearCloset;
-    const interactLabel = nearTrophy ? 'Trophy Hall' : nearBookshelf ? 'Library' : nearCloset ? 'Closet' : '';
+    const showInteractButton = nearTrophy || nearBookshelf || nearCloset || nearMirror;
+    const interactLabel = nearTrophy ? 'Trophy Hall' : nearBookshelf ? 'Library' : nearCloset ? 'Closet' : nearMirror ? 'Mirror' : '';
 
     // Active Aura info
     const activeAura = useMemo(() => AURAS.find(a => a.id === activeAuraId), [activeAuraId]);
@@ -258,6 +268,23 @@ export const WalkableRoom = () => {
                         >
                             <div className="closet-icon">🧥</div>
                             <div className="closet-label">Closet</div>
+                        </motion.div>
+
+                        {/* Mirror - Health Tracker */}
+                        <motion.div
+                            className={`room-closet ${nearMirror ? 'nearby' : ''}`}
+                            style={{
+                                left: mirrorPosition.x * ROOM_LAYOUT.tileSize,
+                                top: 0,
+                                width: ROOM_LAYOUT.tileSize,
+                                height: ROOM_LAYOUT.tileSize * 1.5,
+                            }}
+                            animate={nearMirror ? { scale: [1, 1.05, 1] } : {}}
+                            transition={{ duration: 1, repeat: Infinity }}
+                            onClick={() => nearMirror && setShowMirror(true)}
+                        >
+                            <div className="closet-icon">🪞</div>
+                            <div className="closet-label">Mirror</div>
                         </motion.div>
 
                         {/* Trophy Case - Using AI Image */}
@@ -434,6 +461,17 @@ export const WalkableRoom = () => {
                                 <span>Click to open <strong>Closet</strong></span>
                             </motion.div>
                         )}
+                        {nearMirror && !nearbyItem && !nearTrophy && !nearBookshelf && !nearCloset && !showMirror && (
+                            <motion.div
+                                className="room-item-prompt closet-prompt"
+                                initial={{ opacity: 0, y: 10 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                exit={{ opacity: 0, y: 10 }}
+                            >
+                                <Scale size={18} />
+                                <span>Click to open <strong>Mirror</strong></span>
+                            </motion.div>
+                        )}
                     </AnimatePresence>
 
                     {/* Controls hint */}
@@ -498,7 +536,7 @@ export const WalkableRoom = () => {
                                 exit={{ opacity: 0, scale: 0.8 }}
                                 onClick={handleInteract}
                             >
-                                {nearTrophy ? <Trophy size={18} /> : nearBookshelf ? <BookOpen size={18} /> : <Shirt size={18} />}
+                                {nearTrophy ? <Trophy size={18} /> : nearBookshelf ? <BookOpen size={18} /> : nearCloset ? <Shirt size={18} /> : <Scale size={18} />}
                                 {interactLabel}
                             </motion.button>
                         )}
@@ -720,6 +758,96 @@ export const WalkableRoom = () => {
                                         </div>
                                     )}
                                 </div>
+                            </div>
+                        </motion.div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
+
+            {/* Mirror / Health Modal */}
+            <AnimatePresence>
+                {showMirror && (
+                    <motion.div
+                        className="room-modal-overlay"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        onClick={() => setShowMirror(false)}
+                    >
+                        <motion.div
+                            className="room-modal mirror-modal"
+                            initial={{ scale: 0.8, opacity: 0 }}
+                            animate={{ scale: 1, opacity: 1 }}
+                            exit={{ scale: 0.8, opacity: 0 }}
+                            onClick={(e) => e.stopPropagation()}
+                        >
+                            <button className="modal-close-btn" onClick={() => setShowMirror(false)}>
+                                <X size={20} />
+                            </button>
+                            <div className="modal-content">
+                                <h2>🪞 Health Mirror</h2>
+
+                                {/* Quick Weight Log */}
+                                <div className="mirror-section">
+                                    <h3>⚖️ Weight</h3>
+                                    {hasLoggedWeightToday() ? (
+                                        <div className="mirror-current">
+                                            {getLastWeight()} lbs <span style={{ fontSize: '0.75rem', color: '#34d399' }}>✓ Logged today</span>
+                                        </div>
+                                    ) : (
+                                        <div>
+                                            {getLastWeight() && (
+                                                <p style={{ color: '#475569', fontSize: '0.8rem', margin: '0 0 0.5rem' }}>Last: {getLastWeight()} lbs</p>
+                                            )}
+                                            <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+                                                <input
+                                                    type="number"
+                                                    value={mirrorWeightInput}
+                                                    onChange={(e) => setMirrorWeightInput(e.target.value)}
+                                                    placeholder={getLastWeight() ? `${getLastWeight()}` : '180'}
+                                                    step="0.1"
+                                                    style={{
+                                                        flex: 1, background: 'rgba(15,23,42,0.6)',
+                                                        border: '1px solid rgba(148,163,184,0.2)',
+                                                        borderRadius: '0.5rem', padding: '0.5rem 0.75rem',
+                                                        color: '#e2e8f0', fontSize: '0.85rem', outline: 'none', minHeight: '44px'
+                                                    }}
+                                                />
+                                                <button
+                                                    style={{
+                                                        padding: '0.5rem 0.75rem', background: 'linear-gradient(135deg,#3b82f6,#6366f1)',
+                                                        color: 'white', border: 'none', borderRadius: '0.5rem',
+                                                        fontSize: '0.8rem', fontWeight: 600, cursor: 'pointer', minHeight: '44px'
+                                                    }}
+                                                    onClick={() => {
+                                                        const w = parseFloat(mirrorWeightInput);
+                                                        if (!isNaN(w) && w > 0) {
+                                                            logWeight(w);
+                                                            setMirrorWeightInput('');
+                                                            setMirrorWeightSaved(true);
+                                                            setTimeout(() => setMirrorWeightSaved(false), 2000);
+                                                        }
+                                                    }}
+                                                >
+                                                    Log
+                                                </button>
+                                            </div>
+                                            {mirrorWeightSaved && <p style={{ color: '#34d399', fontSize: '0.8rem', marginTop: '0.25rem' }}>✅ Saved!</p>}
+                                        </div>
+                                    )}
+                                </div>
+
+                                {/* Nav to full page */}
+                                <button
+                                    className="mirror-nav-btn"
+                                    onClick={() => {
+                                        setShowMirror(false);
+                                        navigate('/health');
+                                    }}
+                                >
+                                    <ExternalLink size={16} />
+                                    Open Full Health Tracker
+                                </button>
                             </div>
                         </motion.div>
                     </motion.div>

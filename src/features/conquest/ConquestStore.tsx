@@ -2,10 +2,7 @@ import { motion } from 'framer-motion';
 import { Crown } from 'lucide-react';
 import { useConquestStore } from '../../store/useConquestStore';
 import type { SoldierRole } from '../../store/useConquestStore';
-
-const ROLE_ICONS: Record<SoldierRole, string> = {
-    scout: '🔭', morale: '📯', siege: '🏗️', healer: '💊',
-};
+import { SoldierCard } from './SoldierCard';
 
 const SOLDIER_NAMES = [
     'Marcus', 'Elena', 'Theron', 'Sybil', 'Aldric', 'Renna',
@@ -49,24 +46,22 @@ export const ConquestStoreUI = ({ onClose }: ConquestStoreUIProps) => {
                     {conquest.soldiers.length < conquest.maxTeamSize && (
                         <div className="cq-store-section">
                             <h3>🗡️ Recruit Soldier (30 Sigils)</h3>
-                            {roles.map(role => (
-                                <div key={role} className="cq-store-item">
-                                    <div className="cq-store-item-info">
-                                        <span className="cq-store-item-name">{ROLE_ICONS[role]} {role.charAt(0).toUpperCase() + role.slice(1)}</span>
-                                        <span className="cq-store-item-desc">Recruit a new {role} for your army</span>
-                                    </div>
-                                    <button
-                                        className="cq-store-buy-btn"
-                                        onClick={() => {
+                            <div className="soldiers-grid">
+                                {roles.map(role => (
+                                    <SoldierCard
+                                        key={role}
+                                        name={`New ${role.charAt(0).toUpperCase() + role.slice(1)}`}
+                                        role={role}
+                                        cost={30}
+                                        isStoreView={true}
+                                        onAction={() => {
                                             const name = SOLDIER_NAMES[Math.floor(Math.random() * SOLDIER_NAMES.length)];
                                             conquest.recruitSoldier(name, role);
                                         }}
-                                        disabled={conquest.sigils < 30}
-                                    >
-                                        30 🔱
-                                    </button>
-                                </div>
-                            ))}
+                                        actionDisabled={conquest.sigils < 30}
+                                    />
+                                ))}
+                            </div>
                         </div>
                     )}
 
@@ -144,20 +139,17 @@ export const ConquestStoreUI = ({ onClose }: ConquestStoreUIProps) => {
                     {conquest.soldiers.length > 0 && (
                         <div className="cq-store-section">
                             <h3>⬆️ Upgrade Soldiers</h3>
-                            {conquest.soldiers.filter(s => s.rank !== 'Warden').map(soldier => (
-                                <div key={soldier.id} className="cq-store-item">
-                                    <div className="cq-store-item-info">
-                                        <span className="cq-store-item-name">{ROLE_ICONS[soldier.role]} {soldier.name} ({soldier.rank})</span>
-                                        <span className="cq-store-item-desc">Promote to next rank</span>
-                                    </div>
-                                    <button
-                                        className="cq-store-buy-btn"
-                                        onClick={() => conquest.upgradeSoldierRank(soldier.id)}
-                                    >
-                                        Promote
-                                    </button>
-                                </div>
-                            ))}
+                            <div className="soldiers-grid">
+                                {conquest.soldiers.filter(s => s.rank !== 'Warden').map(soldier => (
+                                    <SoldierCard
+                                        key={soldier.id}
+                                        soldier={soldier}
+                                        isStoreView={false}
+                                        onAction={() => conquest.upgradeSoldierRank(soldier.id)}
+                                        actionLabel="Promote"
+                                    />
+                                ))}
+                            </div>
                         </div>
                     )}
                 </div>

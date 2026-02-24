@@ -6,7 +6,11 @@ import type { ConquestCombatResult, ConquestNode, SoldierRole } from '../../stor
 import { useStrategyStore } from '../../store/useStrategyStore';
 import { ConquestStoreUI } from './ConquestStore';
 import { ChessGame } from './ChessGame';
+import { SoldierCard } from './SoldierCard';
 import './Conquest.css';
+
+// AI-generated background
+import sandCombatBg from '../../assets/backgrounds/infernal_citadel.png';
 
 type ConquestView = 'map' | 'combat' | 'soldiers' | 'store' | 'chess';
 
@@ -301,23 +305,13 @@ export const Conquest = () => {
 
                 <div className="soldiers-grid">
                     {conquest.soldiers.map(soldier => (
-                        <div key={soldier.id} className={`soldier-card rank-${soldier.rank.toLowerCase().replace(' ', '-')}`}>
-                            <div className="soldier-rank-badge">{soldier.rank}</div>
-                            <div className="soldier-name">{ROLE_ICONS[soldier.role]} {soldier.name}</div>
-                            <div className="soldier-stats">
-                                <span>ATK: {soldier.atk}</span>
-                                <span>DEF: {soldier.def}</span>
-                                <span>Lv {soldier.level}</span>
-                            </div>
-                            <div className="soldier-role">{soldier.role}</div>
-                            <button
-                                className="upgrade-rank-btn"
-                                onClick={() => conquest.upgradeSoldierRank(soldier.id)}
-                                disabled={soldier.rank === 'Warden'}
-                            >
-                                {soldier.rank === 'Warden' ? 'MAX RANK' : '⬆ Upgrade'}
-                            </button>
-                        </div>
+                        <SoldierCard
+                            key={soldier.id}
+                            soldier={soldier}
+                            onAction={() => conquest.upgradeSoldierRank(soldier.id)}
+                            actionLabel={soldier.rank === 'Warden' ? 'MAX RANK' : '⬆ Upgrade'}
+                            actionDisabled={soldier.rank === 'Warden'}
+                        />
                     ))}
                     {conquest.soldiers.length === 0 && (
                         <div className="no-soldiers">No soldiers recruited yet. Visit the store to recruit!</div>
@@ -329,17 +323,22 @@ export const Conquest = () => {
 
     // ─── MAIN RENDER ────────────────────────────
     return (
-        <div className="conquest-container">
+        <div
+            className="conquest-container has-bg"
+            style={{ backgroundImage: `url(${sandCombatBg})` }}
+        >
+            <div className="conquest-bg-overlay" />
+
             {/* Top Navigation */}
             <div className="conquest-top-nav">
+                <button className="cq-nav-btn" onClick={() => setShowChess(true)}>
+                    <Star size={16} /> Chess {strategy.canPlayChessToday() && <span className="chess-dot">●</span>}
+                </button>
                 <button className={`cq-nav-btn ${view === 'map' ? 'active' : ''}`} onClick={() => setView('map')}>
                     <Map size={16} /> Map
                 </button>
                 <button className={`cq-nav-btn ${view === 'soldiers' ? 'active' : ''}`} onClick={() => setView('soldiers')}>
                     <Users size={16} /> Army
-                </button>
-                <button className="cq-nav-btn" onClick={() => setShowChess(true)}>
-                    <Star size={16} /> Chess {strategy.canPlayChessToday() && <span className="chess-dot">●</span>}
                 </button>
                 <button className="cq-nav-btn" onClick={() => setShowStore(true)}>
                     <Package size={16} /> Store

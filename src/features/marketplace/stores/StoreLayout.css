@@ -187,21 +187,52 @@
     background: linear-gradient(180deg, rgba(10, 10, 15, 0.8) 0%, rgba(5, 5, 10, 0.95) 100%);
 }
 
-/* Scrollbar styling */
-.store-content::-webkit-scrollbar {
-    width: 12px;
-}
-
-.store-content::-webkit-scrollbar-track {
-    background: var(--bg-secondary);
-    border-radius: 6px;
-}
-
-.store-content::-webkit-scrollbar-thumb {
-    background: var(--border);
-    border-radius: 6px;
-}
-
 .store-content::-webkit-scrollbar-thumb:hover {
     background: var(--primary);
+}
+
+/* Optional Layout Areas */
+.store-sticky-top-bar {
+    position: sticky;
+    top: 0;
+    z-index: 20;
+    background: rgba(10, 10, 15, 0.95);
+    backdrop-filter: blur(8px);
+    border-bottom: 1px solid var(--border-subtle);
+    padding: var(--space-3) var(--space-4);
+}
+
+.store-bottom-sheet {
+    position: relative;
+    z-index: 20;
+    background: var(--gacha-bg-panel);
+    border-top: 1px solid var(--border-subtle);
+    padding: var(--space-3) var(--space-4);
+    box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.mobile-only {
+    display: none;
+}
+
+@media (max-width: 768px) {
+    .mobile-only {
+        display: block;
+    }
+
+    .desktop-only {
+        display: none;
+    }
+
+    .store-modal {
+        width: 100vw;
+        height: 100dvh;
+        max-height: 100dvh;
+        border-radius: 0;
+        border: none;
+    }
+
+    .store-bottom-sheet {
+        padding-bottom: calc(var(--space-3) + env(safe-area-inset-bottom, 0px));
+    }
 }

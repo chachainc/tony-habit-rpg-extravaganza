@@ -11,8 +11,12 @@ interface Props {
     children: ReactNode;
     /** Optional AI-generated background image */
     backgroundImage?: string;
-    /** Optional glow positions for atmospheric lighting */
+    /** Optional glowing points for atmospheric lighting */
     glowPoints?: Array<{ x: number; y: number; color?: string; intensity?: number }>;
+    /** Optional sticky top bar (e.g. for search/filters) */
+    topBar?: ReactNode;
+    /** Optional bottom sheet (e.g. for mobile filters/sort) */
+    bottomSheet?: ReactNode;
 }
 
 export const StoreLayout = ({
@@ -23,6 +27,8 @@ export const StoreLayout = ({
     children,
     backgroundImage,
     glowPoints = [],
+    topBar,
+    bottomSheet,
 }: Props) => {
     return (
         <div className="store-overlay" onClick={onClose}>
@@ -85,10 +91,24 @@ export const StoreLayout = ({
                     </button>
                 </div>
 
+                {/* Optional Sticky Top Bar */}
+                {topBar && (
+                    <div className="store-sticky-top-bar">
+                        {topBar}
+                    </div>
+                )}
+
                 {/* Content */}
                 <div className="store-content">
                     {children}
                 </div>
+
+                {/* Optional Bottom Sheet Container */}
+                {bottomSheet && (
+                    <div className="store-bottom-sheet">
+                        {bottomSheet}
+                    </div>
+                )}
             </motion.div>
         </div>
     );

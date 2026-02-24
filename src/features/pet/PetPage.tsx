@@ -6,6 +6,30 @@ import { Card } from '../../components/ui/Card';
 import { ITEM_DATABASE } from '../../data/items';
 import './PetPage.css';
 
+// AI-generated pet images
+import etherealCowImg from '../../assets/pets/ethereal_cow.png';
+import emberfoxImg from '../../assets/pets/emberfox.png';
+import stormPupImg from '../../assets/pets/storm_pup.png';
+import clockworkOwlImg from '../../assets/pets/clockwork_owl.png';
+import bloomSpriteImg from '../../assets/pets/bloom_sprite.png';
+import mossGolemImg from '../../assets/pets/moss_golem.png';
+import obsidianBeetleImg from '../../assets/pets/obsidian_beetle.png';
+import lanternSlimeImg from '../../assets/pets/lantern_slime.png';
+import voidlingImg from '../../assets/pets/voidling.png';
+
+const PET_IMAGES: Record<string, string> = {
+    ethereal_cow: etherealCowImg,
+    spirit_fox: emberfoxImg,
+    cyber_dog: stormPupImg,
+    pet_dog: stormPupImg,
+    ancient_owl: clockworkOwlImg,
+    pixel_cat: bloomSpriteImg,
+    cosmic_turtle: mossGolemImg,
+    pet_porcupine: obsidianBeetleImg,
+    dragon_hatchling: lanternSlimeImg,
+    pet_wolf: voidlingImg,
+};
+
 export const PetPage = () => {
     const { activePet, name, health, hunger, mood, energy, feed, play } = usePetStore();
     const { items, removeItem } = useInventoryStore();
@@ -14,7 +38,8 @@ export const PetPage = () => {
     // Get active pet data from database
     const petItem = ITEM_DATABASE[activePet];
     const petDef = PET_DATABASE[activePet];
-    const petSprite = petItem?.icon || '🐮'; // Fallback to cow
+    const petSprite = petItem?.icon || '🐮'; // Fallback emoji
+    const petImage = PET_IMAGES[activePet]; // AI-generated image if available
 
     // Get usable items (food/toys/potions)
     const usableItems = Object.entries(items)
@@ -66,7 +91,7 @@ export const PetPage = () => {
             {/* Content Wrapper */}
             <div className="pet-content-wrapper">
                 <div className="page-header">
-                    <h1>{petSprite} {name}</h1>
+                    <h1>{petImage ? '' : petSprite} {name}</h1>
                     <p className="subtitle">Your loyal companion</p>
                 </div>
 
@@ -74,7 +99,11 @@ export const PetPage = () => {
                     {/* LEFT COLUMN: Pet Profile */}
                     <div className="pet-column-profile">
                         <Card className="pet-display-card">
-                            <div className="pet-sprite-large">{petSprite}</div>
+                            {petImage ? (
+                                <img src={petImage} alt={name} className="pet-image-large" />
+                            ) : (
+                                <div className="pet-sprite-large">{petSprite}</div>
+                            )}
                             <h2 className="pet-name">{name}</h2>
                             {petItem && <p className="pet-type">{petItem.name}</p>}
                         </Card>
