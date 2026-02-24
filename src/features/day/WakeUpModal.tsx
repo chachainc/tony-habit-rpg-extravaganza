@@ -208,7 +208,8 @@ export const WakeUpModal = ({ onComplete }: { onComplete: () => void }) => {
                                 return (
                                     <div
                                         key={day}
-                                        className={`wake-checkin__day ${isCurrentDay ? 'current' : ''} ${isPastDay ? 'claimed' : ''}`}
+                                        className={`wake-checkin__day ${isCurrentDay ? 'current' : ''} ${isPastDay ? 'claimed' : ''} ${isCurrentDay && canCheckIn ? 'tappable' : ''}`}
+                                        onClick={() => isCurrentDay && canCheckIn && handleCheckIn()}
                                     >
                                         <div className="wake-checkin__day-num">Day {day}</div>
                                         <div className="wake-checkin__day-icon">
@@ -220,6 +221,9 @@ export const WakeUpModal = ({ onComplete }: { onComplete: () => void }) => {
                                             {reward.buffType && <span className="wake-checkin__buff">+Buff</span>}
                                             {reward.gachaTicket && <span className="wake-checkin__ticket">🎫</span>}
                                         </div>
+                                        {isCurrentDay && canCheckIn && (
+                                            <div className="wake-checkin__tap-hint">Tap!</div>
+                                        )}
                                     </div>
                                 );
                             })}

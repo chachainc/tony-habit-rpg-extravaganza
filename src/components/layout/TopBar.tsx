@@ -5,14 +5,16 @@ import { useGameStore } from '../../store/useGameStore';
 import { useCheckInStore } from '../../store/useCheckInStore';
 import { useMonopolyStore } from '../../store/useMonopolyStore';
 import { useBattleStore } from '../../store/useBattleStore';
+import { useConquestStore } from '../../store/useConquestStore';
 import './TopBar.css';
 
 export const TopBar = () => {
     const navigate = useNavigate();
-    const { currency, globalXp, getGlobalLevel, getAttack, getDefense, getMagicAttack, getMaxMP } = useGameStore();
+    const { currency, gems, globalXp, getGlobalLevel, getAttack, getDefense, getMagicAttack, getMaxMP } = useGameStore();
     const { streakCount } = useCheckInStore();
     const { dailyTickets } = useMonopolyStore();
     const { player, currentMP } = useBattleStore();
+    const { sigils } = useConquestStore();
 
     const level = getGlobalLevel();
     const atk = getAttack();
@@ -161,6 +163,28 @@ export const TopBar = () => {
                     <div className="top-bar__icon">🔥</div>
                     <div className="top-bar__content">
                         <span className="top-bar__value">{streakCount}</span>
+                    </div>
+                </div>
+
+                <div
+                    className="top-bar__item top-bar__item--clickable"
+                    onClick={() => navigate('/conquest')}
+                    title="Conquest Sigils"
+                >
+                    <div className="top-bar__icon">🔱</div>
+                    <div className="top-bar__content">
+                        <span className="top-bar__value">{sigils}</span>
+                    </div>
+                </div>
+
+                <div
+                    className="top-bar__item top-bar__item--clickable"
+                    onClick={() => navigate('/marketplace')}
+                    title="Gems"
+                >
+                    <div className="top-bar__icon">💎</div>
+                    <div className="top-bar__content">
+                        <span className="top-bar__value">{gems}</span>
                     </div>
                 </div>
 

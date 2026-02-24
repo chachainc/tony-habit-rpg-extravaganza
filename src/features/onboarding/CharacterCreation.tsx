@@ -128,35 +128,27 @@ export const CharacterCreation: React.FC = () => {
                     </Panel>
                 )}
 
-                {/* STEP 3: Health Tracking */}
+                {/* STEP 3: Sleep Tracking */}
                 {step === 3 && (
                     <Panel variant="glass" padding="lg" className="cc-panel animation-slide-up">
-                        <h2>Health Integration</h2>
-                        <p className="text-muted mb-4">Do you use a sleep tracker or readiness score device? If enabled, your real-world recovery will impact your in-game stats.</p>
+                        <h2>Do You Track Your Sleep?</h2>
+                        <p className="text-muted mb-4">If yes, you'll log your sleep quality each morning and it will impact your in-game stats and recovery.</p>
 
                         <div className="health-options">
                             <div
                                 className={`health-card ${healthMode === 'sleep' ? 'selected' : ''}`}
                                 onClick={() => setHealthMode('sleep')}
                             >
-                                <h3>Track Sleep Score</h3>
-                                <p>I will log my sleep quality daily.</p>
-                            </div>
-
-                            <div
-                                className={`health-card ${healthMode === 'readiness' ? 'selected' : ''}`}
-                                onClick={() => setHealthMode('readiness')}
-                            >
-                                <h3>Track Readiness</h3>
-                                <p>I will log my Oura/Whoop/Garmin readiness score.</p>
+                                <h3>🌙 Yes, I Track My Sleep</h3>
+                                <p>I'll log how well I slept each day for bonus XP and stat effects.</p>
                             </div>
 
                             <div
                                 className={`health-card ${healthMode === 'none' ? 'selected' : ''}`}
                                 onClick={() => setHealthMode('none')}
                             >
-                                <h3>No Tracking</h3>
-                                <p>Disable wellness modifiers and daily prompts.</p>
+                                <h3>❌ No Thanks</h3>
+                                <p>Skip sleep tracking entirely.</p>
                             </div>
                         </div>
 

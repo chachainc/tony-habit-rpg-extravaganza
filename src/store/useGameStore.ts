@@ -27,6 +27,7 @@ interface Skill {
 
 interface GameState {
     currency: number;
+    gems: number;
     skills: Record<SkillName, Skill>;
     globalXp: number;
     overflowXp: number;
@@ -39,6 +40,7 @@ interface GameState {
 
     // Actions
     addCurrency: (amount: number) => void;
+    addGems: (amount: number) => void;
     addSkillXp: (skill: SkillName, amount: number) => { actual: number; overflow: number; leveledUp?: boolean };
     addGlobalXp: (amount: number) => void;
     getGlobalLevel: () => number;
@@ -128,6 +130,7 @@ export const useGameStore = create<GameState>()(
     persist(
         (set, get) => ({
             currency: 0,
+            gems: 0,
             skills: INITIAL_SKILLS,
             globalXp: 0,
             overflowXp: 0,
@@ -158,6 +161,10 @@ export const useGameStore = create<GameState>()(
 
             addCurrency: (amount) => set((state) => ({
                 currency: Math.max(0, state.currency + amount)
+            })),
+
+            addGems: (amount) => set((state) => ({
+                gems: Math.max(0, state.gems + amount)
             })),
 
             addGlobalXp: (amount) => set((state) => ({

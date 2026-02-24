@@ -29,6 +29,7 @@ import { ToastContainer } from './components/ui/Toast';
 import { ErrorBoundary } from './components/ui/ErrorBoundary';
 import { LevelUpModal } from './components/ui/LevelUpModal';
 import { TrophyEvolvedModal } from './components/ui/TrophyEvolvedModal';
+import { CurrencyPopVFX } from './components/vfx/CurrencyPopVFX';
 import { PlayerRoom } from './features/room/PlayerRoom';
 import { useDayStore } from './store/useDayStore';
 import { useGameStore } from './store/useGameStore';
@@ -118,6 +119,9 @@ function App() {
     <Router>
       {/* Toast notifications - always visible */}
       <ToastContainer />
+
+      {/* Currency gain VFX - always visible */}
+      <CurrencyPopVFX />
 
       {/* Trophy Evolution Modal */}
       <TrophyEvolvedModal />

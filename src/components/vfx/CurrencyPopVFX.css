@@ -1,0 +1,72 @@
+/* Currency Pop VFX */
+.currency-pop-container {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 10000;
+    pointer-events: none;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.currency-pop {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1.5rem;
+    background: rgba(10, 10, 25, 0.9);
+    border: 2px solid currentColor;
+    border-radius: 16px;
+    font-weight: 800;
+    font-size: 1.3rem;
+    white-space: nowrap;
+    box-shadow:
+        0 0 20px currentColor,
+        0 4px 20px rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(8px);
+}
+
+.currency-pop-icon {
+    font-size: 1.5rem;
+    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.4));
+}
+
+.currency-pop-amount {
+    font-weight: 900;
+    text-shadow: 0 2px 6px currentColor;
+}
+
+.currency-pop-label {
+    font-size: 0.75rem;
+    opacity: 0.7;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.currency-sparkle {
+    position: absolute;
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    top: 50%;
+    left: 50%;
+    box-shadow: 0 0 6px currentColor;
+    pointer-events: none;
+}
+
+/* Mobile adjustments */
+@media (max-width: 480px) {
+    .currency-pop {
+        font-size: 1.1rem;
+        padding: 0.5rem 1rem;
+    }
+
+    .currency-pop-icon {
+        font-size: 1.2rem;
+    }
+}

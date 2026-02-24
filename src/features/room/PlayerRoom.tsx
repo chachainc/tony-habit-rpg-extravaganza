@@ -1,7 +1,6 @@
-import { useEffect, useRef, useState, useMemo } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Trophy, BookOpen, Shirt, ArrowUp, ArrowDown, ArrowLeft, ArrowRight, BedDouble, Store } from 'lucide-react';
+import { X, BedDouble, BookOpen, Shirt, Store, Trophy } from 'lucide-react';
 import { useRoomStore } from '../../store/useRoomStore';
 import { useInventoryStore, ITEM_DB } from '../../store/useInventoryStore';
 import { usePetStore } from '../../store/usePetStore';
@@ -194,215 +193,256 @@ export const PlayerRoom = ({ onClose }: { onClose: () => void }) => {
 
     return (
         <div className="player-room-container">
-            <SceneShell
-                backgroundImage={homeCampBg}
-                showFog={true}
-                showVignette={true}
-                showEmbers={true}
-            >
-                <div className="walkable-room">
-                    {/* Top Action Bar */}
-                    <div className="room-top-bar">
-                        <button className="room-exit-btn" onClick={onClose}>
-                            <X size={20} /> Exit Room
-                        </button>
-                    </div>
-
-                    {/* Floor Grid */}
-                    <div
-                        className="room-grid"
-                        onClick={handleGridTap}
-                        style={{
-                            width: ROOM_LAYOUT.gridSize.width * ROOM_LAYOUT.tileSize,
-                            height: ROOM_LAYOUT.gridSize.height * ROOM_LAYOUT.tileSize,
-                            touchAction: 'none' // Prevent pull-to-refresh on mobile while tapping
-                        }}
-                    >
-                        {/* Bed */}
-                        <motion.div
-                            className={`room-hotspot bed-hotspot ${nearbyObj?.panel === 'sleep' ? 'nearby' : ''}`}
-                            style={{
-                                left: interactables.bed.x * ROOM_LAYOUT.tileSize,
-                                top: interactables.bed.y * ROOM_LAYOUT.tileSize,
-                                width: ROOM_LAYOUT.tileSize * 1.5,
-                                height: ROOM_LAYOUT.tileSize * 2,
-                            }}
-                            onPointerUp={(e) => { e.stopPropagation(); setActivePanel('sleep'); }}
-                        >
-                            <BedDouble size={32} className="hotspot-icon" />
-                            <div className="hotspot-label">Bed</div>
-                        </motion.div>
-
-                        {/* Wardrobe */}
-                        <motion.div
-                            className={`room-hotspot wardrobe-hotspot ${nearbyObj?.panel === 'wardrobe' ? 'nearby' : ''}`}
-                            style={{
-                                left: interactables.wardrobe.x * ROOM_LAYOUT.tileSize,
-                                top: interactables.wardrobe.y * ROOM_LAYOUT.tileSize,
-                                width: ROOM_LAYOUT.tileSize,
-                                height: ROOM_LAYOUT.tileSize * 1.5,
-                            }}
-                            onPointerUp={(e) => { e.stopPropagation(); setActivePanel('wardrobe'); }}
-                        >
-                            <Shirt size={32} className="hotspot-icon" />
-                            <div className="hotspot-label">Closet</div>
-                        </motion.div>
-
-                        {/* Bookshelf */}
-                        <motion.div
-                            className={`room-hotspot bookshelf-hotspot ${nearbyObj?.panel === 'bookshelf' ? 'nearby' : ''}`}
-                            style={{
-                                left: interactables.bookshelf.x * ROOM_LAYOUT.tileSize,
-                                top: interactables.bookshelf.y * ROOM_LAYOUT.tileSize,
-                                width: ROOM_LAYOUT.tileSize * 2.5,
-                                height: ROOM_LAYOUT.gridSize.height * ROOM_LAYOUT.tileSize * 0.6,
-                            }}
-                            onPointerUp={(e) => { e.stopPropagation(); setActivePanel('bookshelf'); }}
-                        >
-                            <img src={bookshelfBg} alt="Bookshelf" className="bookshelf-image" />
-                            <div className="hotspot-label overlay-label"><BookOpen size={16} /> Library</div>
-                        </motion.div>
-
-                        {/* Trophy Case */}
-                        <motion.div
-                            className={`room-hotspot trophy-hotspot ${nearbyObj?.panel === 'trophy' ? 'nearby' : ''}`}
-                            style={{
-                                left: interactables.trophy.x * ROOM_LAYOUT.tileSize - ROOM_LAYOUT.tileSize,
-                                top: interactables.trophy.y * ROOM_LAYOUT.tileSize,
-                                width: ROOM_LAYOUT.tileSize * 2.5,
-                                height: ROOM_LAYOUT.gridSize.height * ROOM_LAYOUT.tileSize * 0.6,
-                            }}
-                            onPointerUp={(e) => { e.stopPropagation(); setActivePanel('trophy'); }}
-                        >
-                            <img src={trophyCaseBg} alt="Trophy Case" className="trophy-case-image" />
-                            <div className="hotspot-label overlay-label"><Trophy size={16} /> Trophy Hall</div>
-                        </motion.div>
-
-                        {/* Store Kiosk */}
-                        <motion.div
-                            className={`room-hotspot store-hotspot ${nearbyObj?.panel === 'store' ? 'nearby' : ''}`}
-                            style={{
-                                left: interactables.store.x * ROOM_LAYOUT.tileSize,
-                                top: interactables.store.y * ROOM_LAYOUT.tileSize,
-                                width: ROOM_LAYOUT.tileSize,
-                                height: ROOM_LAYOUT.tileSize,
-                            }}
-                            onPointerUp={(e) => { e.stopPropagation(); setActivePanel('store'); }}
-                            animate={{ y: [0, -3, 0] }}
-                            transition={{ duration: 2, repeat: Infinity }}
-                        >
-                            <Store size={32} className="hotspot-icon" />
-                            <div className="hotspot-label">Store</div>
-                        </motion.div>
-
-                        {/* Placed Furniture */}
-                        {ownedFurniture.map((furniture) => {
-                            const isNearby = Math.abs(furniture.gridX - playerPosition.x) + Math.abs(furniture.gridY - playerPosition.y) <= 1;
-                            return (
-                                <motion.div
-                                    key={furniture.id}
-                                    className={`room-furniture ${isNearby ? 'nearby' : ''}`}
-                                    style={{
-                                        left: furniture.gridX * ROOM_LAYOUT.tileSize,
-                                        top: furniture.gridY * ROOM_LAYOUT.tileSize,
-                                        width: ROOM_LAYOUT.tileSize,
-                                        height: ROOM_LAYOUT.tileSize,
-                                    }}
-                                >
-                                    <div className="furniture-icon">{furniture.icon}</div>
-                                    {furniture.count > 1 && (
-                                        <span className="furniture-count">x{furniture.count}</span>
-                                    )}
-                                </motion.div>
-                            );
-                        })}
-
-                        {/* Pet */}
-                        <motion.div
-                            className="room-pet-follower"
-                            style={{
-                                left: (playerPosition.x - 1) * ROOM_LAYOUT.tileSize,
-                                top: playerPosition.y * ROOM_LAYOUT.tileSize,
-                                width: ROOM_LAYOUT.tileSize,
-                                height: ROOM_LAYOUT.tileSize,
-                            }}
-                            animate={{ y: [0, -4, 0] }}
-                            transition={{ duration: 1.5, repeat: Infinity }}
-                        >
-                            <span className="pet-emoji">{petSprite}</span>
-                            <span className="pet-name-tag">{petName}</span>
-                        </motion.div>
-
-                        {/* Player */}
-                        <motion.div
-                            className="room-player"
-                            style={{
-                                left: playerPosition.x * ROOM_LAYOUT.tileSize,
-                                top: playerPosition.y * ROOM_LAYOUT.tileSize,
-                                width: ROOM_LAYOUT.tileSize,
-                                height: ROOM_LAYOUT.tileSize,
-                            }}
-                            animate={{ y: [0, -3, 0] }}
-                            transition={{ duration: 0.8, repeat: Infinity }}
-                        >
-                            <AnimatePresence>
-                                {activeAura && activeAura.id !== 'none' && (
-                                    <motion.div
-                                        className="player-aura-effect"
-                                        initial={{ opacity: 0, scale: 0.8 }}
-                                        animate={{
-                                            opacity: [0.4, 0.7, 0.4],
-                                            scale: [1, 1.2, 1],
-                                            background: `radial-gradient(circle, ${activeAura.color} 0%, transparent 70%)`
-                                        }}
-                                        transition={{ duration: 2, repeat: Infinity }}
-                                    />
-                                )}
-                            </AnimatePresence>
-                            <img src={playerSprite} alt="Player" className="player-sprite" />
-                            {activeTitleDef && (
-                                <span className="player-title-tag">{activeTitleDef.name}</span>
-                            )}
-                        </motion.div>
-                    </div>
-
-                    {/* Proximity Interaction Prompt */}
-                    <AnimatePresence>
-                        {nearbyObj && !activePanel && (
-                            <motion.div
-                                className="room-item-prompt"
-                                initial={{ opacity: 0, y: 10 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                exit={{ opacity: 0, y: 10 }}
-                            >
-                                <span className="item-icon">{nearbyObj.icon}</span>
-                                {!isMobile && !tooltipSeen && <span className="press-key-hint">['E']</span>}
-                                {isMobile && !tooltipSeen ? <strong>Tap to Interact</strong> : <strong>{nearbyObj.label}</strong>}
-                            </motion.div>
-                        )}
-                    </AnimatePresence>
-
-                    {/* Mobile Controls */}
-                    {isMobile && !activePanel && (
-                        <div className="room-dpad" style={{ bottom: '120px' }}>
-                            <button className="dpad-btn dpad-up" onTouchStart={(e) => { e.preventDefault(); handleDpadDown('arrowup'); }} onTouchEnd={() => handleDpadUp('arrowup')}><ArrowUp size={20} /></button>
-                            <div className="dpad-middle-row">
-                                <button className="dpad-btn dpad-left" onTouchStart={(e) => { e.preventDefault(); handleDpadDown('arrowleft'); }} onTouchEnd={() => handleDpadUp('arrowleft')}><ArrowLeft size={20} /></button>
-                                <div className="dpad-center" />
-                                <button className="dpad-btn dpad-right" onTouchStart={(e) => { e.preventDefault(); handleDpadDown('arrowright'); }} onTouchEnd={() => handleDpadUp('arrowright')}><ArrowRight size={20} /></button>
-                            </div>
-                            <button className="dpad-btn dpad-down" onTouchStart={(e) => { e.preventDefault(); handleDpadDown('arrowdown'); }} onTouchEnd={() => handleDpadUp('arrowdown')}><ArrowDown size={20} /></button>
+            {isMobile ? (
+                /* ==================== MOBILE QUICK-ACCESS MENU ==================== */
+                <SceneShell
+                    backgroundImage={homeCampBg}
+                    showFog={true}
+                    showVignette={true}
+                    showEmbers={true}
+                >
+                    <div className="room-mobile-menu">
+                        <div className="room-mobile-header">
+                            <button className="room-exit-btn" onClick={onClose}>
+                                <X size={18} /> Back
+                            </button>
+                            <h2 className="room-mobile-title">🏠 Your Room</h2>
                         </div>
-                    )}
 
-                    {/* Mobile Interact Overlay Button */}
-                    {isMobile && nearbyObj && !activePanel && (
-                        <button className="mobile-interact-btn" onClick={handleInteract} style={{ bottom: '120px' }}>
-                            {nearbyObj.icon} Interact
-                        </button>
-                    )}
-                </div>
-            </SceneShell>
+                        {/* Player Info */}
+                        <div className="room-mobile-player-card">
+                            <img src={playerSprite} alt="Player" className="mobile-player-sprite" />
+                            <div className="mobile-player-info">
+                                {activeTitleDef && <span className="mobile-title-tag">{activeTitleDef.name}</span>}
+                                {activeAura && activeAura.id !== 'none' && (
+                                    <span className="mobile-aura-tag" style={{ color: activeAura.color }}>✦ {activeAura.name}</span>
+                                )}
+                                {activePet && <span className="mobile-pet-tag">{petSprite} {petName}</span>}
+                            </div>
+                        </div>
+
+                        {/* Feature Buttons */}
+                        <div className="room-mobile-features">
+                            <button className="room-feature-btn room-feature-btn--wardrobe" onClick={() => setActivePanel('wardrobe')}>
+                                <Shirt size={28} />
+                                <span>Closet</span>
+                                <small>Titles, Auras, Clothes, Pets</small>
+                            </button>
+                            <button className="room-feature-btn room-feature-btn--sleep" onClick={() => setActivePanel('sleep')}>
+                                <BedDouble size={28} />
+                                <span>Bed</span>
+                                <small>Sleep Log</small>
+                            </button>
+                            <button className="room-feature-btn room-feature-btn--bookshelf" onClick={() => setActivePanel('bookshelf')}>
+                                <BookOpen size={28} />
+                                <span>Library</span>
+                                <small>Book Collection</small>
+                            </button>
+                            <button className="room-feature-btn room-feature-btn--trophy" onClick={() => setActivePanel('trophy')}>
+                                <Trophy size={28} />
+                                <span>Trophy Hall</span>
+                                <small>Achievements</small>
+                            </button>
+                            <button className="room-feature-btn room-feature-btn--store" onClick={() => setActivePanel('store')}>
+                                <Store size={28} />
+                                <span>Furniture Store</span>
+                                <small>Buy & Place Items</small>
+                            </button>
+                        </div>
+                    </div>
+                </SceneShell>
+            ) : (
+                /* ==================== DESKTOP WALKABLE ROOM ==================== */
+                <SceneShell
+                    backgroundImage={homeCampBg}
+                    showFog={true}
+                    showVignette={true}
+                    showEmbers={true}
+                >
+                    <div className="walkable-room">
+                        {/* Top Action Bar */}
+                        <div className="room-top-bar">
+                            <button className="room-exit-btn" onClick={onClose}>
+                                <X size={20} /> Exit Room
+                            </button>
+                        </div>
+
+                        {/* Floor Grid */}
+                        <div
+                            className="room-grid"
+                            onClick={handleGridTap}
+                            style={{
+                                width: ROOM_LAYOUT.gridSize.width * ROOM_LAYOUT.tileSize,
+                                height: ROOM_LAYOUT.gridSize.height * ROOM_LAYOUT.tileSize,
+                                touchAction: 'none'
+                            }}
+                        >
+                            {/* Bed */}
+                            <motion.div
+                                className={`room-hotspot bed-hotspot ${nearbyObj?.panel === 'sleep' ? 'nearby' : ''}`}
+                                style={{
+                                    left: interactables.bed.x * ROOM_LAYOUT.tileSize,
+                                    top: interactables.bed.y * ROOM_LAYOUT.tileSize,
+                                    width: ROOM_LAYOUT.tileSize * 1.5,
+                                    height: ROOM_LAYOUT.tileSize * 2,
+                                }}
+                                onPointerUp={(e) => { e.stopPropagation(); setActivePanel('sleep'); }}
+                            >
+                                <BedDouble size={32} className="hotspot-icon" />
+                                <div className="hotspot-label">Bed</div>
+                            </motion.div>
+
+                            {/* Wardrobe */}
+                            <motion.div
+                                className={`room-hotspot wardrobe-hotspot ${nearbyObj?.panel === 'wardrobe' ? 'nearby' : ''}`}
+                                style={{
+                                    left: interactables.wardrobe.x * ROOM_LAYOUT.tileSize,
+                                    top: interactables.wardrobe.y * ROOM_LAYOUT.tileSize,
+                                    width: ROOM_LAYOUT.tileSize,
+                                    height: ROOM_LAYOUT.tileSize * 1.5,
+                                }}
+                                onPointerUp={(e) => { e.stopPropagation(); setActivePanel('wardrobe'); }}
+                            >
+                                <Shirt size={32} className="hotspot-icon" />
+                                <div className="hotspot-label">Closet</div>
+                            </motion.div>
+
+                            {/* Bookshelf */}
+                            <motion.div
+                                className={`room-hotspot bookshelf-hotspot ${nearbyObj?.panel === 'bookshelf' ? 'nearby' : ''}`}
+                                style={{
+                                    left: interactables.bookshelf.x * ROOM_LAYOUT.tileSize,
+                                    top: interactables.bookshelf.y * ROOM_LAYOUT.tileSize,
+                                    width: ROOM_LAYOUT.tileSize * 2.5,
+                                    height: ROOM_LAYOUT.gridSize.height * ROOM_LAYOUT.tileSize * 0.6,
+                                }}
+                                onPointerUp={(e) => { e.stopPropagation(); setActivePanel('bookshelf'); }}
+                            >
+                                <img src={bookshelfBg} alt="Bookshelf" className="bookshelf-image" />
+                                <div className="hotspot-label overlay-label"><BookOpen size={16} /> Library</div>
+                            </motion.div>
+
+                            {/* Trophy Case */}
+                            <motion.div
+                                className={`room-hotspot trophy-hotspot ${nearbyObj?.panel === 'trophy' ? 'nearby' : ''}`}
+                                style={{
+                                    left: interactables.trophy.x * ROOM_LAYOUT.tileSize - ROOM_LAYOUT.tileSize,
+                                    top: interactables.trophy.y * ROOM_LAYOUT.tileSize,
+                                    width: ROOM_LAYOUT.tileSize * 2.5,
+                                    height: ROOM_LAYOUT.gridSize.height * ROOM_LAYOUT.tileSize * 0.6,
+                                }}
+                                onPointerUp={(e) => { e.stopPropagation(); setActivePanel('trophy'); }}
+                            >
+                                <img src={trophyCaseBg} alt="Trophy Case" className="trophy-case-image" />
+                                <div className="hotspot-label overlay-label"><Trophy size={16} /> Trophy Hall</div>
+                            </motion.div>
+
+                            {/* Store Kiosk */}
+                            <motion.div
+                                className={`room-hotspot store-hotspot ${nearbyObj?.panel === 'store' ? 'nearby' : ''}`}
+                                style={{
+                                    left: interactables.store.x * ROOM_LAYOUT.tileSize,
+                                    top: interactables.store.y * ROOM_LAYOUT.tileSize,
+                                    width: ROOM_LAYOUT.tileSize,
+                                    height: ROOM_LAYOUT.tileSize,
+                                }}
+                                onPointerUp={(e) => { e.stopPropagation(); setActivePanel('store'); }}
+                                animate={{ y: [0, -3, 0] }}
+                                transition={{ duration: 2, repeat: Infinity }}
+                            >
+                                <Store size={32} className="hotspot-icon" />
+                                <div className="hotspot-label">Store</div>
+                            </motion.div>
+
+                            {/* Placed Furniture */}
+                            {ownedFurniture.map((furniture) => {
+                                const isNearby = Math.abs(furniture.gridX - playerPosition.x) + Math.abs(furniture.gridY - playerPosition.y) <= 1;
+                                return (
+                                    <motion.div
+                                        key={furniture.id}
+                                        className={`room-furniture ${isNearby ? 'nearby' : ''}`}
+                                        style={{
+                                            left: furniture.gridX * ROOM_LAYOUT.tileSize,
+                                            top: furniture.gridY * ROOM_LAYOUT.tileSize,
+                                            width: ROOM_LAYOUT.tileSize,
+                                            height: ROOM_LAYOUT.tileSize,
+                                        }}
+                                    >
+                                        <div className="furniture-icon">{furniture.icon}</div>
+                                        {furniture.count > 1 && (
+                                            <span className="furniture-count">x{furniture.count}</span>
+                                        )}
+                                    </motion.div>
+                                );
+                            })}
+
+                            {/* Pet */}
+                            <motion.div
+                                className="room-pet-follower"
+                                style={{
+                                    left: (playerPosition.x - 1) * ROOM_LAYOUT.tileSize,
+                                    top: playerPosition.y * ROOM_LAYOUT.tileSize,
+                                    width: ROOM_LAYOUT.tileSize,
+                                    height: ROOM_LAYOUT.tileSize,
+                                }}
+                                animate={{ y: [0, -4, 0] }}
+                                transition={{ duration: 1.5, repeat: Infinity }}
+                            >
+                                <span className="pet-emoji">{petSprite}</span>
+                                <span className="pet-name-tag">{petName}</span>
+                            </motion.div>
+
+                            {/* Player */}
+                            <motion.div
+                                className="room-player"
+                                style={{
+                                    left: playerPosition.x * ROOM_LAYOUT.tileSize,
+                                    top: playerPosition.y * ROOM_LAYOUT.tileSize,
+                                    width: ROOM_LAYOUT.tileSize,
+                                    height: ROOM_LAYOUT.tileSize,
+                                }}
+                                animate={{ y: [0, -3, 0] }}
+                                transition={{ duration: 0.8, repeat: Infinity }}
+                            >
+                                <AnimatePresence>
+                                    {activeAura && activeAura.id !== 'none' && (
+                                        <motion.div
+                                            className="player-aura-effect"
+                                            initial={{ opacity: 0, scale: 0.8 }}
+                                            animate={{
+                                                opacity: [0.4, 0.7, 0.4],
+                                                scale: [1, 1.2, 1],
+                                                background: `radial-gradient(circle, ${activeAura.color} 0%, transparent 70%)`
+                                            }}
+                                            transition={{ duration: 2, repeat: Infinity }}
+                                        />
+                                    )}
+                                </AnimatePresence>
+                                <img src={playerSprite} alt="Player" className="player-sprite" />
+                                {activeTitleDef && (
+                                    <span className="player-title-tag">{activeTitleDef.name}</span>
+                                )}
+                            </motion.div>
+                        </div>
+
+                        {/* Proximity Interaction Prompt */}
+                        <AnimatePresence>
+                            {nearbyObj && !activePanel && (
+                                <motion.div
+                                    className="room-item-prompt"
+                                    initial={{ opacity: 0, y: 10 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    exit={{ opacity: 0, y: 10 }}
+                                >
+                                    <span className="item-icon">{nearbyObj.icon}</span>
+                                    {!tooltipSeen && <span className="press-key-hint">['E']</span>}
+                                    <strong>{nearbyObj.label}</strong>
+                                </motion.div>
+                            )}
+                        </AnimatePresence>
+                    </div>
+                </SceneShell>
+            )}
 
             {/* Render Active Panel */}
             <AnimatePresence>

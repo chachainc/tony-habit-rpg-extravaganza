@@ -4,10 +4,89 @@
 
 .wake-modal {
     text-align: center;
-    min-width: 400px;
+    min-width: min(400px, 92vw);
     max-width: 600px;
+    width: 92vw;
     background: linear-gradient(180deg, #1e3a5f, #0f172a);
     border: 2px solid #3b82f6;
+    box-sizing: border-box;
+}
+
+/* ==================== MOBILE RESPONSIVE ==================== */
+@media (max-width: 480px) {
+    .wake-modal {
+        min-width: unset;
+        width: 96vw;
+        max-width: 96vw;
+        padding: 1rem 0.75rem;
+        margin: 0.5rem;
+        border-radius: 16px;
+    }
+
+    .wake-header h2 {
+        font-size: 1.5rem;
+    }
+
+    .sun-icon {
+        width: 36px;
+        height: 36px;
+    }
+
+    .sleep-input {
+        margin: var(--space-3) 0;
+    }
+
+    .sleep-input label {
+        font-size: 0.85rem;
+    }
+
+    .slider-row {
+        gap: var(--space-2);
+    }
+
+    .score-value {
+        font-size: 1.2rem;
+        width: 40px;
+    }
+
+    .xp-preview {
+        font-size: 0.85rem;
+    }
+
+    .start-day-btn {
+        font-size: 1rem;
+        padding: var(--space-2) var(--space-4);
+        width: 100%;
+        justify-content: center;
+    }
+
+    .xp-result p:first-child {
+        font-size: 1.5rem;
+    }
+
+    .wake-checkin__header h3 {
+        font-size: 1.2rem;
+    }
+
+    .wake-checkin__streak-count {
+        font-size: 1.5rem;
+    }
+
+    .wake-checkin__reward-overlay {
+        min-width: unset;
+        width: 90%;
+        max-width: 320px;
+        padding: 1rem;
+    }
+
+    .task-prompt__title {
+        font-size: 1.1rem;
+    }
+
+    .task-prompt__go-btn {
+        font-size: 0.95rem;
+        padding: var(--space-2) var(--space-4);
+    }
 }
 
 .wake-header {
@@ -238,6 +317,44 @@
     border-color: var(--primary);
     background: rgba(96, 108, 220, 0.1);
     box-shadow: 0 0 12px rgba(96, 108, 220, 0.25);
+}
+
+.wake-checkin__day.tappable {
+    cursor: pointer;
+    animation: checkin-pulse 1.5s infinite;
+    border-color: #22c55e;
+    box-shadow: 0 0 16px rgba(34, 197, 94, 0.4);
+}
+
+.wake-checkin__day.tappable:active {
+    transform: scale(0.95);
+}
+
+@keyframes checkin-pulse {
+
+    0%,
+    100% {
+        box-shadow: 0 0 12px rgba(34, 197, 94, 0.3);
+    }
+
+    50% {
+        box-shadow: 0 0 24px rgba(34, 197, 94, 0.6);
+    }
+}
+
+.wake-checkin__tap-hint {
+    position: absolute;
+    bottom: -6px;
+    right: -6px;
+    background: #22c55e;
+    color: white;
+    font-size: 0.55rem;
+    font-weight: 800;
+    padding: 2px 6px;
+    border-radius: 8px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    box-shadow: 0 2px 6px rgba(34, 197, 94, 0.5);
 }
 
 .wake-checkin__day.claimed {
