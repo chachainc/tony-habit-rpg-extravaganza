@@ -257,7 +257,7 @@ export const PlayerRoom = ({ onClose }: { onClose: () => void }) => {
     };
 
     return (
-        <div className="player-room-container" style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100dvh', zIndex: 50, overflow: 'hidden' }}>
+        <div className="player-room-container">
             {isMobile ? (
                 /* ==================== MOBILE QUICK-ACCESS MENU ==================== */
                 <SceneShell
@@ -322,6 +322,11 @@ export const PlayerRoom = ({ onClose }: { onClose: () => void }) => {
                                 <Store size={28} />
                                 <span>Furniture</span>
                                 <small>Buy & Place Items</small>
+                            </button>
+                            <button className="room-feature-btn room-feature-btn--pet" onClick={() => navigate('/pet')}>
+                                <span style={{ fontSize: '1.8rem' }}>{petSprite || '🐾'}</span>
+                                <span>Pet</span>
+                                <small>Care & Bond</small>
                             </button>
                         </div>
                     </div>

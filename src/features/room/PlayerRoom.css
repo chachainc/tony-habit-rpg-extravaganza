@@ -26,6 +26,25 @@
     background: #0a0a14;
 }
 
+/* On mobile, allow the room to scroll so back button is accessible */
+@media (max-width: 768px) {
+    .player-room-container {
+        overflow-y: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    .player-room-container .scene-shell {
+        overflow: visible;
+        min-height: 100dvh;
+        height: auto;
+    }
+
+    .player-room-container .scene-layer--content {
+        position: relative;
+        min-height: 100dvh;
+    }
+}
+
 /* Time-based overlay tints */
 .player-room-overlay.time-morning {
     background: rgba(255, 200, 100, 0.15), rgba(0, 0, 0, 0.7);

@@ -48,7 +48,7 @@ export const TopBar = () => {
             animate={{ y: 0 }}
             transition={{ duration: 0.3 }}
         >
-            {/* Left Section: Level & XP */}
+            {/* Left Section: Level, XP & Gold */}
             <div className="top-bar__section">
                 <div
                     className="top-bar__item top-bar__item--level top-bar__item--clickable"
@@ -59,6 +59,19 @@ export const TopBar = () => {
                     <div className="top-bar__content">
                         <span className="top-bar__label">Lv</span>
                         <span className="top-bar__value">{level}</span>
+                    </div>
+                </div>
+
+                <div
+                    className="top-bar__item top-bar__item--gold top-bar__item--clickable"
+                    onClick={() => navigate('/marketplace')}
+                    title="Go to Marketplace"
+                >
+                    <div className="top-bar__icon">
+                        <Coins size={18} />
+                    </div>
+                    <div className="top-bar__content">
+                        <span className="top-bar__value">{currency.toLocaleString()}</span>
                     </div>
                 </div>
 
@@ -131,19 +144,6 @@ export const TopBar = () => {
 
             {/* Right Section: Currency & Timer */}
             <div className="top-bar__section">
-                <div
-                    className="top-bar__item top-bar__item--gold top-bar__item--clickable"
-                    onClick={() => navigate('/marketplace')}
-                    title="Go to Marketplace"
-                >
-                    <div className="top-bar__icon">
-                        <Coins size={18} />
-                    </div>
-                    <div className="top-bar__content">
-                        <span className="top-bar__value">{currency.toLocaleString()}</span>
-                    </div>
-                </div>
-
                 <div
                     className="top-bar__item top-bar__item--clickable"
                     onClick={() => navigate('/monopoly')}

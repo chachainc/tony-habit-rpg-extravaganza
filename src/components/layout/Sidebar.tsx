@@ -1,8 +1,9 @@
 import { NavLink } from 'react-router-dom';
-import { House, CheckSquare, Cat, BarChart2, Settings, BookOpen, Swords, Dumbbell, Calendar, Crown, Shield, Heart, MapPin, User, Store } from 'lucide-react';
+import { House, CheckSquare, BarChart2, Settings, Swords, Calendar, Crown, Shield, MapPin, User, Store } from 'lucide-react';
 import './Sidebar.css';
 
 const NAV_ITEMS = [
+    { icon: MapPin, label: 'Town', path: '/town' },
     { icon: House, label: 'Room', path: '/' },
     { icon: CheckSquare, label: 'Tasks', path: '/tasks' },
     { icon: Store, label: 'Market', path: '/marketplace' },
@@ -10,11 +11,6 @@ const NAV_ITEMS = [
     { icon: Swords, label: 'Arena', path: '/arena' },
     { icon: Crown, label: 'Conquest', path: '/conquest' },
     { icon: User, label: 'Character', path: '/character' },
-    { icon: BookOpen, label: 'Library', path: '/library' },
-    { icon: Dumbbell, label: 'Gym', path: '/gym' },
-    { icon: Heart, label: 'Health', path: '/health' },
-    { icon: MapPin, label: 'Town', path: '/town' },
-    { icon: Cat, label: 'Pet', path: '/pet' },
     { icon: BarChart2, label: 'Stats', path: '/stats' },
     { icon: Shield, label: 'Security', path: '/security' },
     { icon: Settings, label: 'Settings', path: '/settings' },

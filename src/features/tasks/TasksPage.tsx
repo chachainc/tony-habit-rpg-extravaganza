@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import dayjs from 'dayjs';
 import { motion } from 'framer-motion';
-import { Plus, Gift, CheckCircle, Circle, Sun, Sunset, Moon, Star, MinusCircle, Trash2 } from 'lucide-react';
+import { Plus, Gift, CheckCircle, Circle, Sun, Sunset, Moon, Star, MinusCircle, Trash2, Pencil } from 'lucide-react';
 import { Card, ProgressBar } from '../../components/ui';
 import { type TaskDifficulty } from '../../store/useTaskStore';
 import { useGameStore, type SkillName } from '../../store/useGameStore';
@@ -69,6 +69,7 @@ export const TasksPage = () => {
         weeklyBonusClaimed,
         addCustomRecurringTask,
         removeDailyTask,
+        editDailyTask,
     } = useRecurringTasksStore();
 
     // Form State
@@ -250,17 +251,31 @@ export const TasksPage = () => {
                                         ))}
                                     </div>
                                 </div>
-                                <button
-                                    className="task-delete-btn"
-                                    onClick={(e) => {
-                                        e.stopPropagation();
-                                        if (confirm(`Remove "${task.title}"?`)) {
-                                            removeDailyTask(task.id);
-                                        }
-                                    }}
-                                >
-                                    <MinusCircle size={18} />
-                                </button>
+                                <div className="task-action-btns">
+                                    <button
+                                        className="task-edit-btn"
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            const newTitle = prompt('Edit task title:', task.title);
+                                            if (newTitle && newTitle.trim()) {
+                                                editDailyTask(task.id, newTitle.trim());
+                                            }
+                                        }}
+                                    >
+                                        <Pencil size={16} />
+                                    </button>
+                                    <button
+                                        className="task-delete-btn"
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            if (confirm(`Remove "${task.title}"?`)) {
+                                                removeDailyTask(task.id);
+                                            }
+                                        }}
+                                    >
+                                        <MinusCircle size={18} />
+                                    </button>
+                                </div>
                             </div>
                         ))}
                     </div>

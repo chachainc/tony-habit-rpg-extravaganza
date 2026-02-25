@@ -2158,6 +2158,13 @@
    ================================= */
 @media (max-width: 768px) {
 
+    /* Allow the arena to scroll on mobile */
+    .arena-modal {
+        overflow-y: auto;
+        -webkit-overflow-scrolling: touch;
+        padding-bottom: calc(70px + env(safe-area-inset-bottom, 0px));
+    }
+
     /* --- CAMPAIGN MAP --- */
     .campaign-header h2 {
         font-size: 1.4rem;

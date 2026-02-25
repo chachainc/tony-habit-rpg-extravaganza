@@ -177,6 +177,10 @@
     transform: scale(1.1);
 }
 
+.store-close-label {
+    display: none;
+}
+
 /* Content */
 .store-content {
     position: relative;
@@ -233,13 +237,23 @@
     }
 
     .store-close-btn {
-        width: 44px;
+        min-width: 44px;
         height: 44px;
-        padding: 0.6rem;
-        background: rgba(0, 0, 0, 0.6);
+        padding: 0.5rem 0.75rem;
+        background: rgba(0, 0, 0, 0.7);
         border: 2px solid rgba(255, 255, 255, 0.3);
-        border-radius: 50%;
+        border-radius: 22px;
         z-index: 20;
+        display: flex;
+        align-items: center;
+        gap: 0.3rem;
+    }
+
+    .store-close-label {
+        display: inline;
+        font-size: 0.8rem;
+        font-weight: 700;
+        color: white;
     }
 
     .store-header {

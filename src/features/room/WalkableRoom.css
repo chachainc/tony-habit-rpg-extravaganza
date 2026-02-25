@@ -1037,6 +1037,11 @@
     border-color: rgba(239, 68, 68, 0.4);
 }
 
+.room-feature-btn--pet {
+    background: linear-gradient(135deg, rgba(251, 191, 36, 0.3), rgba(217, 119, 6, 0.15));
+    border-color: rgba(251, 191, 36, 0.4);
+}
+
 /* ==================== BODY PANEL ==================== */
 .body-panel {
     padding: 1.5rem;

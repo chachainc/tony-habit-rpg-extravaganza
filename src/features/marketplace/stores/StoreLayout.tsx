@@ -87,7 +87,7 @@ export const StoreLayout = ({
                         <h2>{storeName}</h2>
                     </div>
                     <button className="store-close-btn" onClick={onClose}>
-                        <X size={24} />
+                        <X size={20} /> <span className="store-close-label">Back</span>
                     </button>
                 </div>
 

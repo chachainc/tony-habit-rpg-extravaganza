@@ -63,6 +63,7 @@ interface RecurringTasksState {
 
     addCustomRecurringTask: (title: string, bundle: BundleType, rewards: TaskReward[]) => void;
     removeDailyTask: (id: string) => void;
+    editDailyTask: (id: string, newTitle: string) => void;
 }
 
 // Get current date in Eastern Time
@@ -442,6 +443,17 @@ export const useRecurringTasksStore = create<RecurringTasksState>()(
                         dailyTasks: state.dailyTasks.filter(t => t.id !== id)
                     };
                 });
+            },
+
+            editDailyTask: (id, newTitle) => {
+                set(state => ({
+                    dailyTasks: state.dailyTasks.map(t =>
+                        t.id === id ? { ...t, title: newTitle } : t
+                    ),
+                    customRecurringTasks: state.customRecurringTasks.map(t =>
+                        t.id === id ? { ...t, title: newTitle } : t
+                    ),
+                }));
             },
 
             resetWeeklyTasks: () => {
