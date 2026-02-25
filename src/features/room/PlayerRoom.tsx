@@ -113,7 +113,15 @@ export const PlayerRoom = ({ onClose }: { onClose: () => void }) => {
     const [tooltipSeen, setTooltipSeen] = useState(false);
     const keysPressed = useRef<Set<string>>(new Set());
 
-    const isMobile = window.innerWidth <= 768;
+    // Reactive mobile detection
+    const [isMobile, setIsMobile] = useState(() => window.innerWidth <= 768);
+    useEffect(() => {
+        const mq = window.matchMedia('(max-width: 768px)');
+        const handler = (e: MediaQueryListEvent) => setIsMobile(e.matches);
+        mq.addEventListener('change', handler);
+        setIsMobile(mq.matches); // Sync on mount
+        return () => mq.removeEventListener('change', handler);
+    }, []);
 
     // Get active aura and titles
     const activeAura = useMemo(() => AURAS.find(a => a.id === activeAuraId), [activeAuraId]);

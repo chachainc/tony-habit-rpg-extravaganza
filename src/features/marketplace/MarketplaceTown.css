@@ -332,10 +332,22 @@
         overflow-y: auto;
         height: 100dvh;
     }
+
+    .marketplace-mobile-grid {
+        display: block !important;
+        /* Show card grid on mobile */
+    }
+
+    .marketplace-desktop-view {
+        display: none !important;
+        /* Hide walkable grid on mobile */
+    }
 }
 
 /* ==================== MOBILE STORE CARDS ==================== */
 .marketplace-mobile-grid {
+    display: none;
+    /* Hidden on desktop */
     width: 100%;
     max-width: 100%;
     padding: 4.5rem 1rem 6rem;
@@ -343,6 +355,11 @@
     height: 100dvh;
     -webkit-overflow-scrolling: touch;
     box-sizing: border-box;
+}
+
+.marketplace-desktop-view {
+    display: contents;
+    /* Show on desktop */
 }
 
 .marketplace-mobile-title {

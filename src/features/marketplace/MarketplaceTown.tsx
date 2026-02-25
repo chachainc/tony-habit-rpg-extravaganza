@@ -36,8 +36,6 @@ export const MarketplaceTown = () => {
     const { playerPosition, setPlayerPosition, activeStore, openStore, closeStore } = useMarketplaceStore();
     const [nearbyStore, setNearbyStore] = useState<string | null>(null);
 
-    const isMobile = window.innerWidth <= 768;
-
     // Movement keys state
     const keysPressed = useRef<Set<string>>(new Set());
 
@@ -175,169 +173,168 @@ export const MarketplaceTown = () => {
                         Exit Marketplace
                     </button>
 
-                    {/* Mobile Store Grid */}
-                    {isMobile ? (
-                        <div className="marketplace-mobile-grid">
-                            <h2 className="marketplace-mobile-title">🏪 Marketplace</h2>
-                            <div className="marketplace-store-cards">
-                                {MARKETPLACE_LAYOUT.stores.map((store) => {
-                                    const signboard = SIGNBOARD_MAP[store.id];
-                                    return (
-                                        <motion.div
-                                            key={store.id}
-                                            className="marketplace-store-card"
-                                            style={{ '--glow-color': store.color } as React.CSSProperties}
-                                            whileTap={{ scale: 0.95 }}
-                                            onClick={() => openStore(store.id)}
-                                        >
-                                            <div className="store-card-image">
-                                                {signboard ? (
-                                                    <img src={signboard} alt={store.name} />
-                                                ) : (
-                                                    <span className="store-card-emoji">{store.emoji}</span>
-                                                )}
-                                            </div>
-                                            <div className="store-card-info">
-                                                <h3>{store.name}</h3>
-                                                <p>{store.description}</p>
-                                            </div>
-                                            <div className="store-card-glow" style={{ backgroundColor: store.color }} />
-                                        </motion.div>
-                                    );
-                                })}
-                            </div>
-                        </div>
-                    ) : (
-                        <>
-                            {/* Town grid (desktop only) */}
-                            <div
-                                className="marketplace-grid"
-                                onClick={handleGridTap}
-                                style={{
-                                    width: MARKETPLACE_LAYOUT.gridSize.width * MARKETPLACE_LAYOUT.tileSize,
-                                    height: MARKETPLACE_LAYOUT.gridSize.height * MARKETPLACE_LAYOUT.tileSize,
-                                    touchAction: 'none'
-                                }}
-                            >
-                                {/* Ground tiles */}
-                                {Array.from({ length: MARKETPLACE_LAYOUT.gridSize.height }).map((_, y) =>
-                                    Array.from({ length: MARKETPLACE_LAYOUT.gridSize.width }).map((_, x) => (
-                                        <div
-                                            key={`${x}-${y}`}
-                                            className="marketplace-tile"
-                                            style={{
-                                                left: x * MARKETPLACE_LAYOUT.tileSize,
-                                                top: y * MARKETPLACE_LAYOUT.tileSize,
-                                                width: MARKETPLACE_LAYOUT.tileSize,
-                                                height: MARKETPLACE_LAYOUT.tileSize,
-                                            }}
-                                        />
-                                    ))
-                                )}
-
-                                {/* Store buildings */}
-                                {MARKETPLACE_LAYOUT.stores.map((store) => {
-                                    const isNearby = nearbyStore === store.id;
-                                    const signboard = SIGNBOARD_MAP[store.id];
-
-                                    return (
-                                        <motion.div
-                                            key={store.id}
-                                            className={`marketplace-building ${isNearby ? 'marketplace-building--nearby' : ''}`}
-                                            style={{
-                                                left: store.position.x * MARKETPLACE_LAYOUT.tileSize,
-                                                top: store.position.y * MARKETPLACE_LAYOUT.tileSize,
-                                                width: MARKETPLACE_LAYOUT.tileSize * 2,
-                                                height: MARKETPLACE_LAYOUT.tileSize * 2,
-                                                '--glow-color': store.color,
-                                            } as React.CSSProperties}
-                                            onClick={(e) => {
-                                                // Mobile/touch interaction and desktop click
-                                                e.stopPropagation();
-                                                if (isNearby) {
-                                                    openStore(store.id);
-                                                }
-                                            }}
-                                            animate={isNearby ? { scale: [1, 1.05, 1] } : {}}
-                                            transition={{ duration: 1, repeat: Infinity }}
-                                        >
+                    {/* Mobile Store Grid — visible only on small screens via CSS */}
+                    <div className="marketplace-mobile-grid">
+                        <h2 className="marketplace-mobile-title">🏪 Marketplace</h2>
+                        <div className="marketplace-store-cards">
+                            {MARKETPLACE_LAYOUT.stores.map((store) => {
+                                const signboard = SIGNBOARD_MAP[store.id];
+                                return (
+                                    <motion.div
+                                        key={store.id}
+                                        className="marketplace-store-card"
+                                        style={{ '--glow-color': store.color } as React.CSSProperties}
+                                        whileTap={{ scale: 0.95 }}
+                                        onClick={() => openStore(store.id)}
+                                    >
+                                        <div className="store-card-image">
                                             {signboard ? (
-                                                <img
-                                                    src={signboard}
-                                                    alt={store.name}
-                                                    className="building-signboard"
-                                                />
+                                                <img src={signboard} alt={store.name} />
                                             ) : (
-                                                <div className="building-emoji">{store.emoji}</div>
+                                                <span className="store-card-emoji">{store.emoji}</span>
                                             )}
-                                            <div className="building-name">{store.name}</div>
-                                            {isNearby && (
-                                                <div className="building-glow" style={{ backgroundColor: store.color }} />
-                                            )}
-                                        </motion.div>
-                                    );
-                                })}
+                                        </div>
+                                        <div className="store-card-info">
+                                            <h3>{store.name}</h3>
+                                            <p>{store.description}</p>
+                                        </div>
+                                        <div className="store-card-glow" style={{ backgroundColor: store.color }} />
+                                    </motion.div>
+                                );
+                            })}
+                        </div>
+                    </div>
 
-                                {/* Obstacles (fountain) */}
-                                {MARKETPLACE_LAYOUT.obstacles.map((obs, idx) => (
+                    {/* Desktop walkable grid — hidden on small screens via CSS */}
+                    <div className="marketplace-desktop-view">
+                        {/* Town grid (desktop only) */}
+                        <div
+                            className="marketplace-grid"
+                            onClick={handleGridTap}
+                            style={{
+                                width: MARKETPLACE_LAYOUT.gridSize.width * MARKETPLACE_LAYOUT.tileSize,
+                                height: MARKETPLACE_LAYOUT.gridSize.height * MARKETPLACE_LAYOUT.tileSize,
+                                touchAction: 'none'
+                            }}
+                        >
+                            {/* Ground tiles */}
+                            {Array.from({ length: MARKETPLACE_LAYOUT.gridSize.height }).map((_, y) =>
+                                Array.from({ length: MARKETPLACE_LAYOUT.gridSize.width }).map((_, x) => (
                                     <div
-                                        key={`obs-${idx}`}
-                                        className="marketplace-obstacle"
+                                        key={`${x}-${y}`}
+                                        className="marketplace-tile"
                                         style={{
-                                            left: obs.x * MARKETPLACE_LAYOUT.tileSize,
-                                            top: obs.y * MARKETPLACE_LAYOUT.tileSize,
+                                            left: x * MARKETPLACE_LAYOUT.tileSize,
+                                            top: y * MARKETPLACE_LAYOUT.tileSize,
                                             width: MARKETPLACE_LAYOUT.tileSize,
                                             height: MARKETPLACE_LAYOUT.tileSize,
                                         }}
-                                    >
-                                        ⛲
-                                    </div>
-                                ))}
+                                    />
+                                ))
+                            )}
 
-                                {/* Player */}
-                                <motion.div
-                                    className="marketplace-player"
+                            {/* Store buildings */}
+                            {MARKETPLACE_LAYOUT.stores.map((store) => {
+                                const isNearby = nearbyStore === store.id;
+                                const signboard = SIGNBOARD_MAP[store.id];
+
+                                return (
+                                    <motion.div
+                                        key={store.id}
+                                        className={`marketplace-building ${isNearby ? 'marketplace-building--nearby' : ''}`}
+                                        style={{
+                                            left: store.position.x * MARKETPLACE_LAYOUT.tileSize,
+                                            top: store.position.y * MARKETPLACE_LAYOUT.tileSize,
+                                            width: MARKETPLACE_LAYOUT.tileSize * 2,
+                                            height: MARKETPLACE_LAYOUT.tileSize * 2,
+                                            '--glow-color': store.color,
+                                        } as React.CSSProperties}
+                                        onClick={(e) => {
+                                            // Mobile/touch interaction and desktop click
+                                            e.stopPropagation();
+                                            if (isNearby) {
+                                                openStore(store.id);
+                                            }
+                                        }}
+                                        animate={isNearby ? { scale: [1, 1.05, 1] } : {}}
+                                        transition={{ duration: 1, repeat: Infinity }}
+                                    >
+                                        {signboard ? (
+                                            <img
+                                                src={signboard}
+                                                alt={store.name}
+                                                className="building-signboard"
+                                            />
+                                        ) : (
+                                            <div className="building-emoji">{store.emoji}</div>
+                                        )}
+                                        <div className="building-name">{store.name}</div>
+                                        {isNearby && (
+                                            <div className="building-glow" style={{ backgroundColor: store.color }} />
+                                        )}
+                                    </motion.div>
+                                );
+                            })}
+
+                            {/* Obstacles (fountain) */}
+                            {MARKETPLACE_LAYOUT.obstacles.map((obs, idx) => (
+                                <div
+                                    key={`obs-${idx}`}
+                                    className="marketplace-obstacle"
                                     style={{
-                                        left: playerPosition.x * MARKETPLACE_LAYOUT.tileSize,
-                                        top: playerPosition.y * MARKETPLACE_LAYOUT.tileSize,
+                                        left: obs.x * MARKETPLACE_LAYOUT.tileSize,
+                                        top: obs.y * MARKETPLACE_LAYOUT.tileSize,
                                         width: MARKETPLACE_LAYOUT.tileSize,
                                         height: MARKETPLACE_LAYOUT.tileSize,
                                     }}
-                                    animate={{ y: [0, -3, 0] }}
-                                    transition={{ duration: 0.8, repeat: Infinity }}
                                 >
-                                    <img
-                                        src={playerSprite}
-                                        alt="Player"
-                                        className="player-sprite"
-                                    />
-                                </motion.div>
-                            </div>
-
-                            {/* Interaction prompt */}
-                            {nearbyStore && nearbyStoreData && !activeStore && (
-                                <motion.div
-                                    className="interaction-prompt"
-                                    initial={{ opacity: 0, y: 10 }}
-                                    animate={{ opacity: 1, y: 0 }}
-                                    onClick={(e) => { e.stopPropagation(); openStore(nearbyStoreData.id); }}
-                                    onPointerUp={(e) => { e.stopPropagation(); openStore(nearbyStoreData.id); }}
-                                    style={{ cursor: 'pointer', zIndex: 100 }}
-                                >
-                                    <span className="desktop-hint">Press <kbd>E</kbd> to enter </span>
-                                    <span className="mobile-hint">Tap here to enter </span>
-                                    <strong>{nearbyStoreData.name}</strong>
-                                </motion.div>
-                            )}
-
-                            {/* Controls hint */}
-                            {!activeStore && (
-                                <div className="controls-hint">
-                                    <div>Use <kbd>WASD</kbd> or <kbd>Arrow Keys</kbd> to move</div>
+                                    ⛲
                                 </div>
-                            )}
-                        </>
-                    )}
+                            ))}
+
+                            {/* Player */}
+                            <motion.div
+                                className="marketplace-player"
+                                style={{
+                                    left: playerPosition.x * MARKETPLACE_LAYOUT.tileSize,
+                                    top: playerPosition.y * MARKETPLACE_LAYOUT.tileSize,
+                                    width: MARKETPLACE_LAYOUT.tileSize,
+                                    height: MARKETPLACE_LAYOUT.tileSize,
+                                }}
+                                animate={{ y: [0, -3, 0] }}
+                                transition={{ duration: 0.8, repeat: Infinity }}
+                            >
+                                <img
+                                    src={playerSprite}
+                                    alt="Player"
+                                    className="player-sprite"
+                                />
+                            </motion.div>
+                        </div>
+
+                        {/* Interaction prompt */}
+                        {nearbyStore && nearbyStoreData && !activeStore && (
+                            <motion.div
+                                className="interaction-prompt"
+                                initial={{ opacity: 0, y: 10 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                onClick={(e) => { e.stopPropagation(); openStore(nearbyStoreData.id); }}
+                                onPointerUp={(e) => { e.stopPropagation(); openStore(nearbyStoreData.id); }}
+                                style={{ cursor: 'pointer', zIndex: 100 }}
+                            >
+                                <span className="desktop-hint">Press <kbd>E</kbd> to enter </span>
+                                <span className="mobile-hint">Tap here to enter </span>
+                                <strong>{nearbyStoreData.name}</strong>
+                            </motion.div>
+                        )}
+
+                        {/* Controls hint */}
+                        {!activeStore && (
+                            <div className="controls-hint">
+                                <div>Use <kbd>WASD</kbd> or <kbd>Arrow Keys</kbd> to move</div>
+                            </div>
+                        )}
+                    </div>
                 </div>
             </SceneShell>
 
