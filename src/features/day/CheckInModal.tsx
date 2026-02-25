@@ -57,8 +57,14 @@ export const CheckInModal = ({ onClose }: { onClose: () => void }) => {
                         return (
                             <motion.div
                                 key={day}
-                                className={`day-card ${isCurrentDay ? 'current' : ''} ${isPastDay ? 'claimed' : ''}`}
+                                className={`day-card ${isCurrentDay ? 'current' : ''} ${isPastDay ? 'claimed' : ''} ${isCurrentDay && canCheckIn ? 'tappable' : ''}`}
                                 whileHover={{ scale: 1.05 }}
+                                onClick={() => {
+                                    if (isCurrentDay && canCheckIn && !showReward) {
+                                        handleCheckIn();
+                                    }
+                                }}
+                                style={{ cursor: isCurrentDay && canCheckIn ? 'pointer' : 'default' }}
                             >
                                 <div className="day-number">Day {day}</div>
                                 <div className="day-icon">

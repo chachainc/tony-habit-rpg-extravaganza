@@ -877,13 +877,14 @@
 .room-mobile-menu {
     width: 100%;
     max-width: 100%;
-    padding: 1rem;
-    overflow-y: auto;
-    max-height: 100dvh;
-    -webkit-overflow-scrolling: touch;
+    padding: 0 1rem 1rem;
+    padding-top: calc(90px + env(safe-area-inset-top, 0px));
+    padding-bottom: calc(90px + env(safe-area-inset-bottom, 0px));
     display: flex;
     flex-direction: column;
     gap: 1rem;
+    min-height: 100dvh;
+    box-sizing: border-box;
 }
 
 .room-mobile-header {

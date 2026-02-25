@@ -176,6 +176,25 @@
     background: rgba(76, 175, 80, 0.1);
 }
 
+.day-card.tappable {
+    border-color: #22c55e;
+    background: rgba(34, 197, 94, 0.15);
+    box-shadow: 0 0 20px rgba(34, 197, 94, 0.4);
+    animation: tappable-pulse 2s ease-in-out infinite;
+}
+
+@keyframes tappable-pulse {
+
+    0%,
+    100% {
+        box-shadow: 0 0 12px rgba(34, 197, 94, 0.3);
+    }
+
+    50% {
+        box-shadow: 0 0 24px rgba(34, 197, 94, 0.6);
+    }
+}
+
 .day-number {
     font-size: 0.75rem;
     color: var(--text-secondary);

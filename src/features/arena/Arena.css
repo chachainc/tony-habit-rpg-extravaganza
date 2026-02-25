@@ -2371,7 +2371,7 @@
     /* The overall combat container inside arena-page */
     .battle-stage {
         flex: 1;
-        min-height: 0;
+        min-height: 35vh;
         padding-bottom: 0.5rem;
     }
 
@@ -2441,18 +2441,45 @@
     }
 
     /* Battle sprites — ensure both are visible */
-    .battle-stage-platforms {
-        bottom: 0;
-        height: 100%;
+    .battle-stage-platforms .combatant-sprite {
+        background: rgba(10, 10, 20, 0.85);
+        border-radius: 12px;
+        padding: 0.25rem;
     }
 
     .battle-stage-platforms .combatant-sprite img {
-        max-height: 20vh;
+        max-height: 22vh;
+        object-fit: contain;
     }
 
     .platform-ellipse {
         width: 120px;
         height: 40px;
+    }
+
+    /* Prep screen mobile overrides */
+    .prep-grid {
+        flex-direction: column !important;
+        gap: 1rem;
+        padding-bottom: calc(80px + env(safe-area-inset-bottom, 0px));
+    }
+
+    .prep-enemy-panel,
+    .prep-hero-panel {
+        width: 100% !important;
+        max-width: 100% !important;
+    }
+
+    .prep-portrait {
+        max-height: 120px;
+        overflow: hidden;
+    }
+
+    .prep-portrait-img {
+        max-height: 120px;
+        object-fit: contain;
+        background: rgba(10, 10, 20, 0.7);
+        border-radius: 8px;
     }
 
     .pet-icon {

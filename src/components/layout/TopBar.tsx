@@ -77,6 +77,17 @@ export const TopBar = () => {
 
                 <div
                     className="top-bar__item top-bar__item--clickable"
+                    onClick={() => navigate('/monopoly')}
+                    title="Play Monopoly"
+                >
+                    <div className="top-bar__icon">🎫</div>
+                    <div className="top-bar__content">
+                        <span className="top-bar__value">{dailyTickets}</span>
+                    </div>
+                </div>
+
+                <div
+                    className="top-bar__item top-bar__item--clickable"
                     onClick={() => navigate('/stats')}
                     title="View Stats"
                 >
@@ -144,16 +155,6 @@ export const TopBar = () => {
 
             {/* Right Section: Currency & Timer */}
             <div className="top-bar__section">
-                <div
-                    className="top-bar__item top-bar__item--clickable"
-                    onClick={() => navigate('/monopoly')}
-                    title="Play Monopoly"
-                >
-                    <div className="top-bar__icon">🎫</div>
-                    <div className="top-bar__content">
-                        <span className="top-bar__value">{dailyTickets}</span>
-                    </div>
-                </div>
 
                 <div
                     className="top-bar__item top-bar__item--clickable"

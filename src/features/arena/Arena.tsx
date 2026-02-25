@@ -500,7 +500,6 @@ export const Arena = ({ onClose }: { onClose: () => void }) => {
                                     <Panel variant="glass" padding="md" className="prep-hero-panel">
                                         <div className="prep-panel-header">YOUR LOADOUT</div>
                                         <div className="profile-header">
-                                            <span className="personality-tag">Your Loadout</span>
                                             <div className="prep-portrait">
                                                 <img src={playerSpriteImg} alt="Player" className="prep-portrait-img" />
                                             </div>
