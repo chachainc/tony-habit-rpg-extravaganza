@@ -23,23 +23,17 @@ export const CharacterCreation: React.FC = () => {
     const navigate = useNavigate();
     const { setCharacterArchetype, setAppearance, setHealthTrackingMode } = useProfileStore();
 
-    const [step, setStep] = useState<1 | 2 | 3>(1);
+    const [step, setStep] = useState<1 | 2>(1);
     const [selectedArchetype, setSelectedArchetype] = useState<string | null>(null);
-    const [hairHue, setHairHue] = useState<number>(0);
-    const [skinHue, setSkinHue] = useState<number>(0);
     const [healthMode, setHealthMode] = useState<'sleep' | 'readiness' | 'none' | null>(null);
 
-    const activeArchetypeData = ARCHETYPES.find(a => a.id === selectedArchetype);
-
     const handleComplete = () => {
-        // Save to store
         if (!selectedArchetype || !healthMode) return;
 
         setCharacterArchetype(selectedArchetype as any);
-        setAppearance({ hairHue, skinHue });
+        setAppearance({ hairHue: 0, skinHue: 0 });
         setHealthTrackingMode(healthMode);
 
-        // Redirect to main game
         navigate('/');
     };
 
@@ -54,7 +48,7 @@ export const CharacterCreation: React.FC = () => {
                 {step === 1 && (
                     <Panel variant="glass" padding="lg" className="cc-panel animation-slide-up">
                         <h2>Choose Your Path</h2>
-                        <p className="text-muted">You can customize your appearance and switch archetypes later.</p>
+                        <p className="text-muted">Select your class. You can switch later.</p>
 
                         <div className="archetype-grid">
                             {ARCHETYPES.map((arch) => (
@@ -85,51 +79,8 @@ export const CharacterCreation: React.FC = () => {
                     </Panel>
                 )}
 
-                {/* STEP 2: Appearance */}
-                {step === 2 && activeArchetypeData && (
-                    <Panel variant="glass" padding="lg" className="cc-panel animation-slide-up">
-                        <h2>Appearance</h2>
-
-                        <div className="appearance-layout">
-                            <div className="appearance-preview">
-                                <img
-                                    src={activeArchetypeData.img}
-                                    alt="preview"
-                                    style={{ filter: `hue-rotate(${hairHue}deg) brightness(${100 + skinHue}%)` }} // Simple hue manipulation MVP
-                                />
-                            </div>
-
-                            <div className="appearance-controls">
-                                <div className="control-group">
-                                    <label>Aura / Tint Offset</label>
-                                    <input
-                                        type="range"
-                                        min="0" max="360"
-                                        value={hairHue}
-                                        onChange={e => setHairHue(Number(e.target.value))}
-                                    />
-                                </div>
-                                <div className="control-group">
-                                    <label>Brightness Shift</label>
-                                    <input
-                                        type="range"
-                                        min="-30" max="30"
-                                        value={skinHue}
-                                        onChange={e => setSkinHue(Number(e.target.value))}
-                                    />
-                                </div>
-                            </div>
-                        </div>
-
-                        <div className="cc-actions spaced">
-                            <GachaButton variant="secondary" onClick={() => setStep(1)}>Back</GachaButton>
-                            <GachaButton variant="primary" size="lg" onClick={() => setStep(3)}>Next</GachaButton>
-                        </div>
-                    </Panel>
-                )}
-
-                {/* STEP 3: Sleep Tracking */}
-                {step === 3 && (
+                {/* STEP 2: Sleep Tracking */}
+                {step === 2 && (
                     <Panel variant="glass" padding="lg" className="cc-panel animation-slide-up">
                         <h2>Do You Track Your Sleep?</h2>
                         <p className="text-muted mb-4">If yes, you'll log your sleep quality each morning and it will impact your in-game stats and recovery.</p>
@@ -153,7 +104,7 @@ export const CharacterCreation: React.FC = () => {
                         </div>
 
                         <div className="cc-actions spaced mt-4">
-                            <GachaButton variant="secondary" onClick={() => setStep(2)}>Back</GachaButton>
+                            <GachaButton variant="secondary" onClick={() => setStep(1)}>Back</GachaButton>
                             <GachaButton
                                 variant="primary"
                                 size="lg"

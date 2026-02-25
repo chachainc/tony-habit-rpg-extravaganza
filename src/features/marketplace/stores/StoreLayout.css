@@ -232,6 +232,29 @@
         border: none;
     }
 
+    .store-close-btn {
+        width: 44px;
+        height: 44px;
+        padding: 0.6rem;
+        background: rgba(0, 0, 0, 0.6);
+        border: 2px solid rgba(255, 255, 255, 0.3);
+        border-radius: 50%;
+        z-index: 20;
+    }
+
+    .store-header {
+        padding: 0.6rem 0.75rem;
+    }
+
+    .store-header h2 {
+        font-size: 1rem;
+    }
+
+    .store-content {
+        padding: var(--space-3);
+        padding-bottom: calc(var(--space-3) + env(safe-area-inset-bottom, 0px) + 70px);
+    }
+
     .store-bottom-sheet {
         padding-bottom: calc(var(--space-3) + env(safe-area-inset-bottom, 0px));
     }
