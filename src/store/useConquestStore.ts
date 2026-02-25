@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import { useGameStore } from './useGameStore';
+import { useStrategyStore } from './useStrategyStore';
 
 
 // ─── TYPES ────────────────────────────────────────
@@ -30,7 +30,9 @@ export interface ConquestNode {
     connections: string[];     // IDs of connected nodes
     conquered: boolean;
     isBoss: boolean;
-    sigils: number;            // Reward
+    sigils: number;            // Reward (0 now, sigils from chess only)
+    goldReward: number;        // Gold earned on conquest
+    gemReward: number;         // Gems earned on conquest
 }
 
 export interface ConquestRegion {
@@ -96,6 +98,8 @@ export interface ConquestState {
 export interface ConquestCombatResult {
     won: boolean;
     sigilsEarned: number;
+    goldEarned: number;
+    gemsEarned: number;
     troopsLost: number;
     moraleChange: number;
     rolls: { attacker: number; defender: number };
@@ -174,7 +178,9 @@ function generateRegions(): ConquestRegion[] {
             const terrain = def.terrain[ni % def.terrain.length];
             const forceMult = isBoss ? 3 : isElite ? 1.8 : isStronghold ? 1.5 : isResource ? 0.7 : 1;
             const enemyForce = Math.floor(def.enemyBase * (1 + ni * 0.15) * forceMult);
-            const sigils = isBoss ? 100 + ri * 50 : isElite ? 30 + ri * 10 : isResource ? 15 + ri * 5 : 8 + ri * 3;
+            const sigils = 0; // Sigils only from chess now
+            const goldReward = isBoss ? 50 + ri * 25 : isElite ? 15 + ri * 5 : isResource ? 8 + ri * 3 : 3 + ri * 2;
+            const gemReward = isBoss ? 5 + ri * 2 : isElite ? 1 : 0;
 
             // Build linear connections
             const connections: string[] = [];
@@ -201,6 +207,8 @@ function generateRegions(): ConquestRegion[] {
                 conquered: false,
                 isBoss,
                 sigils,
+                goldReward,
+                gemReward,
             });
         }
 
@@ -304,10 +312,10 @@ export const useConquestStore = create<ConquestState>()(
             conquestAttack: (nodeId) => {
                 const state = get();
                 const region = state.regions[state.currentRegionIdx];
-                if (!region) return { won: false, sigilsEarned: 0, troopsLost: 0, moraleChange: 0, rolls: { attacker: 0, defender: 0 }, modifiers: { force: 0, terrain: 0, morale: 0, recon: 0 } };
+                if (!region) return { won: false, sigilsEarned: 0, goldEarned: 0, gemsEarned: 0, troopsLost: 0, moraleChange: 0, rolls: { attacker: 0, defender: 0 }, modifiers: { force: 0, terrain: 0, morale: 0, recon: 0 } };
 
                 const node = region.nodes.find(n => n.id === nodeId);
-                if (!node || node.conquered) return { won: false, sigilsEarned: 0, troopsLost: 0, moraleChange: 0, rolls: { attacker: 0, defender: 0 }, modifiers: { force: 0, terrain: 0, morale: 0, recon: 0 } };
+                if (!node || node.conquered) return { won: false, sigilsEarned: 0, goldEarned: 0, gemsEarned: 0, troopsLost: 0, moraleChange: 0, rolls: { attacker: 0, defender: 0 }, modifiers: { force: 0, terrain: 0, morale: 0, recon: 0 } };
 
                 // Calculate forces
                 const totalForce = get().getTotalForce();
@@ -352,6 +360,8 @@ export const useConquestStore = create<ConquestState>()(
                 // Apply results
                 const newMorale = Math.min(100, Math.max(0, state.morale + moraleChange));
                 const sigilsEarned = won ? node.sigils : 0;
+                const goldEarned = won ? (node.goldReward || 0) : 0;
+                const gemsEarned = won ? (node.gemReward || 0) : 0;
 
                 // Remove lost soldiers (random)
                 let newSoldiers = [...state.soldiers];
@@ -386,6 +396,18 @@ export const useConquestStore = create<ConquestState>()(
                         currentNodeId: nodeId,
                         memoryLog: newMemory,
                     });
+
+                    // Award gold and gems
+                    if (goldEarned > 0) {
+                        import('./useCurrencyStore').then(({ useCurrencyStore }) => {
+                            useCurrencyStore.getState().addGold(goldEarned);
+                        }).catch(() => { });
+                    }
+                    if (gemsEarned > 0) {
+                        import('./useGameStore').then(({ useGameStore }) => {
+                            useGameStore.getState().addGems(gemsEarned);
+                        }).catch(() => { });
+                    }
                 } else {
                     set({
                         morale: newMorale,
@@ -396,6 +418,8 @@ export const useConquestStore = create<ConquestState>()(
                 return {
                     won,
                     sigilsEarned,
+                    goldEarned,
+                    gemsEarned,
                     troopsLost,
                     moraleChange,
                     rolls: { attacker: attackerRoll, defender: defenderRoll },
@@ -488,13 +512,8 @@ export const useConquestStore = create<ConquestState>()(
             // ─── GETTERS ────────────────────────────────
 
             getPowerScore: () => {
-                const game = useGameStore.getState();
-
-                const baseAtk = game.getAttack();
-                const baseDef = game.getDefense();
-                const hp = 95 + (game.skills['Health']?.level || 1) * 5;
-                const spd = 50 + (game.skills['Cardio']?.level || 1) * 2;
-                return (baseAtk * 3) + (baseDef * 2) + (hp / 10) + (spd / 5);
+                const { strategyLevel } = useStrategyStore.getState();
+                return strategyLevel * 10;
             },
 
             getArmyBonus: () => {
@@ -516,6 +535,8 @@ export const useConquestStore = create<ConquestState>()(
             getTerrainModifier: (terrain) => {
                 const skillName = TERRAIN_SKILL_MAP[terrain];
                 if (!skillName) return 0;
+                // Lazy import to avoid circular dependency (useGameStore was removed from top-level import)
+                const { useGameStore } = require('./useGameStore');
                 const game = useGameStore.getState();
                 const skill = game.skills[skillName as keyof typeof game.skills];
                 if (!skill) return 0;

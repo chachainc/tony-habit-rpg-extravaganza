@@ -2,6 +2,7 @@
     width: 100vw;
     height: 100dvh;
     overflow: hidden;
+    overflow-y: auto;
     position: relative;
     background: #1a1a2e;
     display: flex;
@@ -351,9 +352,6 @@
     width: 100%;
     max-width: 100%;
     padding: 4.5rem 1rem 6rem;
-    overflow-y: auto;
-    height: 100dvh;
-    -webkit-overflow-scrolling: touch;
     box-sizing: border-box;
 }
 

@@ -12,6 +12,7 @@ export type BoardSpaceType =
     | 'mystery_encounter'
     | 'injury'
     | 'ticket'
+    | 'gem'
     | 'go'
     | 'empty';
 
@@ -19,6 +20,7 @@ export type BoardRegion = 'early' | 'mid' | 'late';
 
 export interface TileEffect {
     gold?: number;
+    gems?: number;
     tickets?: number;
     luckXp?: number;
     statBoost?: { stat: string; value: number; durationHours: number };
@@ -131,6 +133,13 @@ const createBoard = (): BoardSpace[] => {
                     reward: { trainingTokens: 1 },
                 };
             }
+            // Gem tile
+            if (i === 17) {
+                space = {
+                    id: i, type: 'gem', name: 'Hidden Gem', icon: '💎', region,
+                    reward: { gems: 1 },
+                };
+            }
             // Shop discount
             if (i === 18) {
                 space = {
@@ -186,6 +195,12 @@ const createBoard = (): BoardSpace[] => {
                 };
             }
             // Injury tile
+            if (i === 33) {
+                space = {
+                    id: i, type: 'gem', name: 'Rare Gem', icon: '💎', region,
+                    reward: { gems: 2 },
+                };
+            }
             if (i === 34) {
                 space = {
                     id: i, type: 'injury', name: 'Injury', icon: '🩹', region,

@@ -47,12 +47,15 @@ export const useStrategyStore = create<StrategyState>()(
 
                 const XP_MULT: Record<number, number> = { 1: 1, 2: 1.5, 3: 2.5 };
                 let baseXp = 0;
+                let baseSigils = 0;
                 switch (result) {
-                    case 'win': baseXp = 50; break;
-                    case 'draw': baseXp = 25; break;
-                    case 'loss': baseXp = 10; break;
+                    case 'win': baseXp = 50; baseSigils = 15; break;
+                    case 'draw': baseXp = 25; baseSigils = 8; break;
+                    case 'loss': baseXp = 10; baseSigils = 3; break;
                 }
-                const xpGain = Math.round(baseXp * (XP_MULT[difficulty] ?? 1));
+                const mult = XP_MULT[difficulty] ?? 1;
+                const xpGain = Math.round(baseXp * mult);
+                const sigilGain = Math.round(baseSigils * mult);
 
                 let newXp = state.strategyXp + xpGain;
                 let newLevel = state.strategyLevel;
@@ -71,6 +74,13 @@ export const useStrategyStore = create<StrategyState>()(
                     lastChessDate: today,
                     chessPlayed: true,
                 });
+
+                // Grant sigils from chess
+                if (sigilGain > 0) {
+                    import('./useConquestStore').then(({ useConquestStore }) => {
+                        useConquestStore.getState().addSigils(sigilGain);
+                    }).catch(() => { });
+                }
             },
 
             canPlayChessToday: () => {

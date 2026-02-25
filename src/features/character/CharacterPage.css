@@ -1,0 +1,269 @@
+.character-page {
+    position: relative;
+    min-height: 100dvh;
+    overflow-y: auto;
+    padding-bottom: 6rem;
+}
+
+.char-bg {
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none;
+}
+
+.char-bg-gradient {
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(135deg, #0f0c29 0%, #1a1040 40%, #24243e 100%);
+}
+
+.char-content {
+    position: relative;
+    z-index: 1;
+    max-width: 700px;
+    margin: 0 auto;
+    padding: 1.5rem 1rem;
+}
+
+/* Header */
+.char-header {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 1rem;
+}
+
+.char-avatar {
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, rgba(139, 92, 246, 0.3), rgba(59, 130, 246, 0.3));
+    border: 2px solid rgba(139, 92, 246, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+}
+
+.char-info h1 {
+    font-size: 1.3rem;
+    color: #e2e8f0;
+    margin: 0;
+}
+
+.char-subtitle {
+    font-size: 0.85rem;
+    color: rgba(139, 92, 246, 0.9);
+    margin: 0.15rem 0 0;
+}
+
+.char-explainer {
+    font-size: 0.78rem;
+    color: rgba(148, 163, 184, 0.8);
+    margin-bottom: 1rem;
+    line-height: 1.5;
+}
+
+/* Insight Banner */
+.char-insight-banner {
+    background: linear-gradient(135deg, rgba(139, 92, 246, 0.15), rgba(59, 130, 246, 0.1));
+    border: 1px solid rgba(139, 92, 246, 0.25);
+    border-radius: 10px;
+    padding: 0.65rem 0.85rem;
+    font-size: 0.72rem;
+    color: #c4b5fd;
+    margin-bottom: 1rem;
+}
+
+/* Stat Sections Grid */
+.char-stats-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.char-stat-section {
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-left: 3px solid;
+    border-radius: 10px;
+    padding: 0.75rem;
+}
+
+.char-stat-header {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 0.5rem;
+}
+
+.char-stat-header h3 {
+    margin: 0;
+    font-size: 0.9rem;
+    font-weight: 600;
+}
+
+.char-stat-lines {
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+}
+
+.char-stat-line {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 0.68rem;
+    padding: 0.15rem 0;
+}
+
+.char-stat-line.base {
+    color: rgba(148, 163, 184, 0.7);
+}
+
+.char-stat-line.bonus {
+    color: #86efac;
+}
+
+.char-stat-line.bonus .char-stat-value {
+    color: #4ade80;
+    font-weight: 600;
+}
+
+.char-stat-line.penalty {
+    color: #fca5a5;
+}
+
+.char-stat-line.penalty .char-stat-value {
+    color: #f87171;
+    font-weight: 600;
+}
+
+.char-stat-line.total {
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    padding-top: 0.35rem;
+    margin-top: 0.2rem;
+    font-weight: 700;
+    font-size: 0.78rem;
+    color: #e2e8f0;
+}
+
+.char-stat-label {
+    flex: 1;
+}
+
+.char-stat-value {
+    font-family: 'JetBrains Mono', monospace;
+    min-width: 48px;
+    text-align: right;
+}
+
+/* Equipped Gear */
+.char-gear-section {
+    margin-top: 1rem;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 10px;
+    padding: 0.75rem;
+}
+
+.char-gear-section h3 {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-size: 0.85rem;
+    color: #fbbf24;
+    margin: 0 0 0.5rem;
+}
+
+.char-gear-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+}
+
+.char-gear-card {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.4rem 0.6rem;
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.char-gear-card.rarity-common {
+    border-left: 3px solid #94a3b8;
+}
+
+.char-gear-card.rarity-rare {
+    border-left: 3px solid #3b82f6;
+}
+
+.char-gear-card.rarity-epic {
+    border-left: 3px solid #a855f7;
+}
+
+.char-gear-card.rarity-legendary {
+    border-left: 3px solid #f59e0b;
+}
+
+.gear-icon {
+    font-size: 1.2rem;
+}
+
+.gear-info {
+    display: flex;
+    flex-direction: column;
+}
+
+.gear-name {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: #e2e8f0;
+}
+
+.gear-stats {
+    font-size: 0.65rem;
+    color: #86efac;
+}
+
+/* How Section */
+.char-how-section {
+    margin-top: 1rem;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-radius: 10px;
+    padding: 0.75rem;
+}
+
+.char-how-section h3 {
+    font-size: 0.85rem;
+    color: #e2e8f0;
+    margin: 0 0 0.5rem;
+}
+
+.char-how-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.char-how-item {
+    font-size: 0.68rem;
+    color: rgba(148, 163, 184, 0.8);
+    line-height: 1.5;
+}
+
+.char-how-item strong {
+    color: #c4b5fd;
+}
+
+/* Responsive */
+@media (min-width: 600px) {
+    .char-stats-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+    }
+}

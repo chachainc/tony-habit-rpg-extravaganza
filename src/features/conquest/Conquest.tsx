@@ -176,7 +176,7 @@ export const Conquest = () => {
                                 <span>Terrain: {TERRAIN_ICONS[selectedNode.terrain]} {selectedNode.terrain}</span>
                                 <span>Enemy Force: ⚔️ {selectedNode.enemyForce}</span>
                                 <span>Your Force: 💪 {totalForce}</span>
-                                <span>Reward: 🔱 {selectedNode.sigils} Sigils</span>
+                                <span>Reward: 🪙 {selectedNode.goldReward || 0} Gold{selectedNode.gemReward ? ` + 💎 ${selectedNode.gemReward} Gems` : ''}</span>
                                 <span>Terrain Mod: {conquest.getTerrainModifier(selectedNode.terrain) >= 0 ? '+' : ''}{conquest.getTerrainModifier(selectedNode.terrain)}</span>
                                 <span>Morale Mod: {conquest.getMoraleModifier() >= 0 ? '+' : ''}{conquest.getMoraleModifier()}</span>
                             </div>
@@ -246,8 +246,14 @@ export const Conquest = () => {
                     </div>
 
                     <div className="result-details">
-                        {combatResult.won && (
+                        {combatResult.won && combatResult.sigilsEarned > 0 && (
                             <div className="result-row reward">🔱 +{combatResult.sigilsEarned} Sigils</div>
+                        )}
+                        {combatResult.won && combatResult.goldEarned > 0 && (
+                            <div className="result-row reward">🪙 +{combatResult.goldEarned} Gold</div>
+                        )}
+                        {combatResult.won && combatResult.gemsEarned > 0 && (
+                            <div className="result-row reward">💎 +{combatResult.gemsEarned} Gems</div>
                         )}
                         {combatResult.troopsLost > 0 && (
                             <div className="result-row loss">☠️ Lost {combatResult.troopsLost} soldier(s)</div>

@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, BedDouble, BookOpen, Shirt, Store, Trophy, Scale, Dumbbell } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
@@ -230,10 +230,6 @@ export const PlayerRoom = ({ onClose }: { onClose: () => void }) => {
             setTooltipSeen(true);
         }
     };
-
-    // Mobile D-Pad Handlers
-    const handleDpadDown = (direction: string) => keysPressed.current.add(direction);
-    const handleDpadUp = (direction: string) => keysPressed.current.delete(direction);
 
     // Grid Tap-To-Move Handler
     const handleGridTap = (e: React.MouseEvent) => {

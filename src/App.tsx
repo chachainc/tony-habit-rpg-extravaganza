@@ -29,6 +29,7 @@ import { ToastContainer } from './components/ui/Toast';
 import { ErrorBoundary } from './components/ui/ErrorBoundary';
 import { LevelUpModal } from './components/ui/LevelUpModal';
 import { TrophyEvolvedModal } from './components/ui/TrophyEvolvedModal';
+import { CharacterPage } from './features/character/CharacterPage';
 import { CurrencyPopVFX } from './components/vfx/CurrencyPopVFX';
 import { PlayerRoom } from './features/room/PlayerRoom';
 import { useDayStore } from './store/useDayStore';
@@ -41,7 +42,7 @@ const TownHubPage = () => {
 
   const handleNavigate = (page: string) => {
     if (page === 'town') {
-      navigate('/');
+      navigate('/town');
     } else {
       navigate(`/${page}`);
     }
@@ -50,10 +51,10 @@ const TownHubPage = () => {
   return <TownHub onNavigate={handleNavigate} />;
 };
 
-// PlayerRoom wrapper with navigation back
+// PlayerRoom wrapper — this is now the default landing page
 const PlayerRoomPage = () => {
   const navigate = useNavigate();
-  return <PlayerRoom onClose={() => navigate(-1)} />;
+  return <PlayerRoom onClose={() => navigate('/town')} />;
 };
 
 function App() {
@@ -142,7 +143,9 @@ function App() {
 
       <Routes>
         <Route path="/" element={<Layout />}>
-          <Route index element={<TownHubPage />} />
+          <Route index element={<PlayerRoomPage />} />
+          <Route path="character" element={<CharacterPage />} />
+          <Route path="town" element={<TownHubPage />} />
           <Route path="tasks" element={<TasksPage />} />
           <Route path="pet" element={<PetPage />} />
           <Route path="stats" element={<StatsPage />} />
@@ -154,7 +157,6 @@ function App() {
           <Route path="conquest" element={<Conquest />} />
           <Route path="security" element={<SecurityPage />} />
           <Route path="shop" element={<ShopModal category="general" onClose={() => window.history.back()} />} />
-          <Route path="home" element={<PlayerRoomPage />} />
           <Route path="room" element={<Room2D />} />
           <Route path="walkable-room" element={<WalkableRoom />} />
           <Route path="marketplace" element={<MarketplaceTown />} />

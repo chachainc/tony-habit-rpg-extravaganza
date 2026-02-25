@@ -1,5 +1,5 @@
-import { useMemo, useState } from 'react';
-import { Trophy, X, Star } from 'lucide-react';
+import { useState } from 'react';
+import { X } from 'lucide-react';
 import {
     useSkillTrophyStore,
     STRENGTH_TROPHIES,

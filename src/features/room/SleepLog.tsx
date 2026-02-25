@@ -1,5 +1,5 @@
 import { X, Moon, Zap, Calendar } from 'lucide-react';
-import { useDayStore } from '../../store/useDayStore';
+import { useDayStore, type SleepLogEntry } from '../../store/useDayStore';
 import './SleepLog.css';
 
 interface Props {
@@ -7,8 +7,18 @@ interface Props {
 }
 
 export const SleepLog = ({ onClose }: Props) => {
-    const { getSleepHistory } = useDayStore();
-    const history = getSleepHistory();
+    const { sleepLogs, readinessLogs } = useDayStore();
+
+    // Merge sleep and readiness logs by date
+    const history = sleepLogs.map((entry: SleepLogEntry) => {
+        const readiness = readinessLogs.find(r => r.date === entry.date);
+        return {
+            date: entry.date,
+            sleepScore: entry.score,
+            readinessScore: readiness?.score ?? 0,
+            xpEarned: entry.xpEarned + (readiness?.xpEarned ?? 0),
+        };
+    });
 
     return (
         <div className="sleep-log-overlay">
@@ -29,7 +39,7 @@ export const SleepLog = ({ onClose }: Props) => {
                         </div>
                     ) : (
                         <div className="history-list">
-                            {history.map((entry, index) => (
+                            {history.map((entry: { date: string; sleepScore: number; readinessScore: number; xpEarned: number }, index: number) => (
                                 <div key={`${entry.date}-${index}`} className="history-entry">
                                     <div className="entry-date">
                                         <Calendar size={16} />

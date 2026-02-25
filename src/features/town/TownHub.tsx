@@ -3,7 +3,6 @@ import { motion } from 'framer-motion';
 import {
     Swords,
     ShoppingBag,
-    Home,
     ListTodo,
     Users,
     Dices,
@@ -60,14 +59,7 @@ export const TownHub: React.FC<TownHubProps> = ({ onNavigate }) => {
             color: '#f59e0b',
             onClick: () => onNavigate('marketplace'),
         },
-        {
-            id: 'home',
-            name: 'Your Home',
-            icon: <Home size={40} />,
-            description: 'Furniture and decoration',
-            color: '#22c55e',
-            onClick: () => onNavigate('home'),
-        },
+
         {
             id: 'social',
             name: 'Social Hub',

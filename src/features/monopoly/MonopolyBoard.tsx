@@ -129,6 +129,10 @@ export const MonopolyBoard = ({ onClose }: { onClose: () => void }) => {
             setAnimatingTo(null);
 
             if (space.reward.gold) addGold(space.reward.gold);
+            if (space.reward.gems) {
+                const { addGems } = useGameStore.getState();
+                addGems(space.reward.gems);
+            }
             if (space.reward.tickets) addTickets(space.reward.tickets);
             if (space.reward.luckXp) addSkillXp('Luck', space.reward.luckXp);
 
@@ -148,6 +152,7 @@ export const MonopolyBoard = ({ onClose }: { onClose: () => void }) => {
 
     const hasReward = landedSpace && (
         landedSpace.reward.gold ||
+        landedSpace.reward.gems ||
         landedSpace.reward.tickets ||
         landedSpace.reward.luckXp ||
         landedSpace.reward.statBoost ||
@@ -324,12 +329,14 @@ export const MonopolyBoard = ({ onClose }: { onClose: () => void }) => {
                             <div className="rewards-section-label">🔵 Mid Region</div>
                             <div className="rewards-row">
                                 <div className="reward-info-item"><span>🎯 Token</span><span>Pet upgrade</span></div>
+                                <div className="reward-info-item"><span>💎 Gem</span><span>+1 Gem</span></div>
                                 <div className="reward-info-item"><span>🏷️ Discount</span><span>15% 24h</span></div>
                                 <div className="reward-info-item"><span>🔮 Shard</span><span>100 = pet</span></div>
                             </div>
                             <div className="rewards-section-label">🟣 Late Region</div>
                             <div className="rewards-row">
                                 <div className="reward-info-item"><span>⚔️ Encounter</span><span>Bonus gold</span></div>
+                                <div className="reward-info-item"><span>💎 Rare Gem</span><span>+2 Gems</span></div>
                                 <div className="reward-info-item"><span>🩹 Injury</span><span>+5% DEF 24h</span></div>
                                 <div className="reward-info-item"><span>💎 Surge+</span><span>+2% 24h</span></div>
                             </div>
@@ -401,6 +408,12 @@ export const MonopolyBoard = ({ onClose }: { onClose: () => void }) => {
                                     <div className="reward-item">
                                         <span>🪙 Gold:</span>
                                         <span className="reward-value">+{landedSpace.reward.gold}</span>
+                                    </div>
+                                )}
+                                {landedSpace.reward.gems && (
+                                    <div className="reward-item">
+                                        <span>💎 Gems:</span>
+                                        <span className="reward-value">+{landedSpace.reward.gems}</span>
                                     </div>
                                 )}
                                 {landedSpace.reward.tickets && (
