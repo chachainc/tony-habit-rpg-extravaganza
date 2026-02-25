@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Crown, Users, Map, Package, Zap, Heart, Star } from 'lucide-react';
+import { Crown, Users, Map, Package, Zap, Heart } from 'lucide-react';
 import { useConquestStore } from '../../store/useConquestStore';
 import type { ConquestCombatResult, ConquestNode, SoldierRole } from '../../store/useConquestStore';
 import { useStrategyStore } from '../../store/useStrategyStore';
@@ -57,8 +57,8 @@ export const Conquest = () => {
         setView('combat');
     };
 
-    const handleChessComplete = (result: 'win' | 'draw' | 'loss') => {
-        strategy.recordChessResult(result);
+    const handleChessComplete = (result: 'win' | 'draw' | 'loss', difficulty: 1 | 2 | 3) => {
+        strategy.recordChessResult(result, difficulty);
         setShowChess(false);
     };
 
@@ -331,8 +331,8 @@ export const Conquest = () => {
 
             {/* Top Navigation */}
             <div className="conquest-top-nav">
-                <button className="cq-nav-btn" onClick={() => setShowChess(true)}>
-                    <Star size={16} /> Chess {strategy.canPlayChessToday() && <span className="chess-dot">●</span>}
+                <button className="cq-nav-btn cq-chess-btn" onClick={() => setShowChess(true)}>
+                    ♟️ Chess {strategy.canPlayChessToday() && <span className="chess-dot">●</span>}
                 </button>
                 <button className={`cq-nav-btn ${view === 'map' ? 'active' : ''}`} onClick={() => setView('map')}>
                     <Map size={16} /> Map

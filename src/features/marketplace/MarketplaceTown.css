@@ -327,16 +327,22 @@
         font-size: 0.85rem;
         z-index: 200;
     }
+
+    .marketplace-town {
+        overflow-y: auto;
+        height: 100dvh;
+    }
 }
 
 /* ==================== MOBILE STORE CARDS ==================== */
 .marketplace-mobile-grid {
     width: 100%;
     max-width: 100%;
-    padding: 4.5rem 1rem 2rem;
+    padding: 4.5rem 1rem 6rem;
     overflow-y: auto;
-    max-height: 100dvh;
+    height: 100dvh;
     -webkit-overflow-scrolling: touch;
+    box-sizing: border-box;
 }
 
 .marketplace-mobile-title {

@@ -1,6 +1,10 @@
 import { memo } from 'react';
 import { motion } from 'framer-motion';
 import type { SoldierRole, Soldier } from '../../store/useConquestStore';
+import scoutImg from '../../assets/soldiers/scout.png';
+import moraleImg from '../../assets/soldiers/morale.png';
+import siegeImg from '../../assets/soldiers/siege.png';
+import healerImg from '../../assets/soldiers/healer.png';
 import './SoldierCard.css';
 
 interface SoldierCardProps {
@@ -16,6 +20,13 @@ interface SoldierCardProps {
 
 const ROLE_ICONS: Record<SoldierRole, string> = {
     scout: '🔭', morale: '📯', siege: '🏗️', healer: '💊',
+};
+
+const ROLE_IMAGES: Record<SoldierRole, string> = {
+    scout: scoutImg,
+    morale: moraleImg,
+    siege: siegeImg,
+    healer: healerImg,
 };
 
 const RANK_COLORS: Record<string, string> = {
@@ -60,7 +71,8 @@ export const SoldierCard = memo(({
             <div className="soldier-card-header" style={{
                 background: `linear-gradient(135deg, hsl(${baseHue}, 50%, 20%), hsl(${baseHue + 30}, 50%, 15%))`
             }}>
-                <div className="soldier-role-icon">{ROLE_ICONS[displayRole]}</div>
+                <img src={ROLE_IMAGES[displayRole]} alt={displayRole} className="soldier-portrait" />
+                <div className="soldier-role-badge">{ROLE_ICONS[displayRole]}</div>
                 <div className="soldier-rank-pill" style={{ color: RANK_COLORS[displayRank], backgroundColor: `${RANK_COLORS[displayRank]}22` }}>
                     {displayRank}
                 </div>

@@ -9,7 +9,7 @@ type Piece = { type: PieceType; color: Color } | null;
 type Board = Piece[][];
 
 interface ChessGameProps {
-    onComplete: (result: 'win' | 'draw' | 'loss') => void;
+    onComplete: (result: 'win' | 'draw' | 'loss', difficulty: 1 | 2 | 3) => void;
     onClose: () => void;
     canPlay: boolean;
 }
@@ -333,6 +333,13 @@ export const ChessGame = ({ onComplete, onClose, canPlay }: ChessGameProps) => {
     const [enPassant, setEnPassant] = useState<[number, number] | null>(null);
     const [difficulty, setDifficulty] = useState<1 | 2 | 3>(1);
     const [status, setStatus] = useState('Your turn (White)');
+    const [lastAIMove, setLastAIMove] = useState<{ fr: number; fc: number; tr: number; tc: number } | null>(null);
+
+    const XP_MULTIPLIER: Record<number, number> = { 1: 1, 2: 1.5, 3: 2.5 };
+    const getXP = (result: 'win' | 'draw' | 'loss') => {
+        const base = result === 'win' ? 50 : result === 'draw' ? 25 : 10;
+        return Math.round(base * XP_MULTIPLIER[difficulty]);
+    };
 
     const checkGameState = useCallback((newBoard: Board, nextTurn: Color, ep: [number, number] | null) => {
         const legal = getLegalMoves(newBoard, nextTurn, ep);
@@ -381,6 +388,7 @@ export const ChessGame = ({ onComplete, onClose, canPlay }: ChessGameProps) => {
 
             setBoard(newBoard);
             setEnPassant(newEp);
+            setLastAIMove({ fr: aiMove.fr, fc: aiMove.fc, tr: aiMove.tr, tc: aiMove.tc });
             setTurn('w');
             setSelected(null);
             setValidMoves([]);
@@ -508,11 +516,13 @@ export const ChessGame = ({ onComplete, onClose, canPlay }: ChessGameProps) => {
                             const isSelected = selected && selected[0] === r && selected[1] === c;
                             const isValidMove = validMoves.some(m => m.tr === r && m.tc === c);
                             const isCapture = isValidMove && board[r][c] !== null;
+                            const isLastMoveFrom = lastAIMove && lastAIMove.fr === r && lastAIMove.fc === c;
+                            const isLastMoveTo = lastAIMove && lastAIMove.tr === r && lastAIMove.tc === c;
 
                             return (
                                 <div
                                     key={`${r}-${c}`}
-                                    className={`chess-cell ${isLight ? 'light' : 'dark'} ${isSelected ? 'selected' : ''} ${isValidMove && !isCapture ? 'valid-move' : ''} ${isCapture ? 'valid-capture' : ''}`}
+                                    className={`chess-cell ${isLight ? 'light' : 'dark'} ${isSelected ? 'selected' : ''} ${isValidMove && !isCapture ? 'valid-move' : ''} ${isCapture ? 'valid-capture' : ''} ${isLastMoveFrom ? 'last-move-from' : ''} ${isLastMoveTo ? 'last-move-to' : ''}`}
                                     onClick={() => handleCellClick(r, c)}
                                 >
                                     {cell && <span className={cell.color === 'w' ? 'chess-piece-white' : 'chess-piece-black'}>{PIECE_UNICODE[`${cell.color}${cell.type}`]}</span>}
@@ -528,8 +538,8 @@ export const ChessGame = ({ onComplete, onClose, canPlay }: ChessGameProps) => {
                             Resign
                         </button>
                     ) : (
-                        <button className="chess-action-btn chess-complete-btn" onClick={() => onComplete(gameOver)}>
-                            Claim {gameOver === 'win' ? '50' : gameOver === 'draw' ? '25' : '10'} Strategy XP
+                        <button className="chess-action-btn chess-complete-btn" onClick={() => onComplete(gameOver, difficulty)}>
+                            Claim {getXP(gameOver)} Strategy XP
                         </button>
                     )}
                 </div>

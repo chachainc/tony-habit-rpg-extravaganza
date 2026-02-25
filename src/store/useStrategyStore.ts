@@ -15,7 +15,7 @@ export interface StrategyState {
     chessDifficulty: 1 | 2 | 3;
 
     // Actions
-    recordChessResult: (result: 'win' | 'draw' | 'loss') => void;
+    recordChessResult: (result: 'win' | 'draw' | 'loss', difficulty?: 1 | 2 | 3) => void;
     canPlayChessToday: () => boolean;
     getStrategyXpForLevel: (level: number) => number;
 
@@ -40,17 +40,19 @@ export const useStrategyStore = create<StrategyState>()(
 
             getStrategyXpForLevel: (level: number) => level * level * 30,
 
-            recordChessResult: (result) => {
+            recordChessResult: (result, difficulty = 1) => {
                 const today = getEasternDateString();
                 const state = get();
                 if (state.lastChessDate === today && state.chessPlayed) return;
 
-                let xpGain = 0;
+                const XP_MULT: Record<number, number> = { 1: 1, 2: 1.5, 3: 2.5 };
+                let baseXp = 0;
                 switch (result) {
-                    case 'win': xpGain = 50; break;
-                    case 'draw': xpGain = 25; break;
-                    case 'loss': xpGain = 10; break;
+                    case 'win': baseXp = 50; break;
+                    case 'draw': baseXp = 25; break;
+                    case 'loss': baseXp = 10; break;
                 }
+                const xpGain = Math.round(baseXp * (XP_MULT[difficulty] ?? 1));
 
                 let newXp = state.strategyXp + xpGain;
                 let newLevel = state.strategyLevel;

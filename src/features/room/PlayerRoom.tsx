@@ -1,11 +1,13 @@
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, BedDouble, BookOpen, Shirt, Store, Trophy } from 'lucide-react';
+import { X, BedDouble, BookOpen, Shirt, Store, Trophy, Scale, Dumbbell } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { useRoomStore } from '../../store/useRoomStore';
 import { useInventoryStore, ITEM_DB } from '../../store/useInventoryStore';
 import { usePetStore } from '../../store/usePetStore';
 import { useTitleStore } from '../../store/useTitleStore';
 import { useAuraStore, AURAS } from '../../store/useAuraStore';
+import { useHealthStore } from '../../store/useHealthStore';
 import { ITEM_DATABASE } from '../../data/items';
 import { SceneShell } from '../../components/scene';
 import { WardrobePanel } from './WardrobePanel';
@@ -22,7 +24,65 @@ import playerSprite from '../../assets/sprites/player.png';
 import './WalkableRoom.css';
 import './PlayerRoom.css'; // Use existing css alongside WalkableRoom CSS
 
-type ActivePanel = 'wardrobe' | 'bookshelf' | 'sleep' | 'trophy' | 'store' | null;
+type ActivePanel = 'wardrobe' | 'bookshelf' | 'sleep' | 'trophy' | 'store' | 'body' | null;
+
+/* ── Inline Body Panel (calorie + weight) ── */
+const BodyPanel = ({ onClose }: { onClose: () => void }) => {
+    const { logWeight, getLastWeight, hasLoggedWeightToday } = useHealthStore();
+    const [weightVal, setWeightVal] = useState(getLastWeight()?.toString() ?? '');
+    const [calorieVal, setCalorieVal] = useState('');
+    const [saved, setSaved] = useState(false);
+    const navigate = useNavigate();
+
+    const handleSave = () => {
+        if (weightVal) logWeight(parseFloat(weightVal));
+        setSaved(true);
+        setTimeout(() => setSaved(false), 2000);
+    };
+
+    return (
+        <div className="body-panel">
+            <div className="body-panel__header">
+                <h3>⚖️ Body Tracker</h3>
+                <button className="modal-close-btn" onClick={onClose}><X size={18} /></button>
+            </div>
+            <div className="body-panel__inputs">
+                <div className="body-input-group">
+                    <label>Weight (lbs)</label>
+                    <input
+                        type="number"
+                        value={weightVal}
+                        onChange={(e) => setWeightVal(e.target.value)}
+                        placeholder="180"
+                        min="0"
+                        max="1000"
+                    />
+                    {hasLoggedWeightToday() && <span className="body-input-hint">✅ Logged today</span>}
+                </div>
+                <div className="body-input-group">
+                    <label>Calories (kcal)</label>
+                    <input
+                        type="number"
+                        value={calorieVal}
+                        onChange={(e) => setCalorieVal(e.target.value)}
+                        placeholder="2000"
+                        min="0"
+                        max="10000"
+                    />
+                </div>
+            </div>
+            <button className="body-panel__save-btn" onClick={handleSave}>
+                {saved ? '✅ Saved!' : '💾 Save'}
+            </button>
+            <button className="body-panel__gym-link" onClick={() => { onClose(); navigate('/gym'); }}>
+                <Dumbbell size={18} /> Open Full Gym Tracker →
+            </button>
+            <button className="body-panel__gym-link" onClick={() => { onClose(); navigate('/health'); }}>
+                <Scale size={18} /> Open Health Tracker →
+            </button>
+        </div>
+    );
+};
 
 // Room layout config
 const ROOM_LAYOUT = {
@@ -47,6 +107,7 @@ export const PlayerRoom = ({ onClose }: { onClose: () => void }) => {
     const { activePet, name: petName } = usePetStore();
     const { activeTitle, getUnlockedTitleDefs } = useTitleStore();
     const { activeAuraId } = useAuraStore();
+    const navigate = useNavigate();
 
     const [activePanel, setActivePanel] = useState<ActivePanel>(null);
     const [tooltipSeen, setTooltipSeen] = useState(false);
@@ -221,12 +282,12 @@ export const PlayerRoom = ({ onClose }: { onClose: () => void }) => {
                             </div>
                         </div>
 
-                        {/* Feature Buttons */}
-                        <div className="room-mobile-features">
+                        {/* Feature Buttons - 2x grid layout */}
+                        <div className="room-mobile-features room-mobile-features--grid">
                             <button className="room-feature-btn room-feature-btn--wardrobe" onClick={() => setActivePanel('wardrobe')}>
                                 <Shirt size={28} />
                                 <span>Closet</span>
-                                <small>Titles, Auras, Clothes, Pets</small>
+                                <small>Titles, Auras, Pets</small>
                             </button>
                             <button className="room-feature-btn room-feature-btn--sleep" onClick={() => setActivePanel('sleep')}>
                                 <BedDouble size={28} />
@@ -243,9 +304,19 @@ export const PlayerRoom = ({ onClose }: { onClose: () => void }) => {
                                 <span>Trophy Hall</span>
                                 <small>Achievements</small>
                             </button>
+                            <button className="room-feature-btn room-feature-btn--body" onClick={() => setActivePanel('body')}>
+                                <Scale size={28} />
+                                <span>Body</span>
+                                <small>Weight & Calories</small>
+                            </button>
+                            <button className="room-feature-btn room-feature-btn--gym" onClick={() => navigate('/gym')}>
+                                <Dumbbell size={28} />
+                                <span>Gym</span>
+                                <small>Workout Tracker</small>
+                            </button>
                             <button className="room-feature-btn room-feature-btn--store" onClick={() => setActivePanel('store')}>
                                 <Store size={28} />
-                                <span>Furniture Store</span>
+                                <span>Furniture</span>
                                 <small>Buy & Place Items</small>
                             </button>
                         </div>
@@ -466,6 +537,7 @@ export const PlayerRoom = ({ onClose }: { onClose: () => void }) => {
                             {activePanel === 'sleep' && <SleepPanel onClose={() => setActivePanel(null)} />}
                             {activePanel === 'trophy' && <TrophyPanel onClose={() => setActivePanel(null)} />}
                             {activePanel === 'store' && <ShopModal category="furniture" onClose={() => setActivePanel(null)} />}
+                            {activePanel === 'body' && <BodyPanel onClose={() => setActivePanel(null)} />}
                         </motion.div>
                     </motion.div>
                 )}

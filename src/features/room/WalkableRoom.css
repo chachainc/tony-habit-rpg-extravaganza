@@ -949,27 +949,25 @@
     color: rgba(255, 255, 255, 0.7);
 }
 
-.room-mobile-features {
-    display: flex;
-    flex-direction: column;
+.room-mobile-features--grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
     gap: 0.6rem;
-    padding-bottom: 2rem;
+    padding-bottom: 5rem;
 }
 
-.room-feature-btn {
-    display: flex;
+.room-mobile-features--grid .room-feature-btn {
+    flex-direction: column;
     align-items: center;
-    gap: 1rem;
-    padding: 1rem 1.25rem;
-    border: 2px solid rgba(255, 255, 255, 0.12);
-    border-radius: 16px;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    color: white;
-    text-align: left;
-    min-height: 60px;
-    -webkit-tap-highlight-color: transparent;
-    touch-action: manipulation;
+    text-align: center;
+    gap: 0.35rem;
+    padding: 1rem 0.75rem;
+    min-height: 90px;
+    justify-content: center;
+}
+
+.room-mobile-features--grid .room-feature-btn small {
+    text-align: center;
 }
 
 .room-feature-btn span {
@@ -1011,4 +1009,121 @@
 .room-feature-btn--store {
     background: linear-gradient(135deg, rgba(34, 197, 94, 0.3), rgba(22, 163, 74, 0.15));
     border-color: rgba(34, 197, 94, 0.4);
+}
+
+.room-feature-btn--body {
+    background: linear-gradient(135deg, rgba(236, 72, 153, 0.3), rgba(219, 39, 119, 0.15));
+    border-color: rgba(236, 72, 153, 0.4);
+}
+
+.room-feature-btn--gym {
+    background: linear-gradient(135deg, rgba(239, 68, 68, 0.3), rgba(220, 38, 38, 0.15));
+    border-color: rgba(239, 68, 68, 0.4);
+}
+
+/* ==================== BODY PANEL ==================== */
+.body-panel {
+    padding: 1.5rem;
+    color: white;
+    max-width: 500px;
+    width: 100%;
+}
+
+.body-panel__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 1.5rem;
+}
+
+.body-panel__header h3 {
+    font-size: 1.3rem;
+    font-weight: 800;
+    color: #ec4899;
+    margin: 0;
+}
+
+.body-panel__inputs {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    margin-bottom: 1.25rem;
+}
+
+.body-input-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+}
+
+.body-input-group label {
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: rgba(255, 255, 255, 0.7);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.body-input-group input {
+    padding: 0.75rem 1rem;
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 10px;
+    color: white;
+    font-size: 1rem;
+    font-weight: 600;
+    outline: none;
+    transition: border-color 0.2s;
+}
+
+.body-input-group input:focus {
+    border-color: #ec4899;
+}
+
+.body-input-hint {
+    font-size: 0.75rem;
+    color: #22c55e;
+    font-weight: 600;
+}
+
+.body-panel__save-btn {
+    width: 100%;
+    padding: 0.85rem;
+    background: linear-gradient(135deg, #ec4899, #db2777);
+    color: white;
+    border: none;
+    border-radius: 12px;
+    font-weight: 800;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: all 0.2s;
+    margin-bottom: 0.75rem;
+}
+
+.body-panel__save-btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 16px rgba(236, 72, 153, 0.4);
+}
+
+.body-panel__gym-link {
+    width: 100%;
+    padding: 0.65rem 1rem;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 10px;
+    color: rgba(255, 255, 255, 0.7);
+    font-weight: 600;
+    font-size: 0.85rem;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    justify-content: center;
+    margin-bottom: 0.4rem;
+}
+
+.body-panel__gym-link:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: white;
 }
