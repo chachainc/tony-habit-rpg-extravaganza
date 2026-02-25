@@ -257,7 +257,7 @@ export const PlayerRoom = ({ onClose }: { onClose: () => void }) => {
     };
 
     return (
-        <div className="player-room-container">
+        <div className="player-room-container" style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100dvh', zIndex: 50, overflow: 'hidden' }}>
             {isMobile ? (
                 /* ==================== MOBILE QUICK-ACCESS MENU ==================== */
                 <SceneShell

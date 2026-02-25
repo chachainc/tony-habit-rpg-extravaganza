@@ -18,7 +18,7 @@
     backdrop-filter: blur(8px);
     color: var(--gacha-text-primary);
     font-family: var(--font-family-heading);
-    min-width: 100px;
+    min-width: 72px;
 }
 
 .resource-icon {
@@ -72,4 +72,34 @@
 .gacha-resource-bar.variant-solid .resource-pill {
     background: var(--gacha-bg-panel-solid);
     border-color: rgba(255, 255, 255, 0.05);
+}
+
+/* MOBILE: prevent cutoff */
+@media (max-width: 768px) {
+    .gacha-resource-bar {
+        flex-wrap: wrap;
+        gap: 4px;
+    }
+
+    .resource-pill {
+        min-width: 60px;
+        height: 28px;
+        padding: 0 4px 0 6px;
+    }
+
+    .resource-icon {
+        font-size: 1rem;
+        margin-right: 3px;
+    }
+
+    .resource-value {
+        font-size: 0.7rem;
+        margin-right: 4px;
+    }
+
+    .resource-add-btn {
+        width: 20px;
+        height: 20px;
+        font-size: 13px;
+    }
 }
