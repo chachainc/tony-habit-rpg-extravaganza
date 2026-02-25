@@ -21,8 +21,9 @@
     left: 0;
     width: 100vw;
     height: 100dvh;
-    z-index: 50;
+    z-index: 1100;
     overflow: hidden;
+    background: #0a0a14;
 }
 
 /* Time-based overlay tints */

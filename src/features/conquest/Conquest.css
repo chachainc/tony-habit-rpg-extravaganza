@@ -1100,8 +1100,10 @@
         left: 1rem;
         right: 1rem;
         transform: none;
-        bottom: 4.5rem;
+        bottom: calc(70px + env(safe-area-inset-bottom, 0px) + 0.5rem);
         padding: 1rem;
+        max-height: 40vh;
+        overflow-y: auto;
     }
 
     .conquest-stats-bar {

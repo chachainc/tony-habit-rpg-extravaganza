@@ -2359,94 +2359,127 @@
         font-size: 0.75rem !important;
     }
 
-    /* Combat command buttons */
+    /* ─── Combat Layout Overhaul ─── */
+
+    /* The overall combat container inside arena-page */
+    .battle-stage {
+        flex: 1;
+        min-height: 0;
+        padding-bottom: 0.5rem;
+    }
+
+    /* Command deck: compact, minimal height */
     .command-deck {
-        padding: 0.75rem;
-        gap: 0.75rem;
+        flex: 0 0 auto;
+        padding: 0.5rem 0.5rem calc(0.5rem + 70px + env(safe-area-inset-bottom, 0px));
+        gap: 0.5rem;
     }
 
     .action-buttons {
-        gap: 0.5rem;
-        flex-wrap: wrap;
+        gap: 0.4rem;
+        flex-wrap: nowrap;
         justify-content: center;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
     }
 
+    /* Shrink all command buttons */
     .command-btn {
-        width: 68px;
-        height: 68px;
-        border-radius: 14px;
+        width: 56px;
+        height: 56px;
+        border-radius: 12px;
+        min-width: 56px;
+        flex-shrink: 0;
     }
 
     .command-btn.ultimate {
-        width: 76px;
-        height: 76px;
+        width: 64px;
+        height: 64px;
     }
 
     .command-btn.auto {
-        width: 60px;
-        height: 60px;
+        width: 52px;
+        height: 52px;
     }
 
     .btn-icon {
-        font-size: 1.5rem;
-        margin-bottom: 0.2rem;
+        font-size: 1.2rem;
+        margin-bottom: 0.1rem;
+    }
+
+    .btn-icon svg {
+        width: 18px;
+        height: 18px;
     }
 
     .btn-label {
-        font-size: 0.6rem;
+        font-size: 0.5rem;
     }
 
     .rage-cost {
-        font-size: 0.6rem;
+        font-size: 0.5rem;
     }
 
     .cooldown-indicator,
     .ready-indicator {
-        font-size: 0.55rem;
+        font-size: 0.5rem;
     }
 
     .mp-display {
-        font-size: 0.6rem;
+        font-size: 0.55rem;
     }
 
-    /* Battle sprites */
+    .auto-status {
+        font-size: 0.45rem;
+    }
+
+    /* Battle sprites — ensure both are visible */
+    .battle-stage-platforms {
+        bottom: 0;
+        height: 100%;
+    }
+
     .battle-stage-platforms .combatant-sprite img {
-        max-height: 25vh;
+        max-height: 20vh;
     }
 
     .platform-ellipse {
-        width: 150px;
-        height: 50px;
+        width: 120px;
+        height: 40px;
     }
 
     .pet-icon {
-        font-size: 1.8rem;
+        font-size: 1.5rem;
     }
 
-    /* Battle log */
+    /* Battle log: anchored top-left, starts collapsed */
     .battle-log {
-        width: 160px;
-        max-height: 130px;
-        top: auto;
-        bottom: 0.5rem;
+        width: 140px;
+        max-height: 110px;
+        top: 0.5rem;
+        bottom: auto;
         left: 0.5rem;
-        font-size: 0.5rem;
+        font-size: 0.48rem;
+    }
+
+    .battle-log.collapsed {
+        max-height: 24px;
     }
 
     .battle-log-header {
         padding: 0.2rem 0.4rem;
-        font-size: 0.45rem;
+        font-size: 0.42rem;
     }
 
     .log-entry {
-        font-size: 0.48rem;
-        padding: 0.15rem 0.25rem;
+        font-size: 0.44rem;
+        padding: 0.1rem 0.2rem;
     }
 
     /* Spell menu */
     .spell-menu {
-        min-width: 220px;
-        bottom: calc(100% + 8px);
+        min-width: 200px;
+        bottom: calc(100% + 6px);
     }
 
     /* Result overlay */

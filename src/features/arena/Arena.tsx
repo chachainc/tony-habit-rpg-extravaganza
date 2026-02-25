@@ -179,7 +179,7 @@ export const Arena = ({ onClose }: { onClose: () => void }) => {
     const [showSpellMenu, setShowSpellMenu] = useState(false);
 
     // Log Collapse State
-    const [isLogCollapsed, setIsLogCollapsed] = useState(false);
+    const [isLogCollapsed, setIsLogCollapsed] = useState(() => window.innerWidth <= 768);
     const [lastReadLogLength, setLastReadLogLength] = useState(0);
 
     // Update unread count
