@@ -29,8 +29,17 @@
 /* On mobile, allow the room to scroll so back button is accessible */
 @media (max-width: 768px) {
     .player-room-container {
+        padding: 0;
         overflow-y: auto;
+        /* allow scrolling on mobile if needed */
         -webkit-overflow-scrolling: touch;
+    }
+
+    .player-room {
+        height: auto;
+        min-height: 100dvh;
+        border-radius: 0;
+        padding-top: calc(env(safe-area-inset-top, 60px) + 20px);
     }
 
     .player-room-container .scene-shell {

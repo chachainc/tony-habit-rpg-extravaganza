@@ -36,6 +36,7 @@ export const Conquest = () => {
     const [view, setView] = useState<ConquestView>('map');
     const [selectedNode, setSelectedNode] = useState<ConquestNode | null>(null);
     const [combatResult, setCombatResult] = useState<ConquestCombatResult | null>(null);
+    const [isRolling, setIsRolling] = useState(false);
     const [showChess, setShowChess] = useState(false);
     const [showStore, setShowStore] = useState(false);
 
@@ -51,10 +52,17 @@ export const Conquest = () => {
     const totalForce = conquest.getTotalForce();
 
     const handleAttack = (node: ConquestNode) => {
-        const result = conquest.conquestAttack(node.id);
-        setCombatResult(result);
         setSelectedNode(node);
         setView('combat');
+        setIsRolling(true);
+        setCombatResult(null);
+
+        // Simulate a dice roll delay
+        setTimeout(() => {
+            const result = conquest.conquestAttack(node.id);
+            setCombatResult(result);
+            setIsRolling(false);
+        }, 1500);
     };
 
     const handleChessComplete = (result: 'win' | 'draw' | 'loss', difficulty: 1 | 2 | 3) => {
@@ -197,6 +205,37 @@ export const Conquest = () => {
 
     // ─── COMBAT RESULT VIEW ─────────────────────
     const renderCombatResult = () => {
+        if (isRolling) {
+            return (
+                <div className="conquest-combat-result">
+                    <motion.div
+                        className="combat-result-card rolling-card"
+                        initial={{ scale: 0.8, opacity: 0 }}
+                        animate={{ scale: 1, opacity: 1 }}
+                    >
+                        <h2>⚔️ ENGAGING ENEMY...</h2>
+                        <div className="dice-rolling-container">
+                            <motion.div
+                                className="rolling-dice"
+                                animate={{ rotate: 360, x: [-20, 20, -20] }}
+                                transition={{ repeat: Infinity, duration: 0.5 }}
+                            >
+                                🎲
+                            </motion.div>
+                            <motion.div
+                                className="rolling-dice"
+                                animate={{ rotate: -360, x: [20, -20, 20] }}
+                                transition={{ repeat: Infinity, duration: 0.5, delay: 0.1 }}
+                            >
+                                🎲
+                            </motion.div>
+                        </div>
+                        <p className="rolling-text">Calculating Force & Morale...</p>
+                    </motion.div>
+                </div>
+            );
+        }
+
         if (!combatResult) return null;
 
         return (

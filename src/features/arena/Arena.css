@@ -2188,17 +2188,20 @@
     }
 
     .campaign-map-container {
-        padding: 1rem;
+        padding: 1rem 0.5rem;
+        /* slightly less horizontal padding to fit larger nodes */
     }
 
     .floor-node {
-        padding: 0.6rem 0.75rem;
-        gap: 0.6rem;
+        padding: 0.8rem 1rem;
+        /* Increase padding for easier tapping */
+        gap: 0.8rem;
+        margin-bottom: 0.5rem;
     }
 
     .floor-number {
-        font-size: 1rem;
-        min-width: 35px;
+        font-size: 1.2rem;
+        min-width: 40px;
     }
 
     .floor-enemy-name {
@@ -2378,16 +2381,16 @@
     /* Command deck: compact, minimal height */
     .command-deck {
         flex: 0 0 auto;
-        padding: 0.5rem 0.5rem calc(0.5rem + 70px + env(safe-area-inset-bottom, 0px));
-        gap: 0.5rem;
+        padding: 0.5rem 0.5rem calc(1rem + 70px + env(safe-area-inset-bottom, 0px));
+        gap: 0.75rem;
     }
 
     .action-buttons {
-        gap: 0.4rem;
-        flex-wrap: nowrap;
+        gap: 0.6rem;
+        flex-wrap: wrap;
+        /* Wrap buttons instead of scrolling */
         justify-content: center;
-        overflow-x: auto;
-        -webkit-overflow-scrolling: touch;
+        width: 100%;
     }
 
     /* Shrink all command buttons */
@@ -2440,15 +2443,20 @@
         font-size: 0.45rem;
     }
 
-    /* Battle sprites — ensure both are visible */
+    /* Battle sprites — ensure both are visible and not squished */
     .battle-stage-platforms .combatant-sprite {
-        background: rgba(10, 10, 20, 0.85);
+        background: rgb(15, 15, 25);
+        /* Solid dark color to prevent transparency checks */
+        border: 1px solid rgba(255, 255, 255, 0.1);
         border-radius: 12px;
-        padding: 0.25rem;
+        padding: 0.5rem;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
     }
 
     .battle-stage-platforms .combatant-sprite img {
-        max-height: 22vh;
+        height: 180px;
+        /* Fixed height instead of max-height percentage to prevent squishing */
+        max-height: none;
         object-fit: contain;
     }
 
@@ -2471,15 +2479,18 @@
     }
 
     .prep-portrait {
-        max-height: 120px;
+        max-height: 140px;
         overflow: hidden;
     }
 
     .prep-portrait-img {
-        max-height: 120px;
+        height: 140px;
+        max-height: none;
         object-fit: contain;
-        background: rgba(10, 10, 20, 0.7);
+        background: rgb(15, 15, 25);
+        /* Solid dark color */
         border-radius: 8px;
+        border: 1px solid rgba(255, 255, 255, 0.1);
     }
 
     .pet-icon {

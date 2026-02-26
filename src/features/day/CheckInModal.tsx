@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Calendar, Gift, Flame, Trophy } from 'lucide-react';
 import { useCheckInStore } from '../../store/useCheckInStore';
 import './CheckInModal.css';
+import './CheckInModalTapHint.css';
 
 export const CheckInModal = ({ onClose }: { onClose: () => void }) => {
     const { streakDay, streakCount, checkIn, getRewardForDay, getStreakStatus } = useCheckInStore();
@@ -76,6 +77,9 @@ export const CheckInModal = ({ onClose }: { onClose: () => void }) => {
                                     {reward.buffType && <span className="buff-badge">+Buff</span>}
                                     {reward.gachaTicket && <span className="ticket-badge">🎫 Ticket</span>}
                                 </div>
+                                {isCurrentDay && canCheckIn && (
+                                    <div className="tap-hint">Tap to claim!</div>
+                                )}
                             </motion.div>
                         );
                     })}

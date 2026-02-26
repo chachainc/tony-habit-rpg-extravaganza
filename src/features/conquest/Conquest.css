@@ -461,6 +461,27 @@
     box-shadow: 0 0 40px rgba(239, 68, 68, 0.1);
 }
 
+.combat-result-card.rolling-card h2 {
+    color: #a78bfa;
+    animation: pulse-dot 1.5s ease infinite;
+}
+
+.dice-rolling-container {
+    display: flex;
+    justify-content: center;
+    gap: 2rem;
+    font-size: 4rem;
+    margin: 2rem 0;
+}
+
+.rolling-text {
+    font-size: 1rem;
+    color: #94a3b8;
+    text-align: center;
+    font-style: italic;
+    animation: pulse-dot 2s ease-in-out infinite;
+}
+
 .combat-result-card h2 {
     font-size: 2rem;
     margin-bottom: 1.5rem;
