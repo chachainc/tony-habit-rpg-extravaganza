@@ -134,7 +134,8 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    z-index: 10;
+    z-index: 30;
+    /* Increased to ensure it sits above content */
 }
 
 .store-header-left {

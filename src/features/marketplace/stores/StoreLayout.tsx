@@ -86,7 +86,12 @@ export const StoreLayout = ({
                         <span className="store-icon">{storeIcon}</span>
                         <h2>{storeName}</h2>
                     </div>
-                    <button className="store-close-btn" onClick={onClose}>
+                    {/* Explicitly bind cross-browser touch and click to onClose */}
+                    <button
+                        className="store-close-btn"
+                        onClick={(e) => { e.stopPropagation(); onClose(); }}
+                        onPointerDown={(e) => { e.stopPropagation(); onClose(); }}
+                    >
                         <X size={20} /> <span className="store-close-label">Back</span>
                     </button>
                 </div>

@@ -2196,7 +2196,29 @@
         padding: 0.8rem 1rem;
         /* Increase padding for easier tapping */
         gap: 0.8rem;
-        margin-bottom: 0.5rem;
+        margin-bottom: 0.75rem;
+        background: rgba(15, 15, 25, 0.8);
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 16px;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+        transition: transform 0.2s, box-shadow 0.2s;
+    }
+
+    .floor-node:active {
+        transform: scale(0.96);
+    }
+
+    /* Active Node Glows */
+    .floor-node.active {
+        box-shadow: 0 0 20px rgba(59, 130, 246, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.2);
+        border-color: rgba(96, 165, 250, 0.5);
+    }
+
+    .floor-node.boss.active {
+        box-shadow: 0 0 25px rgba(245, 158, 11, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.2);
+        border-color: rgba(251, 191, 36, 0.8);
     }
 
     .floor-number {
@@ -2331,34 +2353,74 @@
         font-size: 0.65rem;
     }
 
-    /* --- COMBAT MOBILE --- */
+    /* Premium Health Bars HUD */
     .battle-hud {
-        padding: 0.5rem 0.75rem;
+        padding: 0.75rem 1rem;
+        background: linear-gradient(180deg, rgba(0, 0, 0, 0.8) 0%, transparent 100%);
     }
 
     .combatant-status {
-        width: 120px;
+        width: 130px;
+        background: rgba(15, 15, 25, 0.6);
+        backdrop-filter: blur(8px);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 12px;
+        padding: 0.4rem;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
     }
 
     .combatant-status.player {
-        left: 0.5rem;
+        left: 0.75rem;
     }
 
     .combatant-status.enemy {
-        right: 0.5rem;
+        right: 0.75rem;
     }
 
     .status-name {
         font-size: 0.8rem;
-        margin-bottom: 0.25rem;
+        margin-bottom: 0.35rem;
+        font-weight: 800;
+        text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8);
     }
 
     .health-bar-container {
-        height: 12px;
+        height: 14px;
+        border-radius: 7px;
+        background: rgba(0, 0, 0, 0.6);
+        box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.8);
+        border: 1px solid rgba(255, 255, 255, 0.05);
+        overflow: hidden;
+    }
+
+    .health-bar-fill {
+        background: linear-gradient(90deg, #16a34a, #4ade80);
+        box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.3);
+        transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .health-bar-fill.low-health {
+        background: linear-gradient(90deg, #dc2626, #f87171);
+        animation: pulseLowHealthMobile 1s infinite alternate;
+    }
+
+    @keyframes pulseLowHealthMobile {
+        from {
+            opacity: 0.8;
+            filter: brightness(1);
+        }
+
+        to {
+            opacity: 1;
+            filter: brightness(1.3);
+            box-shadow: 0 0 10px rgba(239, 68, 68, 0.8);
+        }
     }
 
     .health-text {
-        font-size: 0.55rem;
+        font-size: 0.6rem;
+        font-weight: 700;
+        text-shadow: 0 1px 2px rgba(0, 0, 0, 0.9);
     }
 
     .timeline {
@@ -2378,11 +2440,16 @@
         padding-bottom: 0.5rem;
     }
 
-    /* Command deck: compact, minimal height */
+    /* Command deck: premium glassmorphism */
     .command-deck {
         flex: 0 0 auto;
-        padding: 0.5rem 0.5rem calc(1rem + 70px + env(safe-area-inset-bottom, 0px));
+        padding: 0.75rem 0.5rem calc(1rem + 70px + env(safe-area-inset-bottom, 0px));
         gap: 0.75rem;
+        background: rgba(15, 15, 25, 0.75);
+        backdrop-filter: blur(16px);
+        -webkit-backdrop-filter: blur(16px);
+        border-top: 1px solid rgba(255, 255, 255, 0.1);
+        box-shadow: 0 -10px 30px rgba(0, 0, 0, 0.5);
     }
 
     .action-buttons {
@@ -2393,18 +2460,47 @@
         width: 100%;
     }
 
-    /* Shrink all command buttons */
+    /* Shrink all command buttons and add neumorphism/gradients */
     .command-btn {
         width: 56px;
         height: 56px;
-        border-radius: 12px;
+        border-radius: 14px;
         min-width: 56px;
         flex-shrink: 0;
+        background: linear-gradient(145deg, rgba(40, 40, 55, 0.9), rgba(20, 20, 30, 0.9));
+        border: 1px solid rgba(255, 255, 255, 0.05);
+        box-shadow: 2px 4px 10px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+        transition: transform 0.1s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.1s;
+    }
+
+    .command-btn:active {
+        transform: scale(0.92);
+        box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.5);
     }
 
     .command-btn.ultimate {
         width: 64px;
         height: 64px;
+        border-radius: 16px;
+        background: linear-gradient(135deg, rgba(88, 28, 135, 0.9), rgba(67, 56, 202, 0.9));
+        border: 1px solid rgba(167, 139, 250, 0.5);
+        box-shadow: 0 0 15px rgba(139, 92, 246, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.2);
+    }
+
+    .command-btn.ultimate:not(:disabled) {
+        animation: ultimatePulseMobile 2s infinite;
+    }
+
+    @keyframes ultimatePulseMobile {
+
+        0%,
+        100% {
+            box-shadow: 0 0 15px rgba(139, 92, 246, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.2);
+        }
+
+        50% {
+            box-shadow: 0 0 25px rgba(167, 139, 250, 0.7), inset 0 1px 0 rgba(255, 255, 255, 0.4);
+        }
     }
 
     .command-btn.auto {
@@ -2445,12 +2541,14 @@
 
     /* Battle sprites — ensure both are visible and not squished */
     .battle-stage-platforms .combatant-sprite {
-        background: rgb(15, 15, 25);
-        /* Solid dark color to prevent transparency checks */
-        border: 1px solid rgba(255, 255, 255, 0.1);
-        border-radius: 12px;
+        background: rgba(20, 20, 30, 0.8);
+        /* Semi-transparent but hides checks behind blur */
+        backdrop-filter: blur(8px);
+        -webkit-backdrop-filter: blur(8px);
+        border: 1px solid rgba(255, 255, 255, 0.15);
+        border-radius: 16px;
         padding: 0.5rem;
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.1);
     }
 
     .battle-stage-platforms .combatant-sprite img {
@@ -2461,8 +2559,15 @@
     }
 
     .platform-ellipse {
-        width: 120px;
-        height: 40px;
+        width: 130px;
+        height: 45px;
+        background: radial-gradient(ellipse at center, rgba(59, 130, 246, 0.3) 0%, transparent 70%);
+        box-shadow: 0 0 20px rgba(59, 130, 246, 0.2);
+    }
+
+    .enemy-side .platform-ellipse {
+        background: radial-gradient(ellipse at center, rgba(239, 68, 68, 0.3) 0%, transparent 70%);
+        box-shadow: 0 0 20px rgba(239, 68, 68, 0.2);
     }
 
     /* Prep screen mobile overrides */
@@ -2476,21 +2581,40 @@
     .prep-hero-panel {
         width: 100% !important;
         max-width: 100% !important;
+        background: rgba(15, 15, 25, 0.7);
+        backdrop-filter: blur(16px);
+        -webkit-backdrop-filter: blur(16px);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 16px;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.1);
     }
 
     .prep-portrait {
         max-height: 140px;
         overflow: hidden;
+        position: relative;
+    }
+
+    .prep-portrait::after {
+        content: '';
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        height: 40px;
+        background: linear-gradient(0deg, rgba(15, 15, 25, 0.9) 0%, transparent 100%);
     }
 
     .prep-portrait-img {
         height: 140px;
         max-height: none;
         object-fit: contain;
-        background: rgb(15, 15, 25);
-        /* Solid dark color */
-        border-radius: 8px;
-        border: 1px solid rgba(255, 255, 255, 0.1);
+        background: rgba(20, 20, 30, 0.5);
+        /* Semi-transparent */
+        backdrop-filter: blur(8px);
+        -webkit-backdrop-filter: blur(8px);
+        border-radius: 12px;
+        border: 1px solid rgba(255, 255, 255, 0.15);
     }
 
     .pet-icon {

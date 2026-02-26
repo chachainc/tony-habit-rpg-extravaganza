@@ -331,11 +331,12 @@ export const Arena = ({ onClose }: { onClose: () => void }) => {
                 const isUnlocked = i <= highestFloorCleared + 1;
                 const isCleared = i <= highestFloorCleared;
                 const isBoss = enemyDef.floor % 10 === 0;
+                const isActive = isUnlocked && !isCleared;
 
                 return (
                     <div
                         key={enemyDef.id}
-                        className={`floor-node ${isUnlocked ? 'unlocked' : ''} ${isCleared ? 'cleared' : ''} ${isBoss ? 'boss' : ''}`}
+                        className={`floor-node ${isUnlocked ? 'unlocked' : ''} ${isCleared ? 'cleared' : ''} ${isBoss ? 'boss' : ''} ${isActive ? 'active' : ''}`}
                     >
                         {/* Floor Number Badge */}
                         <div className="floor-number" style={isBoss ? { background: 'linear-gradient(135deg, #f59e0b, #ef4444)', fontSize: '0.85rem' } : {}}>
