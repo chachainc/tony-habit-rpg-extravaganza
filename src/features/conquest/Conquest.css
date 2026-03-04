@@ -1096,14 +1096,31 @@
 /* ─── Conquest Mobile Responsive ─────────── */
 @media (max-width: 768px) {
     .conquest-top-nav {
-        flex-wrap: wrap;
+        overflow-x: auto;
+        overflow-y: hidden;
+        -webkit-overflow-scrolling: touch;
+        flex-wrap: nowrap;
         gap: 0.35rem;
         padding: 0.5rem 0.75rem;
+        /* Allow scrolling to see all items including sigils */
+        scrollbar-width: none;
+    }
+
+    .conquest-top-nav::-webkit-scrollbar {
+        display: none;
     }
 
     .cq-nav-btn {
         font-size: 0.75rem;
         padding: 0.4rem 0.7rem;
+        white-space: nowrap;
+        flex-shrink: 0;
+    }
+
+    .cq-nav-sigils {
+        white-space: nowrap;
+        flex-shrink: 0;
+        font-size: 0.8rem;
     }
 
     .cq-chess-btn {
@@ -1175,6 +1192,15 @@
 
     .cq-store-buy-btn {
         width: 100%;
+    }
+
+    /* Store header on mobile */
+    .cq-store-header {
+        padding: 0.85rem 1rem;
+    }
+
+    .cq-store-header h2 {
+        font-size: 1.1rem;
     }
 
     /* Bottom padding for safe area */

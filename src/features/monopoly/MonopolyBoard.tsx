@@ -296,7 +296,7 @@ export const MonopolyBoard = ({ onClose }: { onClose: () => void }) => {
                     {!canRoll() && !isRolling && !showReward && (
                         <div className="no-tickets">
                             <p>No rolls remaining!</p>
-                            <p className="comeback">Come back tomorrow for 3 more rolls</p>
+                            <p className="comeback">Come back tomorrow for 5 more rolls</p>
                         </div>
                     )}
 
@@ -344,6 +344,10 @@ export const MonopolyBoard = ({ onClose }: { onClose: () => void }) => {
                                 <span>✨ 1:1k = +50 XP</span>
                                 <span>🔥 1:10k = +100 XP</span>
                                 <span>🌌 1:250k = 🐮✨ Ethereal Cow!</span>
+                            </div>
+                            <div className="luck-rolls-row luck-rolls-row--rare">
+                                <span>🏳️ <strong>1:5,000</strong> = Rare Banner!</span>
+                                <span>🌈 <strong>1:10,000</strong> = Unique Aura!</span>
                             </div>
                         </motion.div>
                     )}

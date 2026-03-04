@@ -77,9 +77,9 @@ export const ConquestStoreUI = ({ onClose }: ConquestStoreUIProps) => {
                                 <button
                                     className="cq-store-buy-btn"
                                     onClick={() => conquest.upgradeMaxTeamSize()}
-                                    disabled={!conquest.upgradeMaxTeamSize}
+                                    disabled={conquest.sigils < [0, 100, 200, 400, 700, 1200][conquest.maxTeamSize]}
                                 >
-                                    Upgrade
+                                    🔱 {[0, 100, 200, 400, 700, 1200][conquest.maxTeamSize]} Sigils
                                 </button>
                             </div>
                         </div>
@@ -98,8 +98,9 @@ export const ConquestStoreUI = ({ onClose }: ConquestStoreUIProps) => {
                                 <button
                                     className="cq-store-buy-btn"
                                     onClick={() => conquest.upgradeBarracks()}
+                                    disabled={conquest.sigils < [150, 300, 500][conquest.barracksLevel]}
                                 >
-                                    Upgrade
+                                    🔱 {[150, 300, 500][conquest.barracksLevel]} Sigils
                                 </button>
                             </div>
                         )}
@@ -113,8 +114,9 @@ export const ConquestStoreUI = ({ onClose }: ConquestStoreUIProps) => {
                                 <button
                                     className="cq-store-buy-btn"
                                     onClick={() => conquest.upgradeScoutTower()}
+                                    disabled={conquest.sigils < [100, 250, 500][conquest.scoutTowerLevel]}
                                 >
-                                    Upgrade
+                                    🔱 {[100, 250, 500][conquest.scoutTowerLevel]} Sigils
                                 </button>
                             </div>
                         )}
@@ -128,47 +130,60 @@ export const ConquestStoreUI = ({ onClose }: ConquestStoreUIProps) => {
                                 <button
                                     className="cq-store-buy-btn"
                                     onClick={() => conquest.upgradeShrine()}
+                                    disabled={conquest.sigils < [100, 200, 400][conquest.shrineLevel]}
                                 >
-                                    Upgrade
+                                    🔱 {[100, 200, 400][conquest.shrineLevel]} Sigils
                                 </button>
                             </div>
                         )}
                     </div>
 
                     {/* Dice Upgrades */}
-                    {conquest.diceCount < 5 && (
-                        <div className="cq-store-section">
-                            <h3>🎲 Dice Upgrades</h3>
-                            <div className="cq-store-item">
-                                <div className="cq-store-item-info">
-                                    <span className="cq-store-item-name">Extra Attack Die ({conquest.diceCount}d6 → {conquest.diceCount + 1}d6)</span>
-                                    <span className="cq-store-item-desc">Roll {conquest.diceCount + 1} dice instead of {conquest.diceCount} when attacking. More dice = higher rolls!</span>
+                    {conquest.diceCount < 5 && (() => {
+                        const diceCosts = [200, 400, 800];
+                        const upgradeIdx = conquest.diceCount - 2;
+                        const diceUpgradeCost = diceCosts[upgradeIdx] ?? 0;
+                        return (
+                            <div className="cq-store-section">
+                                <h3>🎲 Dice Upgrades</h3>
+                                <div className="cq-store-item">
+                                    <div className="cq-store-item-info">
+                                        <span className="cq-store-item-name">Extra Attack Die ({conquest.diceCount}d6 → {conquest.diceCount + 1}d6)</span>
+                                        <span className="cq-store-item-desc">Roll {conquest.diceCount + 1} dice instead of {conquest.diceCount} when attacking. More dice = higher rolls!</span>
+                                    </div>
+                                    <button
+                                        className="cq-store-buy-btn"
+                                        onClick={() => conquest.upgradeDice()}
+                                        disabled={conquest.sigils < diceUpgradeCost}
+                                    >
+                                        🔱 {diceUpgradeCost} Sigils
+                                    </button>
                                 </div>
-                                <button
-                                    className="cq-store-buy-btn"
-                                    onClick={() => conquest.upgradeDice()}
-                                    disabled={conquest.diceCount >= 5}
-                                >
-                                    Upgrade
-                                </button>
                             </div>
-                        </div>
-                    )}
+                        );
+                    })()}
 
                     {/* Soldier Upgrades */}
                     {conquest.soldiers.length > 0 && (
                         <div className="cq-store-section">
                             <h3>⬆️ Upgrade Soldiers</h3>
                             <div className="soldiers-grid">
-                                {conquest.soldiers.filter(s => s.rank !== 'Warden').map(soldier => (
-                                    <SoldierCard
-                                        key={soldier.id}
-                                        soldier={soldier}
-                                        isStoreView={false}
-                                        onAction={() => conquest.upgradeSoldierRank(soldier.id)}
-                                        actionLabel="Promote"
-                                    />
-                                ))}
+                                {conquest.soldiers.filter(s => s.rank !== 'Warden').map(soldier => {
+                                    const rankCosts: Record<string, number> = {
+                                        'Recruit': 50, 'Footman': 120, 'Veteran': 250, 'Captain': 500, 'Elite Guard': 1000
+                                    };
+                                    const cost = rankCosts[soldier.rank] ?? 0;
+                                    return (
+                                        <SoldierCard
+                                            key={soldier.id}
+                                            soldier={soldier}
+                                            isStoreView={false}
+                                            onAction={() => conquest.upgradeSoldierRank(soldier.id)}
+                                            actionLabel={`🔱 ${cost} Promote`}
+                                            actionDisabled={conquest.sigils < cost}
+                                        />
+                                    );
+                                })}
                             </div>
                         </div>
                     )}

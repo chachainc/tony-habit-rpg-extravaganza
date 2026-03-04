@@ -1,0 +1,233 @@
+.combat-page {
+    position: relative;
+    min-height: 100%;
+    padding: 1.5rem;
+    padding-bottom: 6rem;
+    color: white;
+}
+
+.combat-bg {
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+}
+
+.combat-bg__gradient {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(135deg, #0f0a1e 0%, #1a0e2e 30%, #2d1034 60%, #1a0a1a 100%);
+}
+
+.combat-bg__particles {
+    position: absolute;
+    inset: 0;
+    overflow: hidden;
+}
+
+.combat-particle {
+    position: absolute;
+    width: 3px;
+    height: 3px;
+    background: rgba(239, 68, 68, 0.6);
+    border-radius: 50%;
+    animation: combatFloat 4s ease-in-out infinite;
+}
+
+@keyframes combatFloat {
+
+    0%,
+    100% {
+        transform: translateY(0) scale(1);
+        opacity: 0.3;
+    }
+
+    50% {
+        transform: translateY(-30px) scale(1.5);
+        opacity: 0.8;
+    }
+}
+
+.combat-content {
+    position: relative;
+    z-index: 1;
+    max-width: 600px;
+    margin: 0 auto;
+}
+
+.combat-header {
+    text-align: center;
+    margin-bottom: 1.5rem;
+}
+
+.combat-header h1 {
+    font-size: 2rem;
+    font-weight: 800;
+    margin: 0;
+    background: linear-gradient(135deg, #ef4444, #f59e0b);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.combat-subtitle {
+    color: rgba(255, 255, 255, 0.5);
+    font-size: 0.95rem;
+    margin: 0.25rem 0 0;
+}
+
+.combat-stats-bar {
+    display: flex;
+    justify-content: center;
+    gap: 1rem;
+    flex-wrap: wrap;
+    padding: 0.75rem 1rem;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 0.75rem;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    margin-bottom: 2rem;
+}
+
+.combat-stat {
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+    font-size: 0.85rem;
+    color: rgba(255, 255, 255, 0.7);
+    white-space: nowrap;
+}
+
+.combat-options {
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+}
+
+.combat-option {
+    display: flex;
+    align-items: center;
+    gap: 1.25rem;
+    padding: 1.5rem;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 1rem;
+    cursor: pointer;
+    color: white;
+    text-align: left;
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.combat-option::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    border-radius: 1rem;
+}
+
+.combat-option--arena::before {
+    background: linear-gradient(135deg, rgba(239, 68, 68, 0.1), rgba(249, 115, 22, 0.05));
+}
+
+.combat-option--conquest::before {
+    background: linear-gradient(135deg, rgba(139, 92, 246, 0.1), rgba(59, 130, 246, 0.05));
+}
+
+.combat-option:hover::before {
+    opacity: 1;
+}
+
+.combat-option:hover {
+    border-color: rgba(255, 255, 255, 0.2);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+}
+
+.combat-option--arena:hover {
+    border-color: rgba(239, 68, 68, 0.4);
+}
+
+.combat-option--conquest:hover {
+    border-color: rgba(139, 92, 246, 0.4);
+}
+
+.combat-option__icon {
+    flex-shrink: 0;
+    width: 70px;
+    height: 70px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 1rem;
+    position: relative;
+    z-index: 1;
+}
+
+.combat-option--arena .combat-option__icon {
+    background: linear-gradient(135deg, rgba(239, 68, 68, 0.2), rgba(249, 115, 22, 0.1));
+    color: #ef4444;
+}
+
+.combat-option--conquest .combat-option__icon {
+    background: linear-gradient(135deg, rgba(139, 92, 246, 0.2), rgba(59, 130, 246, 0.1));
+    color: #a855f7;
+}
+
+.combat-option__info {
+    flex: 1;
+    position: relative;
+    z-index: 1;
+}
+
+.combat-option__info h2 {
+    margin: 0 0 0.25rem;
+    font-size: 1.3rem;
+    font-weight: 700;
+}
+
+.combat-option__info p {
+    margin: 0;
+    font-size: 0.85rem;
+    color: rgba(255, 255, 255, 0.5);
+    line-height: 1.4;
+}
+
+.combat-option__arrow {
+    font-size: 1.5rem;
+    color: rgba(255, 255, 255, 0.3);
+    position: relative;
+    z-index: 1;
+    transition: transform 0.3s ease;
+}
+
+.combat-option:hover .combat-option__arrow {
+    transform: translateX(5px);
+    color: rgba(255, 255, 255, 0.6);
+}
+
+@media (max-width: 768px) {
+    .combat-page {
+        padding: 1rem;
+        padding-bottom: 5rem;
+    }
+
+    .combat-header h1 {
+        font-size: 1.6rem;
+    }
+
+    .combat-option {
+        padding: 1.25rem;
+    }
+
+    .combat-option__icon {
+        width: 56px;
+        height: 56px;
+    }
+
+    .combat-option__icon svg {
+        width: 36px;
+        height: 36px;
+    }
+}
