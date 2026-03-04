@@ -144,6 +144,23 @@ export const useCheckInStore = create<CheckInState>()(
                     hasCheckedInToday: true,
                 });
 
+                // Gem milestone rewards
+                if (newStreakCount === 14) {
+                    import('./useGameStore').then(({ useGameStore }) => {
+                        useGameStore.getState().addGems(1);
+                    });
+                    import('../components/ui/Toast').then(({ useToastStore }) => {
+                        useToastStore.getState().addToast({ type: 'success', message: '💎 2-Week Streak! +1 Gem reward!', duration: 5000 });
+                    }).catch(() => { });
+                } else if (newStreakCount === 30) {
+                    import('./useGameStore').then(({ useGameStore }) => {
+                        useGameStore.getState().addGems(3);
+                    });
+                    import('../components/ui/Toast').then(({ useToastStore }) => {
+                        useToastStore.getState().addToast({ type: 'success', message: '💎💎💎 30-Day Streak! +3 Gems!', duration: 5000 });
+                    }).catch(() => { });
+                }
+
                 return reward;
             },
 

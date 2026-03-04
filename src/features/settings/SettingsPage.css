@@ -1,0 +1,221 @@
+.settings-page {
+    position: relative;
+    min-height: 100%;
+    padding: 1.5rem;
+    padding-bottom: 6rem;
+    color: white;
+}
+
+.settings-bg {
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+}
+
+.settings-bg__gradient {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f172a 100%);
+}
+
+.settings-content {
+    position: relative;
+    z-index: 1;
+    max-width: 700px;
+    margin: 0 auto;
+}
+
+.settings-header {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 2rem;
+}
+
+.settings-icon {
+    color: #60a5fa;
+}
+
+.settings-header h1 {
+    margin: 0;
+    font-size: 1.8rem;
+    font-weight: 800;
+}
+
+.settings-section {
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 1rem;
+    padding: 1.25rem;
+    margin-bottom: 1rem;
+}
+
+.settings-section h2 {
+    margin: 0 0 1rem;
+    font-size: 1.1rem;
+    color: #e2e8f0;
+}
+
+.settings-section h3 {
+    margin: 0;
+    font-size: 1rem;
+    color: #e2e8f0;
+}
+
+.settings-section p {
+    color: rgba(255, 255, 255, 0.7);
+    font-size: 0.9rem;
+    line-height: 1.5;
+    margin: 0.5rem 0;
+}
+
+.settings-section--highlight {
+    border-color: rgba(96, 165, 250, 0.2);
+    background: rgba(96, 165, 250, 0.05);
+}
+
+.settings-section--warning {
+    border-color: rgba(251, 191, 36, 0.2);
+    background: rgba(251, 191, 36, 0.03);
+}
+
+.settings-profile-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.75rem 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.settings-profile-row:last-child {
+    border-bottom: none;
+}
+
+.settings-label {
+    font-size: 0.9rem;
+    color: rgba(255, 255, 255, 0.6);
+}
+
+.settings-value {
+    font-size: 0.9rem;
+    color: white;
+    font-weight: 600;
+}
+
+.settings-value--code {
+    font-family: monospace;
+    background: rgba(0, 0, 0, 0.3);
+    padding: 0.25rem 0.5rem;
+    border-radius: 0.25rem;
+    font-size: 0.8rem;
+}
+
+.settings-actions-row {
+    display: flex;
+    gap: 0.75rem;
+}
+
+.settings-action-btn {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    padding: 0.85rem;
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 0.75rem;
+    color: white;
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.settings-action-btn:hover {
+    background: rgba(255, 255, 255, 0.12);
+    border-color: rgba(255, 255, 255, 0.2);
+}
+
+.settings-security-divider {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 1.5rem 0 0.5rem;
+    margin-top: 1rem;
+    flex-wrap: wrap;
+}
+
+.settings-security-divider h2 {
+    margin: 0;
+    font-size: 1.3rem;
+    color: #e2e8f0;
+}
+
+.settings-security-sub {
+    width: 100%;
+    margin: 0.25rem 0 0;
+    font-size: 0.85rem;
+    color: rgba(255, 255, 255, 0.4);
+}
+
+.section-icon-row {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 0.75rem;
+    color: #94a3b8;
+}
+
+.security-list {
+    padding-left: 1.2rem;
+    margin: 0.5rem 0;
+}
+
+.security-list li {
+    font-size: 0.85rem;
+    color: rgba(255, 255, 255, 0.7);
+    line-height: 1.6;
+}
+
+.no-collect-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0.5rem;
+}
+
+.no-collect-item {
+    font-size: 0.8rem;
+    padding: 0.5rem;
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 0.5rem;
+    text-align: center;
+    color: rgba(255, 255, 255, 0.8);
+}
+
+.security-reassure {
+    color: #4ade80 !important;
+    font-weight: 600;
+}
+
+.security-steps {
+    padding-left: 1.2rem;
+    margin: 0.5rem 0;
+}
+
+.security-steps li {
+    font-size: 0.85rem;
+    color: rgba(255, 255, 255, 0.7);
+    line-height: 1.8;
+}
+
+@media (max-width: 768px) {
+    .settings-page {
+        padding: 1rem;
+        padding-bottom: 5rem;
+    }
+
+    .no-collect-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}

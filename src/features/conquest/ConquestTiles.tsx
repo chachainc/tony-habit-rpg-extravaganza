@@ -37,6 +37,13 @@ export const ConquestTiles = ({ onComplete, onClose, canPlay, canPlayImpossible 
     const [result, setResult] = useState<'win' | 'loss' | null>(null);
     const [clearingIds, setClearingIds] = useState<Set<number>>(new Set());
     const [seed] = useState(() => Math.floor(Math.random() * 2147483647));
+    // Stable random offsets for tray tiles (visual scatter)
+    const trayOffsets = useState(() =>
+        Array.from({ length: 7 }, () => ({
+            dy: (Math.random() - 0.5) * 12,
+            rotate: (Math.random() - 0.5) * 8,
+        }))
+    )[0];
 
     // Power-up state
     const [ownedRemove, setOwnedRemove] = useState(0);
@@ -477,24 +484,27 @@ export const ConquestTiles = ({ onComplete, onClose, canPlay, canPlayImpossible 
 
             {/* Right: Tray */}
             <div className="tiles-tray-column">
-                <div className="tiles-tray-label">Tray {tray.length}/{TRAY_CAPACITY}</div>
-                <div className="tiles-tray">
-                    {Array.from({ length: TRAY_CAPACITY }).map((_, i) => {
-                        const tile = tray[i];
-                        if (!tile) {
-                            return <div key={`empty-${i}`} className="tiles-tray-slot" />;
-                        }
+                <div className="tiles-tray-label">
+                    Tray {tray.length}/{TRAY_CAPACITY}
+                    <span style={{ marginLeft: '0.4rem', fontSize: '0.7rem', color: '#ef4444', opacity: tray.length >= TRAY_CAPACITY - 2 ? 1 : 0.4 }}>
+                        {TRAY_CAPACITY - tray.length === 0 ? '⚠ FULL' : `${TRAY_CAPACITY - tray.length} left`}
+                    </span>
+                </div>
+                {/* Only show REMAINING empty slots, not always 7 */}
+                <div className="tiles-tray" style={{ height: `${(TRAY_CAPACITY) * 54}px` }}>
+                    {/* Filled tiles */}
+                    {tray.map((tile, i) => {
                         const isClearing = clearingIds.has(tile.uid);
-                        // Check if there's a potential match (2+ of same in tray)
                         const matchCount = tray.filter(t => t.symbolId === tile.symbolId).length;
                         const isMatching = matchCount >= 2 && !isClearing;
+                        const offset = trayOffsets[i] || { dy: 0, rotate: 0 };
 
                         return (
                             <motion.div
                                 key={tile.uid}
                                 className={`tiles-tray-tile ${isClearing ? 'clearing' : ''} ${isMatching ? 'matching' : ''}`}
                                 initial={{ x: -40, opacity: 0 }}
-                                animate={{ x: 0, opacity: 1 }}
+                                animate={{ x: 0, opacity: 1, y: offset.dy, rotate: offset.rotate }}
                                 transition={{ duration: 0.25 }}
                             >
                                 {tile.symbol.imageSrc ? (
@@ -505,6 +515,10 @@ export const ConquestTiles = ({ onComplete, onClose, canPlay, canPlayImpossible 
                             </motion.div>
                         );
                     })}
+                    {/* Remaining empty slots — only show how many are left */}
+                    {Array.from({ length: TRAY_CAPACITY - tray.length }).map((_, i) => (
+                        <div key={`empty-${i}`} className="tiles-tray-slot" style={{ opacity: 0.35 }} />
+                    ))}
                 </div>
             </div>
 

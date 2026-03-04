@@ -213,9 +213,13 @@
 }
 
 .combat-stat-value {
-    font-size: 1.8rem;
+    font-size: 1.6rem;
     font-weight: 700;
     color: var(--text-primary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 10ch;
 }
 
 /* Skills Section */
@@ -244,19 +248,14 @@
 }
 
 .skill-card {
-    padding: 2rem 2rem 3rem 2rem;
-    /* Increased bottom padding */
+    padding: 1.5rem;
     display: flex;
     flex-direction: column;
     justify-content: flex-start;
-    /* Changed from space-between to allow natural flow */
-    gap: 1.5rem;
+    gap: 1rem;
     height: auto;
-    /* Force auto height */
     min-height: 0;
-    /* Remove min-height constraint */
     overflow: visible;
-    /* Prevent clipping */
     transition: all 0.2s;
 }
 
@@ -274,9 +273,6 @@
 
 .skill-icon {
     font-size: 2rem;
-    transform: scale(0.3);
-    /* Aggressive shrink for emojis */
-    transform-origin: center;
     display: inline-block;
     line-height: 1;
 }

@@ -1,17 +1,14 @@
 import { NavLink } from 'react-router-dom';
-import { House, CheckSquare, BarChart2, Settings, Swords, Calendar, Crown, Shield, User, Store } from 'lucide-react';
+import { House, CheckSquare, BarChart2, Settings, Swords, User, Store } from 'lucide-react';
 import './Sidebar.css';
 
 const NAV_ITEMS = [
     { icon: House, label: 'Room', path: '/room' },
     { icon: CheckSquare, label: 'Tasks', path: '/' },
     { icon: Store, label: 'Market', path: '/marketplace' },
-    { icon: Calendar, label: 'Calendar', path: '/calendar' },
-    { icon: Swords, label: 'Arena', path: '/arena' },
-    { icon: Crown, label: 'Conquest', path: '/conquest' },
+    { icon: Swords, label: 'Combat', path: '/combat' },
     { icon: User, label: 'Character', path: '/character' },
     { icon: BarChart2, label: 'Stats', path: '/stats' },
-    { icon: Shield, label: 'Security', path: '/security' },
     { icon: Settings, label: 'Settings', path: '/settings' },
 ];
 

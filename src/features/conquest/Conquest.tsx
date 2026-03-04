@@ -39,6 +39,7 @@ export const Conquest = () => {
     const [selectedNode, setSelectedNode] = useState<ConquestNode | null>(null);
     const [combatResult, setCombatResult] = useState<ConquestCombatResult | null>(null);
     const [isRolling, setIsRolling] = useState(false);
+    const [heroRolled, setHeroRolled] = useState(false);
     const [showChess, setShowChess] = useState(false);
     const [showStore, setShowStore] = useState(false);
     const [showTiles, setShowTiles] = useState(false);
@@ -60,25 +61,41 @@ export const Conquest = () => {
         setSelectedNode(node);
         setView('combat');
         setIsRolling(true);
+        setHeroRolled(false);
         setCombatResult(null);
 
-        // Start rolling animation — rapid face cycling
+        // Enemy dice start spinning immediately
         const diceCount = conquest.diceCount;
         const rollInterval = setInterval(() => {
-            setRollingFaces({
-                attacker: Array.from({ length: diceCount }, () => Math.floor(Math.random() * 6) + 1),
+            setRollingFaces(prev => ({
+                attacker: heroRolled
+                    ? prev.attacker   // keep hero fixed if already rolled
+                    : Array.from({ length: diceCount }, () => Math.floor(Math.random() * 6) + 1),
                 defender: Array.from({ length: 2 }, () => Math.floor(Math.random() * 6) + 1),
-            });
+            }));
         }, 80);
 
-        // Stop rolling and show result after 1.8s
+        // Store interval ref so we can clear it when hero rolls
+        (handleAttack as any)._rollInterval = rollInterval;
+    };
+
+    const handleHeroRoll = () => {
+        if (!selectedNode || !isRolling || heroRolled) return;
+        setHeroRolled(true);
+
+        // Fix hero dice immediately
+        const diceCount = conquest.diceCount;
+        const fixedHeroDice = Array.from({ length: diceCount }, () => Math.floor(Math.random() * 6) + 1);
+        setRollingFaces(prev => ({ ...prev, attacker: fixedHeroDice }));
+
+        // Enemy keeps rolling for 1.2s more, then resolve
         setTimeout(() => {
-            clearInterval(rollInterval);
-            const result = conquest.conquestAttack(node.id);
+            clearInterval((handleAttack as any)._rollInterval);
+            const result = conquest.conquestAttack(selectedNode.id);
             setRollingFaces({ attacker: result.rolls.attackerDice, defender: result.rolls.defenderDice });
             setCombatResult(result);
             setIsRolling(false);
-        }, 1800);
+        }, 1200);
     };
 
     const handleChessComplete = (result: 'win' | 'draw' | 'loss', difficulty: 1 | 2 | 3) => {
@@ -250,8 +267,8 @@ export const Conquest = () => {
                                     {(displayFaces.attacker || []).map((face, i) => (
                                         <motion.div
                                             key={i}
-                                            animate={isRolling ? { rotate: [0, 360], scale: [1, 1.2, 1] } : { rotate: 0, scale: 1 }}
-                                            transition={isRolling ? { duration: 0.3, repeat: Infinity, delay: i * 0.05 } : { duration: 0.3 }}
+                                            animate={isRolling && !heroRolled ? { rotate: [0, 360], scale: [1, 1.2, 1] } : { rotate: 0, scale: 1 }}
+                                            transition={isRolling && !heroRolled ? { duration: 0.3, repeat: Infinity, delay: i * 0.05 } : { duration: 0.3 }}
                                             style={{
                                                 fontSize: '2rem',
                                                 width: 48,
@@ -259,8 +276,8 @@ export const Conquest = () => {
                                                 display: 'flex',
                                                 alignItems: 'center',
                                                 justifyContent: 'center',
-                                                background: isRolling ? 'rgba(96,165,250,0.15)' : 'rgba(96,165,250,0.25)',
-                                                border: `2px solid ${isRolling ? 'rgba(96,165,250,0.3)' : 'rgba(96,165,250,0.6)'}`,
+                                                background: isRolling && !heroRolled ? 'rgba(96,165,250,0.15)' : 'rgba(96,165,250,0.25)',
+                                                border: `2px solid ${isRolling && !heroRolled ? 'rgba(96,165,250,0.3)' : 'rgba(96,165,250,0.6)'}`,
                                                 borderRadius: '0.5rem',
                                             }}
                                         >
@@ -273,6 +290,31 @@ export const Conquest = () => {
                                         </div>
                                     )}
                                 </div>
+                                {/* Hero roll button — shown while waiting */}
+                                {isRolling && !heroRolled && (
+                                    <motion.button
+                                        style={{
+                                            marginTop: '0.75rem',
+                                            padding: '0.5rem 1.5rem',
+                                            background: 'linear-gradient(135deg, #3b82f6, #2563eb)',
+                                            border: 'none',
+                                            borderRadius: '8px',
+                                            color: 'white',
+                                            fontWeight: 800,
+                                            fontSize: '0.9rem',
+                                            cursor: 'pointer',
+                                            boxShadow: '0 0 16px rgba(59,130,246,0.5)',
+                                        }}
+                                        animate={{ scale: [1, 1.04, 1] }}
+                                        transition={{ duration: 1.2, repeat: Infinity }}
+                                        onClick={handleHeroRoll}
+                                    >
+                                        🎲 Roll Hero Dice!
+                                    </motion.button>
+                                )}
+                                {isRolling && heroRolled && (
+                                    <div style={{ marginTop: '0.5rem', fontSize: '0.75rem', color: '#34d399' }}>Hero dice locked ✓</div>
+                                )}
                             </div>
 
                             <div style={{ textAlign: 'center', fontSize: '1.2rem', fontWeight: 800, color: '#94a3b8' }}>VS</div>

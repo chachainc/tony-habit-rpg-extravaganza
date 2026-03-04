@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
 import dayjs from 'dayjs';
 import { motion } from 'framer-motion';
-import { Plus, Gift, CheckCircle, Circle, Sun, Sunset, Moon, Star, MinusCircle, Trash2, Pencil } from 'lucide-react';
-import { Card, ProgressBar } from '../../components/ui';
+import { Plus, Gift, CheckCircle, Circle, Sun, Sunset, Moon, Star, MinusCircle, Trash2, Pencil, Dices, CalendarDays } from 'lucide-react';
+import { Card } from '../../components/ui';
 import { type TaskDifficulty } from '../../store/useTaskStore';
 import { useGameStore, type SkillName } from '../../store/useGameStore';
 import { useRecurringTasksStore, type BundleType } from '../../store/useRecurringTasksStore';
@@ -10,6 +10,7 @@ import { useCalendarStore } from '../../store/useCalendarStore';
 import { WeightInput } from '../../components/WeightInput/WeightInput';
 import { TrainingInput } from './TrainingInput';
 import { DailyChest } from './DailyChest';
+import { useNavigate } from 'react-router-dom';
 import './TasksPage.css';
 
 // Skill icons mapping
@@ -53,6 +54,7 @@ const BUNDLE_CONFIG: Record<BundleType, { title: string; icon: React.ReactNode; 
 };
 
 export const TasksPage = () => {
+    const navigate = useNavigate();
     // const { tasks, addTask, toggleTask, removeTask } = useTaskStore(); // Unused
     const { skills, getXpProgress } = useGameStore();
     const {
@@ -302,21 +304,33 @@ export const TasksPage = () => {
             </div>
 
             <div className="tasks-content">
-                {/* Header */}
+                {/* Header with nav buttons */}
                 <motion.div
                     className="tasks-header"
                     initial={{ opacity: 0, y: -20 }}
                     animate={{ opacity: 1, y: 0 }}
                 >
-                    <div>
+                    <button onClick={() => navigate('/monopoly')} className="tasks-header-nav-btn tasks-header-nav-btn--spin">
+                        <Dices size={16} />
+                        Daily Spin
+                    </button>
+                    <div className="tasks-header-center">
                         <h1>Daily Routine</h1>
                         <p className="tasks-subtitle">Build consistency with daily bundles</p>
                     </div>
-                    <button onClick={scrollToAdd} className="add-task-shortcut-btn">
-                        <Plus size={18} />
-                        Add Task
+                    <button onClick={() => navigate('/calendar')} className="tasks-header-nav-btn tasks-header-nav-btn--calendar">
+                        <CalendarDays size={16} />
+                        Calendar
                     </button>
                 </motion.div>
+
+                {/* Add Task Shortcut */}
+                <div className="tasks-add-shortcut-row">
+                    <button onClick={scrollToAdd} className="add-task-shortcut-btn">
+                        <Plus size={16} />
+                        Add Task
+                    </button>
+                </div>
 
                 {/* Perfect Day Banner */}
                 {isPerfectDay && (
@@ -517,52 +531,7 @@ export const TasksPage = () => {
                     onSubmit={(selections) => completeTask('training_session', { trainingSelections: selections })}
                 />
 
-                {/* Skills Overview Grid */}
-                <motion.div
-                    className="skills-grid"
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.1 }}
-                >
-                    {skillNames.map((skillName, index) => {
-                        const skill = skills[skillName];
-
-                        const progress = getXpProgress(skillName);
-
-                        return (
-                            <motion.div
-                                key={skillName}
-                                initial={{ opacity: 0, scale: 0.95 }}
-                                animate={{ opacity: 1, scale: 1 }}
-                                transition={{ delay: 0.05 * index }}
-                            >
-                                <Card variant="glass" className="skill-card">
-                                    <div className="skill-card__header">
-                                        <div
-                                            className="skill-icon"
-                                            style={{ background: SKILL_COLORS[skillName] }}
-                                        >
-                                            {SKILL_ICONS[skillName]}
-                                        </div>
-                                        <div className="skill-info">
-                                            <h3>{skillName}</h3>
-                                            <span className="skill-level">Level {skill.level}</span>
-                                        </div>
-                                    </div>
-
-                                    {/* Level Progress */}
-                                    <ProgressBar
-                                        current={progress.current}
-                                        max={progress.required}
-                                        size="sm"
-                                        variant="default"
-                                        showNumbers={false}
-                                    />
-                                </Card>
-                            </motion.div>
-                        );
-                    })}
-                </motion.div>
+                {/* Skills moved to Stats tab */}
 
                 {/* Daily Chest */}
                 <motion.div

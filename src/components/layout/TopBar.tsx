@@ -1,20 +1,23 @@
 import { motion } from 'framer-motion';
-import { useNavigate } from 'react-router-dom';
-import { Coins, TrendingUp, Clock, Heart, Droplet, Sword, Shield, Sparkles, Home, Store, BookOpen, Calendar } from 'lucide-react';
+import { useNavigate, useLocation } from 'react-router-dom';
+import { Coins, TrendingUp, Heart, Sword, Shield, Sparkles, Home, Store, BookOpen } from 'lucide-react';
 import { useGameStore } from '../../store/useGameStore';
 import { useCheckInStore } from '../../store/useCheckInStore';
 import { useMonopolyStore } from '../../store/useMonopolyStore';
 import { useBattleStore } from '../../store/useBattleStore';
 import { useConquestStore } from '../../store/useConquestStore';
+import { useProfileStore } from '../../store/useProfileStore';
 import './TopBar.css';
 
 export const TopBar = () => {
     const navigate = useNavigate();
+    const location = useLocation();
     const { currency, gems, globalXp, getGlobalLevel, getAttack, getDefense, getMagicAttack, getMaxMP } = useGameStore();
     const { streakCount } = useCheckInStore();
     const { dailyTickets } = useMonopolyStore();
     const { player, currentMP } = useBattleStore();
     const { sigils } = useConquestStore();
+    const { profileName, playerTitle, activeBannerId } = useProfileStore();
 
     const level = getGlobalLevel();
     const atk = getAttack();
@@ -26,20 +29,20 @@ export const TopBar = () => {
     const currentHP = player?.hp ?? 100;
     const maxHP = player?.maxHp ?? 100;
 
-    // Calculate time until daily reset (midnight Eastern)
-    const getTimeUntilReset = () => {
-        const now = new Date();
-        const eastern = new Date(now.toLocaleString('en-US', { timeZone: 'America/New_York' }));
-        const tomorrow = new Date(eastern);
-        tomorrow.setDate(tomorrow.getDate() + 1);
-        tomorrow.setHours(0, 0, 0, 0);
+    // Context detection for right section
+    const isCombatRoute = ['/combat', '/arena', '/conquest'].some(p => location.pathname.startsWith(p));
+    const isMonopolyRoute = location.pathname === '/monopoly';
 
-        const diff = tomorrow.getTime() - eastern.getTime();
-        const hours = Math.floor(diff / (1000 * 60 * 60));
-        const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-
-        return `${hours}h ${minutes}m`;
+    // Banner emoji map
+    const BANNER_EMOJIS: Record<string, string> = {
+        crimson_dawn: '🔴',
+        void_walker: '🌑',
+        celestial_guard: '⭐',
+        iron_sentinel: '⚙️',
+        storm_herald: '⚡',
     };
+    const bannerEmoji = activeBannerId ? (BANNER_EMOJIS[activeBannerId] ?? '🏳️') : null;
+
 
     return (
         <motion.div
@@ -48,18 +51,21 @@ export const TopBar = () => {
             animate={{ y: 0 }}
             transition={{ duration: 0.3 }}
         >
-            {/* Left Section: Level, XP & Gold */}
+            {/* Left Section: Player Identity + Gold */}
             <div className="top-bar__section">
                 <div
-                    className="top-bar__item top-bar__item--level top-bar__item--clickable"
+                    className="top-bar__item top-bar__item--identity top-bar__item--clickable"
                     onClick={() => navigate('/stats')}
                     title="View Stats"
                 >
-                    <div className="top-bar__icon">⭐</div>
-                    <div className="top-bar__content">
-                        <span className="top-bar__label">Lv</span>
-                        <span className="top-bar__value">{level}</span>
+                    <div className="top-bar__identity-block">
+                        <span className="top-bar__player-name">
+                            {bannerEmoji && <span className="top-bar__banner-emoji">{bannerEmoji}</span>}
+                            {profileName}
+                        </span>
+                        <span className="top-bar__player-title">{playerTitle}</span>
                     </div>
+                    <div className="top-bar__level-badge">Lv{level}</div>
                 </div>
 
                 <div
@@ -77,17 +83,6 @@ export const TopBar = () => {
 
                 <div
                     className="top-bar__item top-bar__item--clickable top-bar__hide-mobile"
-                    onClick={() => navigate('/monopoly')}
-                    title="Play Monopoly"
-                >
-                    <div className="top-bar__icon">🎫</div>
-                    <div className="top-bar__content">
-                        <span className="top-bar__value">{dailyTickets}</span>
-                    </div>
-                </div>
-
-                <div
-                    className="top-bar__item top-bar__item--clickable top-bar__hide-mobile"
                     onClick={() => navigate('/stats')}
                     title="View Stats"
                 >
@@ -100,33 +95,23 @@ export const TopBar = () => {
                 </div>
             </div>
 
-            {/* Center Section: Combat Stats */}
-            <div className="top-bar__section top-bar__section--stats top-bar__hide-mobile">
+            {/* Center Section: Combat Stats - always visible */}
+            <div className="top-bar__section top-bar__section--stats">
                 {/* HP */}
                 <div
                     className="top-bar__stat top-bar__stat--hp top-bar__stat--clickable"
-                    title="Hit Points - Click for Home"
-                    onClick={() => navigate('/home')}
+                    title="Hit Points"
+                    onClick={() => navigate('/stats')}
                 >
                     <Heart size={16} />
                     <span>{Math.round(currentHP)}/{maxHP}</span>
                 </div>
 
-                {/* MP */}
-                <div
-                    className="top-bar__stat top-bar__stat--mp top-bar__stat--clickable"
-                    title="Mana Points - Click for Home"
-                    onClick={() => navigate('/home')}
-                >
-                    <Droplet size={16} />
-                    <span>{currentMP}/{maxMP}</span>
-                </div>
-
                 {/* ATK */}
                 <div
                     className="top-bar__stat top-bar__stat--atk top-bar__stat--clickable"
-                    title={`Physical: ${atk} | Magic: ${magicAtk} - Click for Arena`}
-                    onClick={() => navigate('/arena')}
+                    title={`Physical: ${atk} | Magic: ${magicAtk}`}
+                    onClick={() => navigate('/combat')}
                 >
                     <Sword size={16} />
                     <span>{atk}</span>
@@ -135,17 +120,17 @@ export const TopBar = () => {
                 {/* DEF */}
                 <div
                     className="top-bar__stat top-bar__stat--def top-bar__stat--clickable"
-                    title="Defense - Click for Arena"
-                    onClick={() => navigate('/arena')}
+                    title="Defense"
+                    onClick={() => navigate('/combat')}
                 >
                     <Shield size={16} />
                     <span>{def}</span>
                 </div>
 
-                {/* Magic ATK */}
+                {/* Magic ATK - desktop only */}
                 <div
-                    className="top-bar__stat top-bar__stat--magic top-bar__stat--clickable"
-                    title={`Magic Attack: ${magicAtk} - Click for Tome`}
+                    className="top-bar__stat top-bar__stat--magic top-bar__stat--clickable top-bar__hide-mobile"
+                    title={`Magic Attack: ${magicAtk}`}
                     onClick={() => navigate('/tome')}
                 >
                     <Sparkles size={16} />
@@ -153,30 +138,50 @@ export const TopBar = () => {
                 </div>
             </div>
 
-            {/* Right Section: Currency & Timer */}
+            {/* Right Section: Context-aware stats + gems */}
             <div className="top-bar__section">
+                {isCombatRoute && (
+                    <>
+                        <div
+                            className="top-bar__stat top-bar__stat--sigil top-bar__stat--clickable"
+                            onClick={() => navigate('/conquest')}
+                            title="Sigils"
+                        >
+                            <span>🔱 {sigils}</span>
+                        </div>
+                        <div
+                            className="top-bar__stat top-bar__stat--mp"
+                            title="Mana"
+                        >
+                            <span>💎 {currentMP}/{maxMP}</span>
+                        </div>
+                    </>
+                )}
 
-                <div
-                    className="top-bar__item top-bar__item--clickable top-bar__hide-mobile"
-                    onClick={() => navigate('/checkin')}
-                    title="Daily Check-In"
-                >
-                    <div className="top-bar__icon">🔥</div>
-                    <div className="top-bar__content">
-                        <span className="top-bar__value">{streakCount}</span>
+                {isMonopolyRoute && (
+                    <div
+                        className="top-bar__item top-bar__item--clickable"
+                        title="Daily Rolls Remaining"
+                    >
+                        <div className="top-bar__icon">🎫</div>
+                        <div className="top-bar__content">
+                            <span className="top-bar__value">{dailyTickets} rolls</span>
+                        </div>
                     </div>
-                </div>
+                )}
 
-                <div
-                    className="top-bar__item top-bar__item--clickable top-bar__hide-mobile"
-                    onClick={() => navigate('/conquest')}
-                    title="Conquest Sigils"
-                >
-                    <div className="top-bar__icon">🔱</div>
-                    <div className="top-bar__content">
-                        <span className="top-bar__value">{sigils}</span>
+                {!isCombatRoute && !isMonopolyRoute && (
+                    <div
+                        className="top-bar__item top-bar__item--clickable top-bar__hide-mobile"
+                        onClick={() => navigate('/checkin')}
+                        title="Daily Check-In"
+                    >
+                        <div className="top-bar__icon">🔥</div>
+                        <div className="top-bar__content">
+                            <span className="top-bar__value">{streakCount}</span>
+                        </div>
                     </div>
-                </div>
+                )}
 
                 <div
                     className="top-bar__item top-bar__item--clickable top-bar__item--gems"
@@ -189,28 +194,19 @@ export const TopBar = () => {
                     </div>
                 </div>
 
-                <div className="top-bar__item top-bar__item--timer top-bar__hide-mobile">
-                    <div className="top-bar__icon">
-                        <Clock size={16} />
-                    </div>
-                    <div className="top-bar__content">
-                        <span className="top-bar__value top-bar__value--timer">{getTimeUntilReset()}</span>
-                    </div>
-                </div>
-
-                {/* Quick Nav Buttons */}
+                {/* Quick Nav Buttons - desktop only */}
                 <div className="top-bar__nav-buttons top-bar__hide-mobile">
                     <button
                         className="top-bar__nav-btn top-bar__nav-btn--home"
-                        onClick={() => navigate('/home')}
-                        title="Home"
+                        onClick={() => navigate('/room')}
+                        title="Room"
                     >
                         <Home size={16} />
                     </button>
                     <button
                         className="top-bar__nav-btn top-bar__nav-btn--arena"
-                        onClick={() => navigate('/arena')}
-                        title="Arena"
+                        onClick={() => navigate('/combat')}
+                        title="Combat"
                     >
                         <Sword size={16} />
                     </button>
@@ -227,13 +223,6 @@ export const TopBar = () => {
                         title="Tome of Fate"
                     >
                         <BookOpen size={16} />
-                    </button>
-                    <button
-                        className="top-bar__nav-btn top-bar__nav-btn--calendar"
-                        onClick={() => navigate('/calendar')}
-                        title="Calendar"
-                    >
-                        <Calendar size={16} />
                     </button>
                 </div>
             </div>
