@@ -14,10 +14,20 @@ export interface StrategyState {
     chessPlayed: boolean;
     chessDifficulty: 1 | 2 | 3;
 
+    // Tiles
+    lastTilesDate: string | null;
+    tilesPlayed: boolean;
+    tilesHardWins: number;
+
     // Actions
     recordChessResult: (result: 'win' | 'draw' | 'loss', difficulty?: 1 | 2 | 3) => void;
     canPlayChessToday: () => boolean;
     getStrategyXpForLevel: (level: number) => number;
+
+    // Tiles actions
+    recordTilesResult: (result: 'win' | 'loss', difficulty: 1 | 2 | 3 | 4) => void;
+    canPlayTilesToday: () => boolean;
+    canPlayImpossible: () => boolean;
 
     // Conquest bonuses (hard capped)
     getReconBonus: () => number;
@@ -37,6 +47,10 @@ export const useStrategyStore = create<StrategyState>()(
             lastChessDate: null,
             chessPlayed: false,
             chessDifficulty: 1,
+
+            lastTilesDate: null,
+            tilesPlayed: false,
+            tilesHardWins: 0,
 
             getStrategyXpForLevel: (level: number) => level * level * 30,
 
@@ -87,6 +101,65 @@ export const useStrategyStore = create<StrategyState>()(
                 const state = get();
                 const today = getEasternDateString();
                 return state.lastChessDate !== today || !state.chessPlayed;
+            },
+
+            // ─── TILES ────────────────────────────────
+            recordTilesResult: (result, difficulty) => {
+                const today = getEasternDateString();
+                const state = get();
+                if (state.lastTilesDate === today && state.tilesPlayed) return;
+
+                // Same sigil rates as chess
+                const XP_MULT: Record<number, number> = { 1: 1, 2: 1.5, 3: 2.5, 4: 3 };
+                let baseXp = 0;
+                let baseSigils = 0;
+                switch (result) {
+                    case 'win': baseXp = 50; baseSigils = 15; break;
+                    case 'loss': baseXp = 10; baseSigils = 3; break;
+                }
+                const mult = XP_MULT[difficulty] ?? 1;
+                const xpGain = Math.round(baseXp * mult);
+                const sigilGain = Math.round(baseSigils * mult);
+
+                let newXp = state.strategyXp + xpGain;
+                let newLevel = state.strategyLevel;
+                let threshold = get().getStrategyXpForLevel(newLevel);
+
+                while (newXp >= threshold && newLevel < 50) {
+                    newXp -= threshold;
+                    newLevel++;
+                    threshold = get().getStrategyXpForLevel(newLevel);
+                }
+
+                const newHardWins = (result === 'win' && difficulty >= 3)
+                    ? state.tilesHardWins + 1
+                    : state.tilesHardWins;
+
+                set({
+                    strategyXp: newXp,
+                    strategyLevel: newLevel,
+                    strategyTotalXp: state.strategyTotalXp + xpGain,
+                    lastTilesDate: today,
+                    tilesPlayed: true,
+                    tilesHardWins: newHardWins,
+                });
+
+                // Grant sigils
+                if (sigilGain > 0) {
+                    import('./useConquestStore').then(({ useConquestStore }) => {
+                        useConquestStore.getState().addSigils(sigilGain);
+                    }).catch(() => { });
+                }
+            },
+
+            canPlayTilesToday: () => {
+                const state = get();
+                const today = getEasternDateString();
+                return state.lastTilesDate !== today || !state.tilesPlayed;
+            },
+
+            canPlayImpossible: () => {
+                return get().tilesHardWins >= 3;
             },
 
             getReconBonus: () => {

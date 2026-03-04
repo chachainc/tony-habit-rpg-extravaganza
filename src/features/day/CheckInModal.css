@@ -274,7 +274,7 @@
 }
 
 .reward-popup {
-    position: absolute;
+    position: fixed;
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
@@ -283,8 +283,9 @@
     border-radius: 16px;
     padding: 2rem;
     text-align: center;
-    z-index: 10;
-    min-width: 350px;
+    z-index: 1000;
+    min-width: 280px;
+    max-width: min(350px, 90vw);
     box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
 }
 

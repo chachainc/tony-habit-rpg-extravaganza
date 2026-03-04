@@ -10,9 +10,10 @@ import { PetShop } from './stores/PetShop';
 import { WeaponStore } from './stores/WeaponStore';
 import { FurnitureStore } from './stores/FurnitureStore';
 import { SpellStore } from './stores/SpellStore';
+import { JewelryStore } from './stores/JewelryStore';
 import { SceneShell } from '../../components/scene';
 import marketplaceNightBg from '../../assets/backgrounds/marketplace_night.png';
-import playerSprite from '../../assets/sprites/player.png';
+import { useHeroImage } from '../../hooks/useHeroImage';
 import armorSignboard from '../../assets/signboards/armor.png';
 import weaponSignboard from '../../assets/signboards/weapon.png';
 import petSignboard from '../../assets/signboards/pet.png';
@@ -32,6 +33,7 @@ const SIGNBOARD_MAP: Record<string, string> = {
 };
 
 export const MarketplaceTown = () => {
+    const heroImage = useHeroImage();
     const navigate = useNavigate();
     const { playerPosition, setPlayerPosition, activeStore, openStore, closeStore } = useMarketplaceStore();
     const [nearbyStore, setNearbyStore] = useState<string | null>(null);
@@ -305,7 +307,7 @@ export const MarketplaceTown = () => {
                                 transition={{ duration: 0.8, repeat: Infinity }}
                             >
                                 <img
-                                    src={playerSprite}
+                                    src={heroImage}
                                     alt="Player"
                                     className="player-sprite"
                                 />
@@ -357,6 +359,9 @@ export const MarketplaceTown = () => {
                 )}
                 {activeStore === 'spell-store' && (
                     <SpellStore onClose={closeStore} />
+                )}
+                {activeStore === 'jewelry-store' && (
+                    <JewelryStore onClose={closeStore} />
                 )}
             </AnimatePresence>
         </>

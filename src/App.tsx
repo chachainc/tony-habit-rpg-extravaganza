@@ -143,7 +143,7 @@ function App() {
 
       <Routes>
         <Route path="/" element={<Layout />}>
-          <Route index element={<PlayerRoomPage />} />
+          <Route index element={<TasksPage />} />
           <Route path="character" element={<CharacterPage />} />
           <Route path="town" element={<TownHubPage />} />
           <Route path="tasks" element={<TasksPage />} />
@@ -157,7 +157,7 @@ function App() {
           <Route path="conquest" element={<Conquest />} />
           <Route path="security" element={<SecurityPage />} />
           <Route path="shop" element={<ShopModal category="general" onClose={() => window.history.back()} />} />
-          <Route path="room" element={<Room2D />} />
+          <Route path="room" element={<PlayerRoomPage />} />
           <Route path="walkable-room" element={<WalkableRoom />} />
           <Route path="marketplace" element={<MarketplaceTown />} />
           <Route path="monopoly" element={<MonopolyBoard onClose={() => window.history.back()} />} />

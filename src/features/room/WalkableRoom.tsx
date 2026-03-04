@@ -17,7 +17,7 @@ import { SceneShell } from '../../components/scene';
 import homeCampBg from '../../assets/backgrounds/home_camp.png';
 import trophyCaseBg from '../../assets/backgrounds/trophy_case.png';
 import bookshelfBg from '../../assets/backgrounds/bookshelf_display.png';
-import playerSprite from '../../assets/sprites/player.png';
+import { useHeroImage } from '../../hooks/useHeroImage';
 import './WalkableRoom.css';
 
 // Room layout config
@@ -44,6 +44,7 @@ const isWalkable = (x: number, y: number, placedFurniture: { gridX: number; grid
 
 export const WalkableRoom = () => {
     const navigate = useNavigate();
+    const heroImage = useHeroImage();
     const { playerPosition, setPlayerPosition } = useRoomStore();
     const { items } = useInventoryStore();
     const { activePet, name: petName } = usePetStore();
@@ -398,7 +399,7 @@ export const WalkableRoom = () => {
                             </AnimatePresence>
 
                             <img
-                                src={playerSprite}
+                                src={heroImage}
                                 alt="Player"
                                 className="player-sprite"
                             />

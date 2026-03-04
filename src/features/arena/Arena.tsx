@@ -50,7 +50,7 @@ import generalInertiaImg from '../../assets/bosses/general_inertia.png';
 import flickerBurnoutImg from '../../assets/bosses/flicker_burnout.png';
 
 // Player sprite
-import playerSpriteImg from '../../assets/sprites/player.png';
+import { useHeroImage } from '../../hooks/useHeroImage';
 
 // Map floor ranges to background images
 const getBackgroundForFloor = (floor: number): string => {
@@ -130,6 +130,7 @@ const getWinChanceColor = (chance: number): string => {
 
 export const Arena = ({ onClose }: { onClose: () => void }) => {
     const navigate = useNavigate();
+    const heroImage = useHeroImage();
     const { addGlobalXp } = useGameStore();
     const { addGold } = useCurrencyStore();
     const { markDefeated } = useEnemyStore();
@@ -502,7 +503,7 @@ export const Arena = ({ onClose }: { onClose: () => void }) => {
                                         <div className="prep-panel-header">YOUR LOADOUT</div>
                                         <div className="profile-header">
                                             <div className="prep-portrait">
-                                                <img src={playerSpriteImg} alt="Player" className="prep-portrait-img" />
+                                                <img src={heroImage} alt="Player" className="prep-portrait-img" />
                                             </div>
                                         </div>
                                         <div className="profile-content">
@@ -775,7 +776,7 @@ export const Arena = ({ onClose }: { onClose: () => void }) => {
                                                     </AnimatePresence>
 
                                                     <motion.img
-                                                        src={playerSpriteImg}
+                                                        src={heroImage}
                                                         alt="Player"
                                                         animate={lastDamage?.target === 'player' ? { x: [0, -10, 10, -10, 0] } : {}}
                                                     />

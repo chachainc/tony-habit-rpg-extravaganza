@@ -4,8 +4,10 @@ import { useSkillTrophyStore } from '../../store/useSkillTrophyStore';
 import { useBookTrophyStore } from '../../store/useBookTrophyStore';
 import { useStrategyStore } from '../../store/useStrategyStore';
 import { useDayStore } from '../../store/useDayStore';
+import { useProfileStore } from '../../store/useProfileStore';
 import { useNavigate } from 'react-router-dom';
 import { Sword, Shield, Sparkles, Droplet, Heart, Crown, Zap, BookOpen } from 'lucide-react';
+import { useHeroImage } from '../../hooks/useHeroImage';
 import './CharacterPage.css';
 
 interface StatLine {
@@ -23,7 +25,9 @@ export const CharacterPage = () => {
     const bookTrophy = useBookTrophyStore();
     const strategy = useStrategyStore();
     const day = useDayStore();
+    const { appearance } = useProfileStore();
     const navigate = useNavigate();
+    const heroImage = useHeroImage();
 
     const { skills, getAttack, getDefense, getMagicAttack, getMaxMP, getGlobalLevel, isDefenseSuppressed, defenseDecayAmount } = game;
     const equipBonuses = equipment.getEquipmentBonuses();
@@ -148,6 +152,12 @@ export const CharacterPage = () => {
                         <h1>Your Character</h1>
                         <p className="char-subtitle">Level {getGlobalLevel()} Adventurer</p>
                     </div>
+                    <img
+                        src={heroImage}
+                        alt="Your Hero"
+                        className="char-hero-thumb"
+                        style={{ filter: `hue-rotate(${appearance?.hairHue ?? 0}deg)` }}
+                    />
                     <button
                         className="char-skills-link"
                         onClick={() => navigate('/tasks')}

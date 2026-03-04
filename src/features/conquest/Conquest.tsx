@@ -6,6 +6,8 @@ import type { ConquestCombatResult, ConquestNode, SoldierRole } from '../../stor
 import { useStrategyStore } from '../../store/useStrategyStore';
 import { ConquestStoreUI } from './ConquestStore';
 import { ChessGame } from './ChessGame';
+import { ConquestTiles } from './ConquestTiles';
+import type { Difficulty } from './tileConfig';
 import { SoldierCard } from './SoldierCard';
 import './Conquest.css';
 
@@ -39,6 +41,9 @@ export const Conquest = () => {
     const [isRolling, setIsRolling] = useState(false);
     const [showChess, setShowChess] = useState(false);
     const [showStore, setShowStore] = useState(false);
+    const [showTiles, setShowTiles] = useState(false);
+
+    const [rollingFaces, setRollingFaces] = useState<{ attacker: number[]; defender: number[] }>({ attacker: [], defender: [] });
 
     const conquest = useConquestStore();
     const strategy = useStrategyStore();
@@ -57,18 +62,36 @@ export const Conquest = () => {
         setIsRolling(true);
         setCombatResult(null);
 
-        // Simulate a dice roll delay
+        // Start rolling animation — rapid face cycling
+        const diceCount = conquest.diceCount;
+        const rollInterval = setInterval(() => {
+            setRollingFaces({
+                attacker: Array.from({ length: diceCount }, () => Math.floor(Math.random() * 6) + 1),
+                defender: Array.from({ length: 2 }, () => Math.floor(Math.random() * 6) + 1),
+            });
+        }, 80);
+
+        // Stop rolling and show result after 1.8s
         setTimeout(() => {
+            clearInterval(rollInterval);
             const result = conquest.conquestAttack(node.id);
+            setRollingFaces({ attacker: result.rolls.attackerDice, defender: result.rolls.defenderDice });
             setCombatResult(result);
             setIsRolling(false);
-        }, 1500);
+        }, 1800);
     };
 
     const handleChessComplete = (result: 'win' | 'draw' | 'loss', difficulty: 1 | 2 | 3) => {
         strategy.recordChessResult(result, difficulty);
         setShowChess(false);
     };
+
+    const handleTilesComplete = (result: 'win' | 'loss', difficulty: Difficulty) => {
+        strategy.recordTilesResult(result, difficulty);
+    };
+
+    // Die face display helper
+    const DICE_FACES = ['', '⚀', '⚁', '⚂', '⚃', '⚄', '⚅'];
 
     // ─── MAP VIEW ───────────────────────────────
     const renderMap = () => {
@@ -187,6 +210,7 @@ export const Conquest = () => {
                                 <span>Reward: 🪙 {selectedNode.goldReward || 0} Gold{selectedNode.gemReward ? ` + 💎 ${selectedNode.gemReward} Gems` : ''}</span>
                                 <span>Terrain Mod: {conquest.getTerrainModifier(selectedNode.terrain) >= 0 ? '+' : ''}{conquest.getTerrainModifier(selectedNode.terrain)}</span>
                                 <span>Morale Mod: {conquest.getMoraleModifier() >= 0 ? '+' : ''}{conquest.getMoraleModifier()}</span>
+                                <span>🎲 Dice: {conquest.diceCount}d6 vs 2d6</span>
                             </div>
                             <div className="node-detail-actions">
                                 <button className="cq-attack-btn" onClick={() => handleAttack(selectedNode)}>
@@ -205,113 +229,154 @@ export const Conquest = () => {
 
     // ─── COMBAT RESULT VIEW ─────────────────────
     const renderCombatResult = () => {
-        if (isRolling) {
+        const displayFaces = isRolling ? rollingFaces : (combatResult ? { attacker: combatResult.rolls.attackerDice, defender: combatResult.rolls.defenderDice } : rollingFaces);
+
+        if (isRolling || combatResult) {
             return (
                 <div className="conquest-combat-result">
                     <motion.div
-                        className="combat-result-card rolling-card"
+                        className={`combat-result-card ${isRolling ? 'rolling-card' : combatResult?.won ? 'victory' : 'defeat'}`}
                         initial={{ scale: 0.8, opacity: 0 }}
                         animate={{ scale: 1, opacity: 1 }}
                     >
-                        <h2>⚔️ ENGAGING ENEMY...</h2>
-                        <div className="dice-rolling-container">
-                            <motion.div
-                                className="rolling-dice"
-                                animate={{ rotate: 360, x: [-20, 20, -20] }}
-                                transition={{ repeat: Infinity, duration: 0.5 }}
-                            >
-                                🎲
-                            </motion.div>
-                            <motion.div
-                                className="rolling-dice"
-                                animate={{ rotate: -360, x: [20, -20, 20] }}
-                                transition={{ repeat: Infinity, duration: 0.5, delay: 0.1 }}
-                            >
-                                🎲
-                            </motion.div>
+                        <h2>{isRolling ? '⚔️ ENGAGING ENEMY...' : combatResult?.won ? '⚔️ VICTORY!' : '💀 DEFEAT'}</h2>
+
+                        {/* Animated Dice Section */}
+                        <div className="dice-rolling-container" style={{ display: 'flex', flexDirection: 'column', gap: '1rem', margin: '1rem 0' }}>
+                            {/* Attacker Dice */}
+                            <div style={{ textAlign: 'center' }}>
+                                <div style={{ fontSize: '0.7rem', color: '#60a5fa', fontWeight: 700, marginBottom: '0.3rem', textTransform: 'uppercase' }}>Your Roll ({conquest.diceCount}d6)</div>
+                                <div style={{ display: 'flex', justifyContent: 'center', gap: '0.4rem', flexWrap: 'wrap' }}>
+                                    {(displayFaces.attacker || []).map((face, i) => (
+                                        <motion.div
+                                            key={i}
+                                            animate={isRolling ? { rotate: [0, 360], scale: [1, 1.2, 1] } : { rotate: 0, scale: 1 }}
+                                            transition={isRolling ? { duration: 0.3, repeat: Infinity, delay: i * 0.05 } : { duration: 0.3 }}
+                                            style={{
+                                                fontSize: '2rem',
+                                                width: 48,
+                                                height: 48,
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                justifyContent: 'center',
+                                                background: isRolling ? 'rgba(96,165,250,0.15)' : 'rgba(96,165,250,0.25)',
+                                                border: `2px solid ${isRolling ? 'rgba(96,165,250,0.3)' : 'rgba(96,165,250,0.6)'}`,
+                                                borderRadius: '0.5rem',
+                                            }}
+                                        >
+                                            {DICE_FACES[face] || '🎲'}
+                                        </motion.div>
+                                    ))}
+                                    {!isRolling && combatResult && (
+                                        <div style={{ display: 'flex', alignItems: 'center', marginLeft: '0.3rem', fontSize: '1.1rem', color: '#60a5fa', fontWeight: 800 }}>
+                                            = {combatResult.rolls.attacker}
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+
+                            <div style={{ textAlign: 'center', fontSize: '1.2rem', fontWeight: 800, color: '#94a3b8' }}>VS</div>
+
+                            {/* Defender Dice */}
+                            <div style={{ textAlign: 'center' }}>
+                                <div style={{ fontSize: '0.7rem', color: '#f87171', fontWeight: 700, marginBottom: '0.3rem', textTransform: 'uppercase' }}>Enemy Roll (2d6)</div>
+                                <div style={{ display: 'flex', justifyContent: 'center', gap: '0.4rem' }}>
+                                    {(displayFaces.defender || []).map((face, i) => (
+                                        <motion.div
+                                            key={i}
+                                            animate={isRolling ? { rotate: [0, -360], scale: [1, 1.2, 1] } : { rotate: 0, scale: 1 }}
+                                            transition={isRolling ? { duration: 0.3, repeat: Infinity, delay: i * 0.05 } : { duration: 0.3 }}
+                                            style={{
+                                                fontSize: '2rem',
+                                                width: 48,
+                                                height: 48,
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                justifyContent: 'center',
+                                                background: isRolling ? 'rgba(248,113,113,0.15)' : 'rgba(248,113,113,0.25)',
+                                                border: `2px solid ${isRolling ? 'rgba(248,113,113,0.3)' : 'rgba(248,113,113,0.6)'}`,
+                                                borderRadius: '0.5rem',
+                                            }}
+                                        >
+                                            {DICE_FACES[face] || '🎲'}
+                                        </motion.div>
+                                    ))}
+                                    {!isRolling && combatResult && (
+                                        <div style={{ display: 'flex', alignItems: 'center', marginLeft: '0.3rem', fontSize: '1.1rem', color: '#f87171', fontWeight: 800 }}>
+                                            = {combatResult.rolls.defender}
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
                         </div>
-                        <p className="rolling-text">Calculating Force & Morale...</p>
+
+                        {isRolling && <p className="rolling-text">Calculating Force & Morale...</p>}
+
+                        {!isRolling && combatResult && (
+                            <>
+                                {/* Math Breakdown */}
+                                <div style={{
+                                    background: 'rgba(15,23,42,0.6)',
+                                    border: '1px solid rgba(148,163,184,0.15)',
+                                    borderRadius: '0.75rem',
+                                    padding: '0.75rem',
+                                    margin: '0.5rem 0',
+                                    fontSize: '0.8rem',
+                                    color: '#94a3b8',
+                                    textAlign: 'center',
+                                    lineHeight: 1.8,
+                                }}>
+                                    <div>
+                                        <span style={{ color: '#60a5fa' }}>{combatResult.rolls.attacker}</span>
+                                        {' + '}
+                                        <span style={{ color: combatResult.modifiers.force >= 0 ? '#34d399' : '#f87171' }}>{combatResult.modifiers.force >= 0 ? '+' : ''}{combatResult.modifiers.force} force</span>
+                                        {' + '}
+                                        <span style={{ color: combatResult.modifiers.terrain >= 0 ? '#34d399' : '#f87171' }}>{combatResult.modifiers.terrain >= 0 ? '+' : ''}{combatResult.modifiers.terrain} terrain</span>
+                                        {' + '}
+                                        <span style={{ color: combatResult.modifiers.morale >= 0 ? '#34d399' : '#f87171' }}>{combatResult.modifiers.morale >= 0 ? '+' : ''}{combatResult.modifiers.morale} morale</span>
+                                        {' + '}
+                                        <span style={{ color: '#34d399' }}>+{combatResult.modifiers.recon} recon</span>
+                                        {' = '}
+                                        <span style={{ color: '#e2e8f0', fontWeight: 700 }}>{combatResult.rolls.attacker + combatResult.modifiers.force + combatResult.modifiers.terrain + combatResult.modifiers.morale + combatResult.modifiers.recon}</span>
+                                    </div>
+                                    <div style={{ color: '#64748b', fontSize: '0.75rem' }}>
+                                        vs Enemy: <span style={{ color: '#f87171', fontWeight: 700 }}>{combatResult.rolls.defender}</span>
+                                    </div>
+                                </div>
+
+                                <div className="result-details">
+                                    {combatResult.won && combatResult.sigilsEarned > 0 && (
+                                        <div className="result-row reward">🔱 +{combatResult.sigilsEarned} Sigils</div>
+                                    )}
+                                    {combatResult.won && combatResult.goldEarned > 0 && (
+                                        <div className="result-row reward">🪙 +{combatResult.goldEarned} Gold</div>
+                                    )}
+                                    {combatResult.won && combatResult.gemsEarned > 0 && (
+                                        <div className="result-row reward">💎 +{combatResult.gemsEarned} Gems</div>
+                                    )}
+                                    {combatResult.troopsLost > 0 && (
+                                        <div className="result-row loss">☠️ Lost {combatResult.troopsLost} soldier(s)</div>
+                                    )}
+                                    <div className={`result-row ${combatResult.moraleChange >= 0 ? 'reward' : 'loss'}`}>
+                                        ❤️ Morale {combatResult.moraleChange >= 0 ? '+' : ''}{combatResult.moraleChange}
+                                    </div>
+                                </div>
+
+                                <button className="cq-continue-btn" onClick={() => {
+                                    setCombatResult(null);
+                                    setSelectedNode(null);
+                                    setView('map');
+                                }}>
+                                    Continue
+                                </button>
+                            </>
+                        )}
                     </motion.div>
                 </div>
             );
         }
 
-        if (!combatResult) return null;
-
-        return (
-            <div className="conquest-combat-result">
-                <motion.div
-                    className={`combat-result-card ${combatResult.won ? 'victory' : 'defeat'}`}
-                    initial={{ scale: 0.8, opacity: 0 }}
-                    animate={{ scale: 1, opacity: 1 }}
-                >
-                    <h2>{combatResult.won ? '⚔️ VICTORY!' : '💀 DEFEAT'}</h2>
-
-                    <div className="dice-display">
-                        <div className="dice-section">
-                            <span className="dice-label">Your Roll</span>
-                            <span className="dice-value">{combatResult.rolls.attacker}</span>
-                        </div>
-                        <span className="dice-vs">VS</span>
-                        <div className="dice-section">
-                            <span className="dice-label">Enemy Roll</span>
-                            <span className="dice-value">{combatResult.rolls.defender}</span>
-                        </div>
-                    </div>
-
-                    <div className="modifier-display">
-                        <div className="mod-item">
-                            <span>Force</span>
-                            <span className={combatResult.modifiers.force >= 0 ? 'positive' : 'negative'}>
-                                {combatResult.modifiers.force >= 0 ? '+' : ''}{combatResult.modifiers.force}
-                            </span>
-                        </div>
-                        <div className="mod-item">
-                            <span>Terrain</span>
-                            <span className={combatResult.modifiers.terrain >= 0 ? 'positive' : 'negative'}>
-                                {combatResult.modifiers.terrain >= 0 ? '+' : ''}{combatResult.modifiers.terrain}
-                            </span>
-                        </div>
-                        <div className="mod-item">
-                            <span>Morale</span>
-                            <span className={combatResult.modifiers.morale >= 0 ? 'positive' : 'negative'}>
-                                {combatResult.modifiers.morale >= 0 ? '+' : ''}{combatResult.modifiers.morale}
-                            </span>
-                        </div>
-                        <div className="mod-item">
-                            <span>Recon</span>
-                            <span className="positive">+{combatResult.modifiers.recon}</span>
-                        </div>
-                    </div>
-
-                    <div className="result-details">
-                        {combatResult.won && combatResult.sigilsEarned > 0 && (
-                            <div className="result-row reward">🔱 +{combatResult.sigilsEarned} Sigils</div>
-                        )}
-                        {combatResult.won && combatResult.goldEarned > 0 && (
-                            <div className="result-row reward">🪙 +{combatResult.goldEarned} Gold</div>
-                        )}
-                        {combatResult.won && combatResult.gemsEarned > 0 && (
-                            <div className="result-row reward">💎 +{combatResult.gemsEarned} Gems</div>
-                        )}
-                        {combatResult.troopsLost > 0 && (
-                            <div className="result-row loss">☠️ Lost {combatResult.troopsLost} soldier(s)</div>
-                        )}
-                        <div className={`result-row ${combatResult.moraleChange >= 0 ? 'reward' : 'loss'}`}>
-                            ❤️ Morale {combatResult.moraleChange >= 0 ? '+' : ''}{combatResult.moraleChange}
-                        </div>
-                    </div>
-
-                    <button className="cq-continue-btn" onClick={() => {
-                        setCombatResult(null);
-                        setSelectedNode(null);
-                        setView('map');
-                    }}>
-                        Continue
-                    </button>
-                </motion.div>
-            </div>
-        );
+        return null;
     };
 
     // ─── SOLDIERS VIEW ──────────────────────────
@@ -379,6 +444,9 @@ export const Conquest = () => {
                 <button className="cq-nav-btn cq-chess-btn" onClick={() => setShowChess(true)}>
                     ♟️ Chess {strategy.canPlayChessToday() && <span className="chess-dot">●</span>}
                 </button>
+                <button className="cq-nav-btn cq-chess-btn" onClick={() => setShowTiles(true)}>
+                    🎴 Tiles {strategy.canPlayTilesToday() && <span className="chess-dot">●</span>}
+                </button>
                 <button className={`cq-nav-btn ${view === 'map' ? 'active' : ''}`} onClick={() => setView('map')}>
                     <Map size={16} /> Map
                 </button>
@@ -415,6 +483,18 @@ export const Conquest = () => {
             <AnimatePresence>
                 {showStore && (
                     <ConquestStoreUI onClose={() => setShowStore(false)} />
+                )}
+            </AnimatePresence>
+
+            {/* Tiles Modal */}
+            <AnimatePresence>
+                {showTiles && (
+                    <ConquestTiles
+                        onComplete={handleTilesComplete}
+                        onClose={() => setShowTiles(false)}
+                        canPlay={strategy.canPlayTilesToday()}
+                        canPlayImpossible={strategy.canPlayImpossible()}
+                    />
                 )}
             </AnimatePresence>
         </div>

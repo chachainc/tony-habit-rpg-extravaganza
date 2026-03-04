@@ -4,7 +4,7 @@ import { useAuraStore, AURAS } from '../../store/useAuraStore';
 import { usePetStore } from '../../store/usePetStore';
 import { useCampaignStore } from '../../store/useCampaignStore';
 import { ITEM_DATABASE } from '../../data/items';
-import playerSpriteImg from '../../assets/sprites/player.png';
+import { useHeroImage } from '../../hooks/useHeroImage';
 import forestRuinsBg from '../../assets/backgrounds/forest_ruins.png';
 import volcanicCavernBg from '../../assets/backgrounds/volcanic_cavern.png';
 import shadowRealmBg from '../../assets/backgrounds/shadow_realm.png';
@@ -86,6 +86,7 @@ export const ArenaBattlefieldLayout = () => {
   const { currentFloor } = useCampaignStore();
   const { activePet } = usePetStore();
   const { activeAuraId } = useAuraStore();
+  const heroImage = useHeroImage();
 
   const petItem = activePet ? ITEM_DATABASE[activePet] : null;
   const [floatingTexts, setFloatingTexts] = useState<Array<{ id: number; text: string; type: 'damage' | 'heal' | 'crit'; x: number; y: number }>>([]);
@@ -154,7 +155,7 @@ export const ArenaBattlefieldLayout = () => {
             isAlly={true}
             isActive={phase === 'executing' && currentTurn === 'player'}
             isHit={hitTargetId === 'player'}
-            imageSrc={playerSpriteImg}
+            imageSrc={heroImage}
           />
         </div>
 

@@ -76,7 +76,7 @@ export const TopBar = () => {
                 </div>
 
                 <div
-                    className="top-bar__item top-bar__item--clickable"
+                    className="top-bar__item top-bar__item--clickable top-bar__hide-mobile"
                     onClick={() => navigate('/monopoly')}
                     title="Play Monopoly"
                 >
@@ -87,7 +87,7 @@ export const TopBar = () => {
                 </div>
 
                 <div
-                    className="top-bar__item top-bar__item--clickable"
+                    className="top-bar__item top-bar__item--clickable top-bar__hide-mobile"
                     onClick={() => navigate('/stats')}
                     title="View Stats"
                 >
@@ -101,7 +101,7 @@ export const TopBar = () => {
             </div>
 
             {/* Center Section: Combat Stats */}
-            <div className="top-bar__section top-bar__section--stats">
+            <div className="top-bar__section top-bar__section--stats top-bar__hide-mobile">
                 {/* HP */}
                 <div
                     className="top-bar__stat top-bar__stat--hp top-bar__stat--clickable"
@@ -157,7 +157,7 @@ export const TopBar = () => {
             <div className="top-bar__section">
 
                 <div
-                    className="top-bar__item top-bar__item--clickable"
+                    className="top-bar__item top-bar__item--clickable top-bar__hide-mobile"
                     onClick={() => navigate('/checkin')}
                     title="Daily Check-In"
                 >
@@ -168,7 +168,7 @@ export const TopBar = () => {
                 </div>
 
                 <div
-                    className="top-bar__item top-bar__item--clickable"
+                    className="top-bar__item top-bar__item--clickable top-bar__hide-mobile"
                     onClick={() => navigate('/conquest')}
                     title="Conquest Sigils"
                 >
@@ -179,7 +179,7 @@ export const TopBar = () => {
                 </div>
 
                 <div
-                    className="top-bar__item top-bar__item--clickable"
+                    className="top-bar__item top-bar__item--clickable top-bar__item--gems"
                     onClick={() => navigate('/marketplace')}
                     title="Gems"
                 >
@@ -189,7 +189,7 @@ export const TopBar = () => {
                     </div>
                 </div>
 
-                <div className="top-bar__item top-bar__item--timer">
+                <div className="top-bar__item top-bar__item--timer top-bar__hide-mobile">
                     <div className="top-bar__icon">
                         <Clock size={16} />
                     </div>
@@ -199,7 +199,7 @@ export const TopBar = () => {
                 </div>
 
                 {/* Quick Nav Buttons */}
-                <div className="top-bar__nav-buttons">
+                <div className="top-bar__nav-buttons top-bar__hide-mobile">
                     <button
                         className="top-bar__nav-btn top-bar__nav-btn--home"
                         onClick={() => navigate('/home')}

@@ -135,6 +135,26 @@ export const ConquestStoreUI = ({ onClose }: ConquestStoreUIProps) => {
                         )}
                     </div>
 
+                    {/* Dice Upgrades */}
+                    {conquest.diceCount < 5 && (
+                        <div className="cq-store-section">
+                            <h3>🎲 Dice Upgrades</h3>
+                            <div className="cq-store-item">
+                                <div className="cq-store-item-info">
+                                    <span className="cq-store-item-name">Extra Attack Die ({conquest.diceCount}d6 → {conquest.diceCount + 1}d6)</span>
+                                    <span className="cq-store-item-desc">Roll {conquest.diceCount + 1} dice instead of {conquest.diceCount} when attacking. More dice = higher rolls!</span>
+                                </div>
+                                <button
+                                    className="cq-store-buy-btn"
+                                    onClick={() => conquest.upgradeDice()}
+                                    disabled={conquest.diceCount >= 5}
+                                >
+                                    Upgrade
+                                </button>
+                            </div>
+                        </div>
+                    )}
+
                     {/* Soldier Upgrades */}
                     {conquest.soldiers.length > 0 && (
                         <div className="cq-store-section">

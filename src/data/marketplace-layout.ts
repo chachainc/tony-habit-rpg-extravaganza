@@ -95,6 +95,17 @@ export const MARKETPLACE_LAYOUT: MarketplaceLayout = {
             interactionRadius: 2,
             inventoryCategories: ['spells'],
         },
+        {
+            id: 'jewelry-store',
+            name: "Jeweler's Workshop",
+            icon: '💎',
+            emoji: '💎',
+            position: { x: 0, y: 9 },
+            description: 'Spend gems on jewelry for you and your pet',
+            color: '#e879f9',
+            interactionRadius: 2,
+            inventoryCategories: ['jewelry'],
+        },
     ],
 
     // Define obstacles (non-walkable tiles) - fountain in center, decorative elements

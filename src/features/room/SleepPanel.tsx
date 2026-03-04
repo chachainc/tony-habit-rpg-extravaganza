@@ -1,7 +1,8 @@
 import { useState, useMemo } from 'react';
-import { Moon, Zap, X, History, Plus } from 'lucide-react';
+import { Moon, Zap, X, History, Plus, BarChart3 } from 'lucide-react';
 import { useDayStore, type SleepLogEntry, type ReadinessLogEntry } from '../../store/useDayStore';
 import { useGameStore } from '../../store/useGameStore';
+import { useNavigate } from 'react-router-dom';
 import dayjs from 'dayjs';
 import { Panel } from '../../components/ui/Panel';
 import './RoomPanels.css';
@@ -10,7 +11,7 @@ export const SleepPanel = ({ onClose }: { onClose: () => void }) => {
     const [activeTab, setActiveTab] = useState<'log' | 'history'>('log');
     const { sleepLogs, readinessLogs, logSleep, logReadiness } = useDayStore();
     const { addSkillXp, addGlobalXp } = useGameStore();
-
+    const navigate = useNavigate();
     const [sleepScore, setSleepScore] = useState(75);
     const [durationMinutes, setDurationMinutes] = useState(480); // 8 hours default
     const [readinessScore, setReadinessScore] = useState(75);
@@ -65,6 +66,28 @@ export const SleepPanel = ({ onClose }: { onClose: () => void }) => {
             </div>
             <p className="panel-subtitle">Log your recovery to earn Sleep XP</p>
 
+            <button
+                className="sleep-analysis-btn"
+                onClick={() => navigate('/health?tab=analysis')}
+                style={{
+                    width: '100%',
+                    padding: '0.6rem',
+                    marginBottom: '0.75rem',
+                    background: 'linear-gradient(135deg, rgba(129,140,248,0.12), rgba(250,204,21,0.08))',
+                    border: '1px solid rgba(129,140,248,0.25)',
+                    borderRadius: '0.5rem',
+                    color: '#818cf8',
+                    fontSize: '0.82rem',
+                    fontWeight: 600,
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '0.4rem',
+                }}
+            >
+                <BarChart3 size={16} /> 📊 View Sleep & Readiness Analysis
+            </button>
             <div className="panel-tabs">
                 <button
                     className={`panel-tab ${activeTab === 'log' ? 'active' : ''}`}

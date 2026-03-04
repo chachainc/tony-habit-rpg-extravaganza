@@ -28,6 +28,13 @@ export interface WeightTrend {
     netChange30d: number | null;
 }
 
+export interface ProgressPhoto {
+    id: string;
+    date: string; // YYYY-MM-DD
+    type: 'front' | 'side' | 'back';
+    dataUrl: string; // base64
+}
+
 // ── Helpers ────────────────────────────────────────────────────
 
 const getEasternDateString = (d: Date = new Date()): string => {
@@ -63,6 +70,7 @@ export const getLast7Dates = (): string[] => {
 interface HealthState {
     weightLogs: WeightEntry[];
     foodLogs: FoodEntry[];
+    progressPhotos: ProgressPhoto[];
 
     // Weight Actions
     logWeight: (weight: number, date?: string) => void;
@@ -77,6 +85,12 @@ interface HealthState {
     getFoodForDate: (date: string) => FoodEntry | null;
     hasLoggedFoodToday: () => boolean;
     getFoodHistory: (days: number) => FoodEntry[];
+
+    // Photo Actions
+    addProgressPhoto: (type: ProgressPhoto['type'], dataUrl: string) => void;
+    getPhotosForDate: (date: string) => ProgressPhoto[];
+    getAllPhotos: () => ProgressPhoto[];
+    deletePhoto: (id: string) => void;
 }
 
 export const useHealthStore = create<HealthState>()(
@@ -84,7 +98,7 @@ export const useHealthStore = create<HealthState>()(
         (set, get) => ({
             weightLogs: [],
             foodLogs: [],
-
+            progressPhotos: [],
             // ── Weight ────────────────────────────────────────
 
             logWeight: (weight: number, date?: string) => {
@@ -240,6 +254,33 @@ export const useHealthStore = create<HealthState>()(
                 return get()
                     .foodLogs.filter((e) => e.date >= cutoff)
                     .sort((a, b) => a.date.localeCompare(b.date));
+            },
+
+            // ── Photos ────────────────────────────────────────
+
+            addProgressPhoto: (type: ProgressPhoto['type'], dataUrl: string) => {
+                const date = getEasternDateString();
+                const id = `photo-${date}-${type}-${Date.now()}`;
+                set((state) => ({
+                    progressPhotos: [
+                        { id, date, type, dataUrl },
+                        ...state.progressPhotos,
+                    ],
+                }));
+            },
+
+            getPhotosForDate: (date: string) => {
+                return get().progressPhotos.filter((p) => p.date === date);
+            },
+
+            getAllPhotos: () => {
+                return [...get().progressPhotos].sort((a, b) => b.date.localeCompare(a.date));
+            },
+
+            deletePhoto: (id: string) => {
+                set((state) => ({
+                    progressPhotos: state.progressPhotos.filter((p) => p.id !== id),
+                }));
             },
         }),
         {

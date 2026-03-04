@@ -1,26 +1,25 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ArrowLeft, Heart, Scale, Utensils, TrendingUp, TrendingDown, Minus, Check } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { ArrowLeft, Heart, Scale, Utensils, TrendingUp, TrendingDown, Minus, Check, Camera, BarChart3, X, Trash2 } from 'lucide-react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useHealthStore, getDateLabel } from '../../store/useHealthStore';
+import { useDayStore } from '../../store/useDayStore';
 import './HealthTracker.css';
 
-type Tab = 'weight' | 'food';
+type Tab = 'weight' | 'food' | 'photos' | 'analysis';
 type ChartRange = 7 | 30 | 90;
 
 // ── Simple SVG Line Chart ──────────────────────────────────────
 
-const WeightChart = ({ days }: { days: number }) => {
-    const history = useHealthStore((s) => s.getWeightHistory(days));
-
-    if (history.length < 2) {
-        return <div className="chart-empty">Need at least 2 entries to show a chart</div>;
+const LineChart = ({ data, color, label }: { data: { date: string; value: number }[]; color: string; label: string }) => {
+    if (data.length < 2) {
+        return <div className="chart-empty">Need at least 2 entries for {label} chart</div>;
     }
 
-    const weights = history.map((e) => e.weight);
-    const minW = Math.min(...weights) - 2;
-    const maxW = Math.max(...weights) + 2;
-    const range = maxW - minW || 1;
+    const values = data.map((e) => e.value);
+    const minV = Math.min(...values) - 2;
+    const maxV = Math.max(...values) + 2;
+    const range = maxV - minV || 1;
 
     const W = 100;
     const H = 100;
@@ -29,21 +28,21 @@ const WeightChart = ({ days }: { days: number }) => {
     const plotW = W - padX * 2;
     const plotH = H - padY * 2;
 
-    const points = history.map((entry, i) => {
-        const x = padX + (i / (history.length - 1)) * plotW;
-        const y = padY + plotH - ((entry.weight - minW) / range) * plotH;
+    const points = data.map((entry, i) => {
+        const x = padX + (i / (data.length - 1)) * plotW;
+        const y = padY + plotH - ((entry.value - minV) / range) * plotH;
         return { x, y, entry };
     });
 
     const pathD = points.map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.x} ${p.y}`).join(' ');
     const areaD = pathD + ` L ${points[points.length - 1].x} ${padY + plotH} L ${points[0].x} ${padY + plotH} Z`;
+    const gradientId = `gradient-${label.replace(/\s/g, '')}`;
 
     return (
         <svg className="weight-chart" viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none">
-            {/* Grid lines */}
             {[0, 0.25, 0.5, 0.75, 1].map((frac) => {
                 const y = padY + plotH - frac * plotH;
-                const val = minW + frac * range;
+                const val = minV + frac * range;
                 return (
                     <g key={frac}>
                         <line x1={padX} y1={y} x2={W - padX} y2={y} stroke="rgba(148,163,184,0.1)" strokeWidth="0.3" />
@@ -51,18 +50,15 @@ const WeightChart = ({ days }: { days: number }) => {
                     </g>
                 );
             })}
-            {/* Area fill */}
-            <path d={areaD} fill="url(#weightGradient)" opacity="0.3" />
-            {/* Line */}
-            <path d={pathD} fill="none" stroke="#60a5fa" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round" />
-            {/* Dots */}
+            <path d={areaD} fill={`url(#${gradientId})`} opacity="0.3" />
+            <path d={pathD} fill="none" stroke={color} strokeWidth="1" strokeLinecap="round" strokeLinejoin="round" />
             {points.map((p, i) => (
-                <circle key={i} cx={p.x} cy={p.y} r="1.5" fill="#60a5fa" stroke="#0f172a" strokeWidth="0.5" />
+                <circle key={i} cx={p.x} cy={p.y} r="1.5" fill={color} stroke="#0f172a" strokeWidth="0.5" />
             ))}
             <defs>
-                <linearGradient id="weightGradient" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="#60a5fa" stopOpacity="0.4" />
-                    <stop offset="100%" stopColor="#60a5fa" stopOpacity="0" />
+                <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor={color} stopOpacity="0.4" />
+                    <stop offset="100%" stopColor={color} stopOpacity="0" />
                 </linearGradient>
             </defs>
         </svg>
@@ -122,8 +118,12 @@ const MacroPie = ({ protein, carbs, fat }: { protein: number; carbs: number; fat
 
 export const HealthTracker = () => {
     const navigate = useNavigate();
-    const [tab, setTab] = useState<Tab>('weight');
+    const [searchParams] = useSearchParams();
+    const initialTab = (searchParams.get('tab') as Tab) || 'weight';
+    const [tab, setTab] = useState<Tab>(initialTab);
     const [chartRange, setChartRange] = useState<ChartRange>(30);
+    const [analysisRange, setAnalysisRange] = useState<ChartRange>(30);
+    const [viewingPhoto, setViewingPhoto] = useState<string | null>(null);
 
     // Weight form
     const [weightInput, setWeightInput] = useState('');
@@ -138,23 +138,59 @@ export const HealthTracker = () => {
     const [fat, setFat] = useState('');
     const [foodSaved, setFoodSaved] = useState(false);
 
+    // Photo upload ref
+    const fileInputRef = useRef<HTMLInputElement>(null);
+    const [uploadType, setUploadType] = useState<'front' | 'side' | 'back'>('front');
+
     const {
         logWeight, logFood,
         getWeightTrend, getLastWeight,
         hasLoggedWeightToday, hasLoggedFoodToday,
         getWeightHistory, getFoodHistory,
+        addProgressPhoto, getAllPhotos, deletePhoto,
     } = useHealthStore();
+
+    const { sleepLogs, readinessLogs } = useDayStore();
 
     const trend = useMemo(() => getWeightTrend(), [getWeightTrend]);
     const lastWeight = getLastWeight();
     const weightHistory = useMemo(() => getWeightHistory(90), [getWeightHistory]);
     const foodHistory = useMemo(() => getFoodHistory(90), [getFoodHistory]);
+    const allPhotos = useMemo(() => getAllPhotos(), [getAllPhotos]);
 
-    // Latest food entry for pie
     const latestTracked = useMemo(() => {
         const tracked = foodHistory.filter((f) => f.tracked && f.protein && f.carbs && f.fat);
         return tracked.length > 0 ? tracked[tracked.length - 1] : null;
     }, [foodHistory]);
+
+    // Analysis data
+    const sleepChartData = useMemo(() => {
+        return [...sleepLogs]
+            .sort((a, b) => a.date.localeCompare(b.date))
+            .slice(-analysisRange)
+            .map(l => ({ date: l.date, value: l.score }));
+    }, [sleepLogs, analysisRange]);
+
+    const readinessChartData = useMemo(() => {
+        return [...readinessLogs]
+            .sort((a, b) => a.date.localeCompare(b.date))
+            .slice(-analysisRange)
+            .map(l => ({ date: l.date, value: l.score }));
+    }, [readinessLogs, analysisRange]);
+
+    const weightChartData = useMemo(() => {
+        return getWeightHistory(analysisRange).map(e => ({ date: e.date, value: e.weight }));
+    }, [getWeightHistory, analysisRange]);
+
+    // Group photos by date
+    const photosByDate = useMemo(() => {
+        const groups: Record<string, typeof allPhotos> = {};
+        allPhotos.forEach(p => {
+            if (!groups[p.date]) groups[p.date] = [];
+            groups[p.date].push(p);
+        });
+        return Object.entries(groups).sort(([a], [b]) => b.localeCompare(a));
+    }, [allPhotos]);
 
     const handleLogWeight = () => {
         const w = parseFloat(weightInput);
@@ -175,11 +211,7 @@ export const HealthTracker = () => {
             fat: fat ? parseFloat(fat) : undefined,
         });
         setFoodSaved(true);
-        setCalories('');
-        setFiber('');
-        setProtein('');
-        setCarbs('');
-        setFat('');
+        setCalories(''); setFiber(''); setProtein(''); setCarbs(''); setFat('');
         setFoodTracked(null);
         setTimeout(() => setFoodSaved(false), 2000);
     };
@@ -188,6 +220,35 @@ export const HealthTracker = () => {
         logFood({ tracked: false });
         setFoodSaved(true);
         setTimeout(() => setFoodSaved(false), 2000);
+    };
+
+    const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = () => {
+            // Compress: resize to max 600px wide
+            const img = new Image();
+            img.onload = () => {
+                const canvas = document.createElement('canvas');
+                const maxW = 600;
+                const scale = Math.min(1, maxW / img.width);
+                canvas.width = img.width * scale;
+                canvas.height = img.height * scale;
+                const ctx = canvas.getContext('2d')!;
+                ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                const dataUrl = canvas.toDataURL('image/jpeg', 0.7);
+                addProgressPhoto(uploadType, dataUrl);
+            };
+            img.src = reader.result as string;
+        };
+        reader.readAsDataURL(file);
+        e.target.value = ''; // Reset to allow re-upload
+    };
+
+    const triggerUpload = (type: 'front' | 'side' | 'back') => {
+        setUploadType(type);
+        fileInputRef.current?.click();
     };
 
     const trendIcon = trend.direction === 'up' ? <TrendingUp size={16} /> : trend.direction === 'down' ? <TrendingDown size={16} /> : <Minus size={16} />;
@@ -204,7 +265,17 @@ export const HealthTracker = () => {
                     <h2>Health Tracker</h2>
                 </div>
             </div>
-            <p className="health-subtitle">Track your weight and nutrition daily</p>
+            <p className="health-subtitle">Track your weight, nutrition, photos and trends</p>
+
+            {/* Hidden file input */}
+            <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                capture="environment"
+                style={{ display: 'none' }}
+                onChange={handlePhotoUpload}
+            />
 
             {/* Tabs */}
             <div className="health-tabs">
@@ -212,14 +283,20 @@ export const HealthTracker = () => {
                     <Scale size={16} /> Weight
                 </button>
                 <button className={`health-tab ${tab === 'food' ? 'active' : ''}`} onClick={() => setTab('food')}>
-                    <Utensils size={16} /> Food Log
+                    <Utensils size={16} /> Food
+                </button>
+                <button className={`health-tab ${tab === 'photos' ? 'active' : ''}`} onClick={() => setTab('photos')}>
+                    <Camera size={16} /> Photos
+                </button>
+                <button className={`health-tab ${tab === 'analysis' ? 'active' : ''}`} onClick={() => setTab('analysis')}>
+                    <BarChart3 size={16} /> Analysis
                 </button>
             </div>
 
             <AnimatePresence mode="wait">
+                {/* ── WEIGHT TAB ── */}
                 {tab === 'weight' && (
                     <motion.div key="weight" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}>
-                        {/* Summary */}
                         <div className="health-summary">
                             <div className="summary-card">
                                 <span className={`summary-card__value ${trendClass}`}>
@@ -243,7 +320,6 @@ export const HealthTracker = () => {
                             </div>
                         </div>
 
-                        {/* Chart */}
                         <div className="health-chart-container">
                             <div className="chart-header">
                                 <h3>Weight Trend</h3>
@@ -255,10 +331,9 @@ export const HealthTracker = () => {
                                     ))}
                                 </div>
                             </div>
-                            <WeightChart days={chartRange} />
+                            <LineChart data={getWeightHistory(chartRange).map(e => ({ date: e.date, value: e.weight }))} color="#60a5fa" label="Weight" />
                         </div>
 
-                        {/* Log Form */}
                         {!hasLoggedWeightToday() && !weightSaved && (
                             <div className="health-log-form">
                                 <h3>⚖️ Log Today's Weight</h3>
@@ -278,7 +353,6 @@ export const HealthTracker = () => {
                             </motion.div>
                         )}
 
-                        {/* History */}
                         <div className="health-history">
                             <h3>📋 History</h3>
                             {weightHistory.length === 0 ? (
@@ -295,9 +369,9 @@ export const HealthTracker = () => {
                     </motion.div>
                 )}
 
+                {/* ── FOOD TAB ── */}
                 {tab === 'food' && (
                     <motion.div key="food" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}>
-                        {/* Macro Pie from latest tracked entry */}
                         {latestTracked && (
                             <div className="macro-chart-container">
                                 <h3>Latest Macro Breakdown</h3>
@@ -305,7 +379,6 @@ export const HealthTracker = () => {
                             </div>
                         )}
 
-                        {/* Calorie trend chart */}
                         <div className="health-summary">
                             {latestTracked && (
                                 <>
@@ -331,7 +404,6 @@ export const HealthTracker = () => {
                             </div>
                         </div>
 
-                        {/* Log Form */}
                         {!hasLoggedFoodToday() && !foodSaved && (
                             <div className="health-log-form">
                                 <h3>🍽️ End-of-Day Food Log</h3>
@@ -339,57 +411,27 @@ export const HealthTracker = () => {
                                     <div className="food-track-question">
                                         <p>Did you track your macros today?</p>
                                         <div className="food-track-btns">
-                                            <button className="food-track-btn food-track-btn--yes" onClick={() => setFoodTracked(true)}>
-                                                ✅ Yes
-                                            </button>
-                                            <button className="food-track-btn food-track-btn--no" onClick={handleFoodNotTracked}>
-                                                ❌ No
-                                            </button>
+                                            <button className="food-track-btn food-track-btn--yes" onClick={() => setFoodTracked(true)}>✅ Yes</button>
+                                            <button className="food-track-btn food-track-btn--no" onClick={handleFoodNotTracked}>❌ No</button>
                                         </div>
                                     </div>
                                 )}
-
                                 {foodTracked === true && (
                                     <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
-                                        <div className="form-row">
-                                            <label>Calories</label>
-                                            <input type="number" value={calories} onChange={(e) => setCalories(e.target.value)} placeholder="2000" min="0" max="10000" />
-                                            <span className="form-unit">kcal</span>
-                                        </div>
-                                        <div className="form-row">
-                                            <label>Protein</label>
-                                            <input type="number" value={protein} onChange={(e) => setProtein(e.target.value)} placeholder="150" min="0" max="1000" />
-                                            <span className="form-unit">g</span>
-                                        </div>
-                                        <div className="form-row">
-                                            <label>Carbs</label>
-                                            <input type="number" value={carbs} onChange={(e) => setCarbs(e.target.value)} placeholder="200" min="0" max="1000" />
-                                            <span className="form-unit">g</span>
-                                        </div>
-                                        <div className="form-row">
-                                            <label>Fat</label>
-                                            <input type="number" value={fat} onChange={(e) => setFat(e.target.value)} placeholder="65" min="0" max="500" />
-                                            <span className="form-unit">g</span>
-                                        </div>
-                                        <div className="form-row">
-                                            <label>Fiber</label>
-                                            <input type="number" value={fiber} onChange={(e) => setFiber(e.target.value)} placeholder="30" min="0" max="200" />
-                                            <span className="form-unit">g</span>
-                                        </div>
-                                        <button className="log-submit-btn" onClick={handleLogFood}>
-                                            <Check size={18} /> Log Food
-                                        </button>
+                                        <div className="form-row"><label>Calories</label><input type="number" value={calories} onChange={(e) => setCalories(e.target.value)} placeholder="2000" /><span className="form-unit">kcal</span></div>
+                                        <div className="form-row"><label>Protein</label><input type="number" value={protein} onChange={(e) => setProtein(e.target.value)} placeholder="150" /><span className="form-unit">g</span></div>
+                                        <div className="form-row"><label>Carbs</label><input type="number" value={carbs} onChange={(e) => setCarbs(e.target.value)} placeholder="200" /><span className="form-unit">g</span></div>
+                                        <div className="form-row"><label>Fat</label><input type="number" value={fat} onChange={(e) => setFat(e.target.value)} placeholder="65" /><span className="form-unit">g</span></div>
+                                        <div className="form-row"><label>Fiber</label><input type="number" value={fiber} onChange={(e) => setFiber(e.target.value)} placeholder="30" /><span className="form-unit">g</span></div>
+                                        <button className="log-submit-btn" onClick={handleLogFood}><Check size={18} /> Log Food</button>
                                     </motion.div>
                                 )}
                             </div>
                         )}
                         {foodSaved && (
-                            <motion.div className="log-success" initial={{ scale: 0 }} animate={{ scale: 1 }}>
-                                ✅ Food log saved!
-                            </motion.div>
+                            <motion.div className="log-success" initial={{ scale: 0 }} animate={{ scale: 1 }}>✅ Food log saved!</motion.div>
                         )}
 
-                        {/* History */}
                         <div className="health-history">
                             <h3>📋 History</h3>
                             {foodHistory.length === 0 ? (
@@ -412,6 +454,111 @@ export const HealthTracker = () => {
                                     </div>
                                 ))
                             )}
+                        </div>
+                    </motion.div>
+                )}
+
+                {/* ── PHOTOS TAB ── */}
+                {tab === 'photos' && (
+                    <motion.div key="photos" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}>
+                        <div className="photo-upload-section">
+                            <h3>📸 Upload Progress Photos</h3>
+                            <p className="photo-subtitle">Track your transformation with front, side, and back photos</p>
+                            <div className="photo-upload-grid">
+                                {(['front', 'side', 'back'] as const).map((type) => (
+                                    <button key={type} className="photo-upload-btn" onClick={() => triggerUpload(type)}>
+                                        <Camera size={24} />
+                                        <span>{type.charAt(0).toUpperCase() + type.slice(1)}</span>
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+
+                        <div className="photo-gallery">
+                            <h3>📅 Photo History</h3>
+                            {photosByDate.length === 0 ? (
+                                <div className="history-empty">No photos yet. Upload your first progress photo above!</div>
+                            ) : (
+                                photosByDate.map(([date, photos]) => (
+                                    <div key={date} className="photo-date-group">
+                                        <div className="photo-date-label">{getDateLabel(date)}</div>
+                                        <div className="photo-row">
+                                            {photos.map((photo) => (
+                                                <div key={photo.id} className="photo-thumb-wrapper">
+                                                    <img
+                                                        src={photo.dataUrl}
+                                                        alt={`${photo.type} - ${date}`}
+                                                        className="photo-thumb"
+                                                        onClick={() => setViewingPhoto(photo.dataUrl)}
+                                                    />
+                                                    <span className="photo-type-badge">{photo.type}</span>
+                                                    <button className="photo-delete-btn" onClick={() => deletePhoto(photo.id)}>
+                                                        <Trash2 size={12} />
+                                                    </button>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                ))
+                            )}
+                        </div>
+
+                        {/* Full-screen photo viewer */}
+                        <AnimatePresence>
+                            {viewingPhoto && (
+                                <motion.div
+                                    className="photo-viewer-overlay"
+                                    initial={{ opacity: 0 }}
+                                    animate={{ opacity: 1 }}
+                                    exit={{ opacity: 0 }}
+                                    onClick={() => setViewingPhoto(null)}
+                                >
+                                    <button className="photo-viewer-close" onClick={() => setViewingPhoto(null)}>
+                                        <X size={28} />
+                                    </button>
+                                    <img src={viewingPhoto} alt="Full size" className="photo-viewer-img" />
+                                </motion.div>
+                            )}
+                        </AnimatePresence>
+                    </motion.div>
+                )}
+
+                {/* ── ANALYSIS TAB ── */}
+                {tab === 'analysis' && (
+                    <motion.div key="analysis" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}>
+                        <div className="analysis-range-selector">
+                            <h3>📊 Trend Analysis</h3>
+                            <div className="chart-range-btns">
+                                {([7, 30, 90] as ChartRange[]).map((d) => (
+                                    <button key={d} className={`chart-range-btn ${analysisRange === d ? 'active' : ''}`} onClick={() => setAnalysisRange(d)}>
+                                        {d === 7 ? '1 Week' : d === 30 ? '1 Month' : '3 Months'}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+
+                        {/* Sleep Score Graph */}
+                        <div className="health-chart-container">
+                            <div className="chart-header">
+                                <h3>😴 Sleep Score</h3>
+                            </div>
+                            <LineChart data={sleepChartData} color="#818cf8" label="Sleep Score" />
+                        </div>
+
+                        {/* Readiness Graph */}
+                        <div className="health-chart-container">
+                            <div className="chart-header">
+                                <h3>⚡ Readiness Score</h3>
+                            </div>
+                            <LineChart data={readinessChartData} color="#facc15" label="Readiness" />
+                        </div>
+
+                        {/* Weight Graph */}
+                        <div className="health-chart-container">
+                            <div className="chart-header">
+                                <h3>⚖️ Weight</h3>
+                            </div>
+                            <LineChart data={weightChartData} color="#60a5fa" label="Weight" />
                         </div>
                     </motion.div>
                 )}

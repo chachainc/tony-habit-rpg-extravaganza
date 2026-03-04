@@ -67,6 +67,9 @@ export interface ConquestState {
     scoutTowerLevel: number;
     shrineLevel: number;
 
+    // Dice
+    diceCount: number;  // Number of d6 rolled (default 2, upgradeable)
+
     // Morale
     morale: number;       // 0-100
 
@@ -84,6 +87,7 @@ export interface ConquestState {
     upgradeBarracks: () => boolean;
     upgradeScoutTower: () => boolean;
     upgradeShrine: () => boolean;
+    upgradeDice: () => boolean;
     adjustMorale: (amount: number) => void;
 
     // Getters
@@ -102,7 +106,7 @@ export interface ConquestCombatResult {
     gemsEarned: number;
     troopsLost: number;
     moraleChange: number;
-    rolls: { attacker: number; defender: number };
+    rolls: { attacker: number; defender: number; attackerDice: number[]; defenderDice: number[] };
     modifiers: { force: number; terrain: number; morale: number; recon: number };
 }
 
@@ -132,6 +136,7 @@ const TEAM_SIZE_COSTS = [0, 100, 200, 400, 700, 1200]; // cost to unlock slot 2,
 const BARRACKS_COST = [150, 300, 500];
 const SCOUT_COST = [100, 250, 500];
 const SHRINE_COST = [100, 200, 400];
+const DICE_UPGRADE_COST = [200, 400, 800]; // cost to go from 2->3, 3->4 dice
 
 const TERRAIN_SKILL_MAP: Record<TerrainType, string> = {
     swamp: 'Cardio',
@@ -226,8 +231,12 @@ function generateRegions(): ConquestRegion[] {
 
 // ─── DICE ROLLS ─────────────────────────────────
 
-function roll2d6(): number {
-    return Math.floor(Math.random() * 6) + 1 + Math.floor(Math.random() * 6) + 1;
+function rollNd6(n: number): { total: number; dice: number[] } {
+    const dice: number[] = [];
+    for (let i = 0; i < n; i++) {
+        dice.push(Math.floor(Math.random() * 6) + 1);
+    }
+    return { total: dice.reduce((a, b) => a + b, 0), dice };
 }
 
 // ─── HELPERS ──────────────────────────────────────
@@ -280,6 +289,7 @@ export const useConquestStore = create<ConquestState>()(
             barracksLevel: 0,
             scoutTowerLevel: 0,
             shrineLevel: 0,
+            diceCount: 2,
             morale: 50,
             memoryLog: {
                 highestRegionCleared: 0,
@@ -312,18 +322,20 @@ export const useConquestStore = create<ConquestState>()(
             conquestAttack: (nodeId) => {
                 const state = get();
                 const region = state.regions[state.currentRegionIdx];
-                if (!region) return { won: false, sigilsEarned: 0, goldEarned: 0, gemsEarned: 0, troopsLost: 0, moraleChange: 0, rolls: { attacker: 0, defender: 0 }, modifiers: { force: 0, terrain: 0, morale: 0, recon: 0 } };
+                if (!region) return { won: false, sigilsEarned: 0, goldEarned: 0, gemsEarned: 0, troopsLost: 0, moraleChange: 0, rolls: { attacker: 0, defender: 0, attackerDice: [], defenderDice: [] }, modifiers: { force: 0, terrain: 0, morale: 0, recon: 0 } };
 
                 const node = region.nodes.find(n => n.id === nodeId);
-                if (!node || node.conquered) return { won: false, sigilsEarned: 0, goldEarned: 0, gemsEarned: 0, troopsLost: 0, moraleChange: 0, rolls: { attacker: 0, defender: 0 }, modifiers: { force: 0, terrain: 0, morale: 0, recon: 0 } };
+                if (!node || node.conquered) return { won: false, sigilsEarned: 0, goldEarned: 0, gemsEarned: 0, troopsLost: 0, moraleChange: 0, rolls: { attacker: 0, defender: 0, attackerDice: [], defenderDice: [] }, modifiers: { force: 0, terrain: 0, morale: 0, recon: 0 } };
 
                 // Calculate forces
                 const totalForce = get().getTotalForce();
                 const enemyForce = node.enemyForce;
 
-                // Roll dice
-                const attackerRoll = roll2d6();
-                const defenderRoll = roll2d6();
+                // Roll dice (attacker uses upgraded dice count)
+                const attackerResult = rollNd6(state.diceCount);
+                const defenderResult = rollNd6(2); // Defender always rolls 2d6
+                const attackerRoll = attackerResult.total;
+                const defenderRoll = defenderResult.total;
 
                 // Force modifier
                 const forceMod = Math.min(3, Math.max(-3, Math.floor((totalForce / enemyForce - 1) * 4)));
@@ -422,7 +434,7 @@ export const useConquestStore = create<ConquestState>()(
                     gemsEarned,
                     troopsLost,
                     moraleChange,
-                    rolls: { attacker: attackerRoll, defender: defenderRoll },
+                    rolls: { attacker: attackerRoll, defender: defenderRoll, attackerDice: attackerResult.dice, defenderDice: defenderResult.dice },
                     modifiers: { force: forceMod, terrain: terrainMod, morale: moraleMod, recon: reconMod },
                 };
             },
@@ -502,6 +514,16 @@ export const useConquestStore = create<ConquestState>()(
                 const cost = SHRINE_COST[state.shrineLevel];
                 if (!get().spendSigils(cost)) return false;
                 set({ shrineLevel: state.shrineLevel + 1 });
+                return true;
+            },
+
+            upgradeDice: () => {
+                const state = get();
+                const upgradeIdx = state.diceCount - 2; // 0 = 2->3, 1 = 3->4
+                if (upgradeIdx >= DICE_UPGRADE_COST.length) return false;
+                const cost = DICE_UPGRADE_COST[upgradeIdx];
+                if (!get().spendSigils(cost)) return false;
+                set({ diceCount: state.diceCount + 1 });
                 return true;
             },
 

@@ -20,7 +20,7 @@ import { ShopModal } from '../shop/ShopModal';
 import homeCampBg from '../../assets/backgrounds/home_camp.png';
 import trophyCaseBg from '../../assets/backgrounds/trophy_case.png';
 import bookshelfBg from '../../assets/backgrounds/bookshelf_display.png';
-import playerSprite from '../../assets/sprites/player.png';
+import { useHeroImage } from '../../hooks/useHeroImage';
 import './WalkableRoom.css';
 import './PlayerRoom.css'; // Use existing css alongside WalkableRoom CSS
 
@@ -108,10 +108,12 @@ export const PlayerRoom = ({ onClose }: { onClose: () => void }) => {
     const { activeTitle, getUnlockedTitleDefs } = useTitleStore();
     const { activeAuraId } = useAuraStore();
     const navigate = useNavigate();
+    const heroImage = useHeroImage();
 
     const [activePanel, setActivePanel] = useState<ActivePanel>(null);
     const [tooltipSeen, setTooltipSeen] = useState(false);
     const keysPressed = useRef<Set<string>>(new Set());
+    const [forceWalkable, setForceWalkable] = useState(false);
 
     // Reactive mobile detection
     const [isMobile, setIsMobile] = useState(() => window.innerWidth <= 768);
@@ -258,7 +260,7 @@ export const PlayerRoom = ({ onClose }: { onClose: () => void }) => {
 
     return (
         <div className="player-room-container">
-            {isMobile ? (
+            {isMobile && !forceWalkable ? (
                 /* ==================== MOBILE QUICK-ACCESS MENU ==================== */
                 <SceneShell
                     backgroundImage={homeCampBg}
@@ -276,7 +278,7 @@ export const PlayerRoom = ({ onClose }: { onClose: () => void }) => {
 
                         {/* Player Info */}
                         <div className="room-mobile-player-card">
-                            <img src={playerSprite} alt="Player" className="mobile-player-sprite" />
+                            <img src={heroImage} alt="Player" className="mobile-player-sprite" />
                             <div className="mobile-player-info">
                                 {activeTitleDef && <span className="mobile-title-tag">{activeTitleDef.name}</span>}
                                 {activeAura && activeAura.id !== 'none' && (
@@ -327,6 +329,11 @@ export const PlayerRoom = ({ onClose }: { onClose: () => void }) => {
                                 <span style={{ fontSize: '1.8rem' }}>{petSprite || '🐾'}</span>
                                 <span>Pet</span>
                                 <small>Care & Bond</small>
+                            </button>
+                            <button className="room-feature-btn room-feature-btn--walkable" onClick={() => setForceWalkable(true)} style={{ borderColor: 'rgba(251,191,36,0.3)' }}>
+                                <span style={{ fontSize: '1.5rem' }}>🗺️</span>
+                                <span>2D Room</span>
+                                <small>Walk Around</small>
                             </button>
                         </div>
                     </div>
@@ -498,7 +505,7 @@ export const PlayerRoom = ({ onClose }: { onClose: () => void }) => {
                                         />
                                     )}
                                 </AnimatePresence>
-                                <img src={playerSprite} alt="Player" className="player-sprite" />
+                                <img src={heroImage} alt="Player" className="player-sprite" />
                                 {activeTitleDef && (
                                     <span className="player-title-tag">{activeTitleDef.name}</span>
                                 )}
