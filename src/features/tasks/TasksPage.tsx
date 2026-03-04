@@ -56,7 +56,7 @@ const BUNDLE_CONFIG: Record<BundleType, { title: string; icon: React.ReactNode; 
 export const TasksPage = () => {
     const navigate = useNavigate();
     // const { tasks, addTask, toggleTask, removeTask } = useTaskStore(); // Unused
-    const { skills, getXpProgress } = useGameStore();
+    const { skills } = useGameStore();
     const {
         dailyTasks,
         weeklyTasks,
@@ -659,4 +659,3 @@ export const TasksPage = () => {
         </div>
     );
 };
-
