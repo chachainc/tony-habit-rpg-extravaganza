@@ -329,14 +329,15 @@ export const ChessGame = ({ onComplete, onClose, canPlay }: ChessGameProps) => {
     const [turn, setTurn] = useState<Color>('w');
     const [selected, setSelected] = useState<[number, number] | null>(null);
     const [validMoves, setValidMoves] = useState<Move[]>([]);
-    const [gameOver, setGameOver] = useState<'win' | 'draw' | 'loss' | null>(null);
+    const [gameOver, setGameOver] = useState<'win' | 'draw' | 'loss' | 'resigned' | null>(null);
     const [enPassant, setEnPassant] = useState<[number, number] | null>(null);
     const [difficulty, setDifficulty] = useState<1 | 2 | 3>(1);
     const [status, setStatus] = useState('Your turn (White)');
     const [lastAIMove, setLastAIMove] = useState<{ fr: number; fc: number; tr: number; tc: number } | null>(null);
 
     const XP_MULTIPLIER: Record<number, number> = { 1: 1, 2: 1.5, 3: 2.5 };
-    const getXP = (result: 'win' | 'draw' | 'loss') => {
+    const getXP = (result: 'win' | 'draw' | 'loss' | 'resigned') => {
+        if (result === 'resigned') return 1;
         const base = result === 'win' ? 50 : result === 'draw' ? 25 : 10;
         return Math.round(base * XP_MULTIPLIER[difficulty]);
     };
@@ -440,8 +441,8 @@ export const ChessGame = ({ onComplete, onClose, canPlay }: ChessGameProps) => {
     };
 
     const resign = () => {
-        setGameOver('loss');
-        setStatus('You resigned.');
+        setGameOver('resigned');
+        setStatus('You surrendered.');
     };
 
     if (!canPlay) {
@@ -535,10 +536,13 @@ export const ChessGame = ({ onComplete, onClose, canPlay }: ChessGameProps) => {
                 <div className="chess-actions">
                     {!gameOver ? (
                         <button className="chess-action-btn chess-resign-btn" onClick={resign}>
-                            Resign
+                            Surrender
                         </button>
                     ) : (
-                        <button className="chess-action-btn chess-complete-btn" onClick={() => onComplete(gameOver, difficulty)}>
+                        <button
+                            className="chess-action-btn chess-complete-btn"
+                            onClick={() => onComplete(gameOver === 'resigned' ? 'loss' : gameOver, difficulty)}
+                        >
                             Claim {getXP(gameOver)} Strategy XP
                         </button>
                     )}

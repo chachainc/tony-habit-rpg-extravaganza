@@ -21,10 +21,11 @@ import { Library } from './features/library/Library';
 import { GymTracker } from './features/gym/GymTracker';
 import { HealthTracker } from './features/health/HealthTracker';
 import { Conquest } from './features/conquest/Conquest';
-import { SecurityPage } from './features/security/SecurityPage';
+import { CombatPage } from './features/combat/CombatPage';
 import { LoginScreen } from './features/auth/LoginScreen';
 import { CharacterCreation } from './features/onboarding/CharacterCreation';
 import { UIShowcase } from './features/showcase/UIShowcase';
+import { SettingsPage } from './features/settings/SettingsPage';
 import { ToastContainer } from './components/ui/Toast';
 import { ErrorBoundary } from './components/ui/ErrorBoundary';
 import { LevelUpModal } from './components/ui/LevelUpModal';
@@ -155,7 +156,7 @@ function App() {
           <Route path="gym" element={<GymTracker />} />
           <Route path="health" element={<HealthTracker />} />
           <Route path="conquest" element={<Conquest />} />
-          <Route path="security" element={<SecurityPage />} />
+          <Route path="combat" element={<CombatPage />} />
           <Route path="shop" element={<ShopModal category="general" onClose={() => window.history.back()} />} />
           <Route path="room" element={<PlayerRoomPage />} />
           <Route path="walkable-room" element={<WalkableRoom />} />
@@ -166,7 +167,7 @@ function App() {
           <Route path="monthly-calendar" element={<CalendarModal onClose={() => window.history.back()} />} />
           <Route path="social" element={<Room2D />} />
           <Route path="achievements" element={<div>Achievements coming soon!</div>} />
-          <Route path="settings" element={<div>Settings coming soon!</div>} />
+          <Route path="settings" element={<SettingsPage />} />
           <Route path="showcase" element={<UIShowcase />} />
         </Route>
       </Routes>

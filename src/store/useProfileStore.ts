@@ -15,6 +15,11 @@ interface ProfileState {
     appearance: { hairHue: number; skinHue: number };
     healthTrackingMode: 'sleep' | 'readiness' | 'none' | null;
 
+    // Player Identity
+    playerTitle: string;
+    activeBannerId: string | null;
+    unlockedBanners: string[];
+
     // Actions
     createProfile: (name?: string) => Promise<string | null>;
     login: (code: string) => Promise<boolean>;
@@ -27,6 +32,11 @@ interface ProfileState {
     setCharacterArchetype: (archetype: ProfileState['characterArchetype']) => void;
     setAppearance: (appearance: ProfileState['appearance']) => void;
     setHealthTrackingMode: (mode: ProfileState['healthTrackingMode']) => void;
+
+    // Identity Actions
+    setPlayerTitle: (title: string) => void;
+    setActiveBanner: (bannerId: string | null) => void;
+    unlockBanner: (bannerId: string) => void;
 }
 
 /**
@@ -110,6 +120,10 @@ export const useProfileStore = create<ProfileState>()(
             characterArchetype: null,
             appearance: { hairHue: 0, skinHue: 0 },
             healthTrackingMode: null,
+
+            playerTitle: 'Adventurer',
+            activeBannerId: null,
+            unlockedBanners: [],
 
             createProfile: async (name?: string) => {
                 const { data, error } = await profileApi.create(name);
@@ -241,10 +255,19 @@ export const useProfileStore = create<ProfileState>()(
                 }
             },
 
-            // Onboarding Setters
             setCharacterArchetype: (archetype) => set({ characterArchetype: archetype }),
             setAppearance: (appearance) => set({ appearance }),
             setHealthTrackingMode: (mode) => set({ healthTrackingMode: mode }),
+
+            // Identity Actions
+            setPlayerTitle: (title) => set({ playerTitle: title }),
+            setActiveBanner: (bannerId) => set({ activeBannerId: bannerId }),
+            unlockBanner: (bannerId) => {
+                const state = get();
+                if (!state.unlockedBanners.includes(bannerId)) {
+                    set({ unlockedBanners: [...state.unlockedBanners, bannerId] });
+                }
+            },
         }),
         {
             name: 'gl-profile-storage',

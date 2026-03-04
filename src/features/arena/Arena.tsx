@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { Swords, Shield, Zap, X, Sparkles, BookOpen, ChevronUp, ChevronDown } from 'lucide-react';
 import { useGameStore } from '../../store/useGameStore';
+import { useCurrencyStore as _useCurrencyStore } from '../../store/useCurrencyStore';
 import { useBattleStore } from '../../store/useBattleStore';
 import { useEnemyStore, ENEMY_DB, ELEMENT_ICONS } from '../../store/useEnemyStore';
 import { useAuraStore, AURAS } from '../../store/useAuraStore';
@@ -285,6 +286,23 @@ export const Arena = ({ onClose }: { onClose: () => void }) => {
                 // Unlock next floor if this was the current floor
                 if (currentFloor <= highestFloorCleared + 1) { // Logic check
                     unlockNextFloor();
+                }
+
+                // Gem rewards for boss floors (every 10th floor)
+                // 3rd boss+ (floor 30+) awards increasingly more gems
+                if (enemyDef.floor > 0 && enemyDef.floor % 10 === 0) {
+                    const bossNumber = enemyDef.floor / 10; // 1 = floor 10, 2 = floor 20, etc.
+                    const gemReward = bossNumber <= 2 ? 1 : bossNumber - 1; // 1,1,2,3,4...
+                    import('../../store/useGameStore').then(({ useGameStore: gs }) => {
+                        gs.getState().addGems(gemReward);
+                    });
+                    import('../../components/ui/Toast').then(({ useToastStore }) => {
+                        useToastStore.getState().addToast({
+                            type: 'success',
+                            message: `💎 Boss Floor ${enemyDef.floor} Cleared! +${gemReward} Gem${gemReward > 1 ? 's' : ''}!`,
+                            duration: 5000,
+                        });
+                    }).catch(() => { });
                 }
             }
         }

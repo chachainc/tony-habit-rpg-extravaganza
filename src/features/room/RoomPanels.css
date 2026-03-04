@@ -564,8 +564,47 @@
 
     .room-modal-container {
         border-radius: 1.5rem 1.5rem 0 0;
-        max-height: 85vh;
+        max-height: 90vh;
         overflow-y: auto;
         -webkit-overflow-scrolling: touch;
+    }
+
+    /* Room panel on mobile: full available height */
+    .room-panel {
+        max-height: 90vh;
+        padding: 1rem;
+    }
+
+    /* Wardrobe closet: give bottom padding so items don't hide under nav bar */
+    .wardrobe-panel .panel-content-scrollable {
+        padding-bottom: 100px;
+    }
+
+    /* Closet grid: ensure items fit and are tappable */
+    .closet-selection-grid {
+        grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+        gap: 0.65rem;
+    }
+
+    .selection-item {
+        padding: 0.65rem 0.5rem;
+        font-size: 0.85rem;
+    }
+
+    /* Make tabs scrollable on mobile */
+    .panel-tabs {
+        overflow-x: auto;
+        scrollbar-width: none;
+        flex-shrink: 0;
+        padding-bottom: 0.25rem;
+    }
+
+    .panel-tabs::-webkit-scrollbar {
+        display: none;
+    }
+
+    .panel-tab {
+        padding: 0.4rem 0.75rem;
+        font-size: 0.82rem;
     }
 }

@@ -309,9 +309,9 @@ export const useBattleStore = create<BattleState>()((set, get) => ({
         const { turnOrder } = get();
         set({ phase: turnOrder[0] === 'player' ? 'select_action' : 'enemy_turn' });
 
-        // If enemy goes first, trigger their action
+        // If enemy goes first, give a 4-second suspense delay before their first attack
         if (turnOrder[0] !== 'player') {
-            setTimeout(() => get().executeEnemyAction(), 500);
+            setTimeout(() => get().executeEnemyAction(), 4000);
         }
     },
 

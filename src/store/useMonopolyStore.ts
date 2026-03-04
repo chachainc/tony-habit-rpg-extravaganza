@@ -49,6 +49,8 @@ export interface LuckRollResult {
     message: string;
     luckXpBonus: number;
     unlockedPet?: string;
+    unlockedAuraId?: string;
+    unlockedBannerId?: string;
 }
 
 // ── Board Generation ───────────────────────────────────────────
@@ -283,7 +285,7 @@ interface MonopolyState {
 export const useMonopolyStore = create<MonopolyState>()(
     persist(
         (set, get) => ({
-            dailyTickets: 3,
+            dailyTickets: 5,
             currentPosition: 0,
             lastTicketResetDate: null,
             totalRollsToday: 0,
@@ -353,7 +355,7 @@ export const useMonopolyStore = create<MonopolyState>()(
             resetDailyTickets: () => {
                 const today = getEasternDateString();
                 set({
-                    dailyTickets: 3,
+                    dailyTickets: 5,
                     lastTicketResetDate: today,
                     totalRollsToday: 0,
                 });
@@ -402,8 +404,41 @@ export const useMonopolyStore = create<MonopolyState>()(
                         useAchievementTrophyStore.getState().unlockEtherealCowTrophy();
                     });
                 }
+                // 1 in 10,000 - UNIQUE AURA DROP (Lucky Radiance)
+                else if (roll < 0.0001) {
+                    const auraId = 'lucky_radiance';
+                    result = {
+                        type: 'universe',
+                        message: `🌈✨ ULTRA-RARE! Lucky Radiance aura unlocked! 1 in 10,000 chance! Check your Wardrobe!`,
+                        luckXpBonus: 500,
+                        unlockedAuraId: auraId,
+                    };
+                    import('./useAuraStore').then(({ useAuraStore }) => {
+                        useAuraStore.getState().unlockAura(auraId);
+                    });
+                    import('./useSkillTrophyStore').then(({ useSkillTrophyStore }) => {
+                        useSkillTrophyStore.getState().recordRareRoll(10000);
+                    });
+                }
+                // 1 in 5,000 - RARE BANNER DROP
+                else if (roll < 0.0002) {
+                    const bannerIds = ['crimson_dawn', 'void_walker', 'celestial_guard', 'iron_sentinel', 'storm_herald'];
+                    const bannerId = bannerIds[Math.floor(Math.random() * bannerIds.length)];
+                    result = {
+                        type: 'godly',
+                        message: `🏳️✨ RARE BANNER UNLOCKED! "${bannerId.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}"! 1 in 5,000!`,
+                        luckXpBonus: 250,
+                        unlockedBannerId: bannerId,
+                    };
+                    import('./useProfileStore').then(({ useProfileStore }) => {
+                        useProfileStore.getState().unlockBanner(bannerId);
+                    });
+                    import('./useSkillTrophyStore').then(({ useSkillTrophyStore }) => {
+                        useSkillTrophyStore.getState().recordRareRoll(5000);
+                    });
+                }
                 // 1 in 25,000 - GOLDEN GOLDFISH
-                else if (roll < 0.00004) {
+                else if (roll < 0.00004 + 0.0002) {
                     result = {
                         type: 'godly',
                         message: '🐠✨ GOLDEN FORTUNE! You unlocked the GOLDEN GOLDFISH! 1 in 25,000!',
@@ -415,17 +450,6 @@ export const useMonopolyStore = create<MonopolyState>()(
                     });
                     import('./useAchievementTrophyStore').then(({ useAchievementTrophyStore }) => {
                         useAchievementTrophyStore.getState().unlockGoldenGoldfishTrophy();
-                    });
-                }
-                // 1 in 10,000 - GODLY LUCK
-                else if (roll < 0.0001) {
-                    result = {
-                        type: 'godly',
-                        message: '🔥 GODLY LUCK! 1 in 10,000 roll! Massive Luck Boost!',
-                        luckXpBonus: 100,
-                    };
-                    import('./useSkillTrophyStore').then(({ useSkillTrophyStore }) => {
-                        useSkillTrophyStore.getState().recordRareRoll(10000);
                     });
                 }
                 // 1 in 1,000 - INSANE LUCK

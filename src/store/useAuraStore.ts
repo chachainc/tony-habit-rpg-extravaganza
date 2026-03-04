@@ -103,7 +103,17 @@ export const AURAS: Aura[] = [
         description: 'Golden lightning of pure mastery.',
         unlockCondition: 'Total Skill Level 200',
         bonus: { type: 'atk', value: 0.05 },
-    }
+    },
+    // Ultra-rare aura: Daily Spin exclusive (1:10,000 chance)
+    {
+        id: 'lucky_radiance',
+        name: 'Lucky Radiance',
+        icon: '🌈',
+        color: 'rgba(255, 200, 100, 0.9)',
+        description: 'A shimmering rainbow born of pure fortune. Incredibly rare — only obtainable from the Daily Spin.',
+        unlockCondition: '1:10,000 Daily Spin (Ultra-Rare!)',
+        bonus: { type: 'xp', value: 0.02 },
+    },
 ];
 
 interface AuraState {
