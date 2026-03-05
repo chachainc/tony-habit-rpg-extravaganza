@@ -1,8 +1,40 @@
+/* ── Sub-tab toggle (Shop / XP Forge) ──────── */
+.weapon-store-tabs {
+    display: flex;
+    gap: 4px;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 10px;
+    padding: 3px;
+    margin-bottom: 0.75rem;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.weapon-store-tab {
+    flex: 1;
+    padding: 0.45rem 0.75rem;
+    border-radius: 8px;
+    border: none;
+    background: transparent;
+    color: rgba(255, 255, 255, 0.45);
+    font-size: 0.82rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.weapon-store-tab.active {
+    background: linear-gradient(135deg, #ef4444, #b91c1c);
+    color: #fff;
+    box-shadow: 0 2px 10px rgba(239, 68, 68, 0.35);
+}
+
 .weapon-store {
     display: flex;
     flex-direction: column;
     gap: 1rem;
 }
+
+
 
 .store-section {
     background: rgba(239, 68, 68, 0.05);

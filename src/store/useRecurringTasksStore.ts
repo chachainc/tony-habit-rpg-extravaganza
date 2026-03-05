@@ -12,12 +12,12 @@ export interface TaskReward {
 export interface RecurringTask {
     id: string;
     title: string;
-    bundle?: BundleType; // specific to daily tasks
+    bundle?: BundleType;
     type: 'daily' | 'weekly';
     completed: boolean;
 
     // Rewards
-    rewards: TaskReward[]; // Supports multiple rewards
+    rewards: TaskReward[];
 
     // Completion Logic
     requiresInput?: 'weight' | 'training';
@@ -64,6 +64,9 @@ interface RecurringTasksState {
     addCustomRecurringTask: (title: string, bundle: BundleType, rewards: TaskReward[]) => void;
     removeDailyTask: (id: string) => void;
     editDailyTask: (id: string, newTitle: string) => void;
+
+    // Weight helpers
+    getTodayWeight: () => number | null;
 }
 
 // Get current date in Eastern Time
@@ -91,7 +94,7 @@ const getWeekStart = (): string => {
     const now = new Date();
     const eastern = new Date(now.toLocaleString('en-US', { timeZone: 'America/New_York' }));
     const day = eastern.getDay();
-    const diff = eastern.getDate() - day; // Sunday is 0
+    const diff = eastern.getDate() - day;
     const sunday = new Date(eastern.setDate(diff));
     return sunday.toISOString().split('T')[0];
 };
@@ -99,90 +102,73 @@ const getWeekStart = (): string => {
 // ─── TEMPLATES ───────────────────────────────────────────────────────────────
 
 const DAILY_TASKS_TEMPLATE: Omit<RecurringTask, 'completed'>[] = [
-    // MORNING FOUNDATION BUNDLE
+    // ══ MORNING FOUNDATION ═════════════════════════════════════════════════
     {
         id: 'weigh_self',
         title: 'Weigh Self',
         bundle: 'morning',
         type: 'daily',
         requiresInput: 'weight',
-        rewards: [{ skillId: 'Health', xp: 2 }],
+        rewards: [{ skillId: 'Health', xp: 1 }],
     },
     {
-        id: 'brush_morning',
-        title: 'Brush Teeth (Morning)',
+        id: 'brush_and_floss',
+        title: 'Brush Teeth and Floss',
         bundle: 'morning',
         type: 'daily',
         rewards: [{ skillId: 'Hygiene', xp: 1 }],
     },
     {
-        id: 'floss_morning',
-        title: 'Floss (Morning)',
+        id: 'wash_and_moisturize',
+        title: 'Wash and Moisturize Face',
         bundle: 'morning',
         type: 'daily',
         rewards: [{ skillId: 'Hygiene', xp: 1 }],
     },
     {
-        id: 'wash_face_morning',
-        title: 'Wash Face (Morning)',
-        bundle: 'morning',
-        type: 'daily',
-        rewards: [{ skillId: 'Hygiene', xp: 1 }],
-    },
-    {
-        id: 'moisturize',
-        title: 'Moisturize (Face, Elbows, Hands, Legs)',
-        bundle: 'morning',
-        type: 'daily',
-        rewards: [{ skillId: 'Hygiene', xp: 2 }],
-    },
-    {
-        id: 'vitamins',
-        title: 'Take Vitamins',
+        id: 'take_supplements',
+        title: 'Take Supplements (Berberine, Bergamot, Fiber, Creatine, Vitamin D, Antihistamine)',
         bundle: 'morning',
         type: 'daily',
         rewards: [{ skillId: 'Health', xp: 1 }],
     },
     {
         id: 'water_morning',
-        title: 'Drink 30oz Water',
+        title: 'Drink 30oz Water Before 10am',
         bundle: 'morning',
         type: 'daily',
-        rewards: [{ skillId: 'Health', xp: 2 }],
+        rewards: [{ skillId: 'Health', xp: 1 }],
     },
 
-    // AFTERNOON PERFORMANCE BUNDLE
+    // ══ AFTERNOON PERFORMANCE ══════════════════════════════════════════════
     {
         id: 'training_session',
         title: 'Training Session',
         bundle: 'afternoon',
         type: 'daily',
-        requiresInput: 'training', // Special handling for multi-select
-        rewards: [], // XP awarded dynamically based on selection
+        requiresInput: 'training',
+        rewards: [],
     },
     {
         id: 'creatine_fiber',
         title: 'Creatine + 30oz Water + Fiber Supplement',
         bundle: 'afternoon',
         type: 'daily',
-        rewards: [{ skillId: 'Health', xp: 2 }],
+        rewards: [{ skillId: 'Health', xp: 1 }],
     },
     {
         id: 'laundry_organize',
         title: 'Laundry / Put Away + Organize',
         bundle: 'afternoon',
         type: 'daily',
-        rewards: [
-            { skillId: 'Housemaid', xp: 2 },
-            { skillId: 'Clothing', xp: 1 },
-        ],
+        rewards: [{ skillId: 'Housemaid', xp: 1 }],
     },
     {
         id: 'log_meals_afternoon',
         title: 'Log Meals in MacroFactor',
         bundle: 'afternoon',
         type: 'daily',
-        rewards: [{ skillId: 'Intelligence', xp: 2 }],
+        rewards: [{ skillId: 'Intelligence', xp: 1 }],
     },
     {
         id: 'charge_devices',
@@ -196,10 +182,10 @@ const DAILY_TASKS_TEMPLATE: Omit<RecurringTask, 'completed'>[] = [
         title: 'Inbox Zero (Emails + Texts)',
         bundle: 'afternoon',
         type: 'daily',
-        rewards: [{ skillId: 'Work', xp: 2 }],
+        rewards: [{ skillId: 'Work', xp: 1 }],
     },
 
-    // NIGHT SHUTDOWN BUNDLE
+    // ══ NIGHT SHUTDOWN ═════════════════════════════════════════════════════
     {
         id: 'allergy_shots',
         title: 'Allergy Shots (if needed)',
@@ -212,14 +198,14 @@ const DAILY_TASKS_TEMPLATE: Omit<RecurringTask, 'completed'>[] = [
         title: 'No Coffee After 12pm',
         bundle: 'night',
         type: 'daily',
-        rewards: [{ skillId: 'Habit Building', xp: 2 }],
+        rewards: [{ skillId: 'Habit Building', xp: 1 }],
     },
     {
         id: 'water_night',
         title: 'Drink 30oz Water',
         bundle: 'night',
         type: 'daily',
-        rewards: [{ skillId: 'Health', xp: 2 }],
+        rewards: [{ skillId: 'Health', xp: 1 }],
     },
     {
         id: 'clean_bottles',
@@ -233,7 +219,7 @@ const DAILY_TASKS_TEMPLATE: Omit<RecurringTask, 'completed'>[] = [
         title: 'Brush + Floss + Wash Face (Night)',
         bundle: 'night',
         type: 'daily',
-        rewards: [{ skillId: 'Hygiene', xp: 2 }],
+        rewards: [{ skillId: 'Hygiene', xp: 1 }],
     },
     {
         id: 'retinol',
@@ -248,7 +234,7 @@ const DAILY_TASKS_TEMPLATE: Omit<RecurringTask, 'completed'>[] = [
         title: 'Track All Meals in MacroFactor',
         bundle: 'night',
         type: 'daily',
-        rewards: [{ skillId: 'Intelligence', xp: 2 }],
+        rewards: [{ skillId: 'Intelligence', xp: 1 }],
     },
     {
         id: 'tongue_exercises',
@@ -264,7 +250,7 @@ const DAILY_TASKS_TEMPLATE: Omit<RecurringTask, 'completed'>[] = [
         type: 'daily',
         rewards: [
             { skillId: 'Habit Building', xp: 1 },
-            { skillId: 'Sleep', xp: 1 }, // "only if Oura is worn" - assuming true if checked
+            { skillId: 'Sleep', xp: 1 },
         ],
     },
     {
@@ -272,14 +258,14 @@ const DAILY_TASKS_TEMPLATE: Omit<RecurringTask, 'completed'>[] = [
         title: 'Read 10 Minutes',
         bundle: 'night',
         type: 'daily',
-        rewards: [{ skillId: 'Intelligence', xp: 3 }],
+        rewards: [{ skillId: 'Intelligence', xp: 1 }],
     },
     {
         id: 'stretch_10_min',
         title: 'Stretch for 10 Minutes',
         bundle: 'night',
         type: 'daily',
-        rewards: [{ skillId: 'Flexibility', xp: 3 }],
+        rewards: [{ skillId: 'Flexibility', xp: 1 }],
     },
     {
         id: 'clean_pillow_cpap',
@@ -287,13 +273,13 @@ const DAILY_TASKS_TEMPLATE: Omit<RecurringTask, 'completed'>[] = [
         bundle: 'night',
         type: 'daily',
         rewards: [
-            { skillId: 'Sleep', xp: 3 },
+            { skillId: 'Sleep', xp: 1 },
             { skillId: 'Hygiene', xp: 1 },
         ],
     },
 ];
 
-// Predefined weekly tasks (Unchanged mostly)
+// Predefined weekly tasks
 const WEEKLY_TASKS_TEMPLATE: Omit<RecurringTask, 'completed'>[] = [
     {
         id: 'weekly-bathroom',
@@ -318,7 +304,7 @@ const WEEKLY_TASKS_TEMPLATE: Omit<RecurringTask, 'completed'>[] = [
 export const useRecurringTasksStore = create<RecurringTasksState>()(
     persist(
         (set, get) => ({
-            dailyTasks: [], // Initialized in checkAndReset
+            dailyTasks: [],
             weeklyTasks: [],
             lastDailyReset: null,
             lastWeeklyReset: null,
@@ -332,6 +318,12 @@ export const useRecurringTasksStore = create<RecurringTasksState>()(
             customRecurringTasks: [],
             removedTaskIds: [],
 
+            getTodayWeight: () => {
+                const today = getEasternDateString();
+                const { weightHistory } = get();
+                return weightHistory.find(e => e.date === today)?.weight ?? null;
+            },
+
             completeTask: (id, inputData) => {
                 set((state) => {
                     // Try Daily
@@ -341,11 +333,16 @@ export const useRecurringTasksStore = create<RecurringTasksState>()(
                         const task = newTasks[dailyIndex];
                         newTasks[dailyIndex] = { ...task, completed: true };
 
+                        let newWeightHistory = [...state.weightHistory];
                         if (inputData?.weight) {
-                            state.weightHistory.push({
-                                date: getEasternDateString(),
-                                weight: inputData.weight,
-                            });
+                            const today = getEasternDateString();
+                            // Update today's entry if already exists, else push
+                            const idx = newWeightHistory.findIndex(e => e.date === today);
+                            if (idx !== -1) {
+                                newWeightHistory[idx] = { date: today, weight: inputData.weight };
+                            } else {
+                                newWeightHistory.push({ date: today, weight: inputData.weight });
+                            }
                         }
 
                         // Handle XP Awards
@@ -366,7 +363,7 @@ export const useRecurringTasksStore = create<RecurringTasksState>()(
                             });
                         });
 
-                        return { dailyTasks: newTasks, weightHistory: [...state.weightHistory] };
+                        return { dailyTasks: newTasks, weightHistory: newWeightHistory };
                     }
 
                     // Try Weekly
@@ -389,14 +386,11 @@ export const useRecurringTasksStore = create<RecurringTasksState>()(
             },
 
             resetDailyTasks: () => {
-                // Filter conditional tasks based on Day of Week
                 const todayDow = getEasternDayOfWeek();
                 const { customRecurringTasks, removedTaskIds } = get();
 
-                // 1. Get base template tasks that haven't been removed
                 const baseTasks = DAILY_TASKS_TEMPLATE.filter(t => !removedTaskIds.includes(t.id));
 
-                // 2. Filter conditional and custom tasks
                 const todaysTasks = [...baseTasks, ...customRecurringTasks]
                     .filter(t => {
                         if (!t.conditional) return true;
@@ -477,7 +471,6 @@ export const useRecurringTasksStore = create<RecurringTasksState>()(
                     get().resetWeeklyTasks();
                 }
 
-                // Fallback: If template updated significantly (empty list), force reset
                 if (state.dailyTasks.length === 0) {
                     get().resetDailyTasks();
                 }
@@ -548,7 +541,7 @@ export const useRecurringTasksStore = create<RecurringTasksState>()(
             },
         }),
         {
-            name: 'gl-recurring-tasks-v2', // v2 for bundles
+            name: 'gl-recurring-tasks-v3', // Bumped version to force fresh reset with new task IDs
         }
     )
 );

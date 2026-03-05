@@ -43,14 +43,18 @@ interface DayState {
     getEasternTime: () => string;
 }
 
-// ULTRA-SLOW: Very small XP for sleep quality
+// Score-Based XP scale (applies to both sleep and readiness)
+// 100 is the "perfect night" bonus: 25 XP
 const calculateSleepXP = (score: number): number => {
-    if (score >= 90) return 5;  // Excellent
-    if (score >= 80) return 3;  // Great
-    if (score >= 70) return 2;  // Good
-    if (score >= 60) return 1;  // Okay
-    return 0;
+    if (score >= 100) return 25;
+    if (score >= 96) return 5;
+    if (score >= 90) return 4;
+    if (score >= 86) return 3;
+    if (score >= 80) return 2;
+    if (score >= 70) return 1;
+    return 0; // 69 or below
 };
+
 
 export const useDayStore = create<DayState>()(
     persist(

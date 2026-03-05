@@ -1,0 +1,303 @@
+/* ═══════════════════════════════════════════════
+   XP WEAPONS STORE — Premium Dark Theme
+   ═══════════════════════════════════════════════ */
+
+.xpw-store {
+    padding: 1rem;
+    color: var(--text-primary, #fff);
+    position: relative;
+}
+
+/* ── Header ──────────────────────────────────── */
+.xpw-header {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 1rem;
+}
+
+.xpw-header svg {
+    color: #f59e0b;
+    flex-shrink: 0;
+}
+
+.xpw-title {
+    font-size: 1.4rem;
+    font-weight: 800;
+    margin: 0;
+    background: linear-gradient(135deg, #f59e0b, #ef4444);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.xpw-subtitle {
+    font-size: 0.8rem;
+    color: rgba(255, 255, 255, 0.45);
+    margin: 0;
+}
+
+/* ── Tier Tabs ───────────────────────────────── */
+.xpw-tier-tabs {
+    display: flex;
+    gap: 2px;
+    overflow-x: auto;
+    scrollbar-width: none;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    margin-bottom: 1rem;
+}
+
+.xpw-tier-tabs::-webkit-scrollbar {
+    display: none;
+}
+
+.xpw-tier-tab {
+    flex-shrink: 0;
+    padding: 0.5rem 0.9rem;
+    background: transparent;
+    border: none;
+    border-bottom: 2px solid transparent;
+    color: rgba(255, 255, 255, 0.4);
+    font-size: 0.78rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: color 0.2s, border-color 0.2s;
+    white-space: nowrap;
+}
+
+.xpw-tier-tab:hover {
+    color: rgba(255, 255, 255, 0.8);
+}
+
+.xpw-tier-tab.active {
+    color: inherit;
+}
+
+/* ── Grid ────────────────────────────────────── */
+.xpw-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+}
+
+/* ── Card ────────────────────────────────────── */
+.xpw-card {
+    position: relative;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1.5px solid rgba(255, 255, 255, 0.07);
+    border-radius: 12px;
+    overflow: hidden;
+    transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.xpw-card.owned {
+    border-color: rgba(34, 197, 94, 0.25);
+}
+
+.xpw-card.equipped {
+    border-color: var(--tier-color, #f59e0b);
+    box-shadow: 0 0 14px rgba(var(--tier-color-rgb, 245, 158, 11), 0.2);
+}
+
+.xpw-equipped-badge {
+    position: absolute;
+    top: 0;
+    right: 0;
+    background: #f59e0b;
+    color: #000;
+    font-size: 0.55rem;
+    font-weight: 900;
+    padding: 2px 6px;
+    border-radius: 0 12px 0 8px;
+    letter-spacing: 0.08em;
+}
+
+/* ── Card Top Row ────────────────────────────── */
+.xpw-card-top {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.75rem 1rem;
+    cursor: pointer;
+    user-select: none;
+}
+
+.xpw-card-top:hover {
+    background: rgba(255, 255, 255, 0.03);
+}
+
+.xpw-icon {
+    font-size: 1.6rem;
+    flex-shrink: 0;
+}
+
+.xpw-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.xpw-name {
+    display: block;
+    font-size: 0.9rem;
+    font-weight: 700;
+    color: #fff;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.xpw-effect {
+    display: block;
+    font-size: 0.72rem;
+    color: rgba(255, 255, 255, 0.45);
+    margin-top: 1px;
+}
+
+.xpw-owned-check {
+    color: #22c55e;
+}
+
+.xpw-affordable-icon {
+    color: #f59e0b;
+}
+
+.xpw-lock-icon {
+    color: rgba(255, 255, 255, 0.25);
+}
+
+/* ── Cost Breakdown ──────────────────────────── */
+.xpw-costs {
+    overflow: hidden;
+    border-top: 1px solid rgba(255, 255, 255, 0.06);
+    padding: 0.75rem 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+}
+
+.xpw-costs-label {
+    font-size: 0.7rem;
+    font-weight: 700;
+    color: rgba(255, 255, 255, 0.4);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin: 0 0 0.25rem;
+}
+
+.xpw-cost-row {
+    display: grid;
+    grid-template-columns: 120px 1fr 90px;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.xpw-skill-label {
+    font-size: 0.72rem;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.xpw-skill-label.met {
+    color: #22c55e;
+}
+
+.xpw-skill-label.unmet {
+    color: rgba(255, 255, 255, 0.5);
+}
+
+.xpw-cost-bar {
+    height: 5px;
+    background: rgba(255, 255, 255, 0.08);
+    border-radius: 99px;
+    overflow: hidden;
+}
+
+.xpw-cost-fill {
+    height: 100%;
+    border-radius: 99px;
+    transition: width 0.4s ease;
+}
+
+.xpw-cost-num {
+    font-size: 0.65rem;
+    text-align: right;
+}
+
+.xpw-cost-num.met {
+    color: #22c55e;
+}
+
+.xpw-cost-num.unmet {
+    color: rgba(255, 255, 255, 0.4);
+}
+
+/* ── Buttons ─────────────────────────────────── */
+.xpw-btn-row {
+    margin-top: 0.5rem;
+}
+
+.xpw-btn {
+    width: 100%;
+    padding: 0.55rem;
+    border-radius: 8px;
+    border: none;
+    font-size: 0.85rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: transform 0.15s, opacity 0.15s;
+}
+
+.xpw-btn:active {
+    transform: scale(0.97);
+}
+
+.xpw-btn.equip {
+    background: linear-gradient(135deg, #6366f1, #8b5cf6);
+    color: #fff;
+}
+
+.xpw-btn.unequip {
+    background: rgba(255, 255, 255, 0.1);
+    color: rgba(255, 255, 255, 0.7);
+}
+
+.xpw-btn.forge.affordable {
+    color: #fff;
+}
+
+.xpw-btn.forge.locked {
+    background: rgba(255, 255, 255, 0.06);
+    color: rgba(255, 255, 255, 0.3);
+    cursor: not-allowed;
+}
+
+/* ── Toast ───────────────────────────────────── */
+.xpw-toast {
+    position: fixed;
+    bottom: 5rem;
+    left: 50%;
+    transform: translateX(-50%);
+    padding: 0.6rem 1.4rem;
+    border-radius: 50px;
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: #fff;
+    z-index: 999;
+    white-space: nowrap;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+}
+
+.xpw-toast.success {
+    background: linear-gradient(135deg, #10b981, #059669);
+}
+
+.xpw-toast.error {
+    background: linear-gradient(135deg, #ef4444, #dc2626);
+}
+
+/* ── Mobile ──────────────────────────────────── */
+@media (max-width: 400px) {
+    .xpw-cost-row {
+        grid-template-columns: 90px 1fr 70px;
+    }
+}

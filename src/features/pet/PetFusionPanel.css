@@ -1,0 +1,316 @@
+/* ═══════════════════════════════════════════════════
+   PET FUSION PANEL — Premium dark glassmorphism
+   ═══════════════════════════════════════════════════ */
+
+.fusion-panel {
+    padding: 1.5rem 1rem 6rem;
+    min-height: 100%;
+    color: var(--text-primary, #fff);
+    position: relative;
+}
+
+/* ── Header ─────────────────────────────────────── */
+.fusion-header {
+    text-align: center;
+    margin-bottom: 1.5rem;
+}
+
+.fusion-header h2 {
+    font-size: 1.6rem;
+    font-weight: 800;
+    background: linear-gradient(135deg, #a855f7, #6366f1, #3b82f6);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin: 0 0 0.4rem;
+}
+
+.fusion-subtitle {
+    font-size: 0.88rem;
+    color: rgba(255, 255, 255, 0.55);
+    line-height: 1.6;
+    margin: 0;
+}
+
+.fusion-rule {
+    font-weight: 700;
+    color: rgba(255, 255, 255, 0.75);
+}
+
+/* ── Empty State ─────────────────────────────────── */
+.fusion-empty {
+    text-align: center;
+    padding: 3rem 1rem;
+    color: rgba(255, 255, 255, 0.4);
+}
+
+.fusion-empty-icon {
+    font-size: 3rem;
+    display: block;
+    margin-bottom: 0.75rem;
+}
+
+/* ── Grid ─────────────────────────────────────────  */
+.fusion-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 1rem;
+}
+
+/* ── Card ─────────────────────────────────────────  */
+.fusion-card {
+    position: relative;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1.5px solid rgba(255, 255, 255, 0.08);
+    border-radius: 16px;
+    padding: 1.25rem 1rem 1rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+    transition: border-color 0.25s, box-shadow 0.25s;
+    overflow: hidden;
+    backdrop-filter: blur(8px);
+}
+
+.fusion-card:hover {
+    border-color: var(--rarity-color, rgba(99, 102, 241, 0.5));
+    box-shadow: 0 0 20px rgba(var(--rarity-color, 99, 102, 241), 0.15);
+}
+
+.fusion-card--flash {
+    animation: fusion-flash 0.7s ease;
+}
+
+@keyframes fusion-flash {
+    0% {
+        box-shadow: 0 0 0 0 rgba(255, 255, 255, 0.8);
+    }
+
+    40% {
+        box-shadow: 0 0 40px 20px rgba(255, 255, 255, 0.5);
+    }
+
+    100% {
+        box-shadow: 0 0 0 0 rgba(255, 255, 255, 0);
+    }
+}
+
+/* ── Level Badge ─────────────────────────────────── */
+.fusion-level-badge {
+    position: absolute;
+    top: 0.6rem;
+    left: 0.6rem;
+    padding: 0.15rem 0.5rem;
+    border-radius: 6px;
+    font-size: 0.65rem;
+    font-weight: 800;
+    color: #fff;
+    letter-spacing: 0.03em;
+}
+
+/* ── Icon ────────────────────────────────────────── */
+.fusion-pet-icon {
+    font-size: 3.2rem;
+    line-height: 1;
+    filter: drop-shadow(0 0 10px var(--rarity-color, rgba(99, 102, 241, 0.6)));
+    margin-top: 0.25rem;
+}
+
+/* ── Name ────────────────────────────────────────── */
+.fusion-pet-name {
+    font-size: 1rem;
+    font-weight: 700;
+    margin: 0;
+    text-align: center;
+    color: #fff;
+}
+
+/* ── Level Label ─────────────────────────────────── */
+.fusion-level-label {
+    font-size: 0.78rem;
+    color: rgba(255, 255, 255, 0.55);
+    font-weight: 600;
+}
+
+.fusion-max {
+    color: #f59e0b;
+    font-weight: 800;
+    font-size: 0.8rem;
+}
+
+/* ── Progress Bar ────────────────────────────────── */
+.fusion-progress-bar {
+    width: 100%;
+    height: 8px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 99px;
+    overflow: hidden;
+}
+
+.fusion-progress-fill {
+    height: 100%;
+    border-radius: 99px;
+}
+
+.fusion-copies-label {
+    font-size: 0.72rem;
+    color: rgba(255, 255, 255, 0.5);
+    text-align: center;
+}
+
+.fusion-need {
+    color: #f87171;
+}
+
+/* ── Bonus Preview ─────────────────────────────────  */
+.fusion-bonus-preview {
+    font-size: 0.72rem;
+    color: rgba(255, 255, 255, 0.4);
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 6px;
+    padding: 0.25rem 0.5rem;
+    text-align: center;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+/* ── Passive Unlocked ────────────────────────────── */
+.fusion-passive-unlocked {
+    width: 100%;
+    background: rgba(245, 158, 11, 0.1);
+    border: 1px solid rgba(245, 158, 11, 0.25);
+    border-radius: 10px;
+    padding: 0.6rem 0.75rem;
+    box-sizing: border-box;
+    text-align: center;
+}
+
+.passive-tag {
+    display: block;
+    font-size: 0.65rem;
+    font-weight: 700;
+    color: #f59e0b;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    margin-bottom: 0.2rem;
+}
+
+.fusion-passive-unlocked strong {
+    display: block;
+    font-size: 0.875rem;
+    color: #fbbf24;
+    margin-bottom: 0.2rem;
+}
+
+.fusion-passive-unlocked p {
+    font-size: 0.72rem;
+    color: rgba(255, 255, 255, 0.5);
+    margin: 0;
+    line-height: 1.4;
+}
+
+/* ── Fuse Button ─────────────────────────────────── */
+.fuse-btn {
+    width: 100%;
+    padding: 0.6rem 1rem;
+    border-radius: 10px;
+    border: none;
+    color: #fff;
+    font-size: 0.9rem;
+    font-weight: 800;
+    cursor: pointer;
+    letter-spacing: 0.02em;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+    transition: transform 0.2s, box-shadow 0.2s;
+    margin-top: 0.25rem;
+}
+
+.fuse-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 22px rgba(0, 0, 0, 0.4);
+}
+
+.fuse-btn:active {
+    transform: scale(0.96);
+}
+
+/* ── Locked Section ──────────────────────────────── */
+.fusion-locked-section {
+    margin-top: 2rem;
+}
+
+.fusion-locked-title {
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: rgba(255, 255, 255, 0.35);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    margin: 0 0 0.75rem;
+}
+
+.fusion-locked-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.6rem;
+}
+
+.fusion-locked-card {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px dashed rgba(255, 255, 255, 0.1);
+    border-radius: 10px;
+    padding: 0.4rem 0.75rem;
+    opacity: 0.5;
+    filter: grayscale(1);
+}
+
+.fusion-locked-icon {
+    font-size: 1.2rem;
+}
+
+.fusion-locked-name {
+    font-size: 0.8rem;
+    font-weight: 600;
+}
+
+.fusion-locked-hint {
+    font-size: 0.65rem;
+    color: rgba(255, 255, 255, 0.35);
+    margin-left: 0.25rem;
+}
+
+/* ── Toast ───────────────────────────────────────── */
+.fuse-toast {
+    position: fixed;
+    bottom: 5rem;
+    left: 50%;
+    transform: translateX(-50%);
+    background: linear-gradient(135deg, #6366f1, #a855f7);
+    color: #fff;
+    font-weight: 700;
+    font-size: 0.9rem;
+    padding: 0.7rem 1.5rem;
+    border-radius: 50px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+    z-index: 999;
+    white-space: nowrap;
+}
+
+/* ── Mobile ──────────────────────────────────────── */
+@media (max-width: 500px) {
+    .fusion-grid {
+        grid-template-columns: 1fr 1fr;
+        gap: 0.75rem;
+    }
+
+    .fusion-pet-icon {
+        font-size: 2.5rem;
+    }
+
+    .fusion-pet-name {
+        font-size: 0.85rem;
+    }
+}

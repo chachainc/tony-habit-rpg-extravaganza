@@ -69,7 +69,7 @@
     justify-content: center;
     z-index: 20;
     filter: drop-shadow(0 4px 12px rgba(59, 130, 246, 0.6));
-    transition: left 0.15s, top 0.15s;
+    transition: left 0.25s ease-out, top 0.25s ease-out;
 }
 
 .room-player .player-sprite {

@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Ticket, Sparkles, Sword, Shield, Heart } from 'lucide-react';
 import { useGachaStore, PET_DB } from '../../store/useGachaStore';
@@ -9,6 +10,7 @@ type GachaTab = 'pets' | 'equipment';
 type PullPhase = 'idle' | 'shake' | 'burst' | 'reveal';
 
 export const GachaMachine = ({ onClose }: { onClose: () => void }) => {
+    const navigate = useNavigate();
     const { tickets, pullWithTicket, pull10Gacha, getPityInfo, setActivePet, activePet, ownedPets } = useGachaStore();
     const { pullEquipment, equipItem, ownedEquipment, equippedWeapon, equippedArmor, equippedAccessory, essence, getPityInfo: getEquipPity } = useEquipmentStore();
 
@@ -142,6 +144,13 @@ export const GachaMachine = ({ onClose }: { onClose: () => void }) => {
                 animate={{ scale: 1, opacity: 1 }}
             >
                 <button onClick={onClose} className="close-corner">×</button>
+                <button
+                    className="gacha-codex-btn"
+                    onClick={() => { onClose(); navigate('/codex'); }}
+                    title="View Collection Codex"
+                >
+                    📖 Codex
+                </button>
 
                 {/* Tab Switcher */}
                 <div className="gacha-tabs">
@@ -279,25 +288,50 @@ export const GachaMachine = ({ onClose }: { onClose: () => void }) => {
                     </div>
                 )}
 
-                {/* Shake Animation Phase */}
+                {/* ─── SHAKE / DRUMROLL PHASE ─── */}
                 {pullPhase === 'shake' && (
                     <div className="summon-animation">
+                        {/* Orbit particles that expand with rarity */}
+                        <div className="summon-orbit-ring" style={{
+                            borderColor: resultRarity === 'legendary' ? '#f59e0b' :
+                                resultRarity === 'epic' ? '#a855f7' :
+                                    resultRarity === 'rare' ? '#3b82f6' : 'rgba(255,255,255,0.2)',
+                            opacity: resultRarity !== 'common' ? 0.7 : 0.3,
+                        }} />
+                        <div className="summon-orbit-ring summon-orbit-ring--lg" style={{
+                            borderColor: resultRarity === 'mythic' ? '#f43f5e' :
+                                resultRarity === 'legendary' ? '#f59e0b' : 'rgba(255,255,255,0.1)',
+                            opacity: ['legendary', 'mythic'].includes(resultRarity) ? 0.5 : 0.15,
+                        }} />
+
+                        {/* Floating particle dots */}
+                        {['legendary', 'mythic', 'epic'].includes(resultRarity) && (
+                            <div className="summon-particles">
+                                {Array.from({ length: resultRarity === 'mythic' ? 12 : resultRarity === 'legendary' ? 8 : 5 }).map((_, i) => (
+                                    <div key={i} className={`summon-particle summon-particle--${i % 4}`}
+                                        style={{
+                                            background: resultRarity === 'mythic' ? '#f43f5e' :
+                                                resultRarity === 'legendary' ? '#f59e0b' : '#a855f7',
+                                            animationDelay: `${i * 0.15}s`,
+                                        }}
+                                    />
+                                ))}
+                            </div>
+                        )}
+
                         <motion.div
-                            className="summon-orb shaking"
+                            className={`summon-orb shaking ${resultRarity !== 'common' ? `aura-${resultRarity}` : ''}`}
                             animate={{
-                                rotate: [0, -5, 5, -5, 5, 0],
-                                scale: [1, 1.05, 0.95, 1.05, 0.95, 1]
+                                rotate: [0, -8, 8, -8, 8, -5, 5, 0],
+                                scale: [1, 1.08, 0.94, 1.08, 0.94, 1.04, 0.98, 1],
+                                y: [0, -4, 4, -4, 4, 0]
                             }}
-                            transition={{
-                                duration: 0.3,
-                                repeat: 5,
-                                ease: "easeInOut"
-                            }}
+                            transition={{ duration: 0.35, repeat: Infinity, ease: 'easeInOut' }}
                         >
                             <div className="orb-glow" />
                             🔮
                         </motion.div>
-                        <p className="summon-text">{isMultiPull ? 'Summoning 10x...' : 'Summoning...'}</p>
+                        <p className="summon-text">{isMultiPull ? '✨ Summoning 10x...' : '✨ Summoning...'}</p>
                         {canSkip && (
                             <button className="skip-btn" onClick={handleSkip}>
                                 ⏭️ SKIP
@@ -306,38 +340,99 @@ export const GachaMachine = ({ onClose }: { onClose: () => void }) => {
                     </div>
                 )}
 
-                {/* Burst Animation Phase */}
+                {/* ─── BURST PHASE (rarity-scaled) ─── */}
                 {pullPhase === 'burst' && (
                     <div className="summon-animation">
+                        {/* Mythic: full-screen white flash */}
+                        {resultRarity === 'mythic' && (
+                            <motion.div
+                                className="mythic-flash"
+                                initial={{ opacity: 0 }}
+                                animate={{ opacity: [0, 1, 0] }}
+                                transition={{ duration: 0.5 }}
+                            />
+                        )}
+
                         <motion.div
                             className={`summon-orb bursting ${getRarityGlow(resultRarity)}`}
-                            initial={{ scale: 1 }}
-                            animate={{ scale: [1, 1.5, 0] }}
+                            initial={{ scale: 1, opacity: 1 }}
+                            animate={{
+                                scale: resultRarity === 'mythic' ? [1, 3, 0] :
+                                    resultRarity === 'legendary' ? [1, 2.5, 0] :
+                                        resultRarity === 'epic' ? [1, 2, 0] : [1, 1.5, 0],
+                                opacity: [1, 0.6, 0],
+                            }}
                             transition={{ duration: 0.5 }}
                         >
                             <div className="burst-particles" />
                             ✨
                         </motion.div>
+
+                        {/* Expanding ring burst for epic+ */}
+                        {['epic', 'legendary', 'mythic'].includes(resultRarity) && (
+                            <motion.div
+                                className="burst-ring"
+                                style={{
+                                    borderColor: resultRarity === 'mythic' ? '#f43f5e' :
+                                        resultRarity === 'legendary' ? '#f59e0b' : '#a855f7',
+                                }}
+                                initial={{ scale: 0.5, opacity: 1 }}
+                                animate={{ scale: 4, opacity: 0 }}
+                                transition={{ duration: 0.5 }}
+                            />
+                        )}
                     </div>
                 )}
 
-                {/* Reveal Phase */}
+                {/* ─── REVEAL PHASE (cinematic card flip + rarity glow) ─── */}
                 <AnimatePresence>
-                    {pullPhase === 'reveal' && result && (
+                    {pullPhase === 'reveal' && result && !isMultiPull && (
                         <motion.div
                             className="summon-result"
-                            initial={{ scale: 0, opacity: 0, rotateY: 180 }}
+                            initial={{ scale: 0.6, opacity: 0, rotateY: 180 }}
                             animate={{ scale: 1, opacity: 1, rotateY: 0 }}
-                            transition={{ type: "spring", duration: 0.6 }}
+                            transition={{ type: 'spring', duration: 0.7, bounce: 0.35 }}
                         >
+                            {/* Mythic: rainbow background beam */}
+                            {result.item.rarity === 'mythic' && (
+                                <div className="mythic-beam" />
+                            )}
+                            {result.item.rarity === 'legendary' && (
+                                <div className="legendary-rays" />
+                            )}
+
                             <div className={`result-card glassmorphism ${result.item.rarity}`}>
                                 <div className={`result-glow ${getRarityGlow(result.item.rarity)}`} />
                                 <div className="shimmer-effect" />
-                                <div className="result-icon">{result.item.icon}</div>
-                                <h3>{result.item.name}</h3>
-                                <span className={`rarity-tag ${result.item.rarity}`}>
-                                    {result.item.rarity.toUpperCase()}
-                                </span>
+
+                                {/* Animated icon with zoom entrance */}
+                                <motion.div
+                                    className="result-icon"
+                                    initial={{ scale: 0, rotate: -20 }}
+                                    animate={{ scale: 1, rotate: 0 }}
+                                    transition={{ type: 'spring', delay: 0.2, duration: 0.5 }}
+                                >
+                                    {result.item.icon}
+                                </motion.div>
+
+                                <motion.h3
+                                    initial={{ opacity: 0, y: 10 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    transition={{ delay: 0.4 }}
+                                >
+                                    {result.item.name}
+                                </motion.h3>
+
+                                <motion.span
+                                    className={`rarity-tag ${result.item.rarity}`}
+                                    initial={{ opacity: 0, scale: 0.5 }}
+                                    animate={{ opacity: 1, scale: 1 }}
+                                    transition={{ delay: 0.55, type: 'spring' }}
+                                >
+                                    {result.item.rarity === 'mythic' ? '🌌 MYTHIC' :
+                                        result.item.rarity === 'legendary' ? '⭐ LEGENDARY' :
+                                            result.item.rarity.toUpperCase()}
+                                </motion.span>
 
                                 {/* Stats for Equipment */}
                                 {activeTab === 'equipment' && (

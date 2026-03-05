@@ -294,8 +294,8 @@ export const WalkableRoom = () => {
                             style={{
                                 left: trophyPosition.x * ROOM_LAYOUT.tileSize - ROOM_LAYOUT.tileSize,
                                 top: 0,
-                                width: ROOM_LAYOUT.tileSize * 2.5,
-                                height: ROOM_LAYOUT.gridSize.height * ROOM_LAYOUT.tileSize * 0.6,
+                                width: ROOM_LAYOUT.tileSize * 1.8,
+                                height: ROOM_LAYOUT.gridSize.height * ROOM_LAYOUT.tileSize * 0.35,
                             }}
                             animate={nearTrophy ? { boxShadow: ['0 0 20px rgba(168, 85, 247, 0.3)', '0 0 40px rgba(168, 85, 247, 0.6)', '0 0 20px rgba(168, 85, 247, 0.3)'] } : {}}
                             transition={{ duration: 2, repeat: Infinity }}
@@ -315,8 +315,8 @@ export const WalkableRoom = () => {
                             style={{
                                 left: 0,
                                 top: 0,
-                                width: ROOM_LAYOUT.tileSize * 2.5,
-                                height: ROOM_LAYOUT.gridSize.height * ROOM_LAYOUT.tileSize * 0.6,
+                                width: ROOM_LAYOUT.tileSize * 1.8,
+                                height: ROOM_LAYOUT.gridSize.height * ROOM_LAYOUT.tileSize * 0.35,
                             }}
                             animate={nearBookshelf ? { boxShadow: ['0 0 20px rgba(212, 165, 116, 0.3)', '0 0 40px rgba(212, 165, 116, 0.6)', '0 0 20px rgba(212, 165, 116, 0.3)'] } : {}}
                             transition={{ duration: 2, repeat: Infinity }}

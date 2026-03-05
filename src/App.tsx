@@ -26,6 +26,7 @@ import { LoginScreen } from './features/auth/LoginScreen';
 import { CharacterCreation } from './features/onboarding/CharacterCreation';
 import { UIShowcase } from './features/showcase/UIShowcase';
 import { SettingsPage } from './features/settings/SettingsPage';
+import { CollectionCodex } from './features/codex/CollectionCodex';
 import { ToastContainer } from './components/ui/Toast';
 import { ErrorBoundary } from './components/ui/ErrorBoundary';
 import { LevelUpModal } from './components/ui/LevelUpModal';
@@ -168,6 +169,7 @@ function App() {
           <Route path="social" element={<Room2D />} />
           <Route path="achievements" element={<div>Achievements coming soon!</div>} />
           <Route path="settings" element={<SettingsPage />} />
+          <Route path="codex" element={<CollectionCodex />} />
           <Route path="showcase" element={<UIShowcase />} />
         </Route>
       </Routes>

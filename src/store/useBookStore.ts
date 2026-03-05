@@ -1,11 +1,15 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { useGameStore } from './useGameStore';
+import { type BookType } from './useBookArtifactStore';
+
+export type { BookType };
 
 export interface Book {
     id: string;
     title: string;
     author: string;
+    bookType: BookType;        // ← NEW: required category
     startedAt: string;
     completedAt: string | null;
     isComplete: boolean;
@@ -14,21 +18,20 @@ export interface Book {
 }
 
 interface BookState {
-    currentBooks: Book[];      // In-progress books
-    completedBooks: Book[];    // Finished books (permanent display)
+    currentBooks: Book[];
+    completedBooks: Book[];
 
     // Actions
-    addBook: (title: string, author: string, pagesRead?: number, notes?: string) => void;
+    addBook: (title: string, author: string, bookType: BookType, pagesRead?: number, notes?: string) => void;
     completeBook: (bookId: string) => void;
-    logCompletedBook: (title: string, author: string, pagesRead?: number, notes?: string) => void;
+    logCompletedBook: (title: string, author: string, bookType: BookType, pagesRead?: number, notes?: string) => void;
     removeBook: (bookId: string) => void;
     getCompletedCount: () => number;
     getInProgressCount: () => number;
 }
 
-// Constants for book rewards
 const BOOK_GLOBAL_XP_REWARD = 10;
-const BOOK_INTELLIGENCE_XP_REWARD = 100; // Massive XP for completing books
+const BOOK_INTELLIGENCE_XP_REWARD = 100;
 
 export const useBookStore = create<BookState>()(
     persist(
@@ -36,28 +39,25 @@ export const useBookStore = create<BookState>()(
             currentBooks: [],
             completedBooks: [],
 
-            addBook: (title: string, author: string, pagesRead?: number, notes?: string) => {
+            addBook: (title, author, bookType, pagesRead, notes) => {
                 const now = new Date().toISOString();
                 const newBook: Book = {
                     id: `book-${Date.now()}`,
                     title: title.trim(),
                     author: author.trim(),
+                    bookType,
                     startedAt: now,
                     completedAt: null,
                     isComplete: false,
                     pagesRead,
                     notes,
                 };
-
-                set((state) => ({
-                    currentBooks: [...state.currentBooks, newBook],
-                }));
+                set(state => ({ currentBooks: [...state.currentBooks, newBook] }));
             },
 
-            completeBook: (bookId: string) => {
+            completeBook: (bookId) => {
                 const { currentBooks, completedBooks } = get();
                 const book = currentBooks.find(b => b.id === bookId);
-
                 if (!book) return;
 
                 const completedBook: Book = {
@@ -71,19 +71,24 @@ export const useBookStore = create<BookState>()(
                 gameStore.addGlobalXp(BOOK_GLOBAL_XP_REWARD);
                 gameStore.addSkillXp('Intelligence', BOOK_INTELLIGENCE_XP_REWARD);
 
-                // Move to completed books
+                // Award book artifact (lazy import to avoid circular dep)
+                import('./useBookArtifactStore').then(({ useBookArtifactStore }) => {
+                    useBookArtifactStore.getState().awardArtifact(book.bookType, book.title);
+                });
+
                 set({
                     currentBooks: currentBooks.filter(b => b.id !== bookId),
                     completedBooks: [...completedBooks, completedBook],
                 });
             },
 
-            logCompletedBook: (title: string, author: string, pagesRead?: number, notes?: string) => {
+            logCompletedBook: (title, author, bookType, pagesRead, notes) => {
                 const now = new Date().toISOString();
                 const newBook: Book = {
                     id: `book-${Date.now()}`,
                     title: title.trim(),
                     author: author.trim(),
+                    bookType,
                     startedAt: now,
                     completedAt: now,
                     isComplete: true,
@@ -91,35 +96,31 @@ export const useBookStore = create<BookState>()(
                     notes,
                 };
 
-                // Award XP
                 const gameStore = useGameStore.getState();
                 gameStore.addGlobalXp(BOOK_GLOBAL_XP_REWARD);
                 gameStore.addSkillXp('Intelligence', BOOK_INTELLIGENCE_XP_REWARD);
 
-                set((state) => ({
-                    completedBooks: [...state.completedBooks, newBook],
-                }));
+                // Award artifact
+                import('./useBookArtifactStore').then(({ useBookArtifactStore }) => {
+                    useBookArtifactStore.getState().awardArtifact(bookType, title);
+                });
+
+                set(state => ({ completedBooks: [...state.completedBooks, newBook] }));
             },
 
-            removeBook: (bookId: string) => {
-                set((state) => ({
+            removeBook: (bookId) => {
+                set(state => ({
                     currentBooks: state.currentBooks.filter(b => b.id !== bookId),
                 }));
             },
 
-            getCompletedCount: () => {
-                return get().completedBooks.length;
-            },
-
-            getInProgressCount: () => {
-                return get().currentBooks.length;
-            },
+            getCompletedCount: () => get().completedBooks.length,
+            getInProgressCount: () => get().currentBooks.length,
         }),
         {
-            name: 'gl-books-storage-v1',
+            name: 'gl-books-storage-v2', // bumped to v2 for bookType field
         }
     )
 );
 
-// Export constants for UI display
 export { BOOK_GLOBAL_XP_REWARD, BOOK_INTELLIGENCE_XP_REWARD };

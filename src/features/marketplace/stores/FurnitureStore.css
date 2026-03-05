@@ -111,7 +111,18 @@
 }
 
 @media (max-width: 768px) {
+    .furniture-store {
+        max-width: 100%;
+        overflow-x: hidden;
+    }
+
     .items-grid {
         grid-template-columns: 1fr;
+        max-width: 100%;
+    }
+
+    .store-section {
+        max-width: 100%;
+        overflow-x: hidden;
     }
 }

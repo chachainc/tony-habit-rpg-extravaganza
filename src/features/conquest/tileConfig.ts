@@ -95,13 +95,13 @@ export interface BoardTile {
 
 // ─── LEVEL GENERATOR ─────────────────────────────
 // Produces a deterministic board given a seed and difficulty.
+// Uses bag-based randomization to prevent clusters.
 export function generateBoard(difficulty: Difficulty, seed: number): BoardTile[] {
     const rng = createSeededRng(seed);
     const preset = DIFFICULTY_PRESETS[difficulty];
 
     // Pick symbols — fill with soldiers first, pad with pets for variety
     const availableSymbols = [...SOLDIER_SYMBOLS];
-    // shuffle pets randomly and add them
     const shuffledPets = [...PET_SYMBOLS].sort(() => rng() - 0.5);
     availableSymbols.push(...shuffledPets);
 
@@ -113,44 +113,70 @@ export function generateBoard(difficulty: Difficulty, seed: number): BoardTile[]
         chosenSymbols.push(availableSymbols[i % availableSymbols.length]);
     }
 
-    // Build flat tile list (each symbol appears exactly 3 times)
-    const flatTiles: { symbolId: string; symbol: TileSymbol }[] = [];
+    // Build flat tile bag (each symbol appears exactly 3 times)
+    const tileBag: { symbolId: string; symbol: TileSymbol }[] = [];
     for (const sym of chosenSymbols) {
         for (let i = 0; i < tilesPerSymbol; i++) {
-            flatTiles.push({ symbolId: sym.id, symbol: sym });
+            tileBag.push({ symbolId: sym.id, symbol: sym });
         }
     }
 
-    // Shuffle tiles
-    for (let i = flatTiles.length - 1; i > 0; i--) {
+    // Fisher-Yates shuffle the bag
+    for (let i = tileBag.length - 1; i > 0; i--) {
         const j = Math.floor(rng() * (i + 1));
-        [flatTiles[i], flatTiles[j]] = [flatTiles[j], flatTiles[i]];
+        [tileBag[i], tileBag[j]] = [tileBag[j], tileBag[i]];
     }
 
-    // Generate layout positions — stacked cluster
+    // Anti-consecutive pass: prevent 2+ identical symbols adjacent in draw order
+    for (let i = 1; i < tileBag.length - 1; i++) {
+        if (tileBag[i].symbolId === tileBag[i - 1].symbolId) {
+            // Find a different tile to swap with (look ahead)
+            for (let j = i + 1; j < tileBag.length; j++) {
+                if (tileBag[j].symbolId !== tileBag[i].symbolId &&
+                    (j + 1 >= tileBag.length || tileBag[j + 1]?.symbolId !== tileBag[i - 1].symbolId)) {
+                    [tileBag[i], tileBag[j]] = [tileBag[j], tileBag[i]];
+                    break;
+                }
+            }
+        }
+    }
+
+    // Generate layout positions — stacked cluster with jitter
     const cols = Math.ceil(Math.sqrt(preset.totalTiles / preset.layers) * 1.5);
     const rows = Math.ceil(preset.totalTiles / (cols * preset.layers));
 
     const tiles: BoardTile[] = [];
     let uid = 0;
 
-    for (let i = 0; i < flatTiles.length; i++) {
-        const layer = i % preset.layers;
-        const posInLayer = Math.floor(i / preset.layers);
+    // Create position indices and shuffle them for randomized spawn positions
+    const positionIndices = Array.from({ length: tileBag.length }, (_, i) => i);
+    for (let i = positionIndices.length - 1; i > 0; i--) {
+        const j = Math.floor(rng() * (i + 1));
+        [positionIndices[i], positionIndices[j]] = [positionIndices[j], positionIndices[i]];
+    }
+
+    for (let idx = 0; idx < tileBag.length; idx++) {
+        const posIdx = positionIndices[idx];
+        const layer = posIdx % preset.layers;
+        const posInLayer = Math.floor(posIdx / preset.layers);
         const row = posInLayer % rows;
         const col = Math.floor(posInLayer / rows);
 
-        // Add a slight stagger for overlapping effect based on layer
+        // Add position jitter for unpredictability
+        const xJitter = (rng() - 0.5) * 0.15;
+        const yJitter = (rng() - 0.5) * 0.15;
+
+        // Layer stagger for overlapping effect
         const xOffset = layer * 0.35;
         const yOffset = layer * 0.35;
 
         tiles.push({
             uid: uid++,
-            symbolId: flatTiles[i].symbolId,
-            symbol: flatTiles[i].symbol,
+            symbolId: tileBag[idx].symbolId,
+            symbol: tileBag[idx].symbol,
             layer,
-            x: col + xOffset,
-            y: row + yOffset,
+            x: col + xOffset + xJitter,
+            y: row + yOffset + yJitter,
             removed: false,
         });
     }

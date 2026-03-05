@@ -14,9 +14,13 @@ import { useMagicStore } from '../../store/useMagicStore';
 import { ITEM_DATABASE } from '../../data/items';
 import { ArenaBattlefieldLayout } from './ArenaBattlefieldLayout';
 import { getDetailedCombatBreakdown, type StatBreakdown } from '../../store/useCombatFormulas';
+import { WeaponEquipWidget } from './WeaponEquipWidget';
+import { useXpWeaponStore } from '../../store/useXpWeaponStore';
 import { Panel } from '../../components/ui/Panel';
+
 import { GachaButton } from '../../components/ui/GachaButton';
 import './Arena.css';
+
 
 const USE_BATTLEFIELD_LAYOUT = true;
 
@@ -467,6 +471,8 @@ export const Arena = ({ onClose }: { onClose: () => void }) => {
                 <div className="modal-overlay arena-overlay">
                     <div className="arena-modal arena-modal--prep">
                         <div className="battle-prep-container">
+                            <div className="prep-bg-layer" style={{ backgroundImage: `url(${getBackgroundForFloor(currentFloor)})` }} />
+                            <div className="prep-bg-overlay" />
                             <div className="prep-header">
                                 <h2>⚔️ BATTLE PREPARATION ⚔️</h2>
                                 <p>Equip your spells and prepare for combat.</p>
@@ -610,7 +616,21 @@ export const Arena = ({ onClose }: { onClose: () => void }) => {
                                                 )}
                                             </div>
 
+                                            {/* Equipped XP Weapon */}
+                                            <div className="active-pet-section">
+                                                <div className="prep-section-label">EQUIPPED WEAPON</div>
+                                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', padding: '0.4rem 0' }}>
+                                                    <WeaponEquipWidget size="md" />
+                                                    {!useXpWeaponStore.getState().equippedWeaponId && (
+                                                        <span style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.35)' }}>
+                                                            No XP weapon equipped
+                                                        </span>
+                                                    )}
+                                                </div>
+                                            </div>
+
                                             {/* Owned Spells */}
+
                                             {allOwnedSpells.length > 0 && (
                                                 <div className="prep-spells-section">
                                                     <div className="prep-section-label">OWNED SPELLS</div>
@@ -634,13 +654,15 @@ export const Arena = ({ onClose }: { onClose: () => void }) => {
                                         onClick={() => setView('map')}
                                         variant="secondary"
                                         size="md"
+                                        className="prep-flee"
                                     >
-                                        Run Away
+                                        🏃 Run Away
                                     </GachaButton>
                                     <GachaButton
                                         onClick={startBattle}
                                         variant="primary"
                                         size="md"
+                                        className="prep-begin"
                                     >
                                         ⚔️ BEGIN BATTLE
                                     </GachaButton>
