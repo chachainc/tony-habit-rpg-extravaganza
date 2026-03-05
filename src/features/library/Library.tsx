@@ -1,44 +1,56 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { BookOpen, Plus, Check, Trash2, Sparkles, Brain } from 'lucide-react';
+import {
+    BookOpen, Plus, Check, Trash2, Sparkles, Brain, Zap
+} from 'lucide-react';
+
 import { useBookStore, BOOK_GLOBAL_XP_REWARD, BOOK_INTELLIGENCE_XP_REWARD } from '../../store/useBookStore';
 import { useGameStore } from '../../store/useGameStore';
+import { BOOK_TYPES, BOOK_TYPE_MAP, getBookBonus, type BookType } from '../../store/useBookArtifactStore';
+import { useBookArtifactStore } from '../../store/useBookArtifactStore';
 import { Card } from '../../components/ui';
+import { BookFusionPanel } from './BookFusionPanel';
 import './Library.css';
+
+type LibraryTab = 'reading' | 'fusion';
 
 export const Library = () => {
     const { currentBooks, completedBooks, addBook, completeBook, removeBook } = useBookStore();
     const { skills, getXpProgress } = useGameStore();
+    const { artifacts, equippedArtifactId } = useBookArtifactStore();
 
+    const [activeTab, setActiveTab] = useState<LibraryTab>('reading');
     const [newTitle, setNewTitle] = useState('');
     const [newAuthor, setNewAuthor] = useState('');
+    const [newBookType, setNewBookType] = useState<BookType>('fantasy');
     const [showCelebration, setShowCelebration] = useState(false);
-    const [celebratedBook, setCelebratedBook] = useState<string>('');
+    const [celebratedBook, setCelebratedBook] = useState('');
+    const [celebratedBookType, setCelebratedBookType] = useState<BookType>('fantasy');
 
     const intelligenceProgress = getXpProgress('Intelligence');
+    const equippedArtifact = equippedArtifactId
+        ? artifacts.find(a => a.id === equippedArtifactId)
+        : null;
 
     const handleAddBook = (e: React.FormEvent) => {
         e.preventDefault();
         if (!newTitle.trim()) return;
-
-        addBook(newTitle, newAuthor || 'Unknown Author');
+        addBook(newTitle, newAuthor || 'Unknown Author', newBookType);
         setNewTitle('');
         setNewAuthor('');
     };
 
-    const handleCompleteBook = (bookId: string, bookTitle: string) => {
+    const handleCompleteBook = (bookId: string, bookTitle: string, bookType: BookType) => {
         setCelebratedBook(bookTitle);
+        setCelebratedBookType(bookType);
         setShowCelebration(true);
         completeBook(bookId);
-
-        setTimeout(() => {
-            setShowCelebration(false);
-        }, 3000);
+        setTimeout(() => setShowCelebration(false), 4000);
     };
 
     return (
         <div className="library-page">
-            {/* Background Layers */}
+            {/* Background */}
             <div className="library-bg">
                 <div className="library-bg__image" />
                 <div className="library-bg__vignette" />
@@ -80,6 +92,25 @@ export const Library = () => {
                             <div className="celebration-sparkles">✨📚✨</div>
                             <h2>Book Completed!</h2>
                             <p className="celebrated-title">"{celebratedBook}"</p>
+
+                            {/* Book Artifact reward */}
+                            <div
+                                className="celebration-artifact-reward"
+                                style={{ borderColor: BOOK_TYPE_MAP[celebratedBookType].color }}
+                            >
+                                <span style={{ fontSize: '1.5rem' }}>
+                                    {BOOK_TYPE_MAP[celebratedBookType].icon}
+                                </span>
+                                <div>
+                                    <div style={{ fontWeight: 800, color: BOOK_TYPE_MAP[celebratedBookType].color }}>
+                                        {BOOK_TYPE_MAP[celebratedBookType].label} Book — Lv1 Unlocked!
+                                    </div>
+                                    <div style={{ fontSize: '0.78rem', opacity: 0.7 }}>
+                                        +{getBookBonus(1)}% {BOOK_TYPE_MAP[celebratedBookType].bonusStat}
+                                    </div>
+                                </div>
+                            </div>
+
                             <div className="celebration-rewards">
                                 <div className="reward-item">
                                     <Sparkles size={20} />
@@ -108,6 +139,22 @@ export const Library = () => {
                     </div>
                     <p className="library-subtitle">Reading fuels your magical power</p>
 
+                    {/* Equipped book artifact indicator */}
+                    {equippedArtifact && (
+                        <div
+                            className="lib-equipped-indicator"
+                            style={{ borderColor: BOOK_TYPE_MAP[equippedArtifact.bookType].color }}
+                        >
+                            <span>{BOOK_TYPE_MAP[equippedArtifact.bookType].icon}</span>
+                            <span>
+                                Equipped: <strong style={{ color: BOOK_TYPE_MAP[equippedArtifact.bookType].color }}>
+                                    {BOOK_TYPE_MAP[equippedArtifact.bookType].label} Book Lv{equippedArtifact.level}
+                                </strong>
+                                {' '}· +{getBookBonus(equippedArtifact.level)}% {BOOK_TYPE_MAP[equippedArtifact.bookType].bonusStat}
+                            </span>
+                        </div>
+                    )}
+
                     {/* Intelligence Stat */}
                     <div className="intelligence-stat">
                         <div className="intelligence-header">
@@ -128,142 +175,229 @@ export const Library = () => {
                     </div>
                 </motion.div>
 
-                {/* Add New Book */}
-                <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.1 }}
-                >
-                    <Card variant="elevated" className="add-book-card">
-                        <h2>📖 Start a New Book</h2>
-                        <p className="difficulty-badge">
-                            <span className="very-hard">VERY HARD</span> Long-term project
-                        </p>
-                        <form onSubmit={handleAddBook} className="add-book-form">
-                            <input
-                                type="text"
-                                placeholder="Book Title"
-                                value={newTitle}
-                                onChange={(e) => setNewTitle(e.target.value)}
-                                className="book-input"
-                            />
-                            <input
-                                type="text"
-                                placeholder="Author (optional)"
-                                value={newAuthor}
-                                onChange={(e) => setNewAuthor(e.target.value)}
-                                className="book-input"
-                            />
-                            <button
-                                type="submit"
-                                disabled={!newTitle.trim()}
-                                className="btn btn--primary"
-                            >
-                                <Plus size={18} />
-                                Start Reading
-                            </button>
-                        </form>
-                    </Card>
-                </motion.div>
+                {/* Tab Toggle */}
+                <div className="lib-tabs">
+                    <button
+                        className={`lib-tab ${activeTab === 'reading' ? 'active' : ''}`}
+                        onClick={() => setActiveTab('reading')}
+                    >
+                        <BookOpen size={15} /> Library
+                    </button>
+                    <button
+                        className={`lib-tab ${activeTab === 'fusion' ? 'active' : ''}`}
+                        onClick={() => setActiveTab('fusion')}
+                    >
+                        <Zap size={15} /> Fuse Books
+                        {artifacts.length > 0 && (
+                            <span className="lib-tab-badge">{artifacts.length}</span>
+                        )}
+                    </button>
+                </div>
 
-                {/* Currently Reading */}
-                <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.2 }}
-                >
-                    <Card variant="elevated" className="current-books">
-                        <h2>📕 Currently Reading</h2>
-                        {currentBooks.length === 0 ? (
-                            <p className="empty-message">
-                                No books in progress. Start reading something!
-                            </p>
-                        ) : (
-                            <div className="books-list">
-                                {currentBooks.map((book) => (
-                                    <div key={book.id} className="book-item in-progress">
-                                        <div className="book-cover">📙</div>
-                                        <div className="book-info">
-                                            <h3 className="book-title">{book.title}</h3>
-                                            <p className="book-author">by {book.author}</p>
-                                            <p className="book-started">
-                                                Started: {new Date(book.startedAt).toLocaleDateString()}
-                                            </p>
-                                        </div>
-                                        <div className="book-actions">
+                {/* ── READING TAB ── */}
+                {activeTab === 'reading' && (
+                    <>
+                        {/* Add New Book */}
+                        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
+                            <Card variant="elevated" className="add-book-card">
+                                <h2>📖 Start a New Book</h2>
+                                <form onSubmit={handleAddBook} className="add-book-form">
+                                    <input
+                                        type="text"
+                                        placeholder="Book Title"
+                                        value={newTitle}
+                                        onChange={e => setNewTitle(e.target.value)}
+                                        className="book-input"
+                                    />
+                                    <input
+                                        type="text"
+                                        placeholder="Author (optional)"
+                                        value={newAuthor}
+                                        onChange={e => setNewAuthor(e.target.value)}
+                                        className="book-input"
+                                    />
+
+                                    {/* Book Type Selector */}
+                                    <div className="lib-type-selector">
+                                        {BOOK_TYPES.map(t => (
                                             <button
-                                                className="complete-btn"
-                                                onClick={() => handleCompleteBook(book.id, book.title)}
+                                                key={t.id}
+                                                type="button"
+                                                className={`lib-type-btn ${newBookType === t.id ? 'active' : ''}`}
+                                                style={newBookType === t.id
+                                                    ? { borderColor: t.color, color: t.color, background: `${t.color}18` }
+                                                    : {}}
+                                                onClick={() => setNewBookType(t.id)}
                                             >
-                                                <Check size={18} />
-                                                Complete
+                                                {t.icon}
+                                                <span>{t.label.split(' /')[0]}</span>
                                             </button>
-                                            <button
-                                                className="remove-btn"
-                                                onClick={() => removeBook(book.id)}
-                                            >
-                                                <Trash2 size={18} />
-                                            </button>
-                                        </div>
+                                        ))}
                                     </div>
-                                ))}
-                            </div>
-                        )}
-                    </Card>
-                </motion.div>
 
-                {/* Completed Books Shelf */}
-                <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.3 }}
-                >
-                    <Card variant="elevated" className="completed-shelf">
-                        <h2>📚 Completed Books ({completedBooks.length})</h2>
-                        <p className="shelf-subtitle">Your permanent collection of knowledge</p>
-
-                        {completedBooks.length === 0 ? (
-                            <p className="empty-message">
-                                Complete your first book to add it to your shelf!
-                            </p>
-                        ) : (
-                            <div className="bookshelf">
-                                {completedBooks.map((book, index) => (
-                                    <motion.div
-                                        key={book.id}
-                                        className="shelf-book"
-                                        initial={{ opacity: 0, y: 20 }}
-                                        animate={{ opacity: 1, y: 0 }}
-                                        transition={{ delay: index * 0.05 }}
-                                        title={`${book.title} by ${book.author}\nCompleted: ${book.completedAt ? new Date(book.completedAt).toLocaleDateString() : 'N/A'}`}
+                                    {/* Bonus preview */}
+                                    <div
+                                        className="lib-type-preview"
+                                        style={{ color: BOOK_TYPE_MAP[newBookType].color }}
                                     >
-                                        <div className="shelf-book__spine" />
-                                        <div className="shelf-book__cover">📗</div>
-                                        <div className="shelf-book__title">{book.title}</div>
-                                    </motion.div>
-                                ))}
-                            </div>
-                        )}
-                    </Card>
-                </motion.div>
+                                        📗 Completing this book will unlock a{' '}
+                                        <strong>{BOOK_TYPE_MAP[newBookType].label} Book Lv1</strong>{' '}
+                                        (+{getBookBonus(1)}% {BOOK_TYPE_MAP[newBookType].bonusStat})
+                                    </div>
 
-                {/* Info Card */}
-                <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.4 }}
-                >
-                    <Card variant="glass" className="info-card">
-                        <h3>📖 How Books Work</h3>
-                        <ul className="info-list">
-                            <li><strong>Start a Book:</strong> Add any book you're reading</li>
-                            <li><strong>No Daily Reset:</strong> Books are long-term projects</li>
-                            <li><strong>Complete:</strong> Mark finished to earn rewards</li>
-                            <li><strong>Rewards:</strong> +{BOOK_GLOBAL_XP_REWARD} Global XP, +{BOOK_INTELLIGENCE_XP_REWARD} Intelligence XP</li>
-                            <li><strong>Magic Power:</strong> Intelligence increases Max MP and Magic Attack</li>
-                        </ul>
-                    </Card>
-                </motion.div>
+                                    <button
+                                        type="submit"
+                                        disabled={!newTitle.trim()}
+                                        className="btn btn--primary"
+                                    >
+                                        <Plus size={18} />
+                                        Start Reading
+                                    </button>
+                                </form>
+                            </Card>
+                        </motion.div>
+
+                        {/* Currently Reading */}
+                        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
+                            <Card variant="elevated" className="current-books">
+                                <h2>📕 Currently Reading</h2>
+                                {currentBooks.length === 0 ? (
+                                    <p className="empty-message">No books in progress. Start reading something!</p>
+                                ) : (
+                                    <div className="books-list">
+                                        {currentBooks.map(book => {
+                                            const typeDef = BOOK_TYPE_MAP[book.bookType];
+                                            return (
+                                                <div key={book.id} className="book-item in-progress">
+                                                    <div
+                                                        className="book-cover"
+                                                        style={{ color: typeDef?.color }}
+                                                    >
+                                                        {typeDef?.icon ?? '📙'}
+                                                    </div>
+                                                    <div className="book-info">
+                                                        <h3 className="book-title">{book.title}</h3>
+                                                        <p className="book-author">by {book.author}</p>
+                                                        <div className="book-meta-row">
+                                                            <span
+                                                                className="book-type-badge"
+                                                                style={{
+                                                                    background: `${typeDef?.color ?? '#666'}22`,
+                                                                    color: typeDef?.color ?? '#aaa',
+                                                                    border: `1px solid ${typeDef?.color ?? '#666'}44`
+                                                                }}
+                                                            >
+                                                                {typeDef?.label ?? book.bookType}
+                                                            </span>
+                                                            <span className="book-started">
+                                                                Started: {new Date(book.startedAt).toLocaleDateString()}
+                                                            </span>
+                                                        </div>
+                                                    </div>
+                                                    <div className="book-actions">
+                                                        <button
+                                                            className="complete-btn"
+                                                            onClick={() => handleCompleteBook(book.id, book.title, book.bookType)}
+                                                        >
+                                                            <Check size={18} />
+                                                            Complete
+                                                        </button>
+                                                        <button className="remove-btn" onClick={() => removeBook(book.id)}>
+                                                            <Trash2 size={18} />
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                )}
+                            </Card>
+                        </motion.div>
+
+                        {/* Completed Books Shelf */}
+                        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}>
+                            <Card variant="elevated" className="completed-shelf">
+                                <h2>📚 Completed Books ({completedBooks.length})</h2>
+                                <p className="shelf-subtitle">Your permanent collection of knowledge</p>
+                                {completedBooks.length === 0 ? (
+                                    <p className="empty-message">Complete your first book to add it to your shelf!</p>
+                                ) : (
+                                    <div className="books-list">
+                                        {completedBooks.map((book, index) => {
+                                            const typeDef = BOOK_TYPE_MAP[book.bookType];
+                                            return (
+                                                <motion.div
+                                                    key={book.id}
+                                                    className="book-item completed-book-item"
+                                                    initial={{ opacity: 0, y: 20 }}
+                                                    animate={{ opacity: 1, y: 0 }}
+                                                    transition={{ delay: index * 0.04 }}
+                                                >
+                                                    <div
+                                                        className="book-cover"
+                                                        style={{ color: typeDef?.color, fontSize: '1.6rem' }}
+                                                    >
+                                                        {typeDef?.icon ?? '📗'}
+                                                    </div>
+                                                    <div className="book-info">
+                                                        <h3 className="book-title">{book.title}</h3>
+                                                        <p className="book-author">by {book.author}</p>
+                                                        <div className="book-meta-row">
+                                                            <span
+                                                                className="book-type-badge"
+                                                                style={{
+                                                                    background: `${typeDef?.color ?? '#666'}22`,
+                                                                    color: typeDef?.color ?? '#aaa',
+                                                                    border: `1px solid ${typeDef?.color ?? '#666'}44`
+                                                                }}
+                                                            >
+                                                                {typeDef?.label ?? book.bookType}
+                                                            </span>
+                                                            <span className="book-started">
+                                                                Completed: {book.completedAt ? new Date(book.completedAt).toLocaleDateString() : 'N/A'}
+                                                            </span>
+                                                        </div>
+                                                        <div
+                                                            className="book-reward-tag"
+                                                            style={{ color: typeDef?.color }}
+                                                        >
+                                                            🏆 Reward: {typeDef?.label ?? 'Book'} Book Lv1
+                                                        </div>
+                                                    </div>
+                                                </motion.div>
+                                            );
+                                        })}
+                                    </div>
+                                )}
+                            </Card>
+                        </motion.div>
+
+                        {/* Info Card */}
+                        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }}>
+                            <Card variant="glass" className="info-card">
+                                <h3>📖 Book Artifact System</h3>
+                                <ul className="info-list">
+                                    <li><strong>Complete a Book:</strong> Earn a Lv1 Book Artifact of that type</li>
+                                    <li><strong>Fuse Books:</strong> Combine 2 of same type &amp; level → next level (up to Lv5)</li>
+                                    <li><strong>Equip:</strong> One artifact active at a time — bonus applies in Arena</li>
+                                    <li><strong>Fantasy 📘:</strong> +% Arena Combat XP (light blue)</li>
+                                    <li><strong>History 📖:</strong> +% Boss Damage (brown)</li>
+                                    <li><strong>Business 📓:</strong> +% Marketplace rewards (silver)</li>
+                                    <li><strong>Self-Help 📒:</strong> +% All Skill XP gain (yellow)</li>
+                                </ul>
+                            </Card>
+                        </motion.div>
+                    </>
+                )}
+
+                {/* ── FUSION TAB ── */}
+                {activeTab === 'fusion' && (
+                    <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}>
+                        <Card variant="elevated">
+                            <BookFusionPanel />
+                        </Card>
+                    </motion.div>
+                )}
             </div>
         </div>
     );

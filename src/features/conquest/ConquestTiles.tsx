@@ -37,13 +37,8 @@ export const ConquestTiles = ({ onComplete, onClose, canPlay, canPlayImpossible 
     const [result, setResult] = useState<'win' | 'loss' | null>(null);
     const [clearingIds, setClearingIds] = useState<Set<number>>(new Set());
     const [seed] = useState(() => Math.floor(Math.random() * 2147483647));
-    // Stable random offsets for tray tiles (visual scatter)
-    const trayOffsets = useState(() =>
-        Array.from({ length: 7 }, () => ({
-            dy: (Math.random() - 0.5) * 12,
-            rotate: (Math.random() - 0.5) * 8,
-        }))
-    )[0];
+    const [trayFull, setTrayFull] = useState(false);
+    const [trayFullMessage, setTrayFullMessage] = useState(false);
 
     // Power-up state
     const [ownedRemove, setOwnedRemove] = useState(0);
@@ -165,11 +160,16 @@ export const ConquestTiles = ({ onComplete, onClose, canPlay, canPlayImpossible 
             setTray(newTray);
 
             // Check lose: tray full
-            if (newTray.length >= TRAY_CAPACITY) {
+            if (newTray.length >= trayCapacity) {
+                // Trigger failure animation
+                setTrayFull(true);
+                setTrayFullMessage(true);
+                setTimeout(() => setTrayFull(false), 600);
                 setTimeout(() => {
+                    setTrayFullMessage(false);
                     setResult('loss');
                     setPhase('result');
-                }, 300);
+                }, 800);
             }
 
             // Check win: board clear
@@ -250,6 +250,9 @@ export const ConquestTiles = ({ onComplete, onClose, canPlay, canPlayImpossible 
             onComplete(result, difficulty);
         }
     }, [result, phase]);
+
+    // ─── TRAY CAPACITY (difficulty-scaled) ─────────
+    const trayCapacity = difficulty >= 3 ? 6 : TRAY_CAPACITY;
 
     // ─── COMPUTE LAYOUT BOUNDS ────────────────────
     const activeTiles = board.filter(t => !t.removed);
@@ -372,154 +375,170 @@ export const ConquestTiles = ({ onComplete, onClose, canPlay, canPlayImpossible 
 
     // ─── RENDER: GAME BOARD ───────────────────────
     const renderGame = () => (
-        <div className="tiles-game-area">
-            {/* Left: Power buttons */}
-            <div className="tiles-powers">
-                <div style={{ position: 'relative' }}>
-                    <button
-                        className="tiles-power-btn"
-                        disabled={ownedRemove <= 0}
-                        onClick={useRemove}
-                    >
-                        🧲
-                        <span className="tiles-power-badge">{ownedRemove}</span>
-                        <span className="tiles-power-label">Remove</span>
-                    </button>
-                    <div
-                        style={{
-                            position: 'absolute', top: -4, right: -14,
-                            width: 20, height: 20, borderRadius: '50%',
-                            background: 'rgba(245,158,11,0.9)', color: '#000',
-                            fontSize: '0.8rem', fontWeight: 800,
-                            display: 'flex', alignItems: 'center', justifyContent: 'center',
-                            cursor: 'pointer', border: '2px solid #0f2847',
-                        }}
-                        onClick={() => setPurchaseModal('remove')}
-                    >+</div>
+        <div className="tiles-game-area tiles-game-area--horizontal">
+            {/* Top row: Powers + Board */}
+            <div className="tiles-game-top">
+                {/* Left: Power buttons */}
+                <div className="tiles-powers">
+                    <div style={{ position: 'relative' }}>
+                        <button
+                            className="tiles-power-btn"
+                            disabled={ownedRemove <= 0}
+                            onClick={useRemove}
+                        >
+                            🧲
+                            <span className="tiles-power-badge">{ownedRemove}</span>
+                            <span className="tiles-power-label">Remove</span>
+                        </button>
+                        <div
+                            style={{
+                                position: 'absolute', top: -4, right: -14,
+                                width: 20, height: 20, borderRadius: '50%',
+                                background: 'rgba(245,158,11,0.9)', color: '#000',
+                                fontSize: '0.8rem', fontWeight: 800,
+                                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                cursor: 'pointer', border: '2px solid #0f2847',
+                            }}
+                            onClick={() => setPurchaseModal('remove')}
+                        >+</div>
+                    </div>
+
+                    <div style={{ position: 'relative' }}>
+                        <button
+                            className="tiles-power-btn"
+                            disabled={ownedUndo <= 0 || history.current.length === 0}
+                            onClick={useUndo}
+                        >
+                            ↩️
+                            <span className="tiles-power-badge">{ownedUndo}</span>
+                            <span className="tiles-power-label">Undo</span>
+                        </button>
+                        <div
+                            style={{
+                                position: 'absolute', top: -4, right: -14,
+                                width: 20, height: 20, borderRadius: '50%',
+                                background: 'rgba(245,158,11,0.9)', color: '#000',
+                                fontSize: '0.8rem', fontWeight: 800,
+                                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                cursor: 'pointer', border: '2px solid #0f2847',
+                            }}
+                            onClick={() => setPurchaseModal('undo')}
+                        >+</div>
+                    </div>
+
+                    <div style={{ position: 'relative' }}>
+                        <button
+                            className="tiles-power-btn"
+                            disabled={ownedShuffle <= 0}
+                            onClick={useShuffle}
+                        >
+                            🔀
+                            <span className="tiles-power-badge">{ownedShuffle}</span>
+                            <span className="tiles-power-label">Shuffle</span>
+                        </button>
+                        <div
+                            style={{
+                                position: 'absolute', top: -4, right: -14,
+                                width: 20, height: 20, borderRadius: '50%',
+                                background: 'rgba(245,158,11,0.9)', color: '#000',
+                                fontSize: '0.8rem', fontWeight: 800,
+                                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                cursor: 'pointer', border: '2px solid #0f2847',
+                            }}
+                            onClick={() => setPurchaseModal('shuffle')}
+                        >+</div>
+                    </div>
                 </div>
 
-                <div style={{ position: 'relative' }}>
-                    <button
-                        className="tiles-power-btn"
-                        disabled={ownedUndo <= 0 || history.current.length === 0}
-                        onClick={useUndo}
-                    >
-                        ↩️
-                        <span className="tiles-power-badge">{ownedUndo}</span>
-                        <span className="tiles-power-label">Undo</span>
-                    </button>
-                    <div
-                        style={{
-                            position: 'absolute', top: -4, right: -14,
-                            width: 20, height: 20, borderRadius: '50%',
-                            background: 'rgba(245,158,11,0.9)', color: '#000',
-                            fontSize: '0.8rem', fontWeight: 800,
-                            display: 'flex', alignItems: 'center', justifyContent: 'center',
-                            cursor: 'pointer', border: '2px solid #0f2847',
-                        }}
-                        onClick={() => setPurchaseModal('undo')}
-                    >+</div>
-                </div>
-
-                <div style={{ position: 'relative' }}>
-                    <button
-                        className="tiles-power-btn"
-                        disabled={ownedShuffle <= 0}
-                        onClick={useShuffle}
-                    >
-                        🔀
-                        <span className="tiles-power-badge">{ownedShuffle}</span>
-                        <span className="tiles-power-label">Shuffle</span>
-                    </button>
-                    <div
-                        style={{
-                            position: 'absolute', top: -4, right: -14,
-                            width: 20, height: 20, borderRadius: '50%',
-                            background: 'rgba(245,158,11,0.9)', color: '#000',
-                            fontSize: '0.8rem', fontWeight: 800,
-                            display: 'flex', alignItems: 'center', justifyContent: 'center',
-                            cursor: 'pointer', border: '2px solid #0f2847',
-                        }}
-                        onClick={() => setPurchaseModal('shuffle')}
-                    >+</div>
+                {/* Center: Board */}
+                <div className="tiles-board-container">
+                    <div className="tiles-board" style={{ width: boardWidth, height: boardHeight }}>
+                        <AnimatePresence>
+                            {board.filter(t => !t.removed).map(tile => {
+                                const blocked = isTileBlocked(tile, board);
+                                return (
+                                    <motion.div
+                                        key={tile.uid}
+                                        className={`tiles-board-tile ${blocked ? 'blocked' : 'selectable'}`}
+                                        style={{
+                                            left: tile.x * gap,
+                                            top: tile.y * gap,
+                                            zIndex: tile.layer * 10,
+                                            width: tileSize,
+                                            height: tileSize,
+                                        }}
+                                        initial={{ scale: 0, opacity: 0 }}
+                                        animate={{ scale: 1, opacity: 1 }}
+                                        exit={{ scale: 0, opacity: 0, y: -20 }}
+                                        transition={{ duration: 0.2 }}
+                                        onClick={() => !blocked && selectTile(tile)}
+                                        whileHover={!blocked ? { scale: 1.1, y: -3 } : {}}
+                                        whileTap={!blocked ? { scale: 0.9 } : {}}
+                                    >
+                                        {tile.symbol.imageSrc ? (
+                                            <img className="tile-face-img" src={tile.symbol.imageSrc} alt={tile.symbol.label} />
+                                        ) : (
+                                            <span className="tile-face">{tile.symbol.emoji}</span>
+                                        )}
+                                        <span className={`tile-rarity-dot ${tile.symbol.rarity}`} />
+                                    </motion.div>
+                                );
+                            })}
+                        </AnimatePresence>
+                    </div>
                 </div>
             </div>
 
-            {/* Center: Board */}
-            <div className="tiles-board-container">
-                <div className="tiles-board" style={{ width: boardWidth, height: boardHeight }}>
-                    <AnimatePresence>
-                        {board.filter(t => !t.removed).map(tile => {
-                            const blocked = isTileBlocked(tile, board);
+            {/* Bottom: Horizontal Tray */}
+            <div className={`tiles-tray-bar ${trayFull ? 'tray-shake tray-flash' : ''}`}>
+                <div className="tiles-tray-label">
+                    Tray {tray.length}/{trayCapacity}
+                    <span style={{ marginLeft: '0.4rem', fontSize: '0.7rem', color: '#ef4444', opacity: tray.length >= trayCapacity - 2 ? 1 : 0.4 }}>
+                        {trayCapacity - tray.length === 0 ? '⚠ FULL' : `${trayCapacity - tray.length} left`}
+                    </span>
+                </div>
+                <div className="tiles-tray-horizontal" style={{ width: `${trayCapacity * 60}px` }}>
+                    {Array.from({ length: trayCapacity }).map((_, i) => {
+                        const tile = tray[i];
+                        if (tile) {
+                            const isClearing = clearingIds.has(tile.uid);
+                            const matchCount = tray.filter(t => t.symbolId === tile.symbolId).length;
+                            const isMatching = matchCount >= 2 && !isClearing;
                             return (
                                 <motion.div
                                     key={tile.uid}
-                                    className={`tiles-board-tile ${blocked ? 'blocked' : 'selectable'}`}
-                                    style={{
-                                        left: tile.x * gap,
-                                        top: tile.y * gap,
-                                        zIndex: tile.layer * 10,
-                                        width: tileSize,
-                                        height: tileSize,
-                                    }}
-                                    initial={{ scale: 0, opacity: 0 }}
-                                    animate={{ scale: 1, opacity: 1 }}
-                                    exit={{ scale: 0, opacity: 0, y: -20 }}
-                                    transition={{ duration: 0.2 }}
-                                    onClick={() => !blocked && selectTile(tile)}
-                                    whileHover={!blocked ? { scale: 1.1, y: -3 } : {}}
+                                    className={`tiles-tray-tile ${isClearing ? 'clearing' : ''} ${isMatching ? 'matching' : ''}`}
+                                    initial={{ y: -30, opacity: 0, scale: 0.6 }}
+                                    animate={{ y: 0, opacity: 1, scale: 1 }}
+                                    transition={{ duration: 0.25, type: 'spring', stiffness: 300 }}
+                                    layout
                                 >
                                     {tile.symbol.imageSrc ? (
-                                        <img className="tile-face-img" src={tile.symbol.imageSrc} alt={tile.symbol.label} />
+                                        <img className="tile-face-img" src={tile.symbol.imageSrc} alt={tile.symbol.label} style={{ width: 36, height: 36 }} />
                                     ) : (
-                                        <span className="tile-face">{tile.symbol.emoji}</span>
+                                        <span className="tile-face" style={{ fontSize: '1.3rem' }}>{tile.symbol.emoji}</span>
                                     )}
-                                    <span className={`tile-rarity-dot ${tile.symbol.rarity}`} />
                                 </motion.div>
                             );
-                        })}
-                    </AnimatePresence>
-                </div>
-            </div>
-
-            {/* Right: Tray */}
-            <div className="tiles-tray-column">
-                <div className="tiles-tray-label">
-                    Tray {tray.length}/{TRAY_CAPACITY}
-                    <span style={{ marginLeft: '0.4rem', fontSize: '0.7rem', color: '#ef4444', opacity: tray.length >= TRAY_CAPACITY - 2 ? 1 : 0.4 }}>
-                        {TRAY_CAPACITY - tray.length === 0 ? '⚠ FULL' : `${TRAY_CAPACITY - tray.length} left`}
-                    </span>
-                </div>
-                {/* Only show REMAINING empty slots, not always 7 */}
-                <div className="tiles-tray" style={{ height: `${(TRAY_CAPACITY) * 54}px` }}>
-                    {/* Filled tiles */}
-                    {tray.map((tile, i) => {
-                        const isClearing = clearingIds.has(tile.uid);
-                        const matchCount = tray.filter(t => t.symbolId === tile.symbolId).length;
-                        const isMatching = matchCount >= 2 && !isClearing;
-                        const offset = trayOffsets[i] || { dy: 0, rotate: 0 };
-
+                        }
                         return (
-                            <motion.div
-                                key={tile.uid}
-                                className={`tiles-tray-tile ${isClearing ? 'clearing' : ''} ${isMatching ? 'matching' : ''}`}
-                                initial={{ x: -40, opacity: 0 }}
-                                animate={{ x: 0, opacity: 1, y: offset.dy, rotate: offset.rotate }}
-                                transition={{ duration: 0.25 }}
-                            >
-                                {tile.symbol.imageSrc ? (
-                                    <img className="tile-face-img" src={tile.symbol.imageSrc} alt={tile.symbol.label} style={{ width: 36, height: 36 }} />
-                                ) : (
-                                    <span className="tile-face" style={{ fontSize: '1.3rem' }}>{tile.symbol.emoji}</span>
-                                )}
-                            </motion.div>
+                            <div key={`empty-${i}`} className="tiles-tray-slot" />
                         );
                     })}
-                    {/* Remaining empty slots — only show how many are left */}
-                    {Array.from({ length: TRAY_CAPACITY - tray.length }).map((_, i) => (
-                        <div key={`empty-${i}`} className="tiles-tray-slot" style={{ opacity: 0.35 }} />
-                    ))}
                 </div>
+                {/* Tray Full Message */}
+                <AnimatePresence>
+                    {trayFullMessage && (
+                        <motion.div
+                            className="tray-full-message"
+                            initial={{ opacity: 0, y: 10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            exit={{ opacity: 0, y: -10 }}
+                        >
+                            🚫 TRAY FULL!
+                        </motion.div>
+                    )}
+                </AnimatePresence>
             </div>
 
             {/* Result overlay */}

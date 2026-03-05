@@ -69,6 +69,39 @@
     transform: scale(1.05);
 }
 
+/* Codex shortcut button */
+.marketplace-codex-btn {
+    position: absolute;
+    top: 2rem;
+    left: calc(2rem + 180px);
+    z-index: 100;
+    padding: 0.6rem 1.2rem;
+    background: rgba(99, 102, 241, 0.85);
+    border: 2px solid #6366f1;
+    border-radius: var(--radius);
+    color: white;
+    font-weight: 700;
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.marketplace-codex-btn:hover {
+    background: #6366f1;
+    transform: scale(1.05);
+}
+
+@media (max-width: 768px) {
+    .marketplace-codex-btn {
+        top: 0.75rem;
+        left: calc(0.75rem + 145px);
+        padding: 0.4rem 0.8rem;
+        font-size: 0.8rem;
+    }
+}
+
+
+
 /* Town grid container */
 .marketplace-grid {
     position: relative;

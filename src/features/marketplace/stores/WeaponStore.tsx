@@ -9,8 +9,10 @@ import { canPurchaseItem } from '../../../data/unlocks';
 import { useState, useCallback } from 'react';
 import { PurchaseConfirmModal } from '../../../components/ui/PurchaseConfirmModal';
 import { PurchaseSuccessOverlay } from '../../../components/ui/PurchaseSuccessOverlay';
+import { XpWeaponsStore } from '../XpWeaponsStore';
 import weaponStoreBg from '../../../assets/backgrounds/weapon_store.png';
 import './WeaponStore.css';
+
 
 interface Props {
     onClose: () => void;
@@ -31,10 +33,14 @@ export const WeaponStore = ({ onClose }: Props) => {
     const { ownsMarketplaceItem, purchaseMarketplaceItem, marketplaceOwned } = useInventoryStore();
     const { playPurchaseSound, playSuccessSound, playUnlockSound } = useSoundStore();
 
+    // Sub-tab
+    const [storeTab, setStoreTab] = useState<'shop' | 'forge'>('shop');
+
     // Modal state
     const [confirmItem, setConfirmItem] = useState<Item | null>(null);
     const [successItem, setSuccessItem] = useState<Item | null>(null);
     const [showSuccess, setShowSuccess] = useState(false);
+
 
     // Calculate player's attack stat from skills
     const calculateAttack = () => {
@@ -95,61 +101,83 @@ export const WeaponStore = ({ onClose }: Props) => {
                     { x: 75, y: 30, color: '#ff4444', intensity: 1.2 },
                 ]}
             >
-                <div className="weapon-store">
-                    <div className="store-section">
-                        <h3 className="section-title">Weapons & Arms</h3>
-                        <p className="section-description">
-                            Unlock powerful weapons by increasing your Attack stat. Stronger weapons help you defeat tougher enemies!
-                        </p>
-                        <div className="player-stats">
-                            <span className="stat-badge">⚔️ Your Attack: {playerAttack}</span>
-                            <span className="stat-badge">🗡️ Weapons Owned: {ownedCount}</span>
-                        </div>
-
-                        <div className="items-grid">
-                            {WEAPON_ITEMS.map((itemId) => {
-                                const item = ITEM_DATABASE[itemId];
-                                if (!item) return null;
-
-                                const playerState = {
-                                    skills,
-                                    defense: 0,
-                                    attack: playerAttack,
-                                    ownedItems: marketplaceOwned,
-                                };
-
-                                const purchaseCheck = canPurchaseItem(item, playerState, currencyStore);
-                                const isOwned = ownsMarketplaceItem(itemId);
-
-                                return (
-                                    <ItemCard
-                                        key={itemId}
-                                        item={item}
-                                        isUnlocked={purchaseCheck.canUnlock}
-                                        isOwned={isOwned}
-                                        canAfford={purchaseCheck.missingCurrency.length === 0}
-                                        missingRequirements={purchaseCheck.missingRequirements}
-                                        missingCurrency={purchaseCheck.missingCurrency}
-                                        onPurchase={() => handlePurchaseClick(itemId)}
-                                    />
-                                );
-                            })}
-                        </div>
-                    </div>
-
-                    <div className="store-info">
-                        <div className="info-card">
-                            <h4>💪 How to Increase Attack</h4>
-                            <p>Your Attack stat is calculated from:</p>
-                            <ul>
-                                <li><strong>Strength</strong> - Weightlifting, resistance training</li>
-                                <li><strong>Flexibility</strong> - Stretching, yoga</li>
-                                <li><strong>Cardio</strong> - Running, cycling, swimming</li>
-                            </ul>
-                            <p className="formula">Attack = Average(Strength, Flexibility, Cardio) × 0.5</p>
-                        </div>
-                    </div>
+                {/* Sub-tab toggle */}
+                <div className="weapon-store-tabs">
+                    <button
+                        className={`weapon-store-tab ${storeTab === 'shop' ? 'active' : ''}`}
+                        onClick={() => setStoreTab('shop')}
+                    >
+                        ⚔️ Shop
+                    </button>
+                    <button
+                        className={`weapon-store-tab ${storeTab === 'forge' ? 'active' : ''}`}
+                        onClick={() => setStoreTab('forge')}
+                    >
+                        🔥 XP Forge
+                    </button>
                 </div>
+
+                {/* XP Weapons Forge */}
+                {storeTab === 'forge' && <XpWeaponsStore />}
+
+                {/* Existing coin shop */}
+                {storeTab === 'shop' && (
+                    <div className="weapon-store">
+                        <div className="store-section">
+                            <h3 className="section-title">Weapons & Arms</h3>
+                            <p className="section-description">
+                                Unlock powerful weapons by increasing your Attack stat. Stronger weapons help you defeat tougher enemies!
+                            </p>
+                            <div className="player-stats">
+                                <span className="stat-badge">⚔️ Your Attack: {playerAttack}</span>
+                                <span className="stat-badge">🗡️ Weapons Owned: {ownedCount}</span>
+                            </div>
+
+                            <div className="items-grid">
+                                {WEAPON_ITEMS.map((itemId) => {
+                                    const item = ITEM_DATABASE[itemId];
+                                    if (!item) return null;
+
+                                    const playerState = {
+                                        skills,
+                                        defense: 0,
+                                        attack: playerAttack,
+                                        ownedItems: marketplaceOwned,
+                                    };
+
+                                    const purchaseCheck = canPurchaseItem(item, playerState, currencyStore);
+                                    const isOwned = ownsMarketplaceItem(itemId);
+
+                                    return (
+                                        <ItemCard
+                                            key={itemId}
+                                            item={item}
+                                            isUnlocked={purchaseCheck.canUnlock}
+                                            isOwned={isOwned}
+                                            canAfford={purchaseCheck.missingCurrency.length === 0}
+                                            missingRequirements={purchaseCheck.missingRequirements}
+                                            missingCurrency={purchaseCheck.missingCurrency}
+                                            onPurchase={() => handlePurchaseClick(itemId)}
+                                        />
+                                    );
+                                })}
+                            </div>
+                        </div>
+
+                        <div className="store-info">
+                            <div className="info-card">
+                                <h4>💪 How to Increase Attack</h4>
+                                <p>Your Attack stat is calculated from:</p>
+                                <ul>
+                                    <li><strong>Strength</strong> - Weightlifting, resistance training</li>
+                                    <li><strong>Flexibility</strong> - Stretching, yoga</li>
+                                    <li><strong>Cardio</strong> - Running, cycling, swimming</li>
+                                </ul>
+                                <p className="formula">Attack = Average(Strength, Flexibility, Cardio) × 0.5</p>
+                            </div>
+                        </div>
+                    </div>
+                )}
             </StoreLayout>
 
             {/* Purchase Confirmation Modal */}

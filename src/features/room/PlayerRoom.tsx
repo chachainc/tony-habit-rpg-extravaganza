@@ -400,8 +400,8 @@ export const PlayerRoom = ({ onClose }: { onClose: () => void }) => {
                                 style={{
                                     left: interactables.bookshelf.x * ROOM_LAYOUT.tileSize,
                                     top: interactables.bookshelf.y * ROOM_LAYOUT.tileSize,
-                                    width: ROOM_LAYOUT.tileSize * 2.5,
-                                    height: ROOM_LAYOUT.gridSize.height * ROOM_LAYOUT.tileSize * 0.6,
+                                    width: ROOM_LAYOUT.tileSize * 1.8,
+                                    height: ROOM_LAYOUT.gridSize.height * ROOM_LAYOUT.tileSize * 0.35,
                                 }}
                                 onPointerUp={(e) => { e.stopPropagation(); setActivePanel('bookshelf'); }}
                             >
@@ -415,8 +415,8 @@ export const PlayerRoom = ({ onClose }: { onClose: () => void }) => {
                                 style={{
                                     left: interactables.trophy.x * ROOM_LAYOUT.tileSize - ROOM_LAYOUT.tileSize,
                                     top: interactables.trophy.y * ROOM_LAYOUT.tileSize,
-                                    width: ROOM_LAYOUT.tileSize * 2.5,
-                                    height: ROOM_LAYOUT.gridSize.height * ROOM_LAYOUT.tileSize * 0.6,
+                                    width: ROOM_LAYOUT.tileSize * 1.8,
+                                    height: ROOM_LAYOUT.gridSize.height * ROOM_LAYOUT.tileSize * 0.35,
                                 }}
                                 onPointerUp={(e) => { e.stopPropagation(); setActivePanel('trophy'); }}
                             >

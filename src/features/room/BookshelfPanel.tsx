@@ -3,9 +3,15 @@ import { Plus, X, List, Check } from 'lucide-react';
 import { useBookStore } from '../../store/useBookStore';
 import { useBookTrophyStore } from '../../store/useBookTrophyStore';
 import { useGameStore } from '../../store/useGameStore';
+import { BOOK_TYPES, type BookType } from '../../store/useBookArtifactStore';
 import dayjs from 'dayjs';
 import { Panel } from '../../components/ui/Panel';
 import './RoomPanels.css';
+
+const BOOK_TYPE_IDS: BookType[] = BOOK_TYPES.map((type) => type.id);
+
+const coerceBookType = (value: string): BookType =>
+    BOOK_TYPE_IDS.find((type) => type === value) ?? 'fantasy';
 
 export const BookshelfPanel = ({ onClose }: { onClose: () => void }) => {
     const [activeTab, setActiveTab] = useState<'history' | 'log'>('log');
@@ -19,6 +25,7 @@ export const BookshelfPanel = ({ onClose }: { onClose: () => void }) => {
     const [pages, setPages] = useState('');
     const [notes, setNotes] = useState('');
     const [isCompleted, setIsCompleted] = useState(true);
+    const [bookType, setBookType] = useState<BookType>('fantasy');
 
     const handleLogBook = (e: React.FormEvent) => {
         e.preventDefault();
@@ -27,11 +34,11 @@ export const BookshelfPanel = ({ onClose }: { onClose: () => void }) => {
         const pagesNum = parseInt(pages) || undefined;
 
         if (isCompleted) {
-            logCompletedBook(title, author, pagesNum, notes);
+            logCompletedBook(title, author, bookType, pagesNum, notes);
             incrementBooksRead();
             addGlobalXp(50); // Reading grants global XP
         } else {
-            addBook(title, author, pagesNum, notes);
+            addBook(title, author, bookType, pagesNum, notes);
         }
 
         // Reset form
@@ -98,6 +105,19 @@ export const BookshelfPanel = ({ onClose }: { onClose: () => void }) => {
                                 onChange={(e) => setPages(e.target.value)}
                                 placeholder="e.g. 300"
                             />
+                        </div>
+                        <div className="form-group">
+                            <label>Book Type</label>
+                            <select
+                                value={bookType}
+                                onChange={(e) => setBookType(coerceBookType(e.target.value))}
+                            >
+                                {BOOK_TYPES.map((type) => (
+                                    <option key={type.id} value={type.id}>
+                                        {type.label}
+                                    </option>
+                                ))}
+                            </select>
                         </div>
                         <div className="form-group">
                             <label>Notes (Optional)</label>

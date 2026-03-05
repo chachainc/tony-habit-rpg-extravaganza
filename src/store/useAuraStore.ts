@@ -114,6 +114,36 @@ export const AURAS: Aura[] = [
         unlockCondition: '1:10,000 Daily Spin (Ultra-Rare!)',
         bonus: { type: 'xp', value: 0.02 },
     },
+    // MYTHIC ultra-rare spin aura (1:50,000)
+    {
+        id: 'cosmic_aura',
+        name: 'Cosmic Aura',
+        icon: '🌌',
+        color: 'rgba(244, 63, 94, 0.85)',
+        description: 'A shimmering cosmic glow of pure destiny. The rarest aura in existence.',
+        unlockCondition: '1:50,000 Daily Spin (Mythic!)',
+        bonus: { type: 'xp', value: 0.05 },
+    },
+    // Secret aura — spend 777 tickets
+    {
+        id: 'secret_green',
+        name: 'Secret Green Aura',
+        icon: '💚',
+        color: 'rgba(34, 197, 94, 0.75)',
+        description: 'A mysterious green energy unlocked by spending exactly 777 spin tickets.',
+        unlockCondition: 'Spend 777 spin tickets (Secret!)',
+        bonus: { type: 'gold', value: 0.03 },
+    },
+    // Exclusive aura — 30-day streak
+    {
+        id: 'exclusive_glow',
+        name: 'Exclusive Glow',
+        icon: '✨',
+        color: 'rgba(251, 191, 36, 0.85)',
+        description: 'A warm golden radiance earned by the most dedicated players.',
+        unlockCondition: '30-day consecutive login streak',
+        bonus: { type: 'xp', value: 0.03 },
+    },
 ];
 
 interface AuraState {

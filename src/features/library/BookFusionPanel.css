@@ -1,0 +1,351 @@
+/* ═══════════════════════════════════════════
+   Book Fusion Panel
+═══════════════════════════════════════════ */
+
+.bfp-root {
+    padding: 0.5rem 0 1.5rem;
+    position: relative;
+}
+
+/* ── Header ─────────────────────────────── */
+.bfp-header {
+    text-align: center;
+    margin-bottom: 1.25rem;
+}
+
+.bfp-header h2 {
+    font-size: 1.3rem;
+    font-weight: 900;
+    color: #fff;
+    margin: 0 0 0.35rem;
+}
+
+.bfp-subtitle {
+    font-size: 0.8rem;
+    color: rgba(255, 255, 255, 0.55);
+    margin: 0;
+    line-height: 1.5;
+}
+
+.bfp-rule {
+    color: rgba(255, 255, 255, 0.35);
+    font-size: 0.72rem;
+}
+
+/* ── Type Filter Tabs ───────────────────── */
+.bfp-tabs {
+    display: flex;
+    gap: 0.35rem;
+    overflow-x: auto;
+    padding-bottom: 0.25rem;
+    margin-bottom: 1rem;
+    -webkit-overflow-scrolling: touch;
+}
+
+.bfp-tab {
+    flex-shrink: 0;
+    padding: 0.4rem 0.75rem;
+    background: rgba(255, 255, 255, 0.06);
+    border: 1.5px solid rgba(255, 255, 255, 0.1);
+    border-radius: 20px;
+    font-size: 0.73rem;
+    font-weight: 700;
+    color: rgba(255, 255, 255, 0.55);
+    cursor: pointer;
+    transition: all 0.15s;
+    white-space: nowrap;
+}
+
+.bfp-tab.active {
+    background: rgba(255, 255, 255, 0.12);
+    border-color: rgba(255, 255, 255, 0.35);
+    color: #fff;
+}
+
+/* ── Section headings ───────────────────── */
+.bfp-section {
+    margin-bottom: 1.5rem;
+}
+
+.bfp-section-title {
+    font-size: 0.8rem;
+    font-weight: 800;
+    color: rgba(255, 255, 255, 0.5);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin: 0 0 0.75rem;
+}
+
+/* ── Fusable Pair Cards ─────────────────── */
+.bfp-fuse-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+}
+
+.bfp-fuse-card {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1.5px solid color-mix(in srgb, var(--book-color) 30%, transparent);
+    border-radius: 12px;
+    padding: 0.65rem 0.9rem;
+    transition: background 0.15s;
+}
+
+.bfp-fuse-card--flash {
+    animation: bfp-flash 0.4s ease;
+}
+
+@keyframes bfp-flash {
+
+    0%,
+    100% {
+        background: rgba(255, 255, 255, 0.05);
+    }
+
+    50% {
+        background: rgba(255, 255, 255, 0.18);
+    }
+}
+
+.bfp-fuse-icon {
+    font-size: 1.6rem;
+    flex-shrink: 0;
+}
+
+.bfp-fuse-info {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 0.1rem;
+}
+
+.bfp-fuse-name {
+    font-size: 0.85rem;
+    font-weight: 800;
+    color: #fff;
+}
+
+.bfp-fuse-level {
+    font-size: 0.72rem;
+    color: rgba(255, 255, 255, 0.45);
+}
+
+.bfp-fuse-bonus-preview {
+    font-size: 0.7rem;
+    color: var(--book-color);
+    font-weight: 700;
+}
+
+.bfp-fuse-btn {
+    flex-shrink: 0;
+    padding: 0.4rem 0.9rem;
+    border: none;
+    border-radius: 8px;
+    font-size: 0.75rem;
+    font-weight: 800;
+    color: #000;
+    cursor: pointer;
+    transition: filter 0.15s;
+}
+
+.bfp-fuse-btn:hover {
+    filter: brightness(1.1);
+}
+
+/* ── Artifact Grid ──────────────────────── */
+.bfp-artifact-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+    gap: 0.75rem;
+}
+
+.bfp-artifact-card {
+    position: relative;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1.5px solid rgba(255, 255, 255, 0.08);
+    border-radius: 14px;
+    padding: 0.75rem 0.6rem 0.6rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.3rem;
+    text-align: center;
+    transition: border-color 0.15s;
+}
+
+.bfp-artifact-card.equipped {
+    border-color: var(--book-color);
+    background: color-mix(in srgb, var(--book-color) 10%, transparent);
+    box-shadow: 0 0 12px color-mix(in srgb, var(--book-color) 30%, transparent);
+}
+
+.bfp-artifact-lvbadge {
+    position: absolute;
+    top: 6px;
+    left: 8px;
+    font-size: 0.55rem;
+    font-weight: 900;
+    color: #000;
+    padding: 1px 5px;
+    border-radius: 6px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.bfp-equipped-tag {
+    position: absolute;
+    top: 6px;
+    right: 6px;
+    font-size: 0.55rem;
+    font-weight: 800;
+    color: #fff;
+    background: rgba(0, 0, 0, 0.5);
+    padding: 1px 4px;
+    border-radius: 4px;
+}
+
+.bfp-artifact-icon {
+    font-size: 2rem;
+    margin-top: 0.4rem;
+}
+
+.bfp-artifact-type {
+    font-size: 0.72rem;
+    font-weight: 800;
+    color: #fff;
+}
+
+.bfp-artifact-bonus {
+    font-size: 0.68rem;
+    color: rgba(255, 255, 255, 0.65);
+    font-weight: 600;
+}
+
+.bfp-artifact-max {
+    font-size: 0.6rem;
+    color: #fbbf24;
+    font-weight: 900;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+}
+
+.bfp-artifact-source {
+    font-size: 0.58rem;
+    color: rgba(255, 255, 255, 0.3);
+    font-style: italic;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.bfp-equip-btn {
+    margin-top: 0.35rem;
+    padding: 0.3rem 0.75rem;
+    background: transparent;
+    border: 1.5px solid rgba(255, 255, 255, 0.18);
+    border-radius: 8px;
+    font-size: 0.68rem;
+    font-weight: 700;
+    color: rgba(255, 255, 255, 0.55);
+    cursor: pointer;
+    transition: all 0.15s;
+    width: 100%;
+}
+
+.bfp-equip-btn.unequip {
+    border-color: rgba(239, 68, 68, 0.4);
+    color: #ef4444;
+}
+
+.bfp-equip-btn:hover {
+    background: rgba(255, 255, 255, 0.08);
+}
+
+/* ── Level Table ────────────────────────── */
+.bfp-level-table {
+    margin-top: 1.25rem;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.07);
+    border-radius: 12px;
+    padding: 0.75rem 1rem;
+}
+
+.bfp-level-table h4 {
+    font-size: 0.78rem;
+    font-weight: 800;
+    color: rgba(255, 255, 255, 0.5);
+    margin: 0 0 0.5rem;
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+}
+
+.bfp-level-rows {
+    display: flex;
+    gap: 0.4rem;
+    flex-wrap: wrap;
+}
+
+.bfp-level-row {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    background: rgba(255, 255, 255, 0.06);
+    border-radius: 8px;
+    padding: 0.3rem 0.6rem;
+    min-width: 52px;
+    gap: 0.1rem;
+}
+
+.bfp-level-num {
+    font-size: 0.62rem;
+    color: rgba(255, 255, 255, 0.45);
+    font-weight: 700;
+}
+
+.bfp-level-val {
+    font-size: 0.75rem;
+    font-weight: 900;
+    color: #fbbf24;
+}
+
+/* ── Empty State ────────────────────────── */
+.bfp-empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 2.5rem 1rem;
+    color: rgba(255, 255, 255, 0.4);
+}
+
+.bfp-empty-icon {
+    font-size: 2.5rem;
+}
+
+.bfp-empty p {
+    font-size: 0.85rem;
+    text-align: center;
+    margin: 0;
+}
+
+/* ── Toast ──────────────────────────────── */
+.bfp-toast {
+    position: fixed;
+    bottom: 90px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: linear-gradient(135deg, #1e293b, #0f172a);
+    border: 1.5px solid rgba(255, 255, 255, 0.15);
+    border-radius: 12px;
+    padding: 0.65rem 1.25rem;
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: #fff;
+    white-space: nowrap;
+    z-index: 999;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+}

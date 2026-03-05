@@ -170,14 +170,14 @@
 }
 
 .unit-sprite img {
-    height: 250px;
+    height: 200px;
     /* Base height, adjustable */
     width: auto;
     object-fit: contain;
 }
 
 .unit-sprite.player img {
-    height: 220px;
+    height: 180px;
     transform: scaleX(-1);
     /* Face right if sprite faces left naturally */
 }
@@ -396,14 +396,30 @@
 /* --- Responsive Helpers --- */
 @media (max-width: 768px) {
     .battlefield-stage {
-        padding: 0 1rem 30%;
-        /* More bottom padding for mobile controls */
-        align-items: center;
-        /* Center vertically on mobile maybe? */
+        padding: 0 0.5rem 20%;
+        /* Reduced padding to fit both on screen */
+        align-items: flex-end;
+    }
+
+    .squad-zone {
+        min-width: 120px;
+        gap: 0.5rem;
+    }
+
+    .squad-zone.allies {
+        padding-right: 0.5rem;
+    }
+
+    .squad-zone.enemies {
+        padding-left: 0.5rem;
     }
 
     .unit-sprite img {
-        height: 160px;
+        height: 120px;
+    }
+
+    .unit-sprite.player img {
+        height: 110px;
     }
 
     .vs-text {
@@ -412,5 +428,18 @@
 
     .combatant-name-header {
         font-size: 0.9rem;
+    }
+
+    .floating-ui {
+        top: -35px;
+        width: 110px;
+    }
+
+    .unit-name {
+        font-size: 0.6rem;
+    }
+
+    .hp-text {
+        font-size: 0.55rem;
     }
 }

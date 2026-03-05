@@ -72,6 +72,9 @@ export const CombatPage = () => {
                         <span>💎 MP {currentMP}/{maxMP}</span>
                     </div>
                     <div className="combat-stat">
+                        <span>❤️ HP {currentHP}/{maxHP}</span>
+                    </div>
+                    <div className="combat-stat">
                         <span>🔱 {sigils} Sigils</span>
                     </div>
                 </motion.div>

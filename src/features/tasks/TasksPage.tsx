@@ -3,8 +3,8 @@ import dayjs from 'dayjs';
 import { motion } from 'framer-motion';
 import { Plus, Gift, CheckCircle, Circle, Sun, Sunset, Moon, Star, MinusCircle, Trash2, Pencil, Dices, CalendarDays } from 'lucide-react';
 import { Card } from '../../components/ui';
-import { type TaskDifficulty } from '../../store/useTaskStore';
 import { useGameStore, type SkillName } from '../../store/useGameStore';
+
 import { useRecurringTasksStore, type BundleType } from '../../store/useRecurringTasksStore';
 import { useCalendarStore } from '../../store/useCalendarStore';
 import { WeightInput } from '../../components/WeightInput/WeightInput';
@@ -12,6 +12,7 @@ import { TrainingInput } from './TrainingInput';
 import { DailyChest } from './DailyChest';
 import { useNavigate } from 'react-router-dom';
 import './TasksPage.css';
+
 
 // Skill icons mapping
 const SKILL_ICONS: Record<SkillName, string> = {
@@ -55,8 +56,8 @@ const BUNDLE_CONFIG: Record<BundleType, { title: string; icon: React.ReactNode; 
 
 export const TasksPage = () => {
     const navigate = useNavigate();
-    // const { tasks, addTask, toggleTask, removeTask } = useTaskStore(); // Unused
     const { skills } = useGameStore();
+
     const {
         dailyTasks,
         weeklyTasks,
@@ -72,11 +73,14 @@ export const TasksPage = () => {
         addCustomRecurringTask,
         removeDailyTask,
         editDailyTask,
+        getTodayWeight,
     } = useRecurringTasksStore();
+
+    const todayWeight = getTodayWeight();
 
     // Form State
     const [taskTitle, setTaskTitle] = useState('');
-    const [selectedDifficulty, setSelectedDifficulty] = useState<TaskDifficulty | 'very_hard'>('medium');
+    const [customXp, setCustomXp] = useState(1);
     const [selectedSkill, setSelectedSkill] = useState<SkillName>('Sleep');
     const [taskType, setTaskType] = useState<'today' | 'calendar' | 'recurring'>('today');
     const [selectedBundle, setSelectedBundle] = useState<BundleType>('morning');
@@ -84,6 +88,7 @@ export const TasksPage = () => {
     // Input Modals
     const [showWeightInput, setShowWeightInput] = useState(false);
     const [showTrainingInput, setShowTrainingInput] = useState(false);
+
 
     // Scroll Highlight State
     const [highlightAddTask, setHighlightAddTask] = useState(false);
@@ -122,15 +127,9 @@ export const TasksPage = () => {
         if (!taskTitle.trim()) return;
 
         if (taskType === 'recurring') {
-            const difficultyRewards = {
-                small: 1,
-                medium: 3,
-                hard: 5,
-                very_hard: 5
-            };
             addCustomRecurringTask(taskTitle, selectedBundle, [{
                 skillId: selectedSkill,
-                xp: difficultyRewards[selectedDifficulty as TaskDifficulty]
+                xp: customXp
             }]);
         } else if (taskType === 'today') {
             const newTask = {
@@ -138,7 +137,7 @@ export const TasksPage = () => {
                 text: taskTitle,
                 completed: false,
                 skillId: selectedSkill,
-                difficulty: selectedDifficulty as 'easy' | 'medium' | 'hard'
+                difficulty: 'medium' as 'easy' | 'medium' | 'hard'
             };
             addCalendarTask(dayjs().format('YYYY-MM-DD'), newTask);
         } else {
@@ -148,7 +147,7 @@ export const TasksPage = () => {
                 text: taskTitle,
                 completed: false,
                 skillId: selectedSkill,
-                difficulty: selectedDifficulty as 'easy' | 'medium' | 'hard'
+                difficulty: 'medium' as 'easy' | 'medium' | 'hard'
             };
             addCalendarTask(selectedDate, newTask);
         }
@@ -223,6 +222,7 @@ export const TasksPage = () => {
                                 onClick={() => {
                                     if (!task.completed) {
                                         if (task.requiresInput === 'weight') {
+                                            // Only open modal if no weight logged today yet
                                             setShowWeightInput(true);
                                         } else if (task.requiresInput === 'training') {
                                             setShowTrainingInput(true);
@@ -241,6 +241,10 @@ export const TasksPage = () => {
                                 </div>
                                 <div className="recurring-task__info">
                                     <span className="recurring-task__title">{task.title}</span>
+                                    {/* Show logged weight inline for Weigh Self when completed */}
+                                    {task.requiresInput === 'weight' && task.completed && todayWeight != null && (
+                                        <span className="weight-logged-badge">⚖️ {todayWeight} lbs</span>
+                                    )}
                                     <div className="recurring-task__meta">
                                         {task.rewards.map((reward, idx) => (
                                             <span
@@ -522,8 +526,10 @@ export const TasksPage = () => {
                 <WeightInput
                     isOpen={showWeightInput}
                     onClose={() => setShowWeightInput(false)}
+                    todayWeight={todayWeight}
                     onSubmit={(weight) => completeTask('weigh_self', { weight })}
                 />
+
 
                 <TrainingInput
                     isOpen={showTrainingInput}
@@ -564,18 +570,40 @@ export const TasksPage = () => {
                             />
 
                             <div className="task-form__row">
-                                <div className="form-group">
-                                    <label>Difficulty</label>
-                                    <select
-                                        value={selectedDifficulty}
-                                        onChange={(e) => setSelectedDifficulty(e.target.value as TaskDifficulty)}
-                                        className="form-select"
-                                    >
-                                        <option value="small">Small (10 XP)</option>
-                                        <option value="medium">Medium (25 XP)</option>
-                                        <option value="hard">Hard (50 XP)</option>
-                                        <option value="very_hard">Very Hard (100 XP)</option>
-                                    </select>
+                                {/* XP Selector */}
+                                <div className="form-group xp-picker-group">
+                                    <label>XP Reward</label>
+                                    <div className="xp-presets">
+                                        {[{ label: 'Easy', xp: 1 }, { label: 'Medium', xp: 3 }, { label: 'Hard', xp: 5 }].map(p => (
+                                            <button
+                                                key={p.label}
+                                                type="button"
+                                                className={`xp-preset-btn ${customXp === p.xp ? 'active' : ''}`}
+                                                onClick={() => setCustomXp(p.xp)}
+                                            >
+                                                {p.label}<br /><span>{p.xp} XP</span>
+                                            </button>
+                                        ))}
+                                    </div>
+                                    <div className="xp-slider-row">
+                                        <input
+                                            type="range"
+                                            min={1}
+                                            max={25}
+                                            value={customXp}
+                                            onChange={e => setCustomXp(Number(e.target.value))}
+                                            className="xp-slider"
+                                        />
+                                        <span className="xp-value-bubble">{customXp} XP</span>
+                                    </div>
+                                    {customXp >= 10 && (
+                                        <div className="xp-extreme-label">
+                                            {customXp >= 25 ? '💀 Impossible'
+                                                : customXp >= 20 ? '🌋 Super Duper Insane'
+                                                    : customXp >= 15 ? '🤯 You\'re Crazy'
+                                                        : '😤 Insane'}
+                                        </div>
+                                    )}
                                 </div>
 
                                 <div className="form-group">

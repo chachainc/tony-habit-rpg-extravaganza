@@ -137,6 +137,55 @@
     margin: 0 auto;
 }
 
+/* ── Sub-Tab Toggle ──────────────────────── */
+.pet-sub-tabs {
+    display: flex;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    padding: 4px;
+    gap: 4px;
+    margin-bottom: 1.5rem;
+    width: fit-content;
+}
+
+.pet-sub-tab {
+    padding: 0.5rem 1.4rem;
+    border-radius: 9px;
+    border: none;
+    background: transparent;
+    color: rgba(255, 255, 255, 0.5);
+    font-size: 0.9rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    letter-spacing: 0.02em;
+}
+
+.pet-sub-tab:hover {
+    color: rgba(255, 255, 255, 0.8);
+    background: rgba(255, 255, 255, 0.06);
+}
+
+.pet-sub-tab.active {
+    background: linear-gradient(135deg, #7c3aed, #6366f1);
+    color: #fff;
+    box-shadow: 0 2px 12px rgba(99, 102, 241, 0.4);
+}
+
+@media (max-width: 480px) {
+    .pet-sub-tabs {
+        width: 100%;
+    }
+
+    .pet-sub-tab {
+        flex: 1;
+        text-align: center;
+    }
+}
+
+
+
 .page-header {
     margin-bottom: 2rem;
 }

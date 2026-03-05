@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
+import { useFusionStore } from './useFusionStore';
 
 export interface GachaPull {
     id: string;
@@ -258,6 +259,9 @@ function executePull(
         gachaShards: s.gachaShards + shardsGained,
         pityCounter: rarity === 'epic' || rarity === 'legendary' ? 0 : s.pityCounter + 1,
     }));
+
+    // ── Fusion tracking: every copy feeds fusion progress ──────────────────
+    useFusionStore.getState().addPetCopy(item.id);
 
     return { item, wasDuplicate, shardsGained };
 }

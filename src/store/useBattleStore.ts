@@ -85,7 +85,8 @@ interface BattleState {
     usePetAbility: () => void; // Pet ability action
     castSpell: (spellId: string) => void; // Cast a spell from magic store
     restoreMP: (amount: number) => void; // Restore MP (used by room resting)
-    startBattle: () => void; // Tower Expansion: Transition from prep to combat
+    startBattle: () => void;
+    introGracePeriod: boolean; // Tower Expansion: Transition from prep to combat
 }
 
 // Player abilities - Replaced with the 3 distinct actions
@@ -150,6 +151,7 @@ export const useBattleStore = create<BattleState>()((set, get) => ({
     weaknessActive: false,
     activeFloorModifier: null,
     activeRunBuffs: [],
+    introGracePeriod: false,
 
     initBattle: (enemyId: string) => {
         const enemyDef = ENEMY_DB[enemyId];
@@ -307,11 +309,18 @@ export const useBattleStore = create<BattleState>()((set, get) => ({
 
     startBattle: () => {
         const { turnOrder } = get();
-        set({ phase: turnOrder[0] === 'player' ? 'select_action' : 'enemy_turn' });
+        set({ phase: turnOrder[0] === 'player' ? 'select_action' : 'enemy_turn', introGracePeriod: true });
 
-        // If enemy goes first, give a 4-second suspense delay before their first attack
+        // Always give 3-second grace period before enemy can attack
+        // If enemy goes first, delay their action
         if (turnOrder[0] !== 'player') {
-            setTimeout(() => get().executeEnemyAction(), 4000);
+            setTimeout(() => {
+                set({ introGracePeriod: false });
+                get().executeEnemyAction();
+            }, 3000);
+        } else {
+            // If player goes first, just clear the grace flag after 3s
+            setTimeout(() => set({ introGracePeriod: false }), 3000);
         }
     },
 

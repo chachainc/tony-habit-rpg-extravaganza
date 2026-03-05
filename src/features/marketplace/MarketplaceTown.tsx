@@ -175,6 +175,14 @@ export const MarketplaceTown = () => {
                         Exit Marketplace
                     </button>
 
+                    {/* Codex button */}
+                    <button
+                        className="marketplace-codex-btn"
+                        onClick={() => navigate('/codex')}
+                    >
+                        📖 Codex
+                    </button>
+
                     {/* Mobile Store Grid — visible only on small screens via CSS */}
                     <div className="marketplace-mobile-grid">
                         <h2 className="marketplace-mobile-title">🏪 Marketplace</h2>

@@ -395,6 +395,196 @@
     border-radius: 50%;
 }
 
+/* ─── ORBIT RINGS ─────────────────────────── */
+.summon-orbit-ring {
+    position: absolute;
+    width: 130px;
+    height: 130px;
+    border-radius: 50%;
+    border: 2px solid;
+    animation: orbit-spin 2s linear infinite;
+    pointer-events: none;
+}
+
+.summon-orbit-ring--lg {
+    width: 200px;
+    height: 200px;
+    animation-duration: 3s;
+    animation-direction: reverse;
+}
+
+@keyframes orbit-spin {
+    from {
+        transform: rotate(0deg);
+    }
+
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+/* ─── FLOATING PARTICLES ──────────────────── */
+.summon-particles {
+    position: absolute;
+    width: 200px;
+    height: 200px;
+    pointer-events: none;
+}
+
+.summon-particle {
+    position: absolute;
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    animation: particle-orbit 1.5s linear infinite;
+}
+
+.summon-particle--0 {
+    animation-delay: 0s;
+    transform-origin: 0 50px;
+}
+
+.summon-particle--1 {
+    animation-delay: 0.375s;
+    transform-origin: 0 70px;
+}
+
+.summon-particle--2 {
+    animation-delay: 0.75s;
+    transform-origin: 0 55px;
+}
+
+.summon-particle--3 {
+    animation-delay: 1.125s;
+    transform-origin: 0 65px;
+}
+
+@keyframes particle-orbit {
+    0% {
+        transform: rotate(calc(var(--i, 0) * 90deg)) translateX(80px) scale(1);
+        opacity: 1;
+    }
+
+    50% {
+        opacity: 0.6;
+    }
+
+    100% {
+        transform: rotate(calc(var(--i, 0) * 90deg + 360deg)) translateX(80px) scale(0.5);
+        opacity: 0;
+    }
+}
+
+/* ─── RARITY AURA ON ORB ─────────────────── */
+.summon-orb.aura-rare {
+    filter: drop-shadow(0 0 12px #3b82f6);
+}
+
+.summon-orb.aura-epic {
+    filter: drop-shadow(0 0 18px #a855f7);
+}
+
+.summon-orb.aura-legendary {
+    filter: drop-shadow(0 0 24px #f59e0b);
+}
+
+.summon-orb.aura-mythic {
+    filter: drop-shadow(0 0 30px #f43f5e) drop-shadow(0 0 60px rgba(244, 63, 94, 0.4));
+    animation: mythic-orb-pulse 0.5s ease-in-out infinite alternate;
+}
+
+@keyframes mythic-orb-pulse {
+    from {
+        filter: drop-shadow(0 0 20px #f43f5e);
+    }
+
+    to {
+        filter: drop-shadow(0 0 50px #f43f5e) drop-shadow(0 0 80px rgba(244, 63, 94, 0.6));
+    }
+}
+
+/* ─── BURST RING ──────────────────────────── */
+.burst-ring {
+    position: absolute;
+    width: 100px;
+    height: 100px;
+    border-radius: 50%;
+    border: 3px solid;
+    pointer-events: none;
+}
+
+/* ─── MYTHIC FLASH ────────────────────────── */
+.mythic-flash {
+    position: fixed;
+    inset: 0;
+    background: white;
+    z-index: 9999;
+    pointer-events: none;
+}
+
+/* ─── MYTHIC BEAM ─────────────────────────── */
+.mythic-beam {
+    position: absolute;
+    inset: -50px;
+    background: conic-gradient(from 0deg,
+            rgba(244, 63, 94, 0.3),
+            rgba(168, 85, 247, 0.3),
+            rgba(59, 130, 246, 0.3),
+            rgba(244, 63, 94, 0.3));
+    animation: mythic-beam-spin 4s linear infinite;
+    border-radius: 50%;
+    pointer-events: none;
+    z-index: 0;
+}
+
+@keyframes mythic-beam-spin {
+    from {
+        transform: rotate(0deg);
+    }
+
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+/* ─── LEGENDARY RAYS ──────────────────────── */
+.legendary-rays {
+    position: absolute;
+    inset: -30px;
+    background: conic-gradient(from 0deg,
+            transparent 0deg,
+            rgba(251, 191, 36, 0.2) 20deg,
+            transparent 40deg,
+            transparent 60deg,
+            rgba(251, 191, 36, 0.15) 80deg,
+            transparent 100deg,
+            transparent 140deg,
+            rgba(251, 191, 36, 0.2) 160deg,
+            transparent 180deg,
+            transparent 220deg,
+            rgba(251, 191, 36, 0.15) 240deg,
+            transparent 260deg,
+            transparent 300deg,
+            rgba(251, 191, 36, 0.2) 320deg,
+            transparent 340deg);
+    animation: legendary-rays-spin 8s linear infinite;
+    pointer-events: none;
+    z-index: 0;
+    border-radius: 50%;
+}
+
+@keyframes legendary-rays-spin {
+    from {
+        transform: rotate(0deg);
+    }
+
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+
+
 @keyframes pulse {
 
     0%,
@@ -708,6 +898,30 @@
     background: rgba(255, 255, 255, 0.2);
     color: var(--text-primary);
 }
+
+/* Codex shortcut button */
+.gacha-codex-btn {
+    position: absolute;
+    top: 1rem;
+    left: 1rem;
+    padding: 0.3rem 0.8rem;
+    border-radius: 8px;
+    border: 1px solid rgba(99, 102, 241, 0.4);
+    background: rgba(99, 102, 241, 0.15);
+    color: #a5b4fc;
+    font-size: 0.75rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s;
+    z-index: 10;
+}
+
+.gacha-codex-btn:hover {
+    background: rgba(99, 102, 241, 0.3);
+    transform: translateY(-1px);
+}
+
+
 
 /* 10-Pull Multi Button */
 .pull-btn.multi {

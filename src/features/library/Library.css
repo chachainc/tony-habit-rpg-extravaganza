@@ -568,3 +568,149 @@
     border-color: rgba(139, 92, 246, 0.3);
     color: #a78bfa;
 }
+
+/* ── Tab Toggle ─────────────────────────── */
+.lib-tabs {
+    display: flex;
+    gap: 0.5rem;
+    padding: 0.3rem;
+    background: rgba(0, 0, 0, 0.25);
+    border-radius: 14px;
+    border: 1px solid rgba(255, 255, 255, 0.07);
+}
+
+.lib-tab {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.4rem;
+    padding: 0.6rem 0.75rem;
+    background: transparent;
+    border: none;
+    border-radius: 10px;
+    font-size: 0.82rem;
+    font-weight: 700;
+    color: rgba(255, 255, 255, 0.45);
+    cursor: pointer;
+    transition: all 0.2s;
+    position: relative;
+}
+
+.lib-tab.active {
+    background: rgba(255, 255, 255, 0.1);
+    color: #fff;
+}
+
+.lib-tab-badge {
+    background: #fbbf24;
+    color: #000;
+    font-size: 0.6rem;
+    font-weight: 900;
+    border-radius: 99px;
+    padding: 1px 5px;
+    min-width: 17px;
+    text-align: center;
+}
+
+/* ── Book Type Selector ─────────────────── */
+.lib-type-selector {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.5rem;
+}
+
+.lib-type-btn {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.2rem;
+    padding: 0.55rem 0.4rem;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1.5px solid rgba(255, 255, 255, 0.1);
+    border-radius: 10px;
+    font-size: 0.72rem;
+    font-weight: 700;
+    color: rgba(255, 255, 255, 0.55);
+    cursor: pointer;
+    transition: all 0.15s;
+}
+
+.lib-type-btn span {
+    font-size: 0.68rem;
+}
+
+.lib-type-btn:hover {
+    background: rgba(255, 255, 255, 0.08);
+}
+
+/* ── Book Type Preview ──────────────────── */
+.lib-type-preview {
+    font-size: 0.75rem;
+    font-weight: 600;
+    padding: 0.45rem 0.75rem;
+    background: rgba(255, 255, 255, 0.04);
+    border-radius: 8px;
+    text-align: center;
+    line-height: 1.4;
+}
+
+/* ── Equipped Indicator in Header ──────── */
+.lib-equipped-indicator {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin: 0.5rem auto 0;
+    max-width: 450px;
+    padding: 0.45rem 0.9rem;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1.5px solid;
+    border-radius: 10px;
+    font-size: 0.78rem;
+    color: rgba(255, 255, 255, 0.7);
+}
+
+/* ── Book Meta Row (type badge + date) ─── */
+.book-meta-row {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-top: 0.25rem;
+    flex-wrap: wrap;
+}
+
+.book-type-badge {
+    display: inline-block;
+    padding: 1px 7px;
+    border-radius: 6px;
+    font-size: 0.65rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+/* ── Completed book reward tag ──────────── */
+.book-reward-tag {
+    font-size: 0.7rem;
+    font-weight: 700;
+    margin-top: 0.35rem;
+}
+
+/* ── Completed book item variant ─────────  */
+.completed-book-item {
+    border-left: 4px solid rgba(255, 255, 255, 0.1);
+    opacity: 0.85;
+}
+
+/* ── Celebration artifact reward ─────────  */
+.celebration-artifact-reward {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.75rem 1rem;
+    margin: 0.75rem 0 1rem;
+    border: 1.5px solid;
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.04);
+    text-align: left;
+}
