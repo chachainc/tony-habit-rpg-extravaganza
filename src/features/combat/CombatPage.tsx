@@ -10,12 +10,14 @@ export const CombatPage = () => {
     const navigate = useNavigate();
     const { sigils } = useConquestStore();
     const { getAttack, getDefense, getMagicAttack, getMaxMP } = useGameStore();
-    const { currentMP } = useBattleStore();
+    const { currentMP, player } = useBattleStore();
 
     const atk = getAttack();
     const def = getDefense();
     const magicAtk = getMagicAttack();
     const maxMP = getMaxMP();
+    const currentHP = player?.hp ?? 0;
+    const maxHP = player?.maxHp ?? 0;
 
     return (
         <div className="combat-page">
