@@ -229,6 +229,60 @@ export const useRoomStore = create<RoomState>()(
                 set({ playerPosition: { x, y } });
             },
 
+            purchaseRoomFurniture: (furnitureId) => {
+                const { furnitureItems, ownedRoomFurniture } = get();
+                const exists = furnitureItems.some((item) => item.id === furnitureId);
+                const alreadyOwned = ownedRoomFurniture.includes(furnitureId);
+                if (!exists || alreadyOwned) {
+                    return false;
+                }
+
+                set((state) => ({
+                    ownedRoomFurniture: [...state.ownedRoomFurniture, furnitureId],
+                }));
+                return true;
+            },
+
+            ownsRoomFurniture: (furnitureId) => get().ownedRoomFurniture.includes(furnitureId),
+
+            placeRoomFurniture: (furnitureId, gridX, gridY) => {
+                const { ownedRoomFurniture, placedRoomFurniture } = get();
+                if (!ownedRoomFurniture.includes(furnitureId)) {
+                    return;
+                }
+
+                const existingPlacement = placedRoomFurniture.find(
+                    (placedFurniture) => placedFurniture.furnitureId === furnitureId
+                );
+
+                if (existingPlacement) {
+                    set((state) => ({
+                        placedRoomFurniture: state.placedRoomFurniture.map((placedFurniture) =>
+                            placedFurniture.furnitureId === furnitureId
+                                ? { ...placedFurniture, gridX, gridY }
+                                : placedFurniture
+                        ),
+                    }));
+                    return;
+                }
+
+                const placedFurnitureId = `placed-${furnitureId}-${Date.now()}`;
+                set((state) => ({
+                    placedRoomFurniture: [
+                        ...state.placedRoomFurniture,
+                        { id: placedFurnitureId, furnitureId, gridX, gridY },
+                    ],
+                }));
+            },
+
+            unplaceRoomFurniture: (placedId) => {
+                set((state) => ({
+                    placedRoomFurniture: state.placedRoomFurniture.filter(
+                        (placedFurniture) => placedFurniture.id !== placedId
+                    ),
+                }));
+            },
+
             // Aggregate all placed furniture combat bonuses
             getRoomCombatBonuses: () => {
                 const items = get().furnitureItems;
