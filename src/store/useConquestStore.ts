@@ -140,22 +140,12 @@ const TERRAIN_SKILL_MAP: Record<TerrainType, string> = {
 
 // ─── DICE ROLLS ─────────────────────────────────
 
-function rollNd6(n: number): { total: number; dice: number[] } {
-    const dice: number[] = [];
-    for (let i = 0; i < n; i++) {
-        dice.push(Math.floor(Math.random() * 6) + 1);
-    }
-    return { total: dice.reduce((a, b) => a + b, 0), dice };
-}
-
 // ─── BFS PATHFINDING ──────────────────────────────
 
 function findExactDistanceNodes(startId: string | null, distance: number, allNodes: ConquestNodeData[]): string[] {
     if (!startId || distance <= 0) return [];
 
     // Check if the boss is less than 'distance' away to cap movement
-    const endNode = allNodes.find(n => n.type === 'boss');
-
     let currentLevel = [startId];
     let steps = 0;
 
