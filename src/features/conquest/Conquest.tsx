@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Crown, Coins, Dice1, Tent, Swords, Gem, MessageSquare, Gamepad2, Skull } from 'lucide-react';
+import { Crown, Coins, Tent, Swords, Gem, MessageSquare, Gamepad2, Skull } from 'lucide-react';
 import { useConquestStore } from '../../store/useConquestStore';
 import { useCurrencyStore } from '../../store/useCurrencyStore';
 import { CONQUEST_MAP_NODES, CONQUEST_EVENT_TABLE, type ConquestNodeData } from '../../data/conquest';
@@ -10,6 +10,11 @@ import { ChessGame } from './ChessGame';
 import { ConquestTiles } from './ConquestTiles';
 import { useStrategyStore } from '../../store/useStrategyStore';
 import { useNavigate } from 'react-router-dom';
+import { useBattleStore } from '../../store/useBattleStore';
+import { getPassiveBonuses } from '../../store/usePassiveEffects';
+import { useInventoryStore, type ItemDef } from '../../store/useInventoryStore';
+import { useToastStore } from '../../components/ui/Toast';
+import { getConquestRewardPool } from '../../data/rewardTables';
 import './Conquest.css';
 
 // AI-generated background
@@ -37,7 +42,7 @@ export const Conquest = () => {
     const [showChess, setShowChess] = useState(false);
     const [showTiles, setShowTiles] = useState(false);
     const [activeEvent, setActiveEvent] = useState<string | null>(null);
-    const [rewardModal, setRewardModal] = useState<{ gold: number, sigils: number } | null>(null);
+    const [rewardModal, setRewardModal] = useState<{ gold: number, sigils: number, item?: ItemDef } | null>(null);
     const [hasBounced, setHasBounced] = useState(false); // To handle initial scroll to bottom
 
     useEffect(() => {
@@ -54,7 +59,7 @@ export const Conquest = () => {
         }
     }, [hasBounced]);
 
-    const reachableNodes = conquest.activeDiceRoll ? conquest.getReachableNodes() : [];
+    const reachableNodes = conquest.getReachableNodes();
 
     const handleNodeClick = (node: ConquestNodeData) => {
         console.log("Clicked node:", node.id, node.label);
@@ -74,16 +79,41 @@ export const Conquest = () => {
         switch (node.type) {
             case 'battle':
             case 'boss':
-                // Transition to Arena
-                // We assume there's an arena integration, we'll just navigate
-                navigate('/arena');
+                const enemies = ['fatigue_wraith', 'chaos_of_clutter', 'sedentary_colossus', 'insomnia_echo', 'stress_phantom'];
+                const randomEnemy = node.type === 'boss' ? 'shadow_titan' : enemies[Math.floor(Math.random() * enemies.length)];
+
+                useBattleStore.getState().initBattle(randomEnemy, {
+                    context: 'conquest',
+                    conquestTier: node.tier
+                });
+
+                navigate('/arena', { state: { startBattle: true } });
                 break;
-            case 'treasure':
-                const gold = Math.floor(Math.random() * 50) + 20;
-                const sigils = Math.floor(Math.random() * 10) + 5;
+            case 'treasure': {
+                const passives = getPassiveBonuses();
+                const gold = Math.floor(Math.random() * 10) + 5 + passives.gold_bonus;
+                const sigils = Math.floor(Math.random() * 2) + 1 + passives.sigil_bonus;
                 conquest.grantSpireReward(gold, sigils);
-                setRewardModal({ gold, sigils });
+
+                // 15% chance for a low-rarity dynamic drop
+                let droppedItem: ItemDef | undefined;
+                if (Math.random() < 0.15) {
+                    const pool = getConquestRewardPool();
+                    if (pool.length > 0) {
+                        droppedItem = pool[Math.floor(Math.random() * pool.length)];
+                        useInventoryStore.getState().addItem(droppedItem.id, 1);
+
+                        useToastStore.getState().addToast({
+                            type: 'success',
+                            message: `New Item Obtained: ${droppedItem.icon} ${droppedItem.name} `,
+                            duration: 4000
+                        });
+                    }
+                }
+
+                setRewardModal({ gold, sigils, item: droppedItem });
                 break;
+            }
             case 'event':
                 setActiveEvent(node.label);
                 break;
@@ -101,10 +131,6 @@ export const Conquest = () => {
         }
     };
 
-    const handleRoll = () => {
-        conquest.rollMapDice();
-    };
-
     // Group nodes by tier to render them as rows (bottom to top visually means high tier at top)
     const renderMapNodes = () => {
         const tiers: Record<number, ConquestNodeData[]> = {};
@@ -117,7 +143,7 @@ export const Conquest = () => {
         const sortedTiers = Object.keys(tiers).map(Number).sort((a, b) => b - a);
 
         return sortedTiers.map(tier => (
-            <div key={`tier-${tier}`} className="map-tier-row">
+            <div key={`tier - ${tier} `} className="map-tier-row">
                 {tiers[tier].map(node => {
                     const isCurrent = conquest.currentNodeId === node.id;
                     const isCompleted = conquest.completedNodes.includes(node.id) && !isCurrent;
@@ -127,7 +153,7 @@ export const Conquest = () => {
                     return (
                         <div key={node.id} className="map-node-wrapper">
                             <motion.button
-                                className={`map-node ${node.type} ${isCurrent ? 'current' : ''} ${isCompleted ? 'completed' : ''} ${isReachable ? 'reachable' : ''}`}
+                                className={`map - node ${node.type} ${isCurrent ? 'current' : ''} ${isCompleted ? 'completed' : ''} ${isReachable ? 'reachable' : ''} `}
                                 whileHover={isReachable ? { scale: 1.1 } : {}}
                                 whileTap={isReachable ? { scale: 0.95 } : {}}
                                 onClick={() => handleNodeClick(node)}
@@ -182,19 +208,9 @@ export const Conquest = () => {
 
             {/* Action Footer */}
             <div className="spire-footer">
-                <div className="dice-status">
-                    <span>Remaining Rolls: <strong>{conquest.diceRolls}</strong></span>
-                    {conquest.activeDiceRoll && (
-                        <span className="active-roll">Rolled a {conquest.activeDiceRoll}! Select destination.</span>
-                    )}
+                <div className="dice-status" style={{ textAlign: 'center', width: '100%' }}>
+                    <span className="active-roll">Select your next destination.</span>
                 </div>
-                <button
-                    className="roll-dice-btn"
-                    onClick={handleRoll}
-                    disabled={conquest.diceRolls <= 0 || conquest.activeDiceRoll !== null}
-                >
-                    <Dice1 size={20} /> ROLL DICE
-                </button>
             </div>
 
             {/* Event Modal */}
@@ -229,6 +245,11 @@ export const Conquest = () => {
                             <div className="loot-display">
                                 <span className="loot-item gold">+{rewardModal.gold} Gold</span>
                                 <span className="loot-item sigils">+{rewardModal.sigils} Sigils</span>
+                                {rewardModal.item && (
+                                    <span className={`loot - item item - drop rarity - ${rewardModal.item.rarity} `}>
+                                        Found: {rewardModal.item.icon} {rewardModal.item.name}
+                                    </span>
+                                )}
                             </div>
                             <button className="continue-btn" onClick={() => setRewardModal(null)}>Continue</button>
                         </div>

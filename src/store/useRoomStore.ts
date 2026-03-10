@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
+import { PERSIST_REGISTRY } from '../data/persistRegistry';
 
 export interface FurnitureItem {
     id: string;
@@ -312,7 +313,7 @@ export const useRoomStore = create<RoomState>()(
             },
         }),
         {
-            name: 'gl-room-v1',
+            name: PERSIST_REGISTRY.room.persistKey,
         }
     )
 );

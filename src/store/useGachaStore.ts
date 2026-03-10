@@ -21,10 +21,13 @@ export interface PetDef {
         skillName?: string; // For skill-specific bonuses
     };
     description: string;
+    source?: string;
 }
 
+import { mergeExternalPets } from '../data/contentLoader';
+
 // Pet collection for gacha rewards
-export const PET_DB: Record<string, PetDef> = {
+export const PET_DB: Record<string, PetDef> = mergeExternalPets({
     'pixel_cat': {
         id: 'pixel_cat',
         name: 'Pixel Cat',
@@ -94,7 +97,7 @@ export const PET_DB: Record<string, PetDef> = {
         },
         description: '🌌 ULTRA RARE! Stellar Grazing: +25% Housemaid & Strength XP. The cosmos favors you.',
     },
-};
+});
 
 interface GachaState {
     tickets: number;
@@ -202,10 +205,13 @@ export const useGachaStore = create<GachaState>()(
             },
         }),
         {
-            name: 'gl-gacha-v1',
+            name: PERSIST_REGISTRY.gacha.persistKey,
         }
     )
 );
+
+import { getDailySpinPetPool } from '../data/rewardTables';
+import { PERSIST_REGISTRY } from '../data/persistRegistry';
 
 // Helper function to execute gacha pull logic
 function executePull(
@@ -229,10 +235,12 @@ function executePull(
     }
 
     // Filter pet pool by rarity
-    const pool = Object.values(PET_DB).filter((p) => p.rarity === rarity);
+    const basePool = getDailySpinPetPool();
+    const pool = basePool.filter((p) => p.rarity === rarity);
+
     if (pool.length === 0) {
         // Fallback to common
-        const commonPool = Object.values(PET_DB).filter((p) => p.rarity === 'common');
+        const commonPool = basePool.filter((p) => p.rarity === 'common');
         rarity = 'common';
         pool.push(...commonPool);
     }

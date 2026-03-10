@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
+import { PERSIST_REGISTRY } from '../data/persistRegistry';
 
 // ── Types ──────────────────────────────────────────────────────
 export type MuscleGroup = 'arms' | 'shoulders' | 'legs' | 'back' | 'chest';
@@ -201,7 +202,7 @@ export const useGymStore = create<GymState>()(
             },
         }),
         {
-            name: 'gl-gym-v1',
+            name: PERSIST_REGISTRY.gym.persistKey,
         }
     )
 );

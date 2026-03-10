@@ -559,59 +559,72 @@ const COSMETIC_ENTRIES: CodexEntry[] = [
     },
 ];
 
-// ── BOOK ARTIFACTS (from Library) ────────────────────────────────────────────
-// Each book type has levels 1-5 in the codex; owned based on useBookArtifactStore
+// ── BOOK ITEMS (from Library) ────────────────────────────────────────────
+// Each book type has levels 1-3 in the codex; owned based on useInventoryStore
 
 const BOOK_CODEX_ENTRIES: CodexEntry[] = [
     // Fantasy Book
-    ...([1, 2, 3, 4, 5].map(lv => ({
+    ...([1, 2, 3].map(lv => ({
         id: `codex_book_fantasy_lv${lv}`,
-        name: `Fantasy Book — Level ${lv}`,
+        name: `Fantasy Tome ${lv === 1 ? 'I' : lv === 2 ? 'II' : 'III'}`,
         icon: '📘',
         section: 'books' as CodexSection,
-        rarity: (['common', 'uncommon', 'rare', 'epic', 'legendary'] as CodexRarity[])[lv - 1],
-        description: `A Fantasy Book at Level ${lv}. Grants +${[0.05, 1, 2, 3.5, 5][lv - 1]}% Arena Combat XP.`,
+        rarity: (['common', 'rare', 'epic'] as CodexRarity[])[lv - 1],
+        description: `A Fantasy Tome at Level ${lv}. Grants +${lv === 1 ? 2 : lv === 2 ? 5 : 10} Intelligence.`,
         sources: ['library'] as CodexSource[],
-        obtainHint: lv === 1 ? 'Complete any Fantasy book in the Library.' : `Fuse ${lv} Fantasy Books of the previous level.`,
+        obtainHint: lv === 1 ? 'Complete any Fantasy book in the Library.' : `Fuse 3 Fantasy Tomes of the previous level.`,
     }))),
     // History Book
-    ...([1, 2, 3, 4, 5].map(lv => ({
+    ...([1, 2, 3].map(lv => ({
         id: `codex_book_history_lv${lv}`,
-        name: `History Book — Level ${lv}`,
+        name: `History Tome ${lv === 1 ? 'I' : lv === 2 ? 'II' : 'III'}`,
         icon: '📖',
         section: 'books' as CodexSection,
-        rarity: (['common', 'uncommon', 'rare', 'epic', 'legendary'] as CodexRarity[])[lv - 1],
-        description: `A History Book at Level ${lv}. Grants +${[0.05, 1, 2, 3.5, 5][lv - 1]}% Boss Damage.`,
+        rarity: (['common', 'rare', 'epic'] as CodexRarity[])[lv - 1],
+        description: `A History Tome at Level ${lv}. Grants +${lv === 1 ? 2 : lv === 2 ? 5 : 10} Intelligence.`,
         sources: ['library'] as CodexSource[],
-        obtainHint: lv === 1 ? 'Complete any History book in the Library.' : `Fuse ${lv} History Books of the previous level.`,
+        obtainHint: lv === 1 ? 'Complete any History book in the Library.' : `Fuse 3 History Tomes of the previous level.`,
     }))),
     // Business Book
-    ...([1, 2, 3, 4, 5].map(lv => ({
+    ...([1, 2, 3].map(lv => ({
         id: `codex_book_business_lv${lv}`,
-        name: `Business Book — Level ${lv}`,
+        name: `Business Tome ${lv === 1 ? 'I' : lv === 2 ? 'II' : 'III'}`,
         icon: '📓',
         section: 'books' as CodexSection,
-        rarity: (['common', 'uncommon', 'rare', 'epic', 'legendary'] as CodexRarity[])[lv - 1],
-        description: `A Business Book at Level ${lv}. Grants +${[0.05, 1, 2, 3.5, 5][lv - 1]}% Marketplace Rewards.`,
+        rarity: (['common', 'rare', 'epic'] as CodexRarity[])[lv - 1],
+        description: `A Business Tome at Level ${lv}. Grants +${lv === 1 ? 2 : lv === 2 ? 5 : 10} Intelligence and Strategy XP.`,
         sources: ['library'] as CodexSource[],
-        obtainHint: lv === 1 ? 'Complete any Business book in the Library.' : `Fuse ${lv} Business Books of the previous level.`,
+        obtainHint: lv === 1 ? 'Complete any Business book in the Library.' : `Fuse 3 Business Tomes of the previous level.`,
     }))),
-    // Self-Help Book
-    ...([1, 2, 3, 4, 5].map(lv => ({
-        id: `codex_book_selfhelp_lv${lv}`,
-        name: `Self-Help Book — Level ${lv}`,
+    // Self-Improvement Book
+    ...([1, 2, 3].map(lv => ({
+        id: `codex_book_self-improvement_lv${lv}`,
+        name: `Self-Improvement Tome ${lv === 1 ? 'I' : lv === 2 ? 'II' : 'III'}`,
         icon: '📒',
         section: 'books' as CodexSection,
-        rarity: (['common', 'uncommon', 'rare', 'epic', 'legendary'] as CodexRarity[])[lv - 1],
-        description: `A Self-Help Book at Level ${lv}. Grants +${[0.05, 1, 2, 3.5, 5][lv - 1]}% overall Skill XP gain.`,
+        rarity: (['common', 'rare', 'epic'] as CodexRarity[])[lv - 1],
+        description: `A Self-Improvement Tome at Level ${lv}. Grants +${lv === 1 ? 2 : lv === 2 ? 5 : 10} Intelligence.`,
         sources: ['library'] as CodexSource[],
-        obtainHint: lv === 1 ? 'Complete any Self-Help/Improvement book in the Library.' : `Fuse ${lv} Self-Help Books of the previous level.`,
+        obtainHint: lv === 1 ? 'Complete any Self-Improvement book in the Library.' : `Fuse 3 Self-Improvement Tomes of the previous level.`,
+    }))),
+    // Philosophy Book
+    ...([1, 2, 3].map(lv => ({
+        id: `codex_book_philosophy_lv${lv}`,
+        name: `Philosophy Tome ${lv === 1 ? 'I' : lv === 2 ? 'II' : 'III'}`,
+        icon: '📚',
+        section: 'books' as CodexSection,
+        rarity: (['common', 'rare', 'epic'] as CodexRarity[])[lv - 1],
+        description: `A Philosophy Tome at Level ${lv}. Grants +${lv === 1 ? 2 : lv === 2 ? 5 : 10} Intelligence.`,
+        sources: ['library'] as CodexSource[],
+        obtainHint: lv === 1 ? 'Complete any Philosophy book in the Library.' : `Fuse 3 Philosophy Tomes of the previous level.`,
     }))),
 ];
 
 // ── COMBINED CODEX ────────────────────────────────────────────────────────────
 
-export const CODEX_ENTRIES: CodexEntry[] = [
+import { mergeExternalCodex } from './contentLoader';
+
+export const CODEX_ENTRIES: CodexEntry[] = mergeExternalCodex([
     ...PET_ENTRIES,
     ...MARKETPLACE_PET_ENTRIES,
     ...ULTRA_RARE_PET_ENTRIES,
@@ -624,7 +637,7 @@ export const CODEX_ENTRIES: CodexEntry[] = [
     ...RELIC_ENTRIES,
     ...COSMETIC_ENTRIES,
     ...BOOK_CODEX_ENTRIES,
-];
+]);
 
 export function getCodexBySection(section: CodexSection): CodexEntry[] {
     return CODEX_ENTRIES.filter(e => e.section === section);

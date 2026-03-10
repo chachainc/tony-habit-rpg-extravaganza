@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
+import { PERSIST_REGISTRY } from '../data/persistRegistry';
 
 // ── Types ──────────────────────────────────────────────────────
 
@@ -284,7 +285,7 @@ export const useHealthStore = create<HealthState>()(
             },
         }),
         {
-            name: 'gl-health-v1',
+            name: PERSIST_REGISTRY.health.persistKey,
         }
     )
 );

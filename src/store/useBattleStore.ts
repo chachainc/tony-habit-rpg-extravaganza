@@ -88,7 +88,7 @@ interface BattleState {
     activeRunBuffs: any[]; // Use RunBuff[] if imported, or any
 
     // Actions
-    initBattle: (enemyId: string) => void;
+    initBattle: (enemyId: string, options?: { context?: 'arena' | 'conquest'; conquestTier?: number }) => void;
     selectAbility: (ability: Ability) => void;
     executePlayerAction: () => void;
     executeEnemyAction: () => void;
@@ -101,6 +101,9 @@ interface BattleState {
     restoreMP: (amount: number) => void; // Restore MP (used by room resting)
     startBattle: () => void;
     introGracePeriod: boolean; // Tower Expansion: Transition from prep to combat
+    context: 'arena' | 'conquest' | 'risk' | 'tower-defense';
+    conquestTier: number | null;
+    conquestEnemyPower?: number;
 }
 
 // Player abilities - Replaced with the 3 distinct actions
@@ -166,8 +169,10 @@ export const useBattleStore = create<BattleState>()((set, get) => ({
     activeFloorModifier: null,
     activeRunBuffs: [],
     introGracePeriod: false,
+    context: 'arena',
+    conquestTier: null,
 
-    initBattle: (enemyId: string) => {
+    initBattle: (enemyId: string, options?: { context?: 'arena' | 'conquest'; conquestTier?: number }) => {
         const enemyDef = ENEMY_DB[enemyId];
         if (!enemyDef) return;
 
@@ -235,18 +240,37 @@ export const useBattleStore = create<BattleState>()((set, get) => ({
             scalingFactor: 1.0,
         };
 
+        const context = options?.context || 'arena';
+        const conquestTier = options?.conquestTier || null;
+
+        let enemyMaxHp = Math.round(enemyDef.baseHp * levelScaleHp + xpScaling * 2);
+        let enemyAtk = Math.round(enemyDef.baseAtk * levelScaleStats + xpScaling * 0.5);
+        let enemyDef_stat = Math.round(enemyDef.baseDef * levelScaleStats + xpScaling * 0.5);
+        let conquestEnemyPower = undefined;
+
+        if (context === 'conquest' && conquestTier !== null) {
+            // Target curve: Node 1 (~10), Node 2 (~13), Node 3 (~17), Node 4 (~22), Boss (~30).
+            const tierCurve = { 1: 10, 2: 13, 3: 17, 4: 22, 5: 30 };
+            conquestEnemyPower = tierCurve[conquestTier as keyof typeof tierCurve] || 30;
+
+            // Map power roughly to stats
+            enemyMaxHp = Math.round(conquestEnemyPower * 10);
+            enemyAtk = Math.round(conquestEnemyPower * 0.6);
+            enemyDef_stat = Math.round(conquestEnemyPower * 0.4);
+        }
+
         const enemy: Combatant = {
             id: enemyDef.id,
             name: enemyDef.name,
             icon: enemyDef.icon,
             element: enemyDef.element,
-            maxHp: Math.round(enemyDef.baseHp * levelScaleHp + xpScaling * 2),
-            hp: Math.round(enemyDef.baseHp * levelScaleHp + xpScaling * 2),
+            maxHp: enemyMaxHp,
+            hp: enemyMaxHp,
             maxMana: 50,
             mana: 50,
             manaRegen: 5,
-            atk: Math.round(enemyDef.baseAtk * levelScaleStats + xpScaling * 0.5),
-            def: Math.round(enemyDef.baseDef * levelScaleStats + xpScaling * 0.5),
+            atk: enemyAtk,
+            def: enemyDef_stat,
             spd: Math.round(enemyDef.baseSpd * levelScaleStats),
             critRate: enemyDef.critRate,
             critDmg: enemyDef.critDmg,
@@ -320,6 +344,9 @@ export const useBattleStore = create<BattleState>()((set, get) => ({
             affinityActive,
             activeFloorModifier,
             activeRunBuffs: campaignStore.activeRunBuffs,
+            context,
+            conquestTier,
+            conquestEnemyPower,
         });
     },
 

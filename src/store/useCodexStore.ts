@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
+import { PERSIST_REGISTRY } from '../data/persistRegistry';
 
 // ─── CODEX STORE ──────────────────────────────────────────────────────────────
 // Tracks secret discovery state and lifetime spin tickets spent.
@@ -60,6 +61,6 @@ export const useCodexStore = create<CodexState>()(
                 return [];
             },
         }),
-        { name: 'gl-codex-v1' }
+        { name: PERSIST_REGISTRY.codex.persistKey }
     )
 );

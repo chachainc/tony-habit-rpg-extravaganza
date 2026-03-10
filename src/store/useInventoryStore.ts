@@ -4,9 +4,9 @@ import { ITEM_DATABASE } from '../data/items';
 import { useCurrencyStore } from './useCurrencyStore';
 import type { SkillName } from './useGameStore';
 
-export type ItemType = 'food' | 'toy' | 'potion' | 'weapon' | 'armor' | 'pet_gear' | 'ticket' | 'furniture';
+export type ItemType = 'food' | 'toy' | 'potion' | 'weapon' | 'armor' | 'pet_gear' | 'ticket' | 'furniture' | 'book' | 'relic' | 'artifact';
 export type Rarity = 'common' | 'rare' | 'epic' | 'legendary';
-export type ShopCategory = 'blacksmith' | 'armory' | 'first_aid' | 'general' | 'furniture';
+export type ShopCategory = 'blacksmith' | 'armory' | 'first_aid' | 'general' | 'furniture' | 'library';
 
 export interface ItemDef {
     id: string;
@@ -20,9 +20,19 @@ export interface ItemDef {
     icon: string;
     description?: string;
     requiredEnemy?: string; // Enemy ID that must be defeated to unlock
+
+    // Book specific fields
+    category?: 'fantasy' | 'business' | 'self-improvement' | 'history' | 'philosophy';
+    level?: number;
+    fusionRequired?: number;
+    effect?: string;
+    source?: string;
 }
 
-export const ITEM_DB: Record<string, ItemDef> = {
+import { mergeExternalItems } from '../data/contentLoader';
+import { PERSIST_REGISTRY } from '../data/persistRegistry';
+
+export const ITEM_DB: Record<string, ItemDef> = mergeExternalItems({
     // ========== WEAPONS (Blacksmith) ==========
     'rusty_sword': { id: 'rusty_sword', name: 'Rusty Sword', type: 'weapon', rarity: 'common', shopCategory: 'blacksmith', value: 5, critChance: 0.05, price: 500, icon: '🗡️', description: 'A basic blade. Better than fists.' },
     'iron_axe': { id: 'iron_axe', name: 'Iron Axe', type: 'weapon', rarity: 'common', shopCategory: 'blacksmith', value: 8, critChance: 0.10, price: 800, icon: '🪓', description: 'Heavy and brutal.' },
@@ -65,9 +75,30 @@ export const ITEM_DB: Record<string, ItemDef> = {
     'poster': { id: 'poster', name: 'Cool Poster', type: 'furniture', rarity: 'common', shopCategory: 'furniture', value: 1, price: 150, icon: '🖼️', description: 'Decorate your walls.', requiredEnemy: 'chaos_of_clutter' },
     'plant': { id: 'plant', name: 'Potted Plant', type: 'furniture', rarity: 'common', shopCategory: 'furniture', value: 1, price: 250, icon: '🪴', description: 'Brings life to the room.', requiredEnemy: 'chaos_of_clutter' },
     'bookshelf': { id: 'bookshelf', name: 'Bookshelf', type: 'furniture', rarity: 'rare', shopCategory: 'furniture', value: 2, price: 800, icon: '📚', description: 'Store your knowledge.', requiredEnemy: 'procrastination_specter' },
-};
 
-export type EquipmentSlot = 'main_hand' | 'body' | 'head' | 'pet';
+    // ========== BOOKS (Library) ==========
+    'fantasy_book_1': { id: 'fantasy_book_1', name: 'Fantasy Tome I', type: 'book', category: 'fantasy', level: 1, fusionRequired: 3, effect: '+2 Intelligence', rarity: 'common', shopCategory: 'library', value: 0, price: 0, icon: '📘' },
+    'fantasy_book_2': { id: 'fantasy_book_2', name: 'Fantasy Tome II', type: 'book', category: 'fantasy', level: 2, fusionRequired: 3, effect: '+5 Intelligence', rarity: 'rare', shopCategory: 'library', value: 0, price: 0, icon: '📘' },
+    'fantasy_book_3': { id: 'fantasy_book_3', name: 'Fantasy Tome III', type: 'book', category: 'fantasy', level: 3, fusionRequired: 0, effect: '+10 Intelligence', rarity: 'epic', shopCategory: 'library', value: 0, price: 0, icon: '📘' },
+
+    'business_book_1': { id: 'business_book_1', name: 'Business Tome I', type: 'book', category: 'business', level: 1, fusionRequired: 3, effect: '+2 Intelligence, +5 Strategy XP', rarity: 'common', shopCategory: 'library', value: 0, price: 0, icon: '📓' },
+    'business_book_2': { id: 'business_book_2', name: 'Business Tome II', type: 'book', category: 'business', level: 2, fusionRequired: 3, effect: '+5 Intelligence, +10 Strategy XP', rarity: 'rare', shopCategory: 'library', value: 0, price: 0, icon: '📓' },
+    'business_book_3': { id: 'business_book_3', name: 'Business Tome III', type: 'book', category: 'business', level: 3, fusionRequired: 0, effect: '+10 Intelligence, +25 Strategy XP', rarity: 'epic', shopCategory: 'library', value: 0, price: 0, icon: '📓' },
+
+    'self-improvement_book_1': { id: 'self-improvement_book_1', name: 'Self-Improvement Tome I', type: 'book', category: 'self-improvement', level: 1, fusionRequired: 3, effect: '+2 Intelligence', rarity: 'common', shopCategory: 'library', value: 0, price: 0, icon: '📒' },
+    'self-improvement_book_2': { id: 'self-improvement_book_2', name: 'Self-Improvement Tome II', type: 'book', category: 'self-improvement', level: 2, fusionRequired: 3, effect: '+5 Intelligence', rarity: 'rare', shopCategory: 'library', value: 0, price: 0, icon: '📒' },
+    'self-improvement_book_3': { id: 'self-improvement_book_3', name: 'Self-Improvement Tome III', type: 'book', category: 'self-improvement', level: 3, fusionRequired: 0, effect: '+10 Intelligence', rarity: 'epic', shopCategory: 'library', value: 0, price: 0, icon: '📒' },
+
+    'history_book_1': { id: 'history_book_1', name: 'History Tome I', type: 'book', category: 'history', level: 1, fusionRequired: 3, effect: '+2 Intelligence', rarity: 'common', shopCategory: 'library', value: 0, price: 0, icon: '📖' },
+    'history_book_2': { id: 'history_book_2', name: 'History Tome II', type: 'book', category: 'history', level: 2, fusionRequired: 3, effect: '+5 Intelligence', rarity: 'rare', shopCategory: 'library', value: 0, price: 0, icon: '📖' },
+    'history_book_3': { id: 'history_book_3', name: 'History Tome III', type: 'book', category: 'history', level: 3, fusionRequired: 0, effect: '+10 Intelligence', rarity: 'epic', shopCategory: 'library', value: 0, price: 0, icon: '📖' },
+
+    'philosophy_book_1': { id: 'philosophy_book_1', name: 'Philosophy Tome I', type: 'book', category: 'philosophy', level: 1, fusionRequired: 3, effect: '+2 Intelligence', rarity: 'common', shopCategory: 'library', value: 0, price: 0, icon: '📚' },
+    'philosophy_book_2': { id: 'philosophy_book_2', name: 'Philosophy Tome II', type: 'book', category: 'philosophy', level: 2, fusionRequired: 3, effect: '+5 Intelligence', rarity: 'rare', shopCategory: 'library', value: 0, price: 0, icon: '📚' },
+    'philosophy_book_3': { id: 'philosophy_book_3', name: 'Philosophy Tome III', type: 'book', category: 'philosophy', level: 3, fusionRequired: 0, effect: '+10 Intelligence', rarity: 'epic', shopCategory: 'library', value: 0, price: 0, icon: '📚' },
+});
+
+export type EquipmentSlot = 'weapon' | 'armor' | 'relic' | 'artifact' | 'pet';
 
 interface InventoryState {
     items: { [itemId: string]: number };
@@ -77,6 +108,8 @@ interface InventoryState {
     marketplaceOwned: string[];
     marketplaceEquippedArmor: string | null;
     marketplaceEquippedWeapon: string | null;
+
+    discoveredItems: string[];
 
     addItem: (itemId: string, amount?: number) => void;
     removeItem: (itemId: string, amount?: number) => void;
@@ -99,12 +132,14 @@ export const useInventoryStore = create<InventoryState>()(
     persist(
         (set, get) => ({
             items: {},
-            equipped: { main_hand: null, body: null, head: null, pet: null },
+            equipped: { weapon: null, armor: null, relic: null, artifact: null, pet: null },
 
             // Marketplace state
             marketplaceOwned: ['pet_cow', 'wooden_stick'],
             marketplaceEquippedArmor: null,
             marketplaceEquippedWeapon: 'wooden_stick',
+
+            discoveredItems: [],
 
             addItem: (itemId, amount = 1) =>
                 set((state) => ({
@@ -112,6 +147,9 @@ export const useInventoryStore = create<InventoryState>()(
                         ...state.items,
                         [itemId]: (state.items[itemId] || 0) + amount,
                     },
+                    discoveredItems: state.discoveredItems?.includes(itemId)
+                        ? state.discoveredItems
+                        : [...(state.discoveredItems || []), itemId],
                 })),
 
             removeItem: (itemId, amount = 1) =>
@@ -123,10 +161,21 @@ export const useInventoryStore = create<InventoryState>()(
                     return { items: newItems };
                 }),
 
-            equipItem: (itemId, slot) =>
+            equipItem: (itemId, slot) => {
+                if (slot !== 'pet') {
+                    const item = ITEM_DB[itemId];
+                    if (!item) return; // Must exist
+                    // Validate types
+                    if (slot === 'weapon' && item.type !== 'weapon') return;
+                    if (slot === 'armor' && item.type !== 'armor') return;
+                    if (slot === 'relic' && item.type !== 'relic') return;
+                    if (slot === 'artifact' && item.type !== 'artifact') return;
+                }
+
                 set((state) => ({
                     equipped: { ...state.equipped, [slot]: itemId }
-                })),
+                }));
+            },
 
             unequipItem: (slot) =>
                 set((state) => ({
@@ -149,7 +198,7 @@ export const useInventoryStore = create<InventoryState>()(
 
             getEquippedWeapon: () => {
                 const { equipped } = get();
-                const weaponId = equipped.main_hand;
+                const weaponId = equipped.weapon;
                 if (weaponId && ITEM_DB[weaponId]) {
                     return ITEM_DB[weaponId];
                 }
@@ -256,7 +305,7 @@ export const useInventoryStore = create<InventoryState>()(
             },
         }),
         {
-            name: 'gl-inventory-v4', // Reset for economy overhaul
+            name: PERSIST_REGISTRY.inventory.persistKey, // Reset for economy overhaul
         }
     )
 );

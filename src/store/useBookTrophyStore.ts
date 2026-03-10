@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
+import { PERSIST_REGISTRY } from '../data/persistRegistry';
 
 // Trophy milestone definitions
 export interface Trophy {
@@ -174,7 +175,7 @@ export const useBookTrophyStore = create<BookTrophyState>()(
             },
         }),
         {
-            name: 'gl-book-trophy-v1',
+            name: PERSIST_REGISTRY.bookTrophies.persistKey,
         }
     )
 );

@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { useGameStore } from './useGameStore';
+import { PERSIST_REGISTRY } from '../data/persistRegistry';
 
 // Get current date in Eastern Time
 const getEasternDateString = (): string => {
@@ -121,7 +122,7 @@ export const useConsistencyStore = create<ConsistencyState>()(
             },
         }),
         {
-            name: 'gl-consistency-v1',
+            name: PERSIST_REGISTRY.consistency.persistKey,
         }
     )
 );

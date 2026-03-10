@@ -1,8 +1,9 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import { useEquipmentStore } from './useEquipmentStore';
+import { getPassiveBonuses } from './usePassiveEffects';
 import { useBookTrophyStore } from './useBookTrophyStore';
 import { useSkillTrophyStore } from './useSkillTrophyStore';
+import { PERSIST_REGISTRY } from '../data/persistRegistry';
 
 export type SkillName =
     | 'Sleep'
@@ -348,7 +349,7 @@ export const useGameStore = create<GameState>()(
                 // Ultra slow: level × 1.5 + 5
                 const baseAtk = Math.floor(strengthLevel * 1.5) + 5;
                 // Add equipment bonus
-                const equipBonus = useEquipmentStore.getState().getEquipmentBonuses().atk;
+                const equipBonus = getPassiveBonuses().attack_bonus;
                 // Add Strength trophy bonus
                 const trophyBonus = useSkillTrophyStore.getState().getStrengthATKBonus();
                 return baseAtk + equipBonus + trophyBonus;
@@ -377,7 +378,7 @@ export const useGameStore = create<GameState>()(
                 }
 
                 // Add equipment bonus
-                const equipBonus = useEquipmentStore.getState().getEquipmentBonuses().def;
+                const equipBonus = getPassiveBonuses().defense_bonus;
                 // Add Sleep trophy DEF bonus
                 const trophyBonus = useSkillTrophyStore.getState().getSleepDEFBonus();
                 return Math.max(1, baseDef + equipBonus + trophyBonus);
@@ -467,7 +468,7 @@ export const useGameStore = create<GameState>()(
             },
         }),
         {
-            name: 'gl-game-storage-v7', // Added cumulative logs for pet evolution
+            name: PERSIST_REGISTRY.game.persistKey, // Added cumulative logs for pet evolution
         }
     )
 );

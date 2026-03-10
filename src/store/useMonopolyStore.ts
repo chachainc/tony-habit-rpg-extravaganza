@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
+import { PERSIST_REGISTRY } from '../data/persistRegistry';
 
 // ── Tile Types ─────────────────────────────────────────────────
 export type BoardSpaceType =
@@ -469,7 +470,7 @@ export const useMonopolyStore = create<MonopolyState>()(
             },
         }),
         {
-            name: 'gl-monopoly-v3', // v3 for board expansion
+            name: PERSIST_REGISTRY.monopoly.persistKey, // v3 for board expansion
         }
     )
 );

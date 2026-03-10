@@ -1,6 +1,6 @@
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Swords, Crown, Shield, Zap } from 'lucide-react';
+import { Swords, Crown, Shield, Zap, Map as MapIcon, Castle } from 'lucide-react';
 import { useBattleStore } from '../../store/useBattleStore';
 import { useConquestStore } from '../../store/useConquestStore';
 import { useGameStore } from '../../store/useGameStore';
@@ -117,6 +117,43 @@ export const CombatPage = () => {
                         <div className="combat-option__info">
                             <h2>Conquest</h2>
                             <p>Team-based territory battles. Compete for glory with allies.</p>
+                        </div>
+                        <div className="combat-option__arrow">→</div>
+                    </motion.button>
+                    <motion.button
+                        className="combat-option combat-option--risk"
+                        onClick={() => navigate('/risk')}
+                        initial={{ opacity: 0, y: 30 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: 0.4 }}
+                        whileHover={{ scale: 1.02 }}
+                        whileTap={{ scale: 0.98 }}
+                    >
+                        <div className="combat-option__icon">
+                            <MapIcon size={48} />
+                        </div>
+                        <div className="combat-option__info">
+                            <h2>Risk</h2>
+                            <p>Strategic territory conquest. Deploy armies using Sigils.</p>
+                        </div>
+                        <div className="combat-option__arrow">→</div>
+                    </motion.button>
+
+                    <motion.button
+                        className="combat-option combat-option--tower"
+                        onClick={() => navigate('/tower-defense')}
+                        initial={{ opacity: 0, y: 30 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: 0.5 }}
+                        whileHover={{ scale: 1.02 }}
+                        whileTap={{ scale: 0.98 }}
+                    >
+                        <div className="combat-option__icon">
+                            <Castle size={48} />
+                        </div>
+                        <div className="combat-option__info">
+                            <h2>Tower Defense</h2>
+                            <p>Defend the base against waves of enemies.</p>
                         </div>
                         <div className="combat-option__arrow">→</div>
                     </motion.button>

@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
+import { PERSIST_REGISTRY } from '../data/persistRegistry';
 
 export type BuffType =
     | 'xp_boost'
@@ -141,7 +142,7 @@ export const useBuffStore = create<BuffState>()(
             },
         }),
         {
-            name: 'gl-buffs-v2', // v2 for board expansion
+            name: PERSIST_REGISTRY.buffs.persistKey, // v2 for board expansion
         }
     )
 );

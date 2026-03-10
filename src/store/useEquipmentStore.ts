@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
+import { PERSIST_REGISTRY } from '../data/persistRegistry';
 
 export type EquipmentRarity = 'common' | 'rare' | 'epic' | 'legendary';
 export type EquipmentSlot = 'weapon' | 'armor' | 'accessory';
@@ -293,7 +294,7 @@ export const useEquipmentStore = create<EquipmentState>()(
             },
         }),
         {
-            name: 'gl-equipment-v1',
+            name: PERSIST_REGISTRY.equipment.persistKey,
         }
     )
 );

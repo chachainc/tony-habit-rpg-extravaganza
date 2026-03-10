@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { useGameStore, type SkillName } from './useGameStore';
 import { useConsistencyStore } from './useConsistencyStore';
+import { PERSIST_REGISTRY } from '../data/persistRegistry';
 
 export type TaskDifficulty = 'small' | 'medium' | 'hard' | 'very_hard';
 
@@ -198,7 +199,7 @@ export const useTaskStore = create<TaskState>()(
             },
         }),
         {
-            name: 'gl-tasks-storage-v4', // Bump version for consistency integration
+            name: PERSIST_REGISTRY.tasks.persistKey, // Bump version for consistency integration
         }
     )
 );

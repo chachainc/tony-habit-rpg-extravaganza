@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
+import { PERSIST_REGISTRY } from '../data/persistRegistry';
 
 export interface Title {
     id: string;
@@ -276,7 +277,7 @@ export const useTitleStore = create<TitleState>()(
             },
         }),
         {
-            name: 'gl-titles-v1',
+            name: PERSIST_REGISTRY.titles.persistKey,
         }
     )
 );

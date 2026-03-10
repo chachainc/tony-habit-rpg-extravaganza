@@ -1,55 +1,62 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import {
-    useBookArtifactStore,
-    BOOK_TYPES,
-    BOOK_TYPE_MAP,
-    getBookBonus,
-    BOOK_MAX_LEVEL,
-    type BookType,
-} from '../../store/useBookArtifactStore';
+import { useInventoryStore, ITEM_DB } from '../../store/useInventoryStore';
+import { BOOK_TYPES, BOOK_TYPE_MAP, type BookType } from '../../store/useBookStore';
 import './BookFusionPanel.css';
 
 export const BookFusionPanel = () => {
-    const { artifacts, fuseArtifacts, equipArtifact, equippedArtifactId, getFusablePairs } =
-        useBookArtifactStore();
-
+    const { items, removeItem, addItem } = useInventoryStore();
     const [fuseFlash, setFuseFlash] = useState<string | null>(null);
     const [toastMsg, setToastMsg] = useState<string | null>(null);
     const [selectedType, setSelectedType] = useState<BookType | 'all'>('all');
 
-    const handleFuse = (type: BookType, level: number, ids: string[]) => {
-        const result = fuseArtifacts(ids[0], ids[1]);
-        if (result.success) {
+    // Find all owned books
+    const ownedBooks = Object.entries(items).filter(([id, count]) => {
+        const def = ITEM_DB[id];
+        return def?.type === 'book' && count > 0;
+    }).map(([id, count]) => {
+        return { id, count, def: ITEM_DB[id] };
+    });
+
+    const filteredBooks = selectedType === 'all'
+        ? ownedBooks
+        : ownedBooks.filter(b => b.def.category === selectedType);
+
+    // Summary counts by type
+    const countByType = {
+        fantasy: 0, history: 0, business: 0, 'self-improvement': 0, philosophy: 0,
+    } as Record<BookType, number>;
+    ownedBooks.forEach(b => { countByType[b.def.category as BookType] += b.count; });
+
+    // Fusable pairs
+    const fusablePairs = ownedBooks.filter(b => b.count >= 3 && b.def.level! < 3).map(b => {
+        const nextId = `${b.def.category}_book_${b.def.level! + 1}`;
+        const nextDef = ITEM_DB[nextId];
+        return { ...b, nextDef };
+    });
+
+    const handleFuse = (id: string, nextId: string, type: string, level: number) => {
+        const currentCount = useInventoryStore.getState().items[id] || 0;
+        if (currentCount >= 3) {
+            removeItem(id, 3);
+            addItem(nextId, 1);
+
             const key = `${type}-${level}`;
             setFuseFlash(key);
-            setToastMsg(`${BOOK_TYPE_MAP[type].label} Book fused to Level ${level + 1}! 📚`);
+            setToastMsg(`Fusion Complete — ${ITEM_DB[nextId]?.name || 'Tome'} created.`);
             setTimeout(() => setFuseFlash(null), 800);
             setTimeout(() => setToastMsg(null), 3000);
         }
     };
-
-    const fusablePairs = getFusablePairs();
-
-    // Group all artifacts by type for display
-    const filteredArtifacts = selectedType === 'all'
-        ? artifacts
-        : artifacts.filter(a => a.bookType === selectedType);
-
-    // Summary counts by type
-    const countByType: Record<BookType, number> = {
-        fantasy: 0, history: 0, business: 0, selfhelp: 0,
-    };
-    artifacts.forEach(a => { countByType[a.bookType]++; });
 
     return (
         <div className="bfp-root">
             <div className="bfp-header">
                 <h2>📚 Book Fusion Lab</h2>
                 <p className="bfp-subtitle">
-                    Fuse <strong>2 books of the same type &amp; level</strong> to create a stronger version.
+                    Fuse <strong>3 books of the same type &amp; level</strong> to create a stronger version.
                     <br />
-                    <span className="bfp-rule">Lv1+Lv1 → Lv2 · Lv2+Lv2 → Lv3 · ... · Max: Lv5</span>
+                    <span className="bfp-rule">3×Lv1 → Lv2 · 3×Lv2 → Lv3</span>
                 </p>
             </div>
 
@@ -59,16 +66,16 @@ export const BookFusionPanel = () => {
                     className={`bfp-tab ${selectedType === 'all' ? 'active' : ''}`}
                     onClick={() => setSelectedType('all')}
                 >
-                    All ({artifacts.length})
+                    All Types
                 </button>
                 {BOOK_TYPES.map(t => (
                     <button
                         key={t.id}
                         className={`bfp-tab ${selectedType === t.id ? 'active' : ''}`}
                         style={selectedType === t.id ? { borderColor: t.color, color: t.color } : {}}
-                        onClick={() => setSelectedType(t.id)}
+                        onClick={() => setSelectedType(t.id as BookType)}
                     >
-                        {t.icon} {t.label} ({countByType[t.id]})
+                        {t.icon} {t.label} ({countByType[t.id as BookType]})
                     </button>
                 ))}
             </div>
@@ -79,9 +86,8 @@ export const BookFusionPanel = () => {
                     <h3 className="bfp-section-title">⚗️ Ready to Fuse</h3>
                     <div className="bfp-fuse-grid">
                         {fusablePairs.map((pair) => {
-                            const typeDef = BOOK_TYPE_MAP[pair.type];
-                            const key = `${pair.type}-${pair.level}`;
-                            const nextBonus = getBookBonus(pair.level + 1);
+                            const typeDef = BOOK_TYPE_MAP[pair.def.category!];
+                            const key = `${pair.def.category}-${pair.def.level}`;
                             return (
                                 <motion.div
                                     key={key}
@@ -91,10 +97,10 @@ export const BookFusionPanel = () => {
                                 >
                                     <div className="bfp-fuse-icon">{typeDef.icon}</div>
                                     <div className="bfp-fuse-info">
-                                        <span className="bfp-fuse-name">{typeDef.label} Book</span>
-                                        <span className="bfp-fuse-level">Lv{pair.level} × {pair.count}</span>
+                                        <span className="bfp-fuse-name">{typeDef.label} Tome</span>
+                                        <span className="bfp-fuse-level">Lv{pair.def.level} × {pair.count} / 3</span>
                                         <span className="bfp-fuse-bonus-preview">
-                                            → Lv{pair.level + 1}: +{nextBonus}% {typeDef.bonusStat}
+                                            → Lv{pair.def.level! + 1}: {pair.nextDef.effect}
                                         </span>
                                     </div>
                                     <motion.button
@@ -102,7 +108,7 @@ export const BookFusionPanel = () => {
                                         style={{ background: typeDef.color }}
                                         whileHover={{ scale: 1.05 }}
                                         whileTap={{ scale: 0.96 }}
-                                        onClick={() => handleFuse(pair.type, pair.level, pair.ids)}
+                                        onClick={() => handleFuse(pair.id, pair.nextDef.id, pair.def.category!, pair.def.level!)}
                                     >
                                         🧬 Fuse!
                                     </motion.button>
@@ -113,30 +119,28 @@ export const BookFusionPanel = () => {
                 </div>
             )}
 
-            {/* All artifacts inventory */}
-            {filteredArtifacts.length === 0 ? (
+            {/* All books inventory */}
+            {filteredBooks.length === 0 ? (
                 <div className="bfp-empty">
                     <span className="bfp-empty-icon">📚</span>
                     <p>
-                        {artifacts.length === 0
-                            ? 'Complete books in the Library to earn Book Artifacts!'
+                        {ownedBooks.length === 0
+                            ? 'Complete books in the Library to earn Book Items!'
                             : 'No books of this type yet.'}
                     </p>
                 </div>
             ) : (
                 <div className="bfp-section">
-                    <h3 className="bfp-section-title">🗃️ Your Book Artifacts</h3>
+                    <h3 className="bfp-section-title">🗃️ Your Books</h3>
                     <div className="bfp-artifact-grid">
-                        {filteredArtifacts.map((artifact) => {
-                            const typeDef = BOOK_TYPE_MAP[artifact.bookType];
-                            const bonus = getBookBonus(artifact.level);
-                            const isEquipped = equippedArtifactId === artifact.id;
-                            const isMaxLevel = artifact.level >= BOOK_MAX_LEVEL;
+                        {filteredBooks.map((book) => {
+                            const typeDef = BOOK_TYPE_MAP[book.def.category!];
+                            const isMaxLevel = book.def.level! >= 3;
 
                             return (
                                 <motion.div
-                                    key={artifact.id}
-                                    className={`bfp-artifact-card ${isEquipped ? 'equipped' : ''}`}
+                                    key={book.id}
+                                    className={`bfp-artifact-card`}
                                     style={{ '--book-color': typeDef.color } as React.CSSProperties}
                                     layout
                                     initial={{ opacity: 0, scale: 0.9 }}
@@ -147,12 +151,8 @@ export const BookFusionPanel = () => {
                                         className="bfp-artifact-lvbadge"
                                         style={{ background: typeDef.color }}
                                     >
-                                        Lv{artifact.level}
+                                        Lv{book.def.level}
                                     </div>
-
-                                    {isEquipped && (
-                                        <div className="bfp-equipped-tag">⚔️ Equipped</div>
-                                    )}
 
                                     <div
                                         className="bfp-artifact-icon"
@@ -161,30 +161,19 @@ export const BookFusionPanel = () => {
                                         {typeDef.icon}
                                     </div>
 
-                                    <div className="bfp-artifact-type">{typeDef.label} Book</div>
+                                    <div className="bfp-artifact-type">{book.def.name}</div>
 
                                     <div className="bfp-artifact-bonus">
-                                        <span style={{ color: typeDef.color }}>+{bonus}%</span>
-                                        {' '}{typeDef.bonusStat}
+                                        <span style={{ color: typeDef.color }}>{book.def.effect}</span>
+                                    </div>
+
+                                    <div className="bfp-artifact-source" style={{ marginTop: '10px', fontSize: '14px' }}>
+                                        Owned: {book.count}
                                     </div>
 
                                     {isMaxLevel && (
-                                        <div className="bfp-artifact-max">✨ MAX LEVEL</div>
+                                        <div className="bfp-artifact-max" style={{ marginTop: '10px' }}>✨ MAX LEVEL</div>
                                     )}
-
-                                    <div className="bfp-artifact-source" title={artifact.sourceTitle}>
-                                        "{artifact.sourceTitle.length > 22
-                                            ? artifact.sourceTitle.slice(0, 22) + '…'
-                                            : artifact.sourceTitle}"
-                                    </div>
-
-                                    <button
-                                        className={`bfp-equip-btn ${isEquipped ? 'unequip' : ''}`}
-                                        style={!isEquipped ? { borderColor: typeDef.color, color: typeDef.color } : {}}
-                                        onClick={() => equipArtifact(isEquipped ? null : artifact.id)}
-                                    >
-                                        {isEquipped ? 'Unequip' : 'Equip'}
-                                    </button>
                                 </motion.div>
                             );
                         })}
@@ -194,14 +183,12 @@ export const BookFusionPanel = () => {
 
             {/* Book levels reference */}
             <div className="bfp-level-table">
-                <h4>📈 Level Bonuses</h4>
-                <div className="bfp-level-rows">
-                    {[1, 2, 3, 4, 5].map(lv => (
-                        <div key={lv} className="bfp-level-row">
-                            <span className="bfp-level-num">Lv{lv}</span>
-                            <span className="bfp-level-val">+{getBookBonus(lv)}%</span>
-                        </div>
-                    ))}
+                <h4>📈 Inventory Collection System</h4>
+                <div className="bfp-level-rows" style={{ textAlign: 'left', display: 'flex', flexDirection: 'column', gap: '8px', fontSize: '0.9rem', color: '#9ca3af', marginTop: '10px' }}>
+                    <div><strong>1. Read:</strong> Get Lv 1 books and Intelligence XP</div>
+                    <div><strong>2. Collect:</strong> Check inventory for your collection process</div>
+                    <div><strong>3. Fuse:</strong> Combine 3 identical copies into the next level</div>
+                    <div><strong>Business:</strong> Additionally awards Strategy XP</div>
                 </div>
             </div>
 

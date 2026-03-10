@@ -16,6 +16,7 @@
 
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
+import { PERSIST_REGISTRY } from '../data/persistRegistry';
 
 // ==================== TROPHY DEFINITIONS ====================
 
@@ -298,7 +299,7 @@ export const useAchievementTrophyStore = create<AchievementTrophyState>()(
             },
         }),
         {
-            name: 'gl-achievement-trophies-v2',
+            name: PERSIST_REGISTRY.achievements.persistKey,
         }
     )
 );

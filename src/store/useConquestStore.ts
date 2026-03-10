@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { useStrategyStore } from './useStrategyStore';
 import { CONQUEST_MAP_NODES, type ConquestNodeData } from '../data/conquest';
+import { PERSIST_REGISTRY } from '../data/persistRegistry';
 
 
 // ─── TYPES ────────────────────────────────────────
@@ -30,6 +31,8 @@ export interface MemoryLog {
 export interface ConquestState {
     // Currency
     sigils: number;
+    addSigils: (amount: number) => void;
+    spendSigils: (amount: number) => boolean;
 
     // Conquest Map (Phase 1)
     act: number;
@@ -216,28 +219,16 @@ export const useConquestStore = create<ConquestState>()(
                     currentNodeId: 'start',
                     completedNodes: ['start'],
                     activeDiceRoll: null,
-                    diceRolls: 5 // Grant some starter dice
+                    diceRolls: 0
                 });
             },
 
-            rollMapDice: () => {
-                const state = get();
-                if (state.diceRolls <= 0) return null;
-                if (state.activeDiceRoll !== null) return state.activeDiceRoll; // Already rolling
-
-                const roll = Math.floor(Math.random() * 6) + 1;
-                set({
-                    diceRolls: state.diceRolls - 1,
-                    activeDiceRoll: roll
-                });
-                return roll;
-            },
+            rollMapDice: () => null,
 
             getReachableNodes: () => {
                 const state = get();
-                return findExactDistanceNodes(state.currentNodeId, state.activeDiceRoll || 0, CONQUEST_MAP_NODES);
+                return findExactDistanceNodes(state.currentNodeId, 1, CONQUEST_MAP_NODES);
             },
-
             movePlayer: (nodeId: string) => {
                 const state = get();
                 if (!state.completedNodes.includes(nodeId)) {
@@ -406,7 +397,7 @@ export const useConquestStore = create<ConquestState>()(
             conquestAttack: () => ({ won: false, sigilsEarned: 0, goldEarned: 0, gemsEarned: 0, troopsLost: 0, moraleChange: 0, rolls: { attacker: 0, defender: 0, attackerDice: [], defenderDice: [] }, modifiers: { force: 0, terrain: 0, morale: 0, recon: 0 } }),
         }),
         {
-            name: 'gl-conquest-storage-v1',
+            name: PERSIST_REGISTRY.conquest.persistKey,
         }
     )
 );

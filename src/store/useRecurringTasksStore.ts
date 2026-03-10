@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import type { SkillName } from './useGameStore';
+import { PERSIST_REGISTRY } from '../data/persistRegistry';
 
 export type BundleType = 'morning' | 'afternoon' | 'night';
 
@@ -541,7 +542,7 @@ export const useRecurringTasksStore = create<RecurringTasksState>()(
             },
         }),
         {
-            name: 'gl-recurring-tasks-v3', // Bumped version to force fresh reset with new task IDs
+            name: PERSIST_REGISTRY.recurringTasks.persistKey, // Bumped version to force fresh reset with new task IDs
         }
     )
 );

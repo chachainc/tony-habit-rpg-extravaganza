@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import type { SkillName } from './useGameStore';
+import { PERSIST_REGISTRY } from '../data/persistRegistry';
 
 export type EquipmentSlot = 'head' | 'body' | 'legs' | 'feet' | 'accessory' | 'weapon';
 
@@ -215,7 +216,7 @@ export const useCharacterStore = create<CharacterState>()(
             },
         }),
         {
-            name: 'gl-character-v1',
+            name: PERSIST_REGISTRY.character.persistKey,
         }
     )
 );

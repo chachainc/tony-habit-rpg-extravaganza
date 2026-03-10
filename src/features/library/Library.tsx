@@ -4,10 +4,9 @@ import {
     BookOpen, Plus, Check, Trash2, Sparkles, Brain, Zap
 } from 'lucide-react';
 
-import { useBookStore, BOOK_GLOBAL_XP_REWARD, BOOK_INTELLIGENCE_XP_REWARD } from '../../store/useBookStore';
+import { useBookStore, BOOK_GLOBAL_XP_REWARD, BOOK_INTELLIGENCE_XP_REWARD, BOOK_TYPES, BOOK_TYPE_MAP, type BookType } from '../../store/useBookStore';
 import { useGameStore } from '../../store/useGameStore';
-import { BOOK_TYPES, BOOK_TYPE_MAP, getBookBonus, type BookType } from '../../store/useBookArtifactStore';
-import { useBookArtifactStore } from '../../store/useBookArtifactStore';
+import { useInventoryStore, ITEM_DB } from '../../store/useInventoryStore';
 import { Card } from '../../components/ui';
 import { BookFusionPanel } from './BookFusionPanel';
 import './Library.css';
@@ -17,7 +16,7 @@ type LibraryTab = 'reading' | 'fusion';
 export const Library = () => {
     const { currentBooks, completedBooks, addBook, completeBook, removeBook } = useBookStore();
     const { skills, getXpProgress } = useGameStore();
-    const { artifacts, equippedArtifactId } = useBookArtifactStore();
+    const { items } = useInventoryStore();
 
     const [activeTab, setActiveTab] = useState<LibraryTab>('reading');
     const [newTitle, setNewTitle] = useState('');
@@ -28,9 +27,9 @@ export const Library = () => {
     const [celebratedBookType, setCelebratedBookType] = useState<BookType>('fantasy');
 
     const intelligenceProgress = getXpProgress('Intelligence');
-    const equippedArtifact = equippedArtifactId
-        ? artifacts.find(a => a.id === equippedArtifactId)
-        : null;
+
+    // Check if player owns any books for notification badge
+    const hasBooks = Object.keys(items).some(id => ITEM_DB[id]?.type === 'book' && items[id] > 0);
 
     const handleAddBook = (e: React.FormEvent) => {
         e.preventDefault();
@@ -103,10 +102,10 @@ export const Library = () => {
                                 </span>
                                 <div>
                                     <div style={{ fontWeight: 800, color: BOOK_TYPE_MAP[celebratedBookType].color }}>
-                                        {BOOK_TYPE_MAP[celebratedBookType].label} Book — Lv1 Unlocked!
+                                        {BOOK_TYPE_MAP[celebratedBookType].label} Tome Lv1 Earned!
                                     </div>
                                     <div style={{ fontSize: '0.78rem', opacity: 0.7 }}>
-                                        +{getBookBonus(1)}% {BOOK_TYPE_MAP[celebratedBookType].bonusStat}
+                                        Check your Codex to fuse and collect.
                                     </div>
                                 </div>
                             </div>
@@ -139,21 +138,7 @@ export const Library = () => {
                     </div>
                     <p className="library-subtitle">Reading fuels your magical power</p>
 
-                    {/* Equipped book artifact indicator */}
-                    {equippedArtifact && (
-                        <div
-                            className="lib-equipped-indicator"
-                            style={{ borderColor: BOOK_TYPE_MAP[equippedArtifact.bookType].color }}
-                        >
-                            <span>{BOOK_TYPE_MAP[equippedArtifact.bookType].icon}</span>
-                            <span>
-                                Equipped: <strong style={{ color: BOOK_TYPE_MAP[equippedArtifact.bookType].color }}>
-                                    {BOOK_TYPE_MAP[equippedArtifact.bookType].label} Book Lv{equippedArtifact.level}
-                                </strong>
-                                {' '}· +{getBookBonus(equippedArtifact.level)}% {BOOK_TYPE_MAP[equippedArtifact.bookType].bonusStat}
-                            </span>
-                        </div>
-                    )}
+                    <p className="library-subtitle">Reading fuels your magical power</p>
 
                     {/* Intelligence Stat */}
                     <div className="intelligence-stat">
@@ -187,9 +172,9 @@ export const Library = () => {
                         className={`lib-tab ${activeTab === 'fusion' ? 'active' : ''}`}
                         onClick={() => setActiveTab('fusion')}
                     >
-                        <Zap size={15} /> Fuse Books
-                        {artifacts.length > 0 && (
-                            <span className="lib-tab-badge">{artifacts.length}</span>
+                        <Zap size={15} /> Book Codex
+                        {hasBooks && (
+                            <span className="lib-tab-badge">!</span>
                         )}
                     </button>
                 </div>
@@ -235,14 +220,12 @@ export const Library = () => {
                                         ))}
                                     </div>
 
-                                    {/* Bonus preview */}
                                     <div
                                         className="lib-type-preview"
                                         style={{ color: BOOK_TYPE_MAP[newBookType].color }}
                                     >
                                         📗 Completing this book will unlock a{' '}
-                                        <strong>{BOOK_TYPE_MAP[newBookType].label} Book Lv1</strong>{' '}
-                                        (+{getBookBonus(1)}% {BOOK_TYPE_MAP[newBookType].bonusStat})
+                                        <strong>{BOOK_TYPE_MAP[newBookType].label} Tome Lv1</strong>{' '}
                                     </div>
 
                                     <button
@@ -375,15 +358,12 @@ export const Library = () => {
                         {/* Info Card */}
                         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }}>
                             <Card variant="glass" className="info-card">
-                                <h3>📖 Book Artifact System</h3>
+                                <h3>📖 Books & Intelligence</h3>
                                 <ul className="info-list">
-                                    <li><strong>Complete a Book:</strong> Earn a Lv1 Book Artifact of that type</li>
-                                    <li><strong>Fuse Books:</strong> Combine 2 of same type &amp; level → next level (up to Lv5)</li>
-                                    <li><strong>Equip:</strong> One artifact active at a time — bonus applies in Arena</li>
-                                    <li><strong>Fantasy 📘:</strong> +% Arena Combat XP (light blue)</li>
-                                    <li><strong>History 📖:</strong> +% Boss Damage (brown)</li>
-                                    <li><strong>Business 📓:</strong> +% Marketplace rewards (silver)</li>
-                                    <li><strong>Self-Help 📒:</strong> +% All Skill XP gain (yellow)</li>
+                                    <li><strong>Complete a Book:</strong> Experience points added to Intelligence</li>
+                                    <li><strong>Earn items:</strong> You gain a Level 1 Tome after a book is completed</li>
+                                    <li><strong>Fuse Tomes:</strong> 3 copies of a Level N book fuse into a Level N+1 in your Book Codex</li>
+                                    <li><strong>Business Category 📓:</strong> Completing Business books additionally yields Strategy XP</li>
                                 </ul>
                             </Card>
                         </motion.div>

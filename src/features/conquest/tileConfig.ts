@@ -23,20 +23,27 @@ export interface TileSymbol {
     rarity: TileRarity;
 }
 
-// ─── SOLDIER SYMBOLS (common) ─────────────────────
+// ─── RPG SYMBOLS (common) ─────────────────────
 export const SOLDIER_SYMBOLS: TileSymbol[] = [
-    { id: 'soldier_infantry', label: 'Infantry', emoji: '⚔️', rarity: 'common' },
-    { id: 'soldier_archer', label: 'Archer', emoji: '🏹', rarity: 'common' },
-    { id: 'soldier_cavalry', label: 'Cavalry', emoji: '🐴', rarity: 'common' },
-    { id: 'soldier_mage', label: 'Mage', emoji: '🔮', rarity: 'common' },
-    { id: 'soldier_siege', label: 'Siege', emoji: '🏗️', rarity: 'common' },
-    { id: 'soldier_healer', label: 'Healer', emoji: '💊', rarity: 'common' },
-    { id: 'soldier_banner', label: 'Banner', emoji: '🚩', rarity: 'common' },
-    { id: 'soldier_scout', label: 'Scout', emoji: '🔭', rarity: 'common' },
-    { id: 'soldier_shield', label: 'Shield', emoji: '🛡️', rarity: 'common' },
-    { id: 'soldier_spear', label: 'Spear', emoji: '🗡️', rarity: 'common' },
-    { id: 'soldier_drum', label: 'War Drum', emoji: '🥁', rarity: 'common' },
-    { id: 'soldier_catapult', label: 'Catapult', emoji: '💣', rarity: 'common' },
+    { id: 'item_sword', label: 'Sword', emoji: '⚔️', rarity: 'common' },
+    { id: 'item_shield', label: 'Shield', emoji: '🛡️', rarity: 'common' },
+    { id: 'item_scroll', label: 'Scroll', emoji: '📜', rarity: 'common' },
+    { id: 'item_potion', label: 'Potion', emoji: '🧪', rarity: 'common' },
+    { id: 'item_gem', label: 'Gem', emoji: '💎', rarity: 'common' },
+    { id: 'item_coin', label: 'Coin', emoji: '🪙', rarity: 'common' },
+    { id: 'item_ring', label: 'Ring', emoji: '💍', rarity: 'common' },
+    { id: 'item_crown', label: 'Crown', emoji: '👑', rarity: 'common' },
+    { id: 'item_key', label: 'Key', emoji: '🗝️', rarity: 'common' },
+    { id: 'item_book', label: 'Book', emoji: '📘', rarity: 'common' },
+    { id: 'item_meat', label: 'Meat', emoji: '🍖', rarity: 'common' },
+    { id: 'item_chalice', label: 'Chalice', emoji: '🍷', rarity: 'common' },
+];
+
+// ─── SPECIAL SYMBOLS (epic) ──────────────────────
+export const SPECIAL_SYMBOLS: TileSymbol[] = [
+    { id: 'special_wildcard', label: 'Wildcard', emoji: '🌟', rarity: 'epic' },
+    { id: 'special_bomb', label: 'Bomb', emoji: '💥', rarity: 'epic' },
+    { id: 'special_shuffle', label: 'Shuffle', emoji: '🔀', rarity: 'epic' },
 ];
 
 // ─── PET SYMBOLS (rare) ──────────────────────────
@@ -52,7 +59,7 @@ export const PET_SYMBOLS: TileSymbol[] = [
     { id: 'pet_voidling', label: 'Voidling', imageSrc: voidling, rarity: 'epic' },
 ];
 
-export const ALL_SYMBOLS: TileSymbol[] = [...SOLDIER_SYMBOLS, ...PET_SYMBOLS];
+export const ALL_SYMBOLS: TileSymbol[] = [...SOLDIER_SYMBOLS, ...PET_SYMBOLS, ...SPECIAL_SYMBOLS];
 
 // ─── DIFFICULTY PRESETS ───────────────────────────
 export type Difficulty = 1 | 2 | 3 | 4;   // 1=Easy, 2=Medium, 3=Hard, 4=Impossible
@@ -100,7 +107,7 @@ export function generateBoard(difficulty: Difficulty, seed: number): BoardTile[]
     const rng = createSeededRng(seed);
     const preset = DIFFICULTY_PRESETS[difficulty];
 
-    // Pick symbols — fill with soldiers first, pad with pets for variety
+    // Pick symbols — fill with standard thematic items first, pad with pets for variety
     const availableSymbols = [...SOLDIER_SYMBOLS];
     const shuffledPets = [...PET_SYMBOLS].sort(() => rng() - 0.5);
     availableSymbols.push(...shuffledPets);
@@ -111,6 +118,20 @@ export function generateBoard(difficulty: Difficulty, seed: number): BoardTile[]
     const chosenSymbols: TileSymbol[] = [];
     for (let i = 0; i < symbolsNeeded; i++) {
         chosenSymbols.push(availableSymbols[i % availableSymbols.length]);
+    }
+
+    // Inject Specials based on difficulty
+    if (difficulty >= 2) {
+        // Replace 1 normal symbol triad with a Wildcard triad
+        chosenSymbols[symbolsNeeded - 1] = SPECIAL_SYMBOLS.find(s => s.id === 'special_wildcard')!;
+    }
+    if (difficulty >= 3) {
+        // Replace 1 normal symbol triad with a Bomb triad
+        chosenSymbols[symbolsNeeded - 2] = SPECIAL_SYMBOLS.find(s => s.id === 'special_bomb')!;
+    }
+    if (difficulty >= 4) {
+        // Replace 1 normal symbol triad with a Shuffle triad
+        chosenSymbols[symbolsNeeded - 3] = SPECIAL_SYMBOLS.find(s => s.id === 'special_shuffle')!;
     }
 
     // Build flat tile bag (each symbol appears exactly 3 times)
@@ -207,6 +228,66 @@ export function isTileBlocked(tile: BoardTile, allTiles: BoardTile[]): boolean {
         if (overlap / tileArea > 0.15) return true;
     }
     return false;
+}
+
+// ─── SHUFFLE & SOLVABILITY ────────────────────────
+export function shuffleBoardState(board: BoardTile[]): BoardTile[] {
+    const remaining = board.filter(t => !t.removed);
+    const symbols = remaining.map(t => ({ symbolId: t.symbolId, symbol: t.symbol }));
+
+    // Shuffle symbols
+    const rng = createSeededRng(Date.now());
+    for (let i = symbols.length - 1; i > 0; i--) {
+        const j = Math.floor(rng() * (i + 1));
+        [symbols[i], symbols[j]] = [symbols[j], symbols[i]];
+    }
+
+    let idx = 0;
+    return board.map(t => {
+        if (t.removed) return t;
+        const sym = symbols[idx++];
+        return { ...t, symbolId: sym.symbolId, symbol: sym.symbol };
+    });
+}
+
+export function checkIsSolvable(board: BoardTile[], tray: BoardTile[], trayCapacity: number): boolean {
+    const unblockedBoardTiles = board.filter(t => !t.removed && !isTileBlocked(t, board));
+
+    // If board is empty, it's virtually solved
+    if (unblockedBoardTiles.length === 0) return true;
+
+    // If the tray is full and we can't find a triple within it, we are fundamentally stuck (handled by game over logic)
+    if (tray.length >= trayCapacity) return false;
+
+    // A wildcard anywhere on the active board makes the puzzle solvable (can pair with anything)
+    if (unblockedBoardTiles.some(t => t.symbolId === 'special_wildcard')) return true;
+
+    // Try to find if any available board tile matches either:
+    // 1. Another available board tile
+    // 2. An existing tile in the tray
+    // Note: To be perfectly thorough, we'd simulate tray states, but a simple identical pair 
+    // accessible across (board + board) or (board + tray) often means a move is possible.
+
+    // 1. Check if any tile on the board matches another tile on the board
+    const boardSymbolCounts = new Map<string, number>();
+    for (const t of unblockedBoardTiles) {
+        if (t.symbolId.startsWith('special_')) return true; // Specials are always playable
+        boardSymbolCounts.set(t.symbolId, (boardSymbolCounts.get(t.symbolId) || 0) + 1);
+    }
+
+    for (const count of boardSymbolCounts.values()) {
+        if (count >= 2 && tray.length <= trayCapacity - 2) return true; // Can move 2 identical pieces safely
+    }
+
+    // 2. Check if any tile on the board matches a tile in the tray
+    const traySymbolSet = new Set(tray.map(t => t.symbolId));
+    for (const symbolId of boardSymbolCounts.keys()) {
+        if (traySymbolSet.has(symbolId)) return true; // Can advance a partial match
+        // Can we safely put a single singleton into the tray?
+        if (tray.length < trayCapacity - 1) return true;
+    }
+
+    return false; // Board locked structurally
 }
 
 // ─── POWER-UP COSTS ───────────────────────────────

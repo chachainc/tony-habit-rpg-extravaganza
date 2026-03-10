@@ -335,11 +335,10 @@ export const ChessGame = ({ onComplete, onClose, canPlay }: ChessGameProps) => {
     const [status, setStatus] = useState('Your turn (White)');
     const [lastAIMove, setLastAIMove] = useState<{ fr: number; fc: number; tr: number; tc: number } | null>(null);
 
-    const XP_MULTIPLIER: Record<number, number> = { 1: 1, 2: 1.5, 3: 2.5 };
+    const XP_MULTIPLIER: Record<number, number> = { 1: 1, 2: 2, 3: 3 };
     const getXP = (result: 'win' | 'draw' | 'loss' | 'resigned') => {
-        if (result === 'resigned') return 1;
-        const base = result === 'win' ? 50 : result === 'draw' ? 25 : 10;
-        return Math.round(base * XP_MULTIPLIER[difficulty]);
+        if (result === 'loss' || result === 'resigned') return 0;
+        return XP_MULTIPLIER[difficulty] || 1;
     };
 
     const checkGameState = useCallback((newBoard: Board, nextTurn: Color, ep: [number, number] | null) => {

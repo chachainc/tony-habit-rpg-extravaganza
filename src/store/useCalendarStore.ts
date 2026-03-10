@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import dayjs from 'dayjs';
+import { PERSIST_REGISTRY } from '../data/persistRegistry';
 
 interface Task {
     id: string;
@@ -213,7 +214,7 @@ export const useCalendarStore = create<CalendarState>()(
             }
         }),
         {
-            name: 'gl-calendar-storage',
+            name: PERSIST_REGISTRY.calendar.persistKey,
         }
     )
 );

@@ -18,6 +18,7 @@ import { useAuraStore } from '../../store/useAuraStore';
 import { useTitleStore } from '../../store/useTitleStore';
 import { useCodexStore } from '../../store/useCodexStore';
 import { useProfileStore } from '../../store/useProfileStore';
+import { useInventoryStore } from '../../store/useInventoryStore';
 import './CollectionCodex.css';
 
 // ── Owned-check logic per section ───────────────────────────────────────────
@@ -28,6 +29,7 @@ function useOwnedChecker() {
     const titleStore = useTitleStore();
     const codexStore = useCodexStore();
     const profileStore = useProfileStore();
+    const inventoryStore = useInventoryStore();
 
     return (entry: CodexEntry): boolean => {
         // Secret items need to be discovered first
@@ -52,6 +54,13 @@ function useOwnedChecker() {
             const bannerId = entry.id.replace('codex_banner_', '');
             if (bannerId === 'default') return true;
             return profileStore.unlockedBanners.includes(bannerId);
+        }
+        if (entry.section === 'books') {
+            const match = entry.id.match(/^codex_book_(.+)_lv(\d+)$/);
+            if (match) {
+                const itemId = `${match[1]}_book_${match[2]}`;
+                return inventoryStore.discoveredItems?.includes(itemId) || false;
+            }
         }
         // Artifacts / Relics / Cosmetics — not yet tracked per-item; show locked
         // (will integrate with inventory in future)
@@ -211,6 +220,18 @@ export const CollectionCodex = () => {
 
         // Sort: owned → locked, then by rarity desc
         result.sort((a, b) => {
+            if (activeSection === 'books') {
+                const cats = ['fantasy', 'business', 'self-improvement', 'history', 'philosophy'];
+                const matchA = a.entry.id.match(/^codex_book_(.+)_lv(\d+)$/);
+                const matchB = b.entry.id.match(/^codex_book_(.+)_lv(\d+)$/);
+                if (matchA && matchB) {
+                    const catAIdx = cats.indexOf(matchA[1]);
+                    const catBIdx = cats.indexOf(matchB[1]);
+                    if (catAIdx !== catBIdx) return catAIdx - catBIdx;
+                    return parseInt(matchA[2], 10) - parseInt(matchB[2], 10);
+                }
+            }
+
             if (a.owned !== b.owned) return a.owned ? -1 : 1;
             return RARITY_ORDER.indexOf(b.entry.rarity) - RARITY_ORDER.indexOf(a.entry.rarity);
         });

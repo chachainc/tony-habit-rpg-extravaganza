@@ -5,6 +5,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import type { SkillName } from './useGameStore';
+import { PERSIST_REGISTRY } from '../data/persistRegistry';
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 
@@ -364,6 +365,6 @@ export const useXpWeaponStore = create<XpWeaponState>()(
                 return equipped?.modifiers ?? {};
             },
         }),
-        { name: 'gl-xp-weapons-v1' }
+        { name: PERSIST_REGISTRY.xpWeapons.persistKey }
     )
 );

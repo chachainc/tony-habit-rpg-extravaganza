@@ -1,0 +1,118 @@
+.risk-page {
+    position: fixed;
+    inset: 0;
+    background: var(--bg-base);
+    color: var(--text-primary);
+    overflow-y: auto;
+    padding: 2rem;
+    z-index: 100;
+}
+
+.risk-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 2rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.risk-back {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    background: none;
+    border: none;
+    color: var(--text-secondary);
+    cursor: pointer;
+    font-size: 1.1rem;
+}
+
+.risk-back:hover {
+    color: var(--text-primary);
+}
+
+.risk-stats {
+    display: flex;
+    gap: 1.5rem;
+    font-weight: bold;
+}
+
+.sigils-display {
+    color: var(--accent-gold);
+}
+
+.army-display {
+    color: var(--text-primary);
+}
+
+.risk-battle-result {
+    padding: 1rem;
+    background: var(--bg-surface);
+    border: 1px solid var(--accent-gold);
+    border-radius: 8px;
+    margin-bottom: 2rem;
+    text-align: center;
+    font-weight: bold;
+    color: var(--accent-gold);
+}
+
+.risk-map {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 1.5rem;
+    margin-top: 2rem;
+}
+
+.risk-node {
+    padding: 1.5rem;
+    border-radius: 12px;
+    background: var(--bg-surface);
+    border: 2px solid var(--border-color);
+    text-align: center;
+    transition: all 0.2s;
+}
+
+.risk-node.player {
+    border-color: var(--accent-primary);
+    background: rgba(59, 130, 246, 0.1);
+}
+
+.risk-node.enemy {
+    border-color: var(--danger-color);
+    background: rgba(239, 68, 68, 0.1);
+}
+
+.risk-node.attackable {
+    border-color: var(--accent-primary);
+    box-shadow: 0 0 10px rgba(118, 169, 250, 0.4);
+    transform: scale(1.02);
+}
+
+.risk-node.locked {
+    opacity: 0.4;
+    filter: grayscale(1);
+    pointer-events: none;
+    border-color: var(--border-color);
+}
+
+.risk-attack-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    width: 100%;
+    padding: 0.75rem;
+    margin-top: 1rem;
+    background: var(--danger-color);
+    color: white;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: bold;
+    transition: filter 0.2s;
+}
+
+.risk-attack-btn:hover {
+    filter: brightness(1.2);
+}

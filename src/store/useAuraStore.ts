@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
+import { PERSIST_REGISTRY } from '../data/persistRegistry';
 
 export interface Aura {
     id: string;
@@ -203,7 +204,7 @@ export const useAuraStore = create<AuraState>()(
             getActiveAura: () => AURAS.find(a => a.id === get().activeAuraId),
         }),
         {
-            name: 'gl-auras-v1',
+            name: PERSIST_REGISTRY.auras.persistKey,
         }
     )
 );

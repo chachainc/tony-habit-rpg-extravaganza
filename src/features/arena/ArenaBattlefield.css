@@ -436,12 +436,12 @@
 
     .unit-sprite img {
         max-width: 100%;
-        max-height: min(250px, 30vh);
+        height: min(125px, 20vh);
         object-fit: contain;
     }
 
     .unit-sprite.player img {
-        max-height: min(220px, 28vh);
+        height: min(110px, 18vh);
     }
 
     .vs-text {

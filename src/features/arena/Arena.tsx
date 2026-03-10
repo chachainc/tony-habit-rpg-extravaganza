@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { Swords, Shield, Zap, X, Sparkles, BookOpen, ChevronUp, ChevronDown } from 'lucide-react';
 import { useGameStore } from '../../store/useGameStore';
 import { useCurrencyStore as _useCurrencyStore } from '../../store/useCurrencyStore';
@@ -14,6 +14,7 @@ import { useMagicStore } from '../../store/useMagicStore';
 import { ITEM_DATABASE } from '../../data/items';
 import { ArenaBattlefieldLayout } from './ArenaBattlefieldLayout';
 import { getDetailedCombatBreakdown, type StatBreakdown } from '../../store/useCombatFormulas';
+import { getPassiveBonuses } from '../../store/usePassiveEffects';
 import { WeaponEquipWidget } from './WeaponEquipWidget';
 import { useXpWeaponStore } from '../../store/useXpWeaponStore';
 import { Panel } from '../../components/ui/Panel';
@@ -135,6 +136,7 @@ const getWinChanceColor = (chance: number): string => {
 
 export const Arena = ({ onClose }: { onClose: () => void }) => {
     const navigate = useNavigate();
+    const location = useLocation();
     const heroImage = useHeroImage();
     const { addGlobalXp } = useGameStore();
     const { addGold } = useCurrencyStore();
@@ -184,9 +186,7 @@ export const Arena = ({ onClose }: { onClose: () => void }) => {
     const { ownedSpells, getOwnedSpells } = useMagicStore();
     const [showSpellMenu, setShowSpellMenu] = useState(false);
 
-
-
-    const [view, setView] = useState<'map' | 'battle'>('map');
+    const [view, setView] = useState<'map' | 'battle'>(location.state?.startBattle ? 'battle' : 'map');
     const [autoAttack, setAutoAttack] = useState(false);
     const [showPowerDetails, setShowPowerDetails] = useState(false);
 
@@ -267,46 +267,87 @@ export const Arena = ({ onClose }: { onClose: () => void }) => {
     };
 
     // Handle Victory
-
     const handleVictory = () => {
+        const battleState = useBattleStore.getState();
+        const isConquest = battleState.context === 'conquest';
+        const passives = getPassiveBonuses();
+
         if (enemy) {
             const enemyDef = ENEMY_DB[enemy.id];
             if (enemyDef) {
                 markDefeated(enemy.id);
                 const scaling = enemy.scalingFactor || 1.0;
-                addGold(Math.round(enemyDef.goldReward * scaling));
-                addGlobalXp(Math.round(enemyDef.xpReward * scaling));
 
-                // Unlock next floor if this was the current floor
-                if (currentFloor <= highestFloorCleared + 1) { // Logic check
-                    unlockNextFloor();
-                }
-
-                // Gem rewards for boss floors (every 10th floor)
-                // 3rd boss+ (floor 30+) awards increasingly more gems
-                if (enemyDef.floor > 0 && enemyDef.floor % 10 === 0) {
-                    const bossNumber = enemyDef.floor / 10; // 1 = floor 10, 2 = floor 20, etc.
-                    const gemReward = bossNumber <= 2 ? 1 : bossNumber - 1; // 1,1,2,3,4...
-                    import('../../store/useGameStore').then(({ useGameStore: gs }) => {
-                        gs.getState().addGems(gemReward);
-                    });
-                    import('../../components/ui/Toast').then(({ useToastStore }) => {
-                        useToastStore.getState().addToast({
-                            type: 'success',
-                            message: `💎 Boss Floor ${enemyDef.floor} Cleared! +${gemReward} Gem${gemReward > 1 ? 's' : ''}!`,
-                            duration: 5000,
+                if (isConquest) {
+                    // Conquest specific rewards
+                    const sigils = Math.floor(Math.random() * 3) + passives.sigil_bonus; // 0-2
+                    if (sigils > 0) {
+                        import('../../store/useConquestStore').then(({ useConquestStore: cs }) => {
+                            cs.getState().addSigils(sigils);
                         });
-                    }).catch(() => { });
+                        import('../../components/ui/Toast').then(({ useToastStore }) => {
+                            useToastStore.getState().addToast({
+                                type: 'success',
+                                message: `Conquest Victory! Found ${sigils} Sigil${sigils > 1 ? 's' : ''}!`,
+                                duration: 5000,
+                            });
+                        }).catch(() => { });
+                    }
+                } else {
+                    const totalGold = Math.round(enemyDef.goldReward * scaling) + passives.gold_bonus;
+                    addGold(totalGold);
+                    addGlobalXp(Math.round(enemyDef.xpReward * scaling));
+
+                    // Unlock next floor if this was the current floor
+                    if (currentFloor <= highestFloorCleared + 1) { // Logic check
+                        unlockNextFloor();
+                    }
+
+                    // Gem rewards for boss floors (every 10th floor)
+                    // 3rd boss+ (floor 30+) awards increasingly more gems
+                    if (enemyDef.floor > 0 && enemyDef.floor % 10 === 0) {
+                        const bossNumber = enemyDef.floor / 10; // 1 = floor 10, 2 = floor 20, etc.
+                        const gemReward = bossNumber <= 2 ? 1 : bossNumber - 1; // 1,1,2,3,4...
+                        import('../../store/useGameStore').then(({ useGameStore: gs }) => {
+                            gs.getState().addGems(gemReward);
+                        });
+                        import('../../components/ui/Toast').then(({ useToastStore }) => {
+                            useToastStore.getState().addToast({
+                                type: 'success',
+                                message: `💎 Boss Floor ${enemyDef.floor} Cleared! +${gemReward} Gem${gemReward > 1 ? 's' : ''}!`,
+                                duration: 5000,
+                            });
+                        }).catch(() => { });
+                    }
+
+                    // Arena victory sigil (0-1)
+                    const sigils = Math.floor(Math.random() * 2) + passives.sigil_bonus;
+                    if (sigils > 0) {
+                        import('../../store/useConquestStore').then(({ useConquestStore: cs }) => {
+                            cs.getState().addSigils(sigils);
+                        });
+                    }
                 }
             }
         }
-        setView('map');
-        resetBattle();
+
+        if (isConquest) {
+            navigate('/combat');
+            resetBattle();
+        } else {
+            setView('map');
+            resetBattle();
+        }
     };
 
     // Handle Defeat
     const handleDefeat = () => {
-        setView('map');
+        const isConquest = useBattleStore.getState().context === 'conquest';
+        if (isConquest) {
+            navigate('/combat');
+        } else {
+            setView('map');
+        }
         resetBattle();
     };
 
@@ -494,6 +535,11 @@ export const Arena = ({ onClose }: { onClose: () => void }) => {
                                                 <div className="stat-pill"><span className="stat-icon">💨</span> {enemy.spd}</div>
                                                 <div className="stat-pill"><span className="stat-icon">✨</span> {enemyDef.element}</div>
                                             </div>
+                                            {useBattleStore.getState().context === 'conquest' && (
+                                                <div className="synergy-banner" style={{ marginTop: '0.5rem', background: 'rgba(239, 68, 68, 0.2)' }}>
+                                                    [DEBUG] Conquest Enemy Power: {useBattleStore.getState().conquestEnemyPower}
+                                                </div>
+                                            )}
                                         </div>
                                     </Panel>
 

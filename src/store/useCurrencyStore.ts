@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import type { SkillName } from './useGameStore';
+import { PERSIST_REGISTRY } from '../data/persistRegistry';
 
 export interface CurrencyState {
     // Common currency - earned from tasks and battles
@@ -143,7 +144,7 @@ export const useCurrencyStore = create<CurrencyState>()(
             },
         }),
         {
-            name: 'gl-currency-v2', // Reset for economy overhaul
+            name: PERSIST_REGISTRY.currency.persistKey, // Reset for economy overhaul
         }
     )
 );

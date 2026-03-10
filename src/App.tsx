@@ -22,6 +22,8 @@ import { GymTracker } from './features/gym/GymTracker';
 import { HealthTracker } from './features/health/HealthTracker';
 import { Conquest } from './features/conquest/Conquest';
 import { CombatPage } from './features/combat/CombatPage';
+import { RiskPage } from './features/risk/RiskPage';
+import { TowerDefensePage } from './features/tower-defense/TowerDefensePage';
 import { LoginScreen } from './features/auth/LoginScreen';
 import { CharacterCreation } from './features/onboarding/CharacterCreation';
 import { UIShowcase } from './features/showcase/UIShowcase';
@@ -158,6 +160,8 @@ function App() {
           <Route path="health" element={<HealthTracker />} />
           <Route path="conquest" element={<Conquest />} />
           <Route path="combat" element={<CombatPage />} />
+          <Route path="risk" element={<RiskPage />} />
+          <Route path="tower-defense" element={<TowerDefensePage />} />
           <Route path="shop" element={<ShopModal category="general" onClose={() => window.history.back()} />} />
           <Route path="room" element={<PlayerRoomPage />} />
           <Route path="walkable-room" element={<WalkableRoom />} />

@@ -3,6 +3,7 @@ import { persist } from 'zustand/middleware';
 import { useGameStore } from './useGameStore';
 import { useCurrencyStore } from './useCurrencyStore';
 import { useBookTrophyStore } from './useBookTrophyStore';
+import { PERSIST_REGISTRY } from '../data/persistRegistry';
 
 // Spell definitions
 export interface Spell {
@@ -299,7 +300,7 @@ export const useMagicStore = create<MagicState>()(
             },
         }),
         {
-            name: 'gl-magic-storage-v1',
+            name: PERSIST_REGISTRY.magic.persistKey,
         }
     )
 );

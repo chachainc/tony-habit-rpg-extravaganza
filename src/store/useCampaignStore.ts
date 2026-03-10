@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { ENEMY_DB } from './useEnemyStore';
+import { PERSIST_REGISTRY } from '../data/persistRegistry';
 
 // Golden Slime spawn settings
 const GOLDEN_SLIME_SPAWN_CHANCE = 0.01; // 1% chance
@@ -121,7 +122,7 @@ export const useCampaignStore = create<CampaignState>()(
             clearRunBuffs: () => set({ activeRunBuffs: [] }),
         }),
         {
-            name: 'gl-campaign-v2', // Incremented version
+            name: PERSIST_REGISTRY.campaign.persistKey, // Incremented version
         }
     )
 );
