@@ -3,11 +3,11 @@
 .battlefield-layout {
     position: relative;
     width: 100%;
-    height: 100%;
+    flex: 1;
+    min-height: 100%;
     overflow: hidden;
     background-color: var(--gacha-bg-deep);
-    display: grid;
-    grid-template-rows: auto 1fr auto;
+    display: flex;
     font-family: var(--font-family-heading);
 }
 
@@ -43,23 +43,27 @@
 
 /* --- Header Layer --- */
 .battlefield-header {
-    position: relative;
-    z-index: 10;
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    z-index: 20;
     display: flex;
-    justify-content: center;
+    justify-content: space-between;
     align-items: center;
-    padding: var(--space-4);
+    padding: 0.5rem 2rem;
     pointer-events: none;
-    text-transform: uppercase;
+    background: linear-gradient(180deg, rgba(0, 0, 0, 0.8) 0%, rgba(0, 0, 0, 0) 100%);
 }
 
 .vs-badge {
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 1rem;
-    background: linear-gradient(90deg, rgba(0, 0, 0, 0) 0%, rgba(0, 0, 0, 0.8) 20%, rgba(0, 0, 0, 0.8) 80%, rgba(0, 0, 0, 0) 100%);
-    padding: 0.5rem 2rem;
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+    padding: 0 1rem;
 }
 
 .vs-text {
@@ -73,14 +77,14 @@
 
 .turn-counter {
     position: absolute;
-    top: 5rem;
+    top: 3.5rem;
     left: 50%;
     transform: translateX(-50%);
     background: rgba(0, 0, 0, 0.6);
     border: 1px solid rgba(255, 255, 255, 0.1);
     padding: 0.2rem 0.8rem;
     border-radius: 20px;
-    font-size: 0.8rem;
+    font-size: 0.75rem;
     color: #94a3b8;
     font-weight: 600;
 }
@@ -105,45 +109,52 @@
 
 /* --- Field Layer (The Stage) --- */
 .battlefield-stage {
-    position: relative;
+    position: absolute;
+    inset: 0;
     z-index: 5;
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-end;
-    /* Align units to "ground" roughly */
-    padding: 0 5% 8%;
-    /* Bottom padding lifts them from very bottom */
-    width: 100%;
-    max-width: 1200px;
-    margin: 0 auto;
-    perspective: 1000px;
+}
+
+/* Base implicit ground plane for characters */
+.battlefield-stage::after {
+    content: '';
+    position: absolute;
+    bottom: 5%;
+    left: 10%;
+    right: 10%;
+    height: 25%;
+    background: radial-gradient(ellipse at center, rgba(139, 92, 246, 0.4) 0%, rgba(99, 102, 241, 0.2) 35%, transparent 70%);
+    pointer-events: none;
+    z-index: 1;
 }
 
 .squad-zone {
+    position: absolute;
     display: flex;
-    align-items: flex-end;
-    gap: 2rem;
-    position: relative;
-    min-width: 200px;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-end;
+    width: 35%;
 }
 
 .squad-zone.allies {
-    justify-content: flex-end;
-    /* Push towards center */
-    padding-right: 2rem;
+    bottom: 15%;
+    left: 20%;
+    z-index: 20;
+    /* Hero is closer */
 }
 
 .squad-zone.enemies {
-    justify-content: flex-start;
-    /* Push towards center */
-    padding-left: 2rem;
+    bottom: 20%;
+    right: 20%;
+    z-index: 10;
+    /* Enemy is further back */
 }
 
 /* Unit Entity Container */
 .unit-entity {
     position: relative;
     display: flex;
-    flex-direction: column;
+    flex-direction: column-reverse;
     align-items: center;
     transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
@@ -165,20 +176,20 @@
 .unit-sprite {
     position: relative;
     z-index: 10;
-    filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.4));
+    filter: drop-shadow(0 20px 30px rgba(0, 0, 0, 0.8));
     transition: filter 0.2s;
 }
 
 .unit-sprite img {
-    max-height: 250px;
-    max-width: 100%;
+    height: min(250px, 40vh);
+    width: auto;
     object-fit: contain;
 }
 
 .unit-sprite.player img {
-    max-height: 200px;
+    height: min(220px, 35vh);
+    width: auto;
     transform: scaleX(-1);
-    /* Face right if sprite faces left naturally */
 }
 
 /* Hit Flash Animation */
@@ -252,13 +263,19 @@
 .floating-ui {
     position: absolute;
     top: -40px;
-    /* Float above head */
+    /* Float closely above head */
     left: 50%;
     transform: translateX(-50%);
-    width: 140px;
-    z-index: 20;
+    width: 160px;
+    z-index: 30;
     pointer-events: none;
     text-align: center;
+    background: rgba(10, 15, 20, 0.6);
+    backdrop-filter: blur(4px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    padding: 4px 8px;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
 }
 
 .unit-name {
@@ -401,24 +418,30 @@
     }
 
     .squad-zone {
-        min-width: 120px;
-        gap: 0.5rem;
+        width: 45%;
+        padding: 0;
     }
 
     .squad-zone.allies {
-        padding-right: 0.5rem;
+        bottom: 10%;
+        left: 5%;
+        width: 45%;
     }
 
     .squad-zone.enemies {
-        padding-left: 0.5rem;
+        bottom: 20%;
+        right: 5%;
+        width: 45%;
     }
 
     .unit-sprite img {
-        max-height: 150px;
+        max-width: 100%;
+        max-height: min(250px, 30vh);
+        object-fit: contain;
     }
 
     .unit-sprite.player img {
-        max-height: 120px;
+        max-height: min(220px, 28vh);
     }
 
     .vs-text {

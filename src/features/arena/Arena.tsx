@@ -184,18 +184,7 @@ export const Arena = ({ onClose }: { onClose: () => void }) => {
     const { ownedSpells, getOwnedSpells } = useMagicStore();
     const [showSpellMenu, setShowSpellMenu] = useState(false);
 
-    // Log Collapse State
-    const [isLogCollapsed, setIsLogCollapsed] = useState(() => window.innerWidth <= 768);
-    const [lastReadLogLength, setLastReadLogLength] = useState(0);
 
-    // Update unread count
-    useEffect(() => {
-        if (!isLogCollapsed) {
-            setLastReadLogLength(combatLog.length);
-        }
-    }, [combatLog.length, isLogCollapsed]);
-
-    const unreadLogCount = combatLog.length - lastReadLogLength;
 
     const [view, setView] = useState<'map' | 'battle'>('map');
     const [autoAttack, setAutoAttack] = useState(false);
@@ -498,27 +487,12 @@ export const Arena = ({ onClose }: { onClose: () => void }) => {
                                             </div>
                                         </div>
                                         <div className="profile-content">
-                                            <div className="stat-grid">
-                                                <div className="intel-row">
-                                                    <span className="intel-label">HP</span>
-                                                    <span className="intel-status">{enemy.maxHp}</span>
-                                                </div>
-                                                <div className="intel-row">
-                                                    <span className="intel-label">ATK</span>
-                                                    <span className="intel-status">{enemy.atk}</span>
-                                                </div>
-                                                <div className="intel-row">
-                                                    <span className="intel-label">DEF</span>
-                                                    <span className="intel-status">{enemy.def}</span>
-                                                </div>
-                                                <div className="intel-row">
-                                                    <span className="intel-label">SPD</span>
-                                                    <span className="intel-status">{enemy.spd}</span>
-                                                </div>
-                                                <div className="intel-row">
-                                                    <span className="intel-label">Element</span>
-                                                    <span className="intel-status">✨ {enemyDef.element}</span>
-                                                </div>
+                                            <div className="stat-grid horizontal">
+                                                <div className="stat-pill"><span className="stat-icon">❤️</span> {enemy.maxHp}</div>
+                                                <div className="stat-pill"><span className="stat-icon">⚔️</span> {enemy.atk}</div>
+                                                <div className="stat-pill"><span className="stat-icon">🛡️</span> {enemy.def}</div>
+                                                <div className="stat-pill"><span className="stat-icon">💨</span> {enemy.spd}</div>
+                                                <div className="stat-pill"><span className="stat-icon">✨</span> {enemyDef.element}</div>
                                             </div>
                                         </div>
                                     </Panel>
@@ -532,27 +506,12 @@ export const Arena = ({ onClose }: { onClose: () => void }) => {
                                             </div>
                                         </div>
                                         <div className="profile-content">
-                                            <div className="stat-grid">
-                                                <div className="intel-row">
-                                                    <span className="intel-label">HP</span>
-                                                    <span className="intel-status">{player.maxHp}/{player.maxHp}</span>
-                                                </div>
-                                                <div className="intel-row">
-                                                    <span className="intel-label">ATK</span>
-                                                    <span className="intel-status">{player.atk}</span>
-                                                </div>
-                                                <div className="intel-row">
-                                                    <span className="intel-label">DEF</span>
-                                                    <span className="intel-status">{player.def}</span>
-                                                </div>
-                                                <div className="intel-row">
-                                                    <span className="intel-label">SPD</span>
-                                                    <span className="intel-status">{player.spd}</span>
-                                                </div>
-                                                <div className="intel-row">
-                                                    <span className="intel-label">Element</span>
-                                                    <span className="intel-status">✨ neutral</span>
-                                                </div>
+                                            <div className="stat-grid horizontal">
+                                                <div className="stat-pill"><span className="stat-icon">❤️</span> {player.maxHp}</div>
+                                                <div className="stat-pill"><span className="stat-icon">⚔️</span> {player.atk}</div>
+                                                <div className="stat-pill"><span className="stat-icon">🛡️</span> {player.def}</div>
+                                                <div className="stat-pill"><span className="stat-icon">💨</span> {player.spd}</div>
+                                                <div className="stat-pill"><span className="stat-icon">🔮</span> neutral</div>
                                             </div>
 
                                             {/* Power Details Panel */}
@@ -679,230 +638,27 @@ export const Arena = ({ onClose }: { onClose: () => void }) => {
             <div className="modal-overlay arena-overlay">
                 <div className={`arena-modal ${lastDamage?.target === 'player' ? 'shake' : ''}`}>
                     <div className="battle-layout">
-                        {/* Interactive Squad Battlefield Layout */}
-                        {USE_BATTLEFIELD_LAYOUT ? (
-                            <div style={{ flex: 1, position: 'relative', overflow: 'hidden' }}>
-                                <ArenaBattlefieldLayout />
-                            </div>
-                        ) : (
-                            <div className={`battle-stage ${currentFloor >= 15 ? 'high-floor' : ''}`}>
-                                <div
-                                    className="battle-background"
-                                    style={{
-                                        backgroundImage: `url(${getBackgroundForFloor(currentFloor)})`,
-                                        backgroundSize: 'cover',
-                                        backgroundPosition: 'center'
-                                    }}
-                                />
-
-                                {/* Tower Expansion: Environmental Debris Layer */}
-                                <div className="environmental-debris">
-                                    {ENVIRONMENT_DEBRIS.map((item, i) => (
-                                        <div
-                                            key={i}
-                                            className="debris-item"
-                                            style={{
-                                                top: item.top,
-                                                left: item.left,
-                                                fontSize: item.size,
-                                                transform: `rotate(${item.rot})`
-                                            }}
-                                        >
-                                            {item.icon}
-                                        </div>
-                                    ))}
-                                </div>
-
-                                {player && enemy && (
-                                    <>
-                                        {/* Opening Dialogue Overlay */}
-                                        <AnimatePresence>
-                                            {turnNumber === 1 && phase !== 'prep' && (
-                                                <motion.div
-                                                    className="opening-dialogue-overlay"
-                                                    initial={{ opacity: 1 }}
-                                                    animate={{ opacity: 0 }}
-                                                    transition={{ duration: 1, delay: 2 }}
-                                                >
-                                                    <motion.div
-                                                        className="dialogue-box"
-                                                        initial={{ scale: 0.8, opacity: 0 }}
-                                                        animate={{ scale: 1, opacity: 1 }}
-                                                        exit={{ scale: 1.2, opacity: 0 }}
-                                                    >
-                                                        <div className="dialogue-icon">{enemy.icon}</div>
-                                                        <p className="dialogue-text">"{ENEMY_DB[enemy.id].openingLine}"</p>
-                                                    </motion.div>
-                                                </motion.div>
-                                            )}
-                                        </AnimatePresence>
-
-                                        {/* HUD */}
-                                        <div className="battle-hud">
-                                            {/* Timeline / Turn Indicator */}
-                                            <div className="timeline">
-                                                {/* Golden Slime Warning */}
-                                                {isGoldenSlime && (
-                                                    <div className="golden-slime-warning" style={{
-                                                        background: 'linear-gradient(90deg, #fbbf24, #f59e0b)',
-                                                        color: '#000',
-                                                        padding: '0.25rem 0.75rem',
-                                                        borderRadius: '8px',
-                                                        fontWeight: 'bold',
-                                                        marginBottom: '0.5rem',
-                                                        animation: 'pulse 1s infinite'
-                                                    }}>
-                                                        ⚠️ ESCAPES IN {goldenSlimeTurnsRemaining} TURN{goldenSlimeTurnsRemaining > 1 ? 'S' : ''}!
-                                                    </div>
-                                                )}
-                                                {/* Simple turn text for now */}
-                                                <div className="turn-text" style={{ color: 'white', fontWeight: 'bold' }}>
-                                                    Turn {turnNumber} • {phase === 'select_action' ? "YOUR TURN" : `${enemy.name}'s TURN`}
-                                                </div>
-                                            </div>
-
-                                            {/* Player Status */}
-                                            <div className="combatant-status player">
-                                                <div className="status-name">
-                                                    {player.name}
-                                                    {player.isBerserk && <span className="berserk-badge">🔥 BERSERK</span>}
-                                                </div>
-                                                {renderHealthBar(player.hp, player.maxHp, 'player')}
-                                                {/* Mana Bar */}
-                                                <div className="mana-bar" style={{ marginTop: '0.25rem', height: '6px', background: '#1e3a5f', width: '100%', borderRadius: '3px' }}>
-                                                    <div style={{ height: '100%', width: `${(player.mana / player.maxMana) * 100}%`, background: 'linear-gradient(90deg, #3b82f6, #60a5fa)', borderRadius: '3px' }} />
-                                                </div>
-                                                <div style={{ fontSize: '0.65rem', color: '#60a5fa', marginTop: '0.1rem' }}>
-                                                    {player.mana}/{player.maxMana} MP
-                                                </div>
-                                                {/* Rage Bar */}
-                                                <div className="rage-bar" style={{ marginTop: '0.25rem', height: '4px', background: '#333', width: '100%' }}>
-                                                    <div style={{ height: '100%', width: `${player.energy}%`, background: player.energy >= 100 ? '#fbbf24' : '#f59e0b' }} />
-                                                </div>
-                                            </div>
-
-                                            {/* Enemy Status */}
-                                            <div className="combatant-status enemy">
-                                                <div className="status-name">{enemy.name}</div>
-                                                {renderHealthBar(enemy.hp, enemy.maxHp, 'enemy')}
-                                            </div>
-                                        </div>
-
-                                        {/* Sprites with Tower Expansion Platforms */}
-                                        <div className="battle-stage-platforms">
-                                            {/* Player Platform */}
-                                            <div className="player-platform">
-                                                <div className="platform-ellipse" />
-                                                <div className="combatant-sprite player">
-                                                    <AnimatePresence>
-                                                        {(() => {
-                                                            const activeAuraId = useAuraStore.getState().activeAuraId;
-                                                            const activeAura = AURAS.find(a => a.id === activeAuraId);
-                                                            if (activeAura && activeAura.id !== 'none') {
-                                                                return (
-                                                                    <motion.div
-                                                                        className="battle-aura-effect"
-                                                                        initial={{ opacity: 0, scale: 0.8 }}
-                                                                        animate={{
-                                                                            opacity: [0.3, 0.6, 0.3],
-                                                                            scale: [1, 1.3, 1],
-                                                                            background: `radial-gradient(circle, ${activeAura.color} 0%, transparent 70%)`
-                                                                        }}
-                                                                        transition={{ duration: 2, repeat: Infinity }}
-                                                                    />
-                                                                );
-                                                            }
-                                                            return null;
-                                                        })()}
-                                                    </AnimatePresence>
-
-                                                    <motion.img
-                                                        src={heroImage}
-                                                        alt="Player"
-                                                        animate={lastDamage?.target === 'player' ? { x: [0, -10, 10, -10, 0] } : {}}
-                                                    />
-
-                                                    {petItem && (
-                                                        <div className="battle-pet">
-                                                            <span className="pet-icon">{petItem.icon}</span>
-                                                            <div className="pet-name-bubble">{petName}</div>
-                                                        </div>
-                                                    )}
-                                                </div>
-                                            </div>
-
-                                            {/* Enemy Platform */}
-                                            <div className={`enemy-platform ${bossPhase === 2 ? 'boss-enraged' : ''}`}>
-                                                <div className="platform-ellipse" />
-                                                <div className="combatant-sprite enemy">
-                                                    <motion.div
-                                                        className="enemy-sprite-wrap"
-                                                        animate={lastDamage?.target === enemy.id ? { x: [0, 10, -10, 10, 0], scale: [1, 1.1, 1] } : {}}
-                                                    >
-                                                        {ENEMY_IMAGES[enemy.id] ? (
-                                                            <img
-                                                                src={ENEMY_IMAGES[enemy.id]}
-                                                                alt={enemy.name}
-                                                                style={bossPhase === 2 ? { filter: 'sepia(1) saturate(5) hue-rotate(-50deg)' } : {}}
-                                                            />
-                                                        ) : (
-                                                            <div className="enemy-icon-fallback">{enemy.icon}</div>
-                                                        )}
-                                                    </motion.div>
-                                                </div>
-                                            </div>
-                                        </div>
-
-                                        {/* Floating Combat Text */}
-                                        <AnimatePresence>
-                                            {lastDamage && (
-                                                <motion.div
-                                                    key={turnNumber}
-                                                    className={`floating-text damage ${lastDamage.isCrit ? 'crit' : ''}`}
-                                                    style={{
-                                                        top: '40%',
-                                                        left: lastDamage.target === 'player' ? '25%' : '75%'
-                                                    }}
-                                                    initial={{ y: 0, opacity: 1, scale: 0.5 }}
-                                                    animate={{ y: -100, opacity: 0, scale: 1.5 }}
-                                                    transition={{ duration: 0.8 }}
-                                                >
-                                                    {lastDamage.amount}
-                                                </motion.div>
-                                            )}
-                                        </AnimatePresence>
-                                    </>
-                                )}
-                            </div>
-                        )}
-
-                        {/* COMMAND DECK (Bottom 40%) */}
-                        <div className="command-deck">
-                            {/* Battle Log Panel */}
-                            {/* Battle Log Panel */}
-                            <div className={`battle-log ${isLogCollapsed ? 'collapsed' : ''}`}>
-                                <div
-                                    className="battle-log-header"
-                                    onClick={() => setIsLogCollapsed(!isLogCollapsed)}
-                                >
-                                    <span>Combat Log</span>
-                                    <div className="log-controls">
-                                        {isLogCollapsed && unreadLogCount > 0 && (
-                                            <span className="unread-dot" />
-                                        )}
-                                        {isLogCollapsed ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+                        {/* TOP & BATTLEFIELD (60%) */}
+                        <div className="battlefield-container">
+                            <ArenaBattlefieldLayout />
+                        </div>
+                        {/* COMBAT LOG (15%) */}
+                        <div className="combat-log-container">
+                            <div className="combat-log-panel">
+                                {combatLog.slice(-10).map((log, i) => (
+                                    <div key={i} className={`log-entry log-${log.type}`}>
+                                        {log.type === 'damage' && <span className="log-icon">⚔️</span>}
+                                        {log.type === 'heal' && <span className="log-icon">💚</span>}
+                                        {log.type === 'buff' && <span className="log-icon">⬆️</span>}
+                                        {log.message}
                                     </div>
-                                </div>
-                                {!isLogCollapsed && (
-                                    <div className="battle-log-content">
-                                        {combatLog.slice(-15).map((log, i) => (
-                                            <div key={i} className={`log-entry log-${log.type}`}>
-                                                {log.message}
-                                            </div>
-                                        ))}
-                                    </div>
-                                )}
+                                ))}
                             </div>
+                        </div>
+
+                        {/* ACTION BAR (25%) */}
+                        <div className="action-bar-container">
+
 
                             {player && (
                                 <div className="action-buttons">

@@ -62,20 +62,36 @@ const getBackgroundForFloor = (floor: number): string => {
   return infernalCitadelBg;
 };
 
-const UnitEntity = ({ combatant, isAlly, isActive, isHit, imageSrc }: { combatant: Combatant; isAlly: boolean; isActive: boolean; isHit: boolean; imageSrc: string; }) => {
+const UnitEntity = ({ combatant, isAlly, isActive, isHit, imageSrc, petItem }: { combatant: Combatant; isAlly: boolean; isActive: boolean; isHit: boolean; imageSrc: string; petItem?: any }) => {
   const hpPercent = Math.max(0, (combatant.hp / combatant.maxHp) * 100);
+  const mpPercent = combatant.maxMana ? Math.max(0, (combatant.mana / combatant.maxMana) * 100) : 0;
+
   return (
     <div className={`unit-entity ${isAlly ? 'ally' : 'enemy'} ${isActive ? 'attacking' : ''} ${isHit ? 'hit' : ''}`}>
       <div className="unit-shadow" />
+      {petItem && (
+        <div className="pet-mini" style={{ position: 'absolute', right: '-40px', bottom: '10px', zIndex: 20 }}>
+          <span style={{ fontSize: '2.5rem', filter: 'drop-shadow(0 5px 10px rgba(0,0,0,0.5))' }}>{petItem.icon}</span>
+        </div>
+      )}
       <div className={`unit-sprite ${isAlly ? 'player' : 'enemy'}`}>
         <img src={imageSrc} alt={combatant.name} />
       </div>
-      <div className="floating-ui">
+      <div className="floating-ui" style={{ minWidth: '130px', transform: 'translateX(-50%) translateY(-20px)' }}>
         <div className="unit-name">{combatant.name}</div>
         <div className="hp-bar-frame">
           <div className={`hp-bar-fill ${isAlly ? 'ally' : ''}`} style={{ width: `${hpPercent}%` }} />
         </div>
-        <div className="hp-text">{Math.max(0, Math.ceil(combatant.hp))}/{Math.round(combatant.maxHp)}</div>
+        <div className="hp-text">{Math.max(0, Math.ceil(combatant.hp))}/{Math.round(combatant.maxHp)} HP</div>
+
+        {isAlly && combatant.maxMana > 0 && (
+          <>
+            <div className="hp-bar-frame" style={{ marginTop: '4px' }}>
+              <div className="hp-bar-fill" style={{ width: `${mpPercent}%`, background: '#3b82f6' }} />
+            </div>
+            <div className="hp-text" style={{ color: '#93c5fd' }}>{Math.max(0, Math.floor(combatant.mana))}/{Math.round(combatant.maxMana)} MP</div>
+          </>
+        )}
       </div>
     </div>
   );
@@ -145,17 +161,13 @@ export const ArenaBattlefieldLayout = () => {
 
       <div className="battlefield-stage">
         <div className="squad-zone allies">
-          {petItem && (
-            <div className="pet-mini" style={{ position: 'absolute', left: 0, bottom: 0, zIndex: 4 }}>
-              <span style={{ fontSize: '2rem' }}>{petItem.icon}</span>
-            </div>
-          )}
           <UnitEntity
             combatant={player}
             isAlly={true}
             isActive={phase === 'executing' && currentTurn === 'player'}
             isHit={hitTargetId === 'player'}
             imageSrc={heroImage}
+            petItem={petItem}
           />
         </div>
 

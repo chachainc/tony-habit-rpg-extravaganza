@@ -1,11 +1,11 @@
-const CACHE_NAME = 'gl-cache-v1';
+const CACHE_NAME = 'gl-cache-v3';
 const STATIC_ASSETS = [
     '/',
     '/index.html',
     '/manifest.json',
 ];
 
-// Cache-first for static assets
+// Cache-first for static assets ON INSTALL
 self.addEventListener('install', (event) => {
     event.waitUntil(
         caches.open(CACHE_NAME).then((cache) => {
@@ -15,7 +15,7 @@ self.addEventListener('install', (event) => {
     self.skipWaiting();
 });
 
-// Clean up old caches
+// Clean up old caches ON ACTIVATE
 self.addEventListener('activate', (event) => {
     event.waitUntil(
         caches.keys().then((keys) =>
@@ -29,7 +29,7 @@ self.addEventListener('activate', (event) => {
     self.clients.claim();
 });
 
-// Network-first for API, cache-first for assets
+// Network-first for everything to enable sane development and updates
 self.addEventListener('fetch', (event) => {
     const url = new URL(event.request.url);
 
@@ -45,20 +45,19 @@ self.addEventListener('fetch', (event) => {
         return;
     }
 
-    // Static assets: cache-first, fallback to network
+    // Static assets: NETWORK-FIRST, fallback to cache
     event.respondWith(
-        caches.match(event.request).then((cached) => {
-            if (cached) return cached;
-            return fetch(event.request).then((response) => {
-                // Cache successful responses for static content
-                if (response.ok && event.request.method === 'GET') {
-                    const clone = response.clone();
-                    caches.open(CACHE_NAME).then((cache) => {
-                        cache.put(event.request, clone);
-                    });
-                }
-                return response;
-            });
+        fetch(event.request).then((response) => {
+            // Cache successful responses
+            if (response.ok && event.request.method === 'GET') {
+                const clone = response.clone();
+                caches.open(CACHE_NAME).then((cache) => {
+                    cache.put(event.request, clone);
+                });
+            }
+            return response;
+        }).catch(() => {
+            return caches.match(event.request);
         })
     );
 });
