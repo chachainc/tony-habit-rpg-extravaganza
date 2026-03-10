@@ -36,7 +36,21 @@ export interface Combatant {
     damageReductionTurns: number; // Turns remaining for damage reduction
     manaShieldActive: boolean; // True if mana shield is absorbing damage
     manaShieldTurns: number; // Turns remaining for mana shield
+    scalingFactor: number; // Used for dynamic reward scaling
 }
+
+export const calculateEffectiveDefense = (defender: Combatant, isMagic: boolean = false): number => {
+    let effectiveDef = defender.def;
+    defender.buffs.forEach(b => { if (b.stat === 'def') effectiveDef += b.amount; });
+    defender.debuffs.forEach(d => { if (d.stat === 'def') effectiveDef -= d.amount; });
+
+    // Temporary bridge: magic defense is half of physical defense.
+    if (isMagic) {
+        effectiveDef = Math.round(effectiveDef * 0.5);
+    }
+
+    return Math.max(0, effectiveDef);
+};
 
 export interface CombatLog {
     message: string;
@@ -218,6 +232,7 @@ export const useBattleStore = create<BattleState>()((set, get) => ({
             damageReductionTurns: 0,
             manaShieldActive: false,
             manaShieldTurns: 0,
+            scalingFactor: 1.0,
         };
 
         const enemy: Combatant = {
@@ -251,6 +266,7 @@ export const useBattleStore = create<BattleState>()((set, get) => ({
             damageReductionTurns: 0,
             manaShieldActive: false,
             manaShieldTurns: 0,
+            scalingFactor: Math.max(1, levelScaleStats + (xpScaling * 0.02)),
         };
 
         // Psychological Profile Logic
@@ -744,44 +760,51 @@ export const useBattleStore = create<BattleState>()((set, get) => ({
     applyDamage: (attacker: Combatant, defender: Combatant, ability: Ability) => {
         // Calculate effective stats
         let effectiveAtk = attacker.atk;
+        if (ability.isMagic && attacker.isPlayer) {
+            effectiveAtk = useGameStore.getState().getMagicAttack();
+        }
+
         attacker.buffs.forEach(b => { if (b.stat === 'atk') effectiveAtk += b.amount; });
         attacker.debuffs.forEach(d => { if (d.stat === 'atk') effectiveAtk -= d.amount; });
 
-        let effectiveDef = defender.def;
-        defender.buffs.forEach(b => { if (b.stat === 'def') effectiveDef += b.amount; });
-        defender.debuffs.forEach(d => { if (d.stat === 'def') effectiveDef -= d.amount; });
+        const effectiveDef = calculateEffectiveDefense(defender, ability.isMagic);
 
-        // Crit check
-        const isCrit = Math.random() < attacker.critRate;
+        // Crit check - spells don't crit
+        const isCrit = ability.isMagic ? false : Math.random() < attacker.critRate;
         const critMult = isCrit ? attacker.critDmg : 1.0;
 
-        // Base Damage Formula: (ATK * Crit) - DEF
-        // Ensure at least 1 damage
-        let baseDamage = Math.max(1, (effectiveAtk * critMult) - effectiveDef);
-
-        // Multipliers
-        let finalDamage = baseDamage * ability.damageMultiplier;
-
         // Tower Expansion Modifiers
+        let towerMult = 1.0;
         if (attacker.isPlayer) {
-            finalDamage *= get().playerDamageModifier;
+            towerMult = get().playerDamageModifier;
         } else {
-            finalDamage *= get().enemyDamageModifier;
+            towerMult = get().enemyDamageModifier;
         }
 
         // Element multiplier
         const elementMult = getElementMultiplier(ability.element, defender.element);
-        finalDamage *= elementMult;
+
+        // New Mitigation-based Formula
+        const rawDamage = effectiveAtk * ability.damageMultiplier * critMult * elementMult * towerMult;
+        const mitigatedDamage = rawDamage * (100 / (100 + effectiveDef));
+
+        // Incoming damage modifiers
+        let incomingModifiers = 1.0;
 
         // Defensive Stance (50% reduction)
         if (defender.isDefending) {
-            finalDamage *= 0.5;
+            incomingModifiers *= 0.5;
         }
 
         // Pet ability damage reduction
         if (defender.damageReduction > 0 && defender.damageReductionTurns > 0) {
-            finalDamage *= (1 - defender.damageReduction / 100);
+            incomingModifiers *= (1 - defender.damageReduction / 100);
         }
+
+        // Variance (+/- 5%)
+        incomingModifiers *= (0.95 + Math.random() * 0.1);
+
+        let finalDamage = Math.max(1, Math.round(mitigatedDamage * incomingModifiers));
 
         // Mana Shield absorption (2 MP = 1 HP damage absorbed)
         let mpAbsorbed = 0;
@@ -798,11 +821,7 @@ export const useBattleStore = create<BattleState>()((set, get) => ({
             }
         }
 
-        // Variance (+/- 5%)
-        const variance = 0.95 + Math.random() * 0.1;
-        finalDamage *= variance;
-
-        // Round to whole number for clean display
+        // Ensure final damage is rounded
         finalDamage = Math.round(finalDamage);
 
         // Apply HP deduction
@@ -937,10 +956,16 @@ export const useBattleStore = create<BattleState>()((set, get) => ({
         // Deduct MP
         const newMP = currentMP - spell.mpCost;
 
-        const logs: CombatLog[] = [];
-        logs.push({
+        const initialLogs: CombatLog[] = [{
             message: `${player.name} casts ${spell.icon} ${spell.name}!`,
             type: 'info'
+        }];
+
+        // Consume MP and start action
+        set({
+            combatLog: [...get().combatLog, ...initialLogs],
+            currentMP: newMP,
+            phase: 'executing'
         });
 
         let updatedPlayer = { ...player };
@@ -951,61 +976,50 @@ export const useBattleStore = create<BattleState>()((set, get) => ({
             const healAmount = Math.round(player.maxHp * (spell.effect.value / 100));
             const newHp = Math.min(player.maxHp, player.hp + healAmount);
             updatedPlayer.hp = newHp;
-            logs.push({
-                message: `Healed ${healAmount} HP!`,
-                type: 'heal',
-                value: healAmount
+            set({
+                player: updatedPlayer,
+                combatLog: [...get().combatLog, {
+                    message: `Healed ${healAmount} HP!`,
+                    type: 'heal',
+                    value: healAmount
+                }]
             });
         } else if (spell.effect.type === 'damage') {
-            // Get magic attack
-            const gameStore = useGameStore.getState();
-            const magicAtk = gameStore.getMagicAttack();
+            const tempAbility: Ability = {
+                id: spell.id,
+                name: spell.name,
+                type: 'skill',
+                description: spell.description,
+                icon: spell.icon,
+                element: 'neutral', // Spells currently default to neutral
+                isMagic: true, // Flags for MATK and temporary MDEF
+                damageMultiplier: spell.effect.value,
+                cooldown: 0,
+                energyCost: 0,
+            };
 
-            // Calculate damage: Magic ATK × spell multiplier, spells bypass 50% of defense
-            const effectiveDef = Math.round(enemy.def * 0.5);
-            let damage = Math.max(1, Math.round((magicAtk * spell.effect.value) - effectiveDef));
+            // applyDamage mutates updatedEnemy's HP and pushes its own logs
+            get().applyDamage(updatedPlayer, updatedEnemy, tempAbility);
 
-            // Add variance
-            damage = Math.round(damage * (0.95 + Math.random() * 0.1));
+            // Sync mutated objects to store
+            set({ enemy: updatedEnemy, player: updatedPlayer });
 
-            updatedEnemy.hp = Math.max(0, enemy.hp - damage);
-
-            logs.push({
-                message: `Dealt ${damage} magic damage!`,
-                type: 'damage',
-                value: damage
-            });
-
-            // Update lastDamage for visual effects
-            set({
-                lastDamage: {
-                    target: enemy.id,
-                    amount: damage,
-                    isCrit: false,
-                    elementBonus: 1,
-                },
-            });
         } else if (spell.effect.type === 'shield') {
-            // Activate mana shield for X turns
             updatedPlayer.manaShieldActive = true;
             updatedPlayer.manaShieldTurns = spell.effect.value;
-            logs.push({
-                message: `Mana Shield activated for ${spell.effect.value} turns!`,
-                type: 'buff'
+            set({
+                player: updatedPlayer,
+                combatLog: [...get().combatLog, {
+                    message: `Mana Shield activated for ${spell.effect.value} turns!`,
+                    type: 'buff'
+                }]
             });
         }
 
         // Add extra energy for casting spells (+15% faster ultimate)
         const bonusEnergy = Math.min(100 - updatedPlayer.energy, 15);
         updatedPlayer.energy += bonusEnergy;
-
-        set({
-            player: updatedPlayer,
-            enemy: updatedEnemy,
-            currentMP: newMP,
-            combatLog: [...get().combatLog, ...logs],
-            phase: 'executing',
-        });
+        set({ player: updatedPlayer }); // Final player sync
 
         // Check for victory
         if (updatedEnemy.hp <= 0) {

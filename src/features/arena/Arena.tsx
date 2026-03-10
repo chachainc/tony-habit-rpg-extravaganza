@@ -284,8 +284,9 @@ export const Arena = ({ onClose }: { onClose: () => void }) => {
             const enemyDef = ENEMY_DB[enemy.id];
             if (enemyDef) {
                 markDefeated(enemy.id);
-                addGold(enemyDef.goldReward);
-                addGlobalXp(enemyDef.xpReward);
+                const scaling = enemy.scalingFactor || 1.0;
+                addGold(Math.round(enemyDef.goldReward * scaling));
+                addGlobalXp(Math.round(enemyDef.xpReward * scaling));
 
                 // Unlock next floor if this was the current floor
                 if (currentFloor <= highestFloorCleared + 1) { // Logic check

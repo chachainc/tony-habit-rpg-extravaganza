@@ -45,6 +45,7 @@ export interface Ability {
     description: string;
     icon: string;
     element: Element;
+    isMagic?: boolean; // True if this ability uses MATK vs MDEF logic
     damageMultiplier: number; // Base ATK multiplier
     cooldown: number; // Turns before usable again (0 for attack)
     energyCost: number; // For ultimates (0-100 energy required)

@@ -170,14 +170,13 @@
 }
 
 .unit-sprite img {
-    height: 200px;
-    /* Base height, adjustable */
-    width: auto;
+    max-height: 250px;
+    max-width: 100%;
     object-fit: contain;
 }
 
 .unit-sprite.player img {
-    height: 180px;
+    max-height: 200px;
     transform: scaleX(-1);
     /* Face right if sprite faces left naturally */
 }
@@ -415,11 +414,11 @@
     }
 
     .unit-sprite img {
-        height: 120px;
+        max-height: 150px;
     }
 
     .unit-sprite.player img {
-        height: 110px;
+        max-height: 120px;
     }
 
     .vs-text {
