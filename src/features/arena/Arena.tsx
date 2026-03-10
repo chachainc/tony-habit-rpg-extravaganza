@@ -3,15 +3,12 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Swords, Shield, Zap, X, Sparkles, BookOpen, ChevronUp, ChevronDown } from 'lucide-react';
 import { useGameStore } from '../../store/useGameStore';
-import { useCurrencyStore as _useCurrencyStore } from '../../store/useCurrencyStore';
 import { useBattleStore } from '../../store/useBattleStore';
 import { useEnemyStore, ENEMY_DB, ELEMENT_ICONS } from '../../store/useEnemyStore';
-import { useAuraStore, AURAS } from '../../store/useAuraStore';
 import { useCurrencyStore } from '../../store/useCurrencyStore';
 import { useCampaignStore } from '../../store/useCampaignStore';
 import { usePetStore, PET_DATABASE } from '../../store/usePetStore';
 import { useMagicStore } from '../../store/useMagicStore';
-import { ITEM_DATABASE } from '../../data/items';
 import { ArenaBattlefieldLayout } from './ArenaBattlefieldLayout';
 import { getDetailedCombatBreakdown, type StatBreakdown } from '../../store/useCombatFormulas';
 import { getPassiveBonuses } from '../../store/usePassiveEffects';
@@ -22,8 +19,6 @@ import { Panel } from '../../components/ui/Panel';
 import { GachaButton } from '../../components/ui/GachaButton';
 import './Arena.css';
 
-
-const USE_BATTLEFIELD_LAYOUT = true;
 
 // Background images - imported directly for Vite bundling
 import forestRuinsBg from '../../assets/backgrounds/forest_ruins.png';
@@ -91,16 +86,6 @@ const ENEMY_IMAGES: Record<string, string> = {
     'flicker_of_burnout': flickerBurnoutImg,
 };
 
-// Tower Expansion: Environmental Debris
-const ENVIRONMENT_DEBRIS = [
-    { icon: '🪨', top: '15%', left: '10%', size: '1.5rem', rot: '15deg' },
-    { icon: '🦴', top: '25%', left: '85%', size: '1.2rem', rot: '-20deg' },
-    { icon: '📦', top: '75%', left: '15%', size: '1.8rem', rot: '10deg' },
-    { icon: '🏺', top: '65%', left: '80%', size: '1.4rem', rot: '-5deg' },
-    { icon: '🕸️', top: '5%', left: '75%', size: '2rem', rot: '0deg' },
-    { icon: '⛓️', top: '40%', left: '5%', size: '2.5rem', rot: '45deg' },
-];
-
 /**
  * Calculates a win probability percentage based on combatant stats.
  * Weighted primarily on ATK vs DEF and HP pools.
@@ -151,14 +136,12 @@ export const Arena = ({ onClose }: { onClose: () => void }) => {
     } = useCampaignStore();
 
     // Pet companion
-    const { activePet, name: petName } = usePetStore();
-    const petItem = ITEM_DATABASE[activePet];
+    const { activePet } = usePetStore();
 
     const {
         phase,
         player,
         enemy,
-        turnNumber,
         combatLog,
         lastDamage,
         initBattle,
@@ -166,8 +149,6 @@ export const Arena = ({ onClose }: { onClose: () => void }) => {
         selectAbility,
         playerDefend,
         resetBattle,
-        isGoldenSlime,
-        goldenSlimeTurnsRemaining,
         petAbilityCooldown,
         usePetAbility,
         castSpell,
@@ -175,7 +156,6 @@ export const Arena = ({ onClose }: { onClose: () => void }) => {
         maxMP: battleMaxMP,
         equippedSpells,
         startBattle,
-        bossPhase,
     } = useBattleStore();
 
     // Get pet ability info
@@ -352,16 +332,6 @@ export const Arena = ({ onClose }: { onClose: () => void }) => {
     };
 
     // --- RENDER HELPERS ---
-
-    const renderHealthBar = (current: number, max: number, type: 'player' | 'enemy') => (
-        <div className="health-bar-container">
-            <div
-                className={`health-fill ${type}`}
-                style={{ width: `${Math.max(0, (current / max) * 100)}%` }}
-            />
-            <span className="health-text">{Math.round(current)}/{Math.round(max)}</span>
-        </div>
-    );
 
     // --- CAMPAIGN MAP ---
     if (view === 'map') {
