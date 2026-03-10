@@ -55,10 +55,6 @@ export interface ConquestState {
     // Memory Log
     memoryLog: MemoryLog;
 
-    // Currency Actions
-    addSigils: (amount: number) => void;
-    spendSigils: (amount: number) => boolean;
-
     // Soldier/Upgrade Actions
     recruitSoldier: (name: string, role: SoldierRole) => boolean;
     upgradeSoldierRank: (soldierId: string) => boolean;

@@ -17,6 +17,7 @@ const SHOP_TITLES: Record<ShopCategory, string> = {
     first_aid: '⚕️ First Aid',
     general: '🏪 General Store',
     furniture: '🪑 Furniture Store',
+    library: '📚 Library',
 };
 
 export const ShopModal = ({ category, onClose }: Props) => {
@@ -43,8 +44,8 @@ export const ShopModal = ({ category, onClose }: Props) => {
             addCurrency(-item.price);
             addItem(item.id);
             // Auto-equip based on type
-            if (item.type === 'weapon') equipItem(item.id, 'main_hand');
-            if (item.type === 'armor') equipItem(item.id, 'body');
+            if (item.type === 'weapon') equipItem(item.id, 'weapon');
+            if (item.type === 'armor') equipItem(item.id, 'armor');
         } else {
             alert("Not enough coins!");
         }

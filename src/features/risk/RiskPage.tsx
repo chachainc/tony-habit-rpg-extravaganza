@@ -1,6 +1,6 @@
 import { useNavigate } from 'react-router-dom';
 import { useEffect, useState } from 'react';
-import { useRiskStore, BattleResult, SoldierCard } from '../../store/useRiskStore';
+import { useRiskStore, type BattleResult, type SoldierCard } from '../../store/useRiskStore';
 import { useConquestStore } from '../../store/useConquestStore';
 import { useStrategyStore } from '../../store/useStrategyStore';
 import { Map as MapIcon, Swords, ArrowLeft, Brain, Shield, Pickaxe, Sparkles } from 'lucide-react';
@@ -140,9 +140,9 @@ export const RiskPage = () => {
                             <div key={node.id} className={nodeClass}>
                                 <div className="node-header">
                                     <h3>{node.name}</h3>
-                                    {node.trait === 'fortified' && <Shield size={16} className="trait-icon fortified" title="Fortified (+2 Def)" />}
-                                    {node.trait === 'resource' && <Pickaxe size={16} className="trait-icon resource" title="Resource (Sigil drop)" />}
-                                    {node.trait === 'mystic' && <Sparkles size={16} className="trait-icon mystic" title="Mystic (Card drop)" />}
+                                    {node.trait === 'fortified' && <span title="Fortified (+2 Def)"><Shield size={16} className="trait-icon fortified" /></span>}
+                                    {node.trait === 'resource' && <span title="Resource (Sigil drop)"><Pickaxe size={16} className="trait-icon resource" /></span>}
+                                    {node.trait === 'mystic' && <span title="Mystic (Card drop)"><Sparkles size={16} className="trait-icon mystic" /></span>}
                                 </div>
                                 <p>DEF: {node.defenseValue}</p>
                                 {isAttackable && (

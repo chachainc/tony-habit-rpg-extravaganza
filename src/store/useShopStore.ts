@@ -2,7 +2,6 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { getShopItemPool } from '../data/rewardTables';
 import type { ItemDef } from './useInventoryStore';
-import { useInventoryStore } from './useInventoryStore';
 import { PERSIST_REGISTRY } from '../data/persistRegistry';
 
 export interface ShopItem {
@@ -25,7 +24,6 @@ const generatePrice = (item: ItemDef) => {
 
     // Otherwise generate price heuristically based on rarity
     switch (item.rarity) {
-        case 'mythic': return 25000;
         case 'legendary': return 10000;
         case 'epic': return 3500;
         case 'rare': return 1000;
