@@ -8,8 +8,6 @@ import { useGameStore } from './store/useGameStore'
 import { useProfileStore } from './store/useProfileStore'
 import { useInventoryStore } from './store/useInventoryStore'
 import { usePetStore } from './store/usePetStore'
-import { useBattleStore } from './store/useBattleStore'
-import { useConquestStore } from './store/useConquestStore'
 
 console.log('[BOOT] app bundle started - Stage 3');
 
@@ -18,7 +16,7 @@ console.log('[BOOT] Store check:', {
   game: useGameStore.getState().currency,
   profile: useProfileStore.getState().profileName,
   inventory: useInventoryStore.getState().items,
-  pet: usePetStore.getState().activePetId,
+  pet: usePetStore.getState().activePet,
 });
 
 createRoot(document.getElementById('root')!).render(
