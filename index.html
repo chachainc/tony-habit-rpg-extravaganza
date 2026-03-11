@@ -48,23 +48,8 @@
   <div id="root"></div>
   <script type="module" src="/src/main.tsx"></script>
   <script>
-    // Register service worker
-    if ('serviceWorker' in navigator) {
-      window.addEventListener('load', () => {
-        try {
-          // Allow disabling SW temporarily on mobile via localStorage
-          if (localStorage.getItem('DISABLE_SW')) {
-            console.log('[BOOT] Service Worker registration skipped (DISABLE_SW is set).');
-            return;
-          }
-          navigator.serviceWorker.register('/sw.js').catch((e) => {
-            console.warn('[BOOT] Service Worker registration failed:', e);
-          });
-        } catch (e) {
-          console.warn('[BOOT] Service Worker registration crashed synchronously:', e);
-        }
-      });
-    }
+    // Service worker registration intentionally disabled while mobile Safari stability is being validated.
+    console.info('[BOOT] Service worker registration is disabled in this build.');
   </script>
 </body>
 

@@ -8,6 +8,33 @@ import { rewardsRouter } from './routes/rewards.js';
 const app = express();
 const PORT = parseInt(process.env.PORT || '3001', 10);
 
+const NON_HTML_PATH_PREFIXES = ['/assets/', '/icons/', '/workbox-'];
+const NON_HTML_EXACT_PATHS = new Set([
+    '/manifest.json',
+    '/sw.js',
+    '/vite.svg',
+]);
+const NON_HTML_EXTENSIONS = new Set([
+    '.js',
+    '.mjs',
+    '.css',
+    '.map',
+    '.json',
+    '.png',
+    '.jpg',
+    '.jpeg',
+    '.webp',
+    '.gif',
+    '.svg',
+    '.ico',
+    '.woff',
+    '.woff2',
+    '.ttf',
+    '.otf',
+    '.txt',
+    '.xml',
+]);
+
 // ─── Security Headers ────────────────────────
 app.use(helmet({
     contentSecurityPolicy: false, // Let Vite handle CSP in dev
@@ -31,6 +58,24 @@ app.get('/api/health', (_req, res) => {
     res.json({ status: 'ok', timestamp: new Date().toISOString() });
 });
 
+function isNonHtmlAssetPath(pathname: string): boolean {
+    if (NON_HTML_EXACT_PATHS.has(pathname)) {
+        return true;
+    }
+
+    if (NON_HTML_PATH_PREFIXES.some((prefix) => pathname.startsWith(prefix))) {
+        return true;
+    }
+
+    const lastDot = pathname.lastIndexOf('.');
+    if (lastDot === -1) {
+        return false;
+    }
+
+    const extension = pathname.slice(lastDot).toLowerCase();
+    return NON_HTML_EXTENSIONS.has(extension);
+}
+
 // ─── Serve static frontend in production ─────
 if (process.env.NODE_ENV === 'production') {
     const { default: path } = await import('node:path');
@@ -38,11 +83,15 @@ if (process.env.NODE_ENV === 'production') {
     const __dirname = path.dirname(fileURLToPath(import.meta.url));
     const distPath = path.join(__dirname, '..', 'dist');
 
-    app.use(express.static(distPath));
+    app.use(express.static(distPath, { index: false }));
 
-    // SPA fallback
-    app.get(/.*/, (_req, res) => {
-        res.sendFile(path.join(distPath, 'index.html'));
+    // SPA fallback only for real HTML document navigations
+    app.get(/.*/, (req, res, next) => {
+        if (req.path.startsWith('/api/') || isNonHtmlAssetPath(req.path)) {
+            return next();
+        }
+
+        return res.sendFile(path.join(distPath, 'index.html'));
     });
 }
 

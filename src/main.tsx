@@ -1,34 +1,81 @@
-import { StrictMode } from 'react'
-import { createRoot } from 'react-dom/client'
-import { BrowserRouter, Routes, Route } from 'react-router-dom'
-import './styles/global.css'
+import { StrictMode } from 'react';
+import { createRoot } from 'react-dom/client';
+import App from './App';
+import { BootErrorBoundary } from './components/ui/BootErrorBoundary';
+import './styles/global.css';
 
-// ── STAGE 3A: useGameStore only ──────────────────────────────
-// DO NOT import useInventoryStore, useGachaStore, useBattleStore yet.
-import { useGameStore } from './store/useGameStore'
-// Also import usePetStore to check activePet as requested
-import { usePetStore } from './store/usePetStore'
+const BOOT_OVERLAY_ID = 'boot-failure-overlay';
 
-console.log('[BOOT 3A] app bundle started');
-console.log('[BOOT 3A] useGameStore currency:', useGameStore.getState().currency);
+function showBootFailureOverlay(message: string, error?: unknown) {
+  if (document.getElementById(BOOT_OVERLAY_ID)) {
+    return;
+  }
 
-// Force evaluation to ensure activePet instead of activePetId
-console.log('[BOOT] Store check:', {
-  pet: usePetStore.getState().activePet,
+  const overlay = document.createElement('div');
+  overlay.id = BOOT_OVERLAY_ID;
+  overlay.style.position = 'fixed';
+  overlay.style.inset = '0';
+  overlay.style.zIndex = '999999';
+  overlay.style.background = '#09090b';
+  overlay.style.color = '#f4f4f5';
+  overlay.style.fontFamily = 'system-ui, -apple-system, sans-serif';
+  overlay.style.padding = '24px';
+  overlay.style.display = 'flex';
+  overlay.style.flexDirection = 'column';
+  overlay.style.justifyContent = 'center';
+  overlay.style.gap = '12px';
+  overlay.innerHTML = `
+    <h1 style="margin:0;color:#f87171;font-size:24px;">App failed to start</h1>
+    <p style="margin:0;max-width:680px;line-height:1.5;">${message}</p>
+    <pre style="margin:0;max-width:100%;overflow:auto;background:#18181b;border-radius:8px;padding:12px;color:#fca5a5;font-size:12px;">${String(error ?? 'No error details available.')}</pre>
+  `;
+
+  document.body.appendChild(overlay);
+}
+
+function disableServiceWorkerForStability() {
+  if (!('serviceWorker' in navigator)) {
+    return;
+  }
+
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.getRegistrations()
+      .then((registrations) => Promise.all(registrations.map((registration) => registration.unregister())))
+      .then(() => caches.keys())
+      .then((keys) => Promise.all(keys.map((key) => caches.delete(key))))
+      .then(() => {
+        console.info('[BOOT] Service workers unregistered and caches cleared for Safari stability.');
+      })
+      .catch((error) => {
+        console.warn('[BOOT] Failed to fully disable service workers:', error);
+      });
+  });
+}
+
+window.addEventListener('error', (event) => {
+  console.error('[BOOT] Unhandled startup error:', event.error ?? event.message);
+  showBootFailureOverlay('A runtime error occurred before the game could render.', event.error ?? event.message);
 });
 
-createRoot(document.getElementById('root')!).render(
+window.addEventListener('unhandledrejection', (event) => {
+  console.error('[BOOT] Unhandled startup promise rejection:', event.reason);
+  showBootFailureOverlay('A startup promise was rejected before the game could render.', event.reason);
+});
+
+disableServiceWorkerForStability();
+
+const root = document.getElementById('root');
+
+if (!root) {
+  const error = new Error('Root element #root is missing.');
+  console.error('[BOOT] Cannot mount React app:', error);
+  throw error;
+}
+
+createRoot(root).render(
   <StrictMode>
-    <BrowserRouter>
-      <Routes>
-        <Route path="*" element={
-          <div style={{ padding: 20, fontSize: 24, background: '#030303', color: '#e5e5e5', height: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
-            <h1>BOOT STEP 3A</h1>
-            <p style={{ marginTop: 10, fontSize: 16 }}>useGameStore imported successfully</p>
-            <p style={{ marginTop: 6, fontSize: 14, color: '#9ca3af' }}>No persistence</p>
-          </div>
-        } />
-      </Routes>
-    </BrowserRouter>
+    <BootErrorBoundary>
+      <App />
+    </BootErrorBoundary>
   </StrictMode>,
-)
+);
