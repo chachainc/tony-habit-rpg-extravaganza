@@ -1,19 +1,6 @@
-import { ITEM_DB, ItemDef } from '../store/useInventoryStore';
-import { PET_DB, PetDef } from '../store/useGachaStore';
+import { ITEM_DB, type ItemDef } from '../store/useInventoryStore';
+import { PET_DB, type PetDef } from '../store/useGachaStore';
 import { CODEX_ENTRIES } from './codex';
-
-// ── Generic Filters ────────
-
-function getItemsBySource(source: string): ItemDef[] {
-    const validIds = CODEX_ENTRIES.filter(e => e.sources.includes(source as any)).map(e => {
-        // codex ids are prefixed like codex_weapon_xxx, codex_pet_xxx. We need the real internal ID.
-        // It's safer to check the actual databases if possible, but our codex wrapper doesn't store the exact raw id easily if it's external.
-        // Actually, let's just filter ITEM_DB directly, cross referencing Codex only if necessary.
-        return e.id;
-    });
-    // This string manipulation is brittle. Let's instead export a better utility that just iterates the DBs.
-    return [];
-}
 
 // ── Actual Implementation ────────
 // We will iterate the databases directly to build the pools. We can cross-reference CODEX_ENTRIES to find the `source` tag since we stored it there during merge, or we can just read the original external ingestion. Wait, the `source` is ONLY mapped to the CodexEntry.
@@ -26,7 +13,6 @@ const getSourceMap = () => {
         // 'codex_weapon_rusty_sword' -> 'rusty_sword'
         const parts = entry.id.split('_');
         if (parts.length >= 3) {
-            const potentialType = parts[1]; // pet, weapon, etc.
             const baseId = parts.slice(2).join('_');
             map[baseId] = entry.sources as string[];
         }
