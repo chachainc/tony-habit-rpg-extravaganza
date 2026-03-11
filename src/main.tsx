@@ -52,15 +52,16 @@ function disableServiceWorkerForStability() {
   });
 }
 
-window.addEventListener('error', (event) => {
-  console.error('[BOOT] Unhandled startup error:', event.error ?? event.message);
-  showBootFailureOverlay('A runtime error occurred before the game could render.', event.error ?? event.message);
-});
+window.onerror = (_message, _source, _lineno, _colno, error) => {
+  console.error('[BOOT] Unhandled startup error:', error ?? _message);
+  showBootFailureOverlay('A runtime error occurred before the game could render.', error ?? _message);
+  return false;
+};
 
-window.addEventListener('unhandledrejection', (event) => {
+window.onunhandledrejection = (event) => {
   console.error('[BOOT] Unhandled startup promise rejection:', event.reason);
   showBootFailureOverlay('A startup promise was rejected before the game could render.', event.reason);
-});
+};
 
 disableServiceWorkerForStability();
 
