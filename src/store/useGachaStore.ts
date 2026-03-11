@@ -5,6 +5,7 @@ import { safeUUID } from '../utils/safeUUID';
 
 console.log('[BOOT] useGachaStore module load started');
 import { useFusionStore } from './useFusionStore';
+import { PERSIST_REGISTRY } from '../data/persistRegistry';
 
 export interface GachaPull {
     id: string;
@@ -220,8 +221,14 @@ export const useGachaStore = create<GachaState>()(
 
 console.log('[BOOT] useGachaStore module load finished');
 
-import { getDailySpinPetPool } from '../data/rewardTables';
-import { PERSIST_REGISTRY } from '../data/persistRegistry';
+const getDailySpinPetPool = (): PetDef[] => {
+    // Keep this local to avoid a startup circular dependency:
+    // useGachaStore -> rewardTables -> codex -> useGachaStore.
+    // External pets default to daily-spin if source metadata is missing.
+    return Object.values(PET_DB).filter((pet) => {
+        return pet.source === 'gacha' || pet.source === 'daily_spin' || !pet.source;
+    });
+};
 
 // Helper function to execute gacha pull logic
 function executePull(
