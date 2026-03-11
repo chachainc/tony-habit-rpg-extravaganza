@@ -155,20 +155,7 @@ interface EquipmentState {
     upgradeEquipment: (equipmentId: string) => boolean;
 
     // Getters
-    upgradeEquipment: (equipmentId: string) => {
-                const state = get();
-                if (!state.ownedEquipment.includes(equipmentId)) return false;
-                const currentLevel = state.equipmentLevels[equipmentId] || 0;
-                set({
-                    equipmentLevels: {
-                        ...state.equipmentLevels,
-                        [equipmentId]: currentLevel + 1
-                    }
-                });
-                return true;
-            },
-
-            getEquipmentBonuses: () => { atk: number; def: number; hp: number };
+    getEquipmentBonuses: () => { atk: number; def: number; hp: number };
     getPityInfo: () => { current: number; nextGuaranteed: number };
 }
 
@@ -277,6 +264,21 @@ export const useEquipmentStore = create<EquipmentState>()(
                         set({ equippedAccessory: null });
                         break;
                 }
+            },
+
+            upgradeEquipment: (equipmentId: string) => {
+                const state = get();
+                if (!state.ownedEquipment.includes(equipmentId)) return false;
+
+                const currentLevel = state.equipmentLevels[equipmentId] || 0;
+                set({
+                    equipmentLevels: {
+                        ...state.equipmentLevels,
+                        [equipmentId]: currentLevel + 1,
+                    },
+                });
+
+                return true;
             },
 
             getEquipmentBonuses: () => {
