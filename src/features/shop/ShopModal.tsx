@@ -14,6 +14,7 @@ interface Props {
 const SHOP_TITLES: Record<ShopCategory, string> = {
     blacksmith: '🗡️ Blacksmith',
     armory: '🛡️ Armory',
+    jeweler: '💎 Jeweler',
     first_aid: '⚕️ First Aid',
     general: '🏪 General Store',
     furniture: '🪑 Furniture Store',
