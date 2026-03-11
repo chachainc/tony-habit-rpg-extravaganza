@@ -4,11 +4,18 @@ import { BrowserRouter, Routes, Route } from 'react-router-dom'
 import './styles/global.css'
 
 // ── STAGE 3A: useGameStore only ──────────────────────────────
-// DO NOT import useInventoryStore, useGachaStore, usePetStore, useBattleStore yet.
+// DO NOT import useInventoryStore, useGachaStore, useBattleStore yet.
 import { useGameStore } from './store/useGameStore'
+// Also import usePetStore to check activePet as requested
+import { usePetStore } from './store/usePetStore'
 
 console.log('[BOOT 3A] app bundle started');
 console.log('[BOOT 3A] useGameStore currency:', useGameStore.getState().currency);
+
+// Force evaluation to ensure activePet instead of activePetId
+console.log('[BOOT] Store check:', {
+  pet: usePetStore.getState().activePet,
+});
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
