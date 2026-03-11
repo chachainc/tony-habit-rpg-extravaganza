@@ -1,9 +1,10 @@
 import { useNavigate } from 'react-router-dom';
 import { useEffect, useState } from 'react';
-import { useRiskStore, type BattleResult, type SoldierCard } from '../../store/useRiskStore';
+import { useRiskStore, type BattleResult, type SoldierCard, REGIONS } from '../../store/useRiskStore';
 import { useConquestStore } from '../../store/useConquestStore';
 import { useStrategyStore } from '../../store/useStrategyStore';
-import { Map as MapIcon, Swords, ArrowLeft, Brain, Shield, Pickaxe, Sparkles } from 'lucide-react';
+import { getDetailedCombatBreakdown } from '../../store/useCombatFormulas';
+import { Map as MapIcon, Swords, ArrowLeft, Brain, Shield, Pickaxe, Sparkles, TrendingUp } from 'lucide-react';
 import './RiskPage.css';
 
 export const RiskPage = () => {
@@ -23,8 +24,12 @@ export const RiskPage = () => {
         risk.initializeMap();
     }, []);
 
+    const combatStats = getDetailedCombatBreakdown();
+    const heroAtkBonus = Math.floor(combatStats.atk.total / 10);
+    const activeRegions = risk.getActiveRegionBonuses();
+
     const handleAttack = (nodeId: string) => {
-        const result = risk.resolveBattle(nodeId);
+        const result = risk.resolveBattle(nodeId, heroAtkBonus);
         if (result) setBattleResult(result);
     };
 
@@ -54,6 +59,19 @@ export const RiskPage = () => {
                     <span className="army-display">
                         Army: {risk.getUnlockedArmySize()}x(d{risk.getSoldierDiceSides()})
                     </span>
+                    <span className="sigils-display" style={{ color: '#ef4444' }}>
+                        Hero Bonus: +{heroAtkBonus} Base Damage
+                    </span>
+                    <span className="sigils-display" style={{ color: '#a855f7' }}>
+                        Ascension: {risk.ascensionLevel}
+                    </span>
+                    {activeRegions.length > 0 && (
+                        <span className="sigils-display" style={{ color: '#10b981', display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                            {activeRegions.map(rId => (
+                                <span key={rId} title={REGIONS[rId].bonusDescription}>✨ {REGIONS[rId].name}</span>
+                            ))}
+                        </span>
+                    )}
                 </div>
             </div>
 
@@ -121,38 +139,72 @@ export const RiskPage = () => {
                                 ⚔️ Node defense reduced by 1!
                             </div>
                         )}
+                        {battleResult.fortifiedEnemyNodes && battleResult.fortifiedEnemyNodes.length > 0 && (
+                            <div className="battle-attrition" style={{ color: '#a855f7', marginTop: '0.5rem' }}>
+                                ⚠️ AI Fortified: {battleResult.fortifiedEnemyNodes.map(id => risk.mapNodes[id]?.name).join(', ')} (+1 DEF)
+                            </div>
+                        )}
                     </div>
                 )}
 
                 {/* --- Territory Map --- */}
                 <div className="risk-map">
-                    {Object.values(risk.mapNodes).map((node) => {
-                        const isOwned = node.owner === 'player';
-                        const isAttackable = !isOwned && node.neighbors.some(n => risk.mapNodes[n]?.owner === 'player');
-                        const isLocked = !isOwned && !isAttackable;
-
-                        let nodeClass = `risk-node ${node.owner}`;
-                        if (isAttackable) nodeClass += ' attackable';
-                        if (isLocked) nodeClass += ' locked';
-                        if (node.trait && node.trait !== 'none') nodeClass += ` trait-${node.trait}`;
-
-                        return (
-                            <div key={node.id} className={nodeClass}>
-                                <div className="node-header">
-                                    <h3>{node.name}</h3>
-                                    {node.trait === 'fortified' && <span title="Fortified (+2 Def)"><Shield size={16} className="trait-icon fortified" /></span>}
-                                    {node.trait === 'resource' && <span title="Resource (Sigil drop)"><Pickaxe size={16} className="trait-icon resource" /></span>}
-                                    {node.trait === 'mystic' && <span title="Mystic (Card drop)"><Sparkles size={16} className="trait-icon mystic" /></span>}
-                                </div>
-                                <p>DEF: {node.defenseValue}</p>
-                                {isAttackable && (
-                                    <button className="risk-attack-btn" onClick={() => handleAttack(node.id)}>
-                                        <Swords size={16} /> Attack
+                    {(() => {
+                        const nodes = Object.values(risk.mapNodes);
+                        const allOwned = nodes.length > 0 && nodes.every(n => n.owner === 'player');
+                        
+                        if (allOwned) {
+                            return (
+                                <div className="risk-ascend-panel" style={{ gridColumn: '1 / -1', textAlign: 'center', padding: '2rem', background: 'rgba(0,0,0,0.5)', borderRadius: '12px' }}>
+                                    <h2>Map Total Conquest!</h2>
+                                    <p>The realms fall under your banner. Ascending resets the map and empowers enemy defenses, but provides higher progression capabilities.</p>
+                                    <button 
+                                        className="soldier-card buy-btn" 
+                                        style={{ margin: '1rem auto', padding: '1rem 2rem', fontSize: '1.2rem' }}
+                                        onClick={() => {
+                                            useConquestStore.getState().addSigils(10 + (risk.ascensionLevel * 5));
+                                            risk.resetAndAscendMap();
+                                            setBattleResult(null);
+                                        }}>
+                                        <TrendingUp size={24} style={{ display: 'inline', verticalAlign: 'middle', marginRight: '8px' }}/> 
+                                        Ascend (Gain {10 + (risk.ascensionLevel * 5)} Sigils)
                                     </button>
-                                )}
-                            </div>
-                        );
-                    })}
+                                </div>
+                            );
+                        }
+
+                        // Group nodes visually
+                        return nodes.map((node) => {
+                            const isOwned = node.owner === 'player';
+                            const isAttackable = !isOwned && node.neighbors.some(n => risk.mapNodes[n]?.owner === 'player');
+                            const isLocked = !isOwned && !isAttackable && node.id !== 't2'; // exception since start node
+
+                            let nodeClass = `risk-node ${node.owner}`;
+                            if (isAttackable) nodeClass += ' attackable';
+                            if (isLocked) nodeClass += ' locked';
+                            if (node.trait && node.trait !== 'none') nodeClass += ` trait-${node.trait}`;
+
+                            return (
+                                <div key={node.id} className={nodeClass} style={{ display: 'flex', flexDirection: 'column' }}>
+                                    <div className="node-header">
+                                        <h3>{node.name}</h3>
+                                        <div style={{ display: 'flex', gap: '4px' }}>
+                                            {node.trait === 'fortified' && <span title="Fortified (+2 Def)"><Shield size={16} className="trait-icon fortified" /></span>}
+                                            {node.trait === 'resource' && <span title="Resource (Sigil drop)"><Pickaxe size={16} className="trait-icon resource" /></span>}
+                                            {node.trait === 'mystic' && <span title="Mystic (Card drop)"><Sparkles size={16} className="trait-icon mystic" /></span>}
+                                        </div>
+                                    </div>
+                                    <p>DEF: {node.defenseValue}</p>
+                                    <div style={{ fontSize: '0.75rem', color: '#888', marginTop: 'auto', marginBottom: '8px', textTransform: 'uppercase' }}>Region: {node.region}</div>
+                                    {isAttackable && (
+                                        <button className="risk-attack-btn" onClick={() => handleAttack(node.id)}>
+                                            <Swords size={16} /> Attack
+                                        </button>
+                                    )}
+                                </div>
+                            );
+                        });
+                    })()}
                 </div>
             </div>
         </div>

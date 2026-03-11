@@ -99,7 +99,7 @@ const UnitEntity = ({ combatant, isAlly, isActive, isHit, imageSrc, petItem }: {
 
 export const ArenaBattlefieldLayout = () => {
   const { phase, player, enemy, turnNumber, isGoldenSlime, lastDamage, currentTurn } = useBattleStore();
-  const { currentFloor } = useCampaignStore();
+  const { currentFloor, currentStreak } = useCampaignStore();
   const { activePet } = usePetStore();
   const { activeAuraId } = useAuraStore();
   const heroImage = useHeroImage();
@@ -154,9 +154,18 @@ export const ArenaBattlefieldLayout = () => {
 
       <div className="battlefield-header">
         <div className="combatant-name-header ally" style={{ width: '200px' }}>{player.name}</div>
-        <div className="vs-badge"><div className="vs-text">VS</div></div>
+        <div className="vs-badge">
+          <div className="vs-text">VS</div>
+        </div>
         <div className="combatant-name-header enemy" style={{ width: '200px' }}>{enemy.name}</div>
-        <div className="turn-counter">Turn {turnNumber} {isGoldenSlime ? '(Golden Slime!)' : ''}</div>
+        <div className="turn-counter" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px' }}>
+          <div>Turn {turnNumber} {isGoldenSlime ? '(Golden Slime!)' : ''}</div>
+          {useBattleStore.getState().context === 'arena' && currentStreak > 0 && (
+            <div style={{ fontSize: '0.8rem', color: '#f59e0b', fontWeight: 'bold' }}>
+              🔥 Win Streak: {currentStreak} (+{Math.min(currentStreak * 5, 50)}% Rewards)
+            </div>
+          )}
+        </div>
       </div>
 
       <div className="battlefield-stage">

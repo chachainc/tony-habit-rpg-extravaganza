@@ -436,3 +436,142 @@
     font-size: 1rem;
     cursor: pointer;
 }
+
+/* ─── New Conquest Expansion Styles ──────────────────────── */
+
+.run-buff-chip {
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(15, 23, 42, 0.8);
+    border: 1px solid rgba(148, 163, 184, 0.2);
+    border-radius: 8px;
+    font-size: 1.1rem;
+    cursor: help;
+}
+
+.floor-badge {
+    display: inline-block;
+    background: rgba(245, 158, 11, 0.2);
+    color: #fcd34d;
+    padding: 0.2rem 0.5rem;
+    border-radius: 4px;
+    font-size: 0.75rem;
+    margin-left: 0.5rem;
+    vertical-align: middle;
+}
+
+.hud-hp-bar {
+    margin-top: 0.25rem;
+    height: 14px;
+    width: 120px;
+    background: rgba(0, 0, 0, 0.5);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 4px;
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.hp-fill {
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    transition: width 0.3s ease, background-color 0.3s ease;
+    z-index: 1;
+}
+
+.hp-text {
+    position: relative;
+    z-index: 2;
+    font-size: 0.6rem;
+    font-weight: 700;
+    color: white;
+    display: flex;
+    align-items: center;
+    gap: 0.2rem;
+    text-shadow: 0 1px 2px black;
+}
+
+.node-preview-tooltip {
+    position: absolute;
+    bottom: 110%;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 160px;
+    background: rgba(15, 23, 42, 0.95);
+    border: 1px solid #475569;
+    border-radius: 8px;
+    padding: 0.75rem;
+    z-index: 50;
+    pointer-events: none;
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.6);
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+}
+
+.preview-type {
+    font-size: 0.7rem;
+    font-weight: 800;
+    color: #cbd5e1;
+    letter-spacing: 0.5px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    padding-bottom: 0.2rem;
+}
+
+.preview-risk {
+    font-size: 0.75rem;
+    color: #f87171;
+    font-weight: 600;
+}
+
+.preview-reward {
+    font-size: 0.7rem;
+    color: #a78bfa;
+}
+
+/* New Node Types Colors */
+.map-node.elite {
+    border-color: #b91c1c;
+    color: #fca5a5;
+    box-shadow: 0 0 15px rgba(185, 28, 28, 0.5);
+}
+
+.map-node.campfire {
+    border-color: #ea580c;
+    color: #fdba74;
+}
+
+.map-node.shrine {
+    border-color: #d97706;
+    color: #fde68a;
+}
+
+.map-node.cursed {
+    border-color: #7e22ce;
+    color: #d8b4fe;
+}
+
+.run-stats {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    margin-bottom: 2rem;
+    text-align: left;
+    background: rgba(0, 0, 0, 0.3);
+    padding: 1rem;
+    border-radius: 8px;
+    color: #cbd5e1;
+    font-size: 0.95rem;
+}
+
+.campfire-modal h2 { color: #f97316; }
+.shrine-modal h2 { color: #fbbf24; }
+.cursed-modal h2 { color: #a855f7; }
+.run-complete-modal h2 { color: #f1f5f9; font-size: 1.8rem; }

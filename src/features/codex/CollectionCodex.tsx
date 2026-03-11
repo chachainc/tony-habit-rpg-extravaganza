@@ -19,6 +19,8 @@ import { useTitleStore } from '../../store/useTitleStore';
 import { useCodexStore } from '../../store/useCodexStore';
 import { useProfileStore } from '../../store/useProfileStore';
 import { useInventoryStore } from '../../store/useInventoryStore';
+import { useEquipmentStore } from '../../store/useEquipmentStore';
+import { useRoomStore } from '../../store/useRoomStore';
 import './CollectionCodex.css';
 
 // ── Owned-check logic per section ───────────────────────────────────────────
@@ -30,6 +32,8 @@ function useOwnedChecker() {
     const codexStore = useCodexStore();
     const profileStore = useProfileStore();
     const inventoryStore = useInventoryStore();
+    const equipmentStore = useEquipmentStore();
+    const roomStore = useRoomStore();
 
     return (entry: CodexEntry): boolean => {
         // Secret items need to be discovered first
@@ -62,6 +66,21 @@ function useOwnedChecker() {
                 return inventoryStore.discoveredItems?.includes(itemId) || false;
             }
         }
+        if (entry.section === 'weapons' || entry.section === 'armor' || entry.section === 'jewelry') {
+            if (entry.id.startsWith('codex_item_')) {
+                const itemId = entry.id.replace('codex_item_', '');
+                return inventoryStore.ownsMarketplaceItem(itemId);
+            }
+            if (entry.id.startsWith('codex_equip_')) {
+                const equipId = entry.id.replace('codex_equip_', '');
+                return equipmentStore.ownedEquipment.includes(equipId);
+            }
+        }
+        if (entry.section === 'furniture') {
+            const furnId = entry.id.replace('codex_furn_', '');
+            return roomStore.ownsRoomFurniture(furnId);
+        }
+
         // Artifacts / Relics / Cosmetics — not yet tracked per-item; show locked
         // (will integrate with inventory in future)
         return false;

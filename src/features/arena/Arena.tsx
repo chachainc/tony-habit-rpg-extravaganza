@@ -129,10 +129,13 @@ export const Arena = ({ onClose }: { onClose: () => void }) => {
     const {
         currentFloor,
         highestFloorCleared,
+        currentStreak, // New
         unlockNextFloor,
         getEnemyForFloor,
         checkForGoldenSlime,
-        recordGoldenSlimeEncounter
+        recordGoldenSlimeEncounter,
+        incrementStreak, // New
+        resetStreak // New
     } = useCampaignStore();
 
     // Pet companion
@@ -274,9 +277,16 @@ export const Arena = ({ onClose }: { onClose: () => void }) => {
                         }).catch(() => { });
                     }
                 } else {
-                    const totalGold = Math.round(enemyDef.goldReward * scaling) + passives.gold_bonus;
+                    // Arena Rewards with Streak Multiplier
+                    incrementStreak();
+                    const streakCount = useCampaignStore.getState().currentStreak;
+                    const streakMultiplier = 1.0 + (Math.min(streakCount, 10) * 0.05); // Cap at +50%
+
+                    const totalGold = Math.floor((Math.round(enemyDef.goldReward * scaling) + passives.gold_bonus) * streakMultiplier);
+                    const totalXp = Math.floor(Math.round(enemyDef.xpReward * scaling) * streakMultiplier);
+
                     addGold(totalGold);
-                    addGlobalXp(Math.round(enemyDef.xpReward * scaling));
+                    addGlobalXp(totalXp);
 
                     // Unlock next floor if this was the current floor
                     if (currentFloor <= highestFloorCleared + 1) { // Logic check
@@ -300,12 +310,29 @@ export const Arena = ({ onClose }: { onClose: () => void }) => {
                         }).catch(() => { });
                     }
 
-                    // Arena victory sigil (0-1)
-                    const sigils = Math.floor(Math.random() * 2) + passives.sigil_bonus;
+                    // Arena victory sigil (0-1) - reduced base chance
+                    const sigilRoll = Math.random();
+                    const sigils = (sigilRoll < 0.25 ? 1 : 0) + passives.sigil_bonus;
                     if (sigils > 0) {
                         import('../../store/useConquestStore').then(({ useConquestStore: cs }) => {
                             cs.getState().addSigils(sigils);
                         });
+                    }
+
+                    // Native Equipment drop chance (20%)
+                    if (Math.random() < 0.20) {
+                        import('../../store/useEquipmentStore').then(({ useEquipmentStore: es }) => {
+                            const result = es.getState().pullEquipment();
+                            if (result) {
+                                import('../../components/ui/Toast').then(({ useToastStore }) => {
+                                    useToastStore.getState().addToast({
+                                        type: 'success',
+                                        message: `Loot: ${result.item.name}! ${result.wasDuplicate ? `(Converted to ${result.essenceGained} essence)` : ''}`,
+                                        duration: 5000,
+                                    });
+                                }).catch(() => { });
+                            }
+                        }).catch(() => { });
                     }
                 }
             }
@@ -326,6 +353,7 @@ export const Arena = ({ onClose }: { onClose: () => void }) => {
         if (isConquest) {
             navigate('/combat');
         } else {
+            resetStreak(); // Break streak on defeat
             setView('map');
         }
         resetBattle();
@@ -431,6 +459,11 @@ export const Arena = ({ onClose }: { onClose: () => void }) => {
                         <div className="campaign-header">
                             <h2>⚔️ The Tower of Discipline ⚔️</h2>
                             <p className="campaign-subtitle">Ascend through the floors and conquer your demons</p>
+                            {currentStreak > 0 && (
+                                <div className="streak-indicator" style={{ color: '#f59e0b', fontWeight: 'bold', marginTop: '0.5rem' }}>
+                                    🔥 Win Streak: {currentStreak} (+{Math.min(currentStreak * 5, 50)}% Rewards)
+                                </div>
+                            )}
                             <div className="campaign-header-buttons">
                                 <button
                                     className="tome-btn"
@@ -833,11 +866,15 @@ export const Arena = ({ onClose }: { onClose: () => void }) => {
                                         <div className="result-rewards">
                                             <div className="reward-row">
                                                 <span>Gold</span>
-                                                <span>+{ENEMY_DB[enemy!.id].goldReward}</span>
+                                                <span>
+                                                    +{Math.floor((ENEMY_DB[enemy!.id].goldReward + getPassiveBonuses().gold_bonus) * (1.0 + Math.min(useCampaignStore.getState().currentStreak, 10) * 0.05))}
+                                                </span>
                                             </div>
                                             <div className="reward-row">
                                                 <span>XP</span>
-                                                <span>+{ENEMY_DB[enemy!.id].xpReward}</span>
+                                                <span>
+                                                    +{Math.floor(ENEMY_DB[enemy!.id].xpReward * (1.0 + Math.min(useCampaignStore.getState().currentStreak, 10) * 0.05))}
+                                                </span>
                                             </div>
                                         </div>
                                         {(() => {

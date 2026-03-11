@@ -1,9 +1,9 @@
 import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Crown, Coins, Tent, Swords, Gem, MessageSquare, Gamepad2, Skull } from 'lucide-react';
+import { Crown, Coins, Tent, Swords, Gem, MessageSquare, Gamepad2, Skull, Flame, Sparkles, AlertTriangle, Heart } from 'lucide-react';
 import { useConquestStore } from '../../store/useConquestStore';
 import { useCurrencyStore } from '../../store/useCurrencyStore';
-import { CONQUEST_MAP_NODES, CONQUEST_EVENT_TABLE, type ConquestNodeData } from '../../data/conquest';
+import { CONQUEST_MAP_NODES, CONQUEST_EVENT_TABLE, CONQUEST_NODE_PREVIEW, type ConquestNodeData } from '../../data/conquest';
 import { useHeroImage } from '../../hooks/useHeroImage';
 import { ConquestStoreUI } from './ConquestStore';
 import { ChessGame } from './ChessGame';
@@ -23,10 +23,14 @@ import bgMap from '../../assets/backgrounds/infernal_citadel.png';
 const NODE_ICONS: Record<string, React.ReactNode> = {
     start: <Tent size={24} />,
     battle: <Swords size={24} />,
+    elite: <Swords className="elite-icon" size={28} color="#ef4444" />,
     treasure: <Gem size={24} />,
     event: <MessageSquare size={24} />,
     minigame: <Gamepad2 size={24} />,
     shop: <Coins size={24} />,
+    campfire: <Flame size={24} color="#f97316" />,
+    shrine: <Sparkles size={24} color="#fbbf24" />,
+    cursed: <AlertTriangle size={24} color="#a855f7" />,
     boss: <Skull size={32} />
 };
 
@@ -42,8 +46,12 @@ export const Conquest = () => {
     const [showChess, setShowChess] = useState(false);
     const [showTiles, setShowTiles] = useState(false);
     const [activeEvent, setActiveEvent] = useState<string | null>(null);
+    const [showCampfire, setShowCampfire] = useState(false);
+    const [showShrine, setShowShrine] = useState(false);
+    const [showCursed, setShowCursed] = useState(false);
     const [rewardModal, setRewardModal] = useState<{ gold: number, sigils: number, item?: ItemDef } | null>(null);
     const [hasBounced, setHasBounced] = useState(false); // To handle initial scroll to bottom
+    const [hoveredNode, setHoveredNode] = useState<ConquestNodeData | null>(null);
 
     useEffect(() => {
         conquest.initMap();
@@ -78,17 +86,22 @@ export const Conquest = () => {
         // Execute node effect
         switch (node.type) {
             case 'battle':
-            case 'boss':
+            case 'elite':
+            case 'boss': {
                 const enemies = ['fatigue_wraith', 'chaos_of_clutter', 'sedentary_colossus', 'insomnia_echo', 'stress_phantom'];
-                const randomEnemy = node.type === 'boss' ? 'shadow_titan' : enemies[Math.floor(Math.random() * enemies.length)];
+                let randomEnemy = enemies[Math.floor(Math.random() * enemies.length)];
+                
+                if (node.type === 'boss') randomEnemy = 'shadow_titan';
+                if (node.type === 'elite') randomEnemy = 'fatigue_wraith'; // Just an example elite for now
 
                 useBattleStore.getState().initBattle(randomEnemy, {
-                    context: 'conquest',
+                    context: node.type === 'elite' ? 'conquest_elite' : 'conquest',
                     conquestTier: node.tier
                 });
 
                 navigate('/arena', { state: { startBattle: true } });
                 break;
+            }
             case 'treasure': {
                 const passives = getPassiveBonuses();
                 const gold = Math.floor(Math.random() * 10) + 5 + passives.gold_bonus;
@@ -120,6 +133,15 @@ export const Conquest = () => {
             case 'shop':
                 setShowStore(true);
                 break;
+            case 'campfire':
+                setShowCampfire(true);
+                break;
+            case 'shrine':
+                setShowShrine(true);
+                break;
+            case 'cursed':
+                setShowCursed(true);
+                break;
             case 'minigame':
                 // Randomly open chess or tiles based on game string or logic
                 if (node.label === 'Fae Mischief') {
@@ -149,14 +171,15 @@ export const Conquest = () => {
                     const isCompleted = conquest.completedNodes.includes(node.id) && !isCurrent;
                     const isReachable = reachableNodes.includes(node.id);
 
-                    // Draw connections to lower tiers if they exist visually (Optional SVG overlay would be better, but CSS lines work)
                     return (
                         <div key={node.id} className="map-node-wrapper">
                             <motion.button
-                                className={`map - node ${node.type} ${isCurrent ? 'current' : ''} ${isCompleted ? 'completed' : ''} ${isReachable ? 'reachable' : ''} `}
+                                className={`map-node ${node.type} ${isCurrent ? 'current' : ''} ${isCompleted ? 'completed' : ''} ${isReachable ? 'reachable' : ''}`}
                                 whileHover={isReachable ? { scale: 1.1 } : {}}
                                 whileTap={isReachable ? { scale: 0.95 } : {}}
                                 onClick={() => handleNodeClick(node)}
+                                onMouseEnter={() => setHoveredNode(node)}
+                                onMouseLeave={() => setHoveredNode(null)}
                                 disabled={(!isReachable && !isCurrent && !isCompleted) || false}
                                 style={{ pointerEvents: ((!isReachable && !isCurrent && !isCompleted) ? 'none' : 'auto') }}
                             >
@@ -173,6 +196,22 @@ export const Conquest = () => {
                                 )}
                             </motion.button>
                             <span className="node-label">{node.label}</span>
+                            
+                            {/* Hover Tooltip */}
+                            <AnimatePresence>
+                                {hoveredNode?.id === node.id && (
+                                    <motion.div 
+                                        className="node-preview-tooltip"
+                                        initial={{ opacity: 0, y: 10 }}
+                                        animate={{ opacity: 1, y: 0 }}
+                                        exit={{ opacity: 0, y: 10 }}
+                                    >
+                                        <div className="preview-type">{node.type.toUpperCase()}</div>
+                                        <div className="preview-risk">Risk: {CONQUEST_NODE_PREVIEW[node.type].risk}</div>
+                                        <div className="preview-reward">{CONQUEST_NODE_PREVIEW[node.type].reward}</div>
+                                    </motion.div>
+                                )}
+                            </AnimatePresence>
                         </div>
                     );
                 })}
@@ -189,11 +228,19 @@ export const Conquest = () => {
                 <div className="hud-left">
                     <img src={heroImage} alt="Hero" className="hud-hero" />
                     <div className="hud-act-info">
-                        <h2>Act {conquest.act}</h2>
-                        <span>The Dark Road</span>
+                        <h2>Act {conquest.act} <span className="floor-badge">Floor {conquest.runFloor}</span></h2>
+                        <div className="hud-hp-bar">
+                            <div className="hp-fill" style={{ width: `${(conquest.runHP / Math.max(1, conquest.runMaxHP)) * 100}%`, background: conquest.runHP < 30 ? '#ef4444' : '#22c55e' }} />
+                            <div className="hp-text"><Heart size={10}/> {conquest.runHP} / {conquest.runMaxHP}</div>
+                        </div>
                     </div>
                 </div>
                 <div className="hud-resources">
+                    {conquest.runBuffs.map(b => (
+                        <div key={b.id} className="run-buff-chip" title={b.label}>
+                            {b.type === 'strength' ? '⚔️' : b.type === 'defense' ? '🛡️' : b.type === 'curse' ? '☠️' : '✨'}
+                        </div>
+                    ))}
                     <div className="hud-stat gold"><Coins size={14} /> {currency.gold}</div>
                     <div className="hud-stat sigils"><Crown size={14} /> {conquest.sigils}</div>
                 </div>
@@ -209,27 +256,122 @@ export const Conquest = () => {
             {/* Action Footer */}
             <div className="spire-footer">
                 <div className="dice-status" style={{ textAlign: 'center', width: '100%' }}>
-                    <span className="active-roll">Select your next destination.</span>
+                    <span className="active-roll">
+                        {hoveredNode ? hoveredNode.description : 'Select your next destination.'}
+                    </span>
                 </div>
             </div>
 
+            {/* Run Complete Overlay */}
+            <AnimatePresence>
+                {conquest.runComplete !== 'none' && (
+                    <motion.div className="modal-overlay" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+                        <div className="run-complete-modal map-modal">
+                            <h2>{conquest.runComplete === 'victory' ? 'VICTORY Achieved!' : 'Run Failed'}</h2>
+                            <p>You {conquest.runComplete === 'victory' ? 'conquered the map' : 'fell in battle'} on Floor {conquest.runFloor}.</p>
+                            <div className="run-stats">
+                                <div>Sigils Earned: {conquest.memoryLog.mostSigilsInRun}</div>
+                                <div>Best Floor: {conquest.bestFloor}</div>
+                                <div>Runs Completed: {conquest.runsCompleted}</div>
+                            </div>
+                            <button className="continue-btn" onClick={() => conquest.resetRun()}>
+                                Start New Run
+                            </button>
+                        </div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
+
             {/* Event Modal */}
             <AnimatePresence>
-                {activeEvent && CONQUEST_EVENT_TABLE[activeEvent as keyof typeof CONQUEST_EVENT_TABLE] && (
+                {activeEvent && CONQUEST_EVENT_TABLE[activeEvent] && (
                     <motion.div className="modal-overlay" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
                         <div className="event-modal map-modal">
                             <h2>{activeEvent}</h2>
-                            <p>{CONQUEST_EVENT_TABLE[activeEvent as keyof typeof CONQUEST_EVENT_TABLE].text}</p>
+                            <p>{CONQUEST_EVENT_TABLE[activeEvent].text}</p>
                             <div className="event-options">
-                                {CONQUEST_EVENT_TABLE[activeEvent as keyof typeof CONQUEST_EVENT_TABLE].options.map((opt, i) => (
+                                {CONQUEST_EVENT_TABLE[activeEvent].options.map((opt, i) => (
                                     <button key={i} onClick={() => {
                                         if (opt.effect.type === 'gold') conquest.grantSpireReward(opt.effect.gold || 0, 0);
-                                        if (opt.effect.type === 'hp_and_sigils') conquest.grantSpireReward(0, opt.effect.sigils || 0); // HP logic needed if implemented
+                                        if (opt.effect.type === 'hp_and_sigils') {
+                                            conquest.grantSpireReward(0, opt.effect.sigils || 0);
+                                            if (opt.effect.hp < 0) conquest.takeDamage(-opt.effect.hp);
+                                            else conquest.healHP(opt.effect.hp);
+                                        }
+                                        if (opt.effect.type === 'heal') conquest.healHP(opt.effect.hp);
+                                        if (opt.effect.type === 'damage') conquest.takeDamage(opt.effect.hp);
                                         setActiveEvent(null);
                                     }}>
                                         {opt.label}
                                     </button>
                                 ))}
+                            </div>
+                        </div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
+
+            {/* Campfire Modal */}
+            <AnimatePresence>
+                {showCampfire && (
+                    <motion.div className="modal-overlay" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+                        <div className="campfire-modal map-modal">
+                            <h2>Campfire</h2>
+                            <p>A warm fire flickers, offering a brief respite.</p>
+                            <div className="event-options">
+                                <button onClick={() => { conquest.healHP(20); setShowCampfire(false); }}>
+                                    <Heart size={16} /> Rest (+20 HP)
+                                </button>
+                                <button onClick={() => { 
+                                    conquest.addRunBuff({ id: `buff_${Date.now()}`, type: 'strength', label: 'Sharpened: +10% ATK', amount: 10 });
+                                    setShowCampfire(false); 
+                                }}>
+                                    <Swords size={16} /> Sharpen (+10% ATK Buff)
+                                </button>
+                            </div>
+                        </div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
+
+            {/* Shrine Modal */}
+            <AnimatePresence>
+                {showShrine && (
+                    <motion.div className="modal-overlay" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+                        <div className="shrine-modal map-modal">
+                            <h2>Sacred Shrine</h2>
+                            <p>You touch the cold stone and feel a blessing wash over you.</p>
+                            <div className="event-options">
+                                <button onClick={() => { 
+                                    conquest.addRunBuff({ id: `buff_${Date.now()}`, type: 'defense', label: 'Blessed: +10% DEF', amount: 10 });
+                                    setShowShrine(false); 
+                                }}>
+                                    Accept Blessing
+                                </button>
+                            </div>
+                        </div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
+
+            {/* Cursed Modal */}
+            <AnimatePresence>
+                {showCursed && (
+                    <motion.div className="modal-overlay" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+                        <div className="cursed-modal map-modal" style={{ borderColor: '#a855f7' }}>
+                            <h2 style={{ color: '#a855f7' }}>Dark Altar</h2>
+                            <p>Great power awaits... if you are willing to pay the price.</p>
+                            <div className="event-options">
+                                <button onClick={() => { 
+                                    conquest.takeDamage(20);
+                                    conquest.grantSpireReward(100, 20);
+                                    setShowCursed(false); 
+                                }}>
+                                    Sacrifice Blood (-20 HP, +100 Gold, +20 Sigils)
+                                </button>
+                                <button onClick={() => setShowCursed(false)}>
+                                    Leave it be
+                                </button>
                             </div>
                         </div>
                     </motion.div>
@@ -246,7 +388,7 @@ export const Conquest = () => {
                                 <span className="loot-item gold">+{rewardModal.gold} Gold</span>
                                 <span className="loot-item sigils">+{rewardModal.sigils} Sigils</span>
                                 {rewardModal.item && (
-                                    <span className={`loot - item item - drop rarity - ${rewardModal.item.rarity} `}>
+                                    <span className={`loot-item item-drop rarity-${rewardModal.item.rarity}`}>
                                         Found: {rewardModal.item.icon} {rewardModal.item.name}
                                     </span>
                                 )}

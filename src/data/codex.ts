@@ -5,6 +5,9 @@
 import { AURAS } from '../store/useAuraStore';
 import { TITLES } from '../store/useTitleStore';
 import { PET_DB } from '../store/useGachaStore';
+import { ITEM_DB } from '../store/useInventoryStore';
+import { EQUIPMENT_DB } from '../store/useEquipmentStore';
+import { ROOM_FURNITURE_CATALOG } from '../store/useRoomStore';
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -16,7 +19,11 @@ export type CodexSection =
     | 'artifacts'
     | 'relics'
     | 'cosmetics'
-    | 'books';
+    | 'books'
+    | 'weapons'
+    | 'armor'
+    | 'jewelry'
+    | 'furniture';
 
 export type CodexRarity = 'common' | 'uncommon' | 'rare' | 'epic' | 'legendary' | 'mythic';
 
@@ -413,61 +420,6 @@ const ARTIFACT_ENTRIES: CodexEntry[] = [
 
 const RELIC_ENTRIES: CodexEntry[] = [
     {
-        id: 'codex_relic_fireplace',
-        name: 'Fireplace',
-        icon: '🔥',
-        section: 'relics',
-        rarity: 'uncommon',
-        description: 'A warm fireplace to place in your room. Cozy and inviting.',
-        sources: ['marketplace'],
-        obtainHint: 'Purchase from the Furniture Store.',
-        priceHint: '8,000 gold',
-    },
-    {
-        id: 'codex_relic_pet_bed',
-        name: 'Pet Bed',
-        icon: '🛏️',
-        section: 'relics',
-        rarity: 'common',
-        description: 'A soft bed for your pet to rest in.',
-        sources: ['marketplace'],
-        obtainHint: 'Purchase from the Furniture Store.',
-        priceHint: '2,000 gold',
-    },
-    {
-        id: 'codex_relic_guitar',
-        name: 'Guitar',
-        icon: '🎸',
-        section: 'relics',
-        rarity: 'uncommon',
-        description: 'A decorative guitar for your room. Your hero can play it!',
-        sources: ['marketplace'],
-        obtainHint: 'Purchase from the Furniture Store.',
-        priceHint: '5,000 gold',
-    },
-    {
-        id: 'codex_relic_arcane_bookshelf',
-        name: 'Arcane Bookshelf',
-        icon: '📚',
-        section: 'relics',
-        rarity: 'legendary',
-        description: 'Holds knowledge from ancient times. Grants bonus Intelligence XP.',
-        sources: ['marketplace'],
-        obtainHint: 'Purchase from the Furniture Store. Requires Housemaid Lv.25.',
-        priceHint: '80,000 gold + 100 diamonds',
-    },
-    {
-        id: 'codex_relic_celestial_chandelier',
-        name: 'Celestial Chandelier',
-        icon: '💎',
-        section: 'relics',
-        rarity: 'legendary',
-        description: 'Radiates a Cleanliness Aura. Grants +10% HP/MP regen while resting.',
-        sources: ['marketplace'],
-        obtainHint: 'Purchase from the Furniture Store. Requires Housemaid Lv.30.',
-        priceHint: '150,000 gold + 250 diamonds',
-    },
-    {
         id: 'codex_relic_trophy_case',
         name: 'Trophy Case',
         icon: '🏆',
@@ -620,6 +572,89 @@ const BOOK_CODEX_ENTRIES: CodexEntry[] = [
     }))),
 ];
 
+// ── EQUIPMENT (Weapons, Armor, Jewelry) ───────────────────────────────────────
+const ITEM_WEAPONS: CodexEntry[] = Object.values(ITEM_DB).filter(i => i.type === 'weapon').map(w => ({
+    id: `codex_item_${w.id}`,
+    name: w.name,
+    icon: w.icon || '⚔️',
+    section: 'weapons',
+    rarity: w.rarity as CodexRarity,
+    description: w.description || '',
+    sources: ['marketplace'],
+    obtainHint: w.requiredEnemy ? `Defeat ${w.requiredEnemy} then purchase from Blacksmith.` : 'Purchase from the Blacksmith.',
+    priceHint: `${w.price} gold`,
+}));
+const EQUIP_WEAPONS: CodexEntry[] = Object.values(EQUIPMENT_DB).filter(e => e.slot === 'weapon').map(w => ({
+    id: `codex_equip_${w.id}`,
+    name: w.name,
+    icon: w.icon,
+    section: 'weapons',
+    rarity: w.rarity as CodexRarity,
+    description: w.description,
+    sources: ['arena'],
+    obtainHint: 'Drop from Arena victories.',
+}));
+const WEAPON_ENTRIES = [...ITEM_WEAPONS, ...EQUIP_WEAPONS];
+
+const ITEM_ARMOR: CodexEntry[] = Object.values(ITEM_DB).filter(i => i.type === 'armor').map(a => ({
+    id: `codex_item_${a.id}`,
+    name: a.name,
+    icon: a.icon || '🛡️',
+    section: 'armor',
+    rarity: a.rarity as CodexRarity,
+    description: a.description || '',
+    sources: ['marketplace'],
+    obtainHint: a.requiredEnemy ? `Defeat ${a.requiredEnemy} then purchase from Armory.` : 'Purchase from the Armory.',
+    priceHint: `${a.price} gold`,
+}));
+const EQUIP_ARMOR: CodexEntry[] = Object.values(EQUIPMENT_DB).filter(e => e.slot === 'armor').map(a => ({
+    id: `codex_equip_${a.id}`,
+    name: a.name,
+    icon: a.icon,
+    section: 'armor',
+    rarity: a.rarity as CodexRarity,
+    description: a.description,
+    sources: ['arena'],
+    obtainHint: 'Drop from Arena victories.',
+}));
+const ARMOR_ENTRIES = [...ITEM_ARMOR, ...EQUIP_ARMOR];
+
+const ITEM_JEWELRY: CodexEntry[] = Object.values(ITEM_DB).filter(i => i.type === 'jewelry').map(j => ({
+    id: `codex_item_${j.id}`,
+    name: j.name,
+    icon: j.icon || '💍',
+    section: 'jewelry',
+    rarity: j.rarity as CodexRarity,
+    description: j.description || j.flavorText || '',
+    sources: ['marketplace'],
+    obtainHint: 'Purchase from the Jeweler.',
+    priceHint: `${j.price} gold`,
+}));
+const EQUIP_ACCESSORY: CodexEntry[] = Object.values(EQUIPMENT_DB).filter(e => e.slot === 'accessory').map(a => ({
+    id: `codex_equip_${a.id}`,
+    name: a.name,
+    icon: a.icon,
+    section: 'jewelry',
+    rarity: a.rarity as CodexRarity,
+    description: a.description,
+    sources: ['arena'],
+    obtainHint: 'Drop from Arena victories.',
+}));
+const JEWELRY_ENTRIES = [...ITEM_JEWELRY, ...EQUIP_ACCESSORY];
+
+// ── FURNITURE ────────────────────────────────────────────────────────────────
+const FURNITURE_ENTRIES: CodexEntry[] = ROOM_FURNITURE_CATALOG.map(f => ({
+    id: `codex_furn_${f.id}`,
+    name: f.name,
+    icon: f.icon,
+    section: 'furniture',
+    rarity: f.rarity as CodexRarity,
+    description: f.description,
+    sources: ['marketplace'],
+    obtainHint: `Purchase from the Furniture Store.${f.requirementLabel ? ' ' + f.requirementLabel : ''}`,
+    priceHint: `${f.goldCost > 0 ? f.goldCost + ' gold' : ''}${f.gemCost ? (f.goldCost > 0 ? ' + ' : '') + f.gemCost + ' diamonds' : ''}`,
+}));
+
 // ── COMBINED CODEX ────────────────────────────────────────────────────────────
 
 import { mergeExternalCodex } from './contentLoader';
@@ -637,6 +672,10 @@ export const CODEX_ENTRIES: CodexEntry[] = mergeExternalCodex([
     ...RELIC_ENTRIES,
     ...COSMETIC_ENTRIES,
     ...BOOK_CODEX_ENTRIES,
+    ...WEAPON_ENTRIES,
+    ...ARMOR_ENTRIES,
+    ...JEWELRY_ENTRIES,
+    ...FURNITURE_ENTRIES,
 ]);
 
 export function getCodexBySection(section: CodexSection): CodexEntry[] {
@@ -652,6 +691,10 @@ export const CODEX_SECTIONS: { id: CodexSection; label: string; icon: string }[]
     { id: 'relics', label: 'Relics', icon: '🏺' },
     { id: 'cosmetics', label: 'Cosmetics', icon: '🎭' },
     { id: 'books', label: 'Books', icon: '📚' },
+    { id: 'weapons', label: 'Weapons', icon: '⚔️' },
+    { id: 'armor', label: 'Armor', icon: '🛡️' },
+    { id: 'jewelry', label: 'Jewelry', icon: '💍' },
+    { id: 'furniture', label: 'Furniture', icon: '🪑' },
 ];
 
 export const RARITY_ORDER: CodexRarity[] = ['common', 'uncommon', 'rare', 'epic', 'legendary', 'mythic'];

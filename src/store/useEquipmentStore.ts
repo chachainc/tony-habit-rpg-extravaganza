@@ -142,6 +142,7 @@ interface EquipmentState {
     equippedWeapon: string | null;
     equippedArmor: string | null;
     equippedAccessory: string | null;
+    equipmentLevels: Record<string, number>;
 
     // Gacha
     equipmentPity: number;  // Counter for pity system
@@ -151,9 +152,23 @@ interface EquipmentState {
     pullEquipment: () => { item: Equipment; wasDuplicate: boolean; essenceGained: number } | null;
     equipItem: (equipmentId: string) => void;
     unequipSlot: (slot: EquipmentSlot) => void;
+    upgradeEquipment: (equipmentId: string) => boolean;
 
     // Getters
-    getEquipmentBonuses: () => { atk: number; def: number; hp: number };
+    upgradeEquipment: (equipmentId: string) => {
+                const state = get();
+                if (!state.ownedEquipment.includes(equipmentId)) return false;
+                const currentLevel = state.equipmentLevels[equipmentId] || 0;
+                set({
+                    equipmentLevels: {
+                        ...state.equipmentLevels,
+                        [equipmentId]: currentLevel + 1
+                    }
+                });
+                return true;
+            },
+
+            getEquipmentBonuses: () => { atk: number; def: number; hp: number };
     getPityInfo: () => { current: number; nextGuaranteed: number };
 }
 
@@ -164,6 +179,7 @@ export const useEquipmentStore = create<EquipmentState>()(
             equippedWeapon: null,
             equippedArmor: null,
             equippedAccessory: null,
+            equipmentLevels: {},
             equipmentPity: 0,
             essence: 0,
 
@@ -275,10 +291,12 @@ export const useEquipmentStore = create<EquipmentState>()(
 
                 for (const id of equipped) {
                     const item = EQUIPMENT_DB[id];
+                    const level = state.equipmentLevels[id] || 0;
                     if (item) {
-                        atk += item.atkBonus;
-                        def += item.defBonus;
-                        hp += item.hpBonus;
+                        const levelMult = 1 + (level * 0.10);
+                        atk += Math.floor(item.atkBonus * levelMult);
+                        def += Math.floor(item.defBonus * levelMult);
+                        hp += Math.floor(item.hpBonus * levelMult);
                     }
                 }
 

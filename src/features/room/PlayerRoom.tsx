@@ -1,9 +1,8 @@
-import { useState, useEffect, useRef, useMemo } from 'react';
+import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, BedDouble, BookOpen, Shirt, Store, Trophy, Scale, Dumbbell } from 'lucide-react';
+import { X, BedDouble, BookOpen, Shirt, Store, Trophy, Scale, Dumbbell, Pencil, Check } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useRoomStore } from '../../store/useRoomStore';
-import { useInventoryStore, ITEM_DB } from '../../store/useInventoryStore';
 import { usePetStore } from '../../store/usePetStore';
 import { useTitleStore } from '../../store/useTitleStore';
 import { useAuraStore, AURAS } from '../../store/useAuraStore';
@@ -15,6 +14,7 @@ import { BookshelfPanel } from './BookshelfPanel';
 import { SleepPanel } from './SleepPanel';
 import { TrophyPanel } from './TrophyPanel';
 import { ShopModal } from '../shop/ShopModal';
+import { FurniturePlacementPanel, DraggableFurniturePiece } from './FurniturePlacementPanel';
 
 // AI-generated assets
 import homeCampBg from '../../assets/backgrounds/home_camp.png';
@@ -22,9 +22,10 @@ import trophyCaseBg from '../../assets/backgrounds/trophy_case.png';
 import bookshelfBg from '../../assets/backgrounds/bookshelf_display.png';
 import { useHeroImage } from '../../hooks/useHeroImage';
 import './WalkableRoom.css';
-import './PlayerRoom.css'; // Use existing css alongside WalkableRoom CSS
+import './PlayerRoom.css';
+import './FurniturePlacementPanel.css';
 
-type ActivePanel = 'wardrobe' | 'bookshelf' | 'sleep' | 'trophy' | 'store' | 'body' | null;
+type ActivePanel = 'wardrobe' | 'bookshelf' | 'sleep' | 'trophy' | 'store' | 'body' | 'furniture_edit' | null;
 
 /* ── Inline Body Panel (calorie + weight) ── */
 const BodyPanel = ({ onClose }: { onClose: () => void }) => {
@@ -102,8 +103,11 @@ const isWalkable = (x: number, y: number, placedFurniture: { gridX: number; grid
 };
 
 export const PlayerRoom = ({ onClose }: { onClose: () => void }) => {
-    const { playerPosition, setPlayerPosition } = useRoomStore();
-    const { items } = useInventoryStore();
+    const {
+        playerPosition, setPlayerPosition,
+        placedRoomFurniture, placeRoomFurniture,
+        getPlacedBonusSummary,
+    } = useRoomStore();
     const { activePet, name: petName } = usePetStore();
     const { activeTitle, getUnlockedTitleDefs } = useTitleStore();
     const { activeAuraId } = useAuraStore();
@@ -114,6 +118,9 @@ export const PlayerRoom = ({ onClose }: { onClose: () => void }) => {
     const [tooltipSeen, setTooltipSeen] = useState(false);
     const keysPressed = useRef<Set<string>>(new Set());
     const [forceWalkable, setForceWalkable] = useState(false);
+    const [editMode, setEditMode] = useState(false);
+    const [placingFurnitureId, setPlacingFurnitureId] = useState<string | null>(null);
+    const roomGridRef = useRef<HTMLDivElement>(null);
 
     // Reactive mobile detection
     const [isMobile, setIsMobile] = useState(() => window.innerWidth <= 768);
@@ -133,21 +140,18 @@ export const PlayerRoom = ({ onClose }: { onClose: () => void }) => {
     const petData = ITEM_DATABASE[activePet];
     const petSprite = petData?.icon || '🐮';
 
-    // Parse furniture from inventory
-    const ownedFurniture = useMemo(() => {
-        return Object.entries(items)
-            .filter(([itemId]) => ITEM_DB[itemId]?.type === 'furniture')
-            .map(([itemId, count], index) => {
-                const itemData = ITEM_DB[itemId];
-                return {
-                    ...itemData,
-                    id: itemId,
-                    count,
-                    gridX: 2 + (index % 4) * 2,
-                    gridY: 3 + Math.floor(index / 4) * 2,
-                };
-            });
-    }, [items]);
+    // Placement click handler: when user has selected an item to place
+    const handlePlacementClick = useCallback((e: React.MouseEvent) => {
+        if (!placingFurnitureId || !roomGridRef.current) return;
+        e.stopPropagation();
+        const rect = roomGridRef.current.getBoundingClientRect();
+        const x = Math.max(0, Math.min(90, ((e.clientX - rect.left) / rect.width) * 100));
+        const y = Math.max(0, Math.min(85, ((e.clientY - rect.top) / rect.height) * 100));
+        placeRoomFurniture(placingFurnitureId, x, y);
+        setPlacingFurnitureId(null);
+    }, [placingFurnitureId, placeRoomFurniture]);
+
+    const bonusSummary = useMemo(() => getPlacedBonusSummary(), [placedRoomFurniture]);
 
     // Keyboard Movement
     useEffect(() => {
@@ -197,14 +201,14 @@ export const PlayerRoom = ({ onClose }: { onClose: () => void }) => {
                 const newX = playerPosition.x + dx;
                 const newY = playerPosition.y + dy;
 
-                if (isWalkable(newX, newY, ownedFurniture)) {
+                if (isWalkable(newX, newY, [])) {
                     setPlayerPosition(newX, newY);
                 }
             }
         }, 150);
 
         return () => clearInterval(intervalId);
-    }, [playerPosition, setPlayerPosition, ownedFurniture, activePanel]);
+    }, [playerPosition, setPlayerPosition, activePanel]);
 
     // Setup coordinates for interactables
     const interactables = {
@@ -233,14 +237,19 @@ export const PlayerRoom = ({ onClose }: { onClose: () => void }) => {
         }
     };
 
-    // Grid Tap-To-Move Handler
+    // Grid Tap-To-Move (or placement) Handler
     const handleGridTap = (e: React.MouseEvent) => {
-        if (activePanel) return;
+        // If placing furniture, delegate to placement handler
+        if (placingFurnitureId) {
+            handlePlacementClick(e);
+            return;
+        }
+
+        if (activePanel || editMode) return;
 
         const gridContainer = e.currentTarget;
         const rect = gridContainer.getBoundingClientRect();
 
-        // Ensure click/tap is inside the grid
         if (e.clientX >= rect.left && e.clientX <= rect.right && e.clientY >= rect.top && e.clientY <= rect.bottom) {
             const scale = rect.width / (ROOM_LAYOUT.gridSize.width * ROOM_LAYOUT.tileSize);
             const clientX = e.clientX - rect.left;
@@ -252,7 +261,7 @@ export const PlayerRoom = ({ onClose }: { onClose: () => void }) => {
             const boundedX = Math.max(0, Math.min(ROOM_LAYOUT.gridSize.width - 1, gridX));
             const boundedY = Math.max(0, Math.min(ROOM_LAYOUT.gridSize.height - 1, gridY));
 
-            if (isWalkable(boundedX, boundedY, ownedFurniture)) {
+            if (isWalkable(boundedX, boundedY, [])) {
                 setPlayerPosition(boundedX, boundedY);
             }
         }
@@ -322,8 +331,13 @@ export const PlayerRoom = ({ onClose }: { onClose: () => void }) => {
                             </button>
                             <button className="room-feature-btn room-feature-btn--store" onClick={() => setActivePanel('store')}>
                                 <Store size={28} />
-                                <span>Furniture</span>
-                                <small>Buy & Place Items</small>
+                                <span>Buy Furniture</span>
+                                <small>Furniture Store</small>
+                            </button>
+                            <button className="room-feature-btn room-feature-btn--walkable" onClick={() => setActivePanel('furniture_edit')} style={{ borderColor: 'rgba(34,197,94,0.3)' }}>
+                                <Pencil size={22} />
+                                <span>Arrange</span>
+                                <small>Place & Move Items{bonusSummary.length > 0 ? ` · ${bonusSummary.length} bonus` : ''}</small>
                             </button>
                             <button className="room-feature-btn room-feature-btn--pet" onClick={() => navigate('/pet')}>
                                 <span style={{ fontSize: '1.8rem' }}>{petSprite || '🐾'}</span>
@@ -352,18 +366,39 @@ export const PlayerRoom = ({ onClose }: { onClose: () => void }) => {
                             <button className="room-exit-btn" onClick={onClose}>
                                 <X size={20} /> Exit Room
                             </button>
+                            {/* Room bonus chip */}
+                            {bonusSummary.length > 0 && !editMode && (
+                                <div className="room-bonus-chip" onClick={() => setActivePanel('furniture_edit')}>
+                                    ✨ {bonusSummary.length} bonus{bonusSummary.length > 1 ? 'es' : ''} active
+                                </div>
+                            )}
+                            {/* Edit Mode toggle */}
+                            <button
+                                className={`room-edit-btn ${editMode ? 'active' : ''}`}
+                                onClick={() => { setEditMode(v => !v); setPlacingFurnitureId(null); setActivePanel(editMode ? null : 'furniture_edit'); }}
+                            >
+                                {editMode ? <><Check size={16} /> Done</> : <><Pencil size={16} /> Edit Room</>}
+                            </button>
                         </div>
 
                         {/* Floor Grid */}
                         <div
-                            className="room-grid"
+                            ref={roomGridRef}
+                            className={`room-grid ${placingFurnitureId ? 'placing-mode' : ''}`}
                             onClick={handleGridTap}
                             style={{
                                 width: ROOM_LAYOUT.gridSize.width * ROOM_LAYOUT.tileSize,
                                 height: ROOM_LAYOUT.gridSize.height * ROOM_LAYOUT.tileSize,
-                                touchAction: 'none'
+                                touchAction: 'none',
+                                position: 'relative',
                             }}
                         >
+                            {/* Edit mode label */}
+                            {editMode && (
+                                <div className="fp-edit-mode-badge">
+                                    {placingFurnitureId ? 'Tap to place furniture' : 'Drag furniture to reposition'}
+                                </div>
+                            )}
                             {/* Bed */}
                             <motion.div
                                 className={`room-hotspot bed-hotspot ${nearbyObj?.panel === 'sleep' ? 'nearby' : ''}`}
@@ -441,27 +476,15 @@ export const PlayerRoom = ({ onClose }: { onClose: () => void }) => {
                                 <div className="hotspot-label">Store</div>
                             </motion.div>
 
-                            {/* Placed Furniture */}
-                            {ownedFurniture.map((furniture) => {
-                                const isNearby = Math.abs(furniture.gridX - playerPosition.x) + Math.abs(furniture.gridY - playerPosition.y) <= 1;
-                                return (
-                                    <motion.div
-                                        key={furniture.id}
-                                        className={`room-furniture ${isNearby ? 'nearby' : ''}`}
-                                        style={{
-                                            left: furniture.gridX * ROOM_LAYOUT.tileSize,
-                                            top: furniture.gridY * ROOM_LAYOUT.tileSize,
-                                            width: ROOM_LAYOUT.tileSize,
-                                            height: ROOM_LAYOUT.tileSize,
-                                        }}
-                                    >
-                                        <div className="furniture-icon">{furniture.icon}</div>
-                                        {furniture.count > 1 && (
-                                            <span className="furniture-count">x{furniture.count}</span>
-                                        )}
-                                    </motion.div>
-                                );
-                            })}
+                            {/* Placed Furniture from placement store */}
+                            {placedRoomFurniture.map((placed) => (
+                                <DraggableFurniturePiece
+                                    key={placed.id}
+                                    placed={placed}
+                                    editMode={editMode}
+                                    containerRef={roomGridRef}
+                                />
+                            ))}
 
                             {/* Pet */}
                             <motion.div
@@ -554,6 +577,13 @@ export const PlayerRoom = ({ onClose }: { onClose: () => void }) => {
                             {activePanel === 'trophy' && <TrophyPanel onClose={() => setActivePanel(null)} />}
                             {activePanel === 'store' && <ShopModal category="furniture" onClose={() => setActivePanel(null)} />}
                             {activePanel === 'body' && <BodyPanel onClose={() => setActivePanel(null)} />}
+                            {activePanel === 'furniture_edit' && (
+                                <FurniturePlacementPanel
+                                    onClose={() => { setActivePanel(null); }}
+                                    onEnterPlacementMode={(id) => { setPlacingFurnitureId(id); setActivePanel(null); }}
+                                    placingFurnitureId={placingFurnitureId}
+                                />
+                            )}
                         </motion.div>
                     </motion.div>
                 )}

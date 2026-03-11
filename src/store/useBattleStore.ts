@@ -88,7 +88,7 @@ interface BattleState {
     activeRunBuffs: any[]; // Use RunBuff[] if imported, or any
 
     // Actions
-    initBattle: (enemyId: string, options?: { context?: 'arena' | 'conquest'; conquestTier?: number }) => void;
+    initBattle: (enemyId: string, options?: { context?: 'arena' | 'conquest' | 'conquest_elite'; conquestTier?: number }) => void;
     selectAbility: (ability: Ability) => void;
     executePlayerAction: () => void;
     executeEnemyAction: () => void;
@@ -101,7 +101,7 @@ interface BattleState {
     restoreMP: (amount: number) => void; // Restore MP (used by room resting)
     startBattle: () => void;
     introGracePeriod: boolean; // Tower Expansion: Transition from prep to combat
-    context: 'arena' | 'conquest' | 'risk' | 'tower-defense';
+    context: 'arena' | 'conquest' | 'conquest_elite' | 'risk' | 'tower-defense';
     conquestTier: number | null;
     conquestEnemyPower?: number;
 }
@@ -172,7 +172,7 @@ export const useBattleStore = create<BattleState>()((set, get) => ({
     context: 'arena',
     conquestTier: null,
 
-    initBattle: (enemyId: string, options?: { context?: 'arena' | 'conquest'; conquestTier?: number }) => {
+    initBattle: (enemyId: string, options?: { context?: 'arena' | 'conquest' | 'conquest_elite'; conquestTier?: number }) => {
         const enemyDef = ENEMY_DB[enemyId];
         if (!enemyDef) return;
 
@@ -303,11 +303,26 @@ export const useBattleStore = create<BattleState>()((set, get) => ({
         const playerDamageModifier = weaknessActive ? 1.08 : 1.0;
         const enemyDamageModifier = affinityActive ? 1.08 : 1.0;
 
-        // Apply Floor Modifier
+        // Apply Floor Modifiers natively
         const activeFloorModifier = campaignStore.currentFloorModifier;
-        if (activeFloorModifier?.effect.stat === 'hp') {
-            enemy.maxHp = Math.round(enemy.maxHp * (activeFloorModifier.effect.multiplier || 1));
-            enemy.hp = enemy.maxHp;
+        if (activeFloorModifier && context === 'arena') {
+            const effect = activeFloorModifier.effect;
+            const mult = effect.multiplier || 1.0;
+
+            if (effect.stat === 'hp') {
+                enemy.maxHp = Math.round(enemy.maxHp * mult);
+                enemy.hp = enemy.maxHp;
+            } else if (effect.stat === 'atk') {
+                if (mult < 1.0) player.atk = Math.round(player.atk * mult); // 'Void Aura' nerfs player
+                else enemy.atk = Math.round(enemy.atk * mult);
+            } else if (effect.stat === 'def') {
+                enemy.def = Math.round(enemy.def * mult);
+            } else if (effect.stat === 'spd') {
+                player.spd = Math.round(player.spd * mult);
+                enemy.spd = Math.round(enemy.spd * mult);
+            } else if (effect.stat === 'mana') {
+                player.manaRegen = Math.round(player.manaRegen * mult);
+            }
         }
 
         const isGoldenSlime = enemyId === 'golden_slime';

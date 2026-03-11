@@ -1,51 +1,102 @@
-.td-page {
-    position: fixed;
-    inset: 0;
-    background: var(--bg-base);
-    color: var(--text-primary);
-    overflow-y: auto;
-    padding: 2rem;
-    z-index: 100;
+/* ===========================
+   Tower Defense Mode (Expanded)
+   =========================== */
+
+   .td-page {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    background-color: #0b0f19;
+    color: #e2e8f0;
+    overflow: hidden;
 }
 
+/* ─── Header ──────────────────────── */
 .td-header {
     display: flex;
-    justify-content: space-between;
     align-items: center;
-    margin-bottom: 2rem;
-    padding-bottom: 1rem;
-    border-bottom: 1px solid var(--border-color);
+    justify-content: space-between;
+    padding: 1rem 1.5rem;
+    background: rgba(15, 20, 35, 0.95);
+    border-bottom: 1px solid rgba(139, 92, 246, 0.2);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+    z-index: 10;
+}
+
+.td-header-left {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.td-header h1 {
+    font-size: 1.4rem;
+    font-weight: 800;
+    color: #f59e0b;
+    margin: 0;
+    text-transform: uppercase;
+    letter-spacing: 1px;
 }
 
 .td-back {
     display: flex;
     align-items: center;
     gap: 0.5rem;
-    background: none;
+    background: transparent;
     border: none;
-    color: var(--text-secondary);
+    color: #94a3b8;
     cursor: pointer;
-    font-size: 1.1rem;
+    font-weight: 600;
+    font-size: 1rem;
+    transition: color 0.2s;
 }
 
 .td-back:hover {
-    color: var(--text-primary);
+    color: #e2e8f0;
 }
 
 .td-stats {
     display: flex;
-    gap: 1.5rem;
-    font-weight: bold;
+    gap: 1rem;
+}
+
+.td-stats span {
+    padding: 0.4rem 0.8rem;
+    background: rgba(0, 0, 0, 0.4);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    font-weight: 700;
+    font-size: 0.95rem;
+}
+
+.mana-display {
+    color: #c084fc;
+    border-color: rgba(192, 132, 252, 0.3) !important;
+}
+
+.wave-display {
+    color: #fcd34d;
 }
 
 .health-display {
-    color: var(--danger-color);
+    color: #f87171;
+}
+
+/* ─── Content Area ──────────────────────── */
+.td-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    padding: 1rem;
+    gap: 1rem;
+    position: relative;
+    overflow: hidden;
 }
 
 .td-controls {
-    margin: 2rem 0;
     display: flex;
     justify-content: center;
+    z-index: 10;
 }
 
 .td-start-btn {
@@ -53,27 +104,29 @@
     align-items: center;
     gap: 0.5rem;
     padding: 0.75rem 1.5rem;
-    background: var(--accent-primary);
+    background: linear-gradient(135deg, #7c3aed, #4f46e5);
+    border: 2px solid #a78bfa;
+    border-radius: 12px;
     color: white;
-    border: none;
-    border-radius: 6px;
-    font-weight: bold;
+    font-weight: 800;
     cursor: pointer;
-    transition: filter 0.2s;
+    box-shadow: 0 4px 12px rgba(99, 102, 241, 0.4);
+    transition: transform 0.2s, opacity 0.2s;
 }
 
 .td-start-btn:disabled {
     opacity: 0.5;
     cursor: not-allowed;
-}
-
-.td-start-btn:not(:disabled):hover {
-    filter: brightness(1.2);
+    background: #334155;
+    border-color: #475569;
 }
 
 .td-game-over {
-    text-align: center;
-    color: var(--danger-color);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+    color: #f87171;
 }
 
 .td-reset-btn {
@@ -81,44 +134,375 @@
     align-items: center;
     gap: 0.5rem;
     padding: 0.5rem 1rem;
-    margin-top: 1rem;
-    background: var(--bg-surface);
-    color: var(--text-primary);
-    border: 1px solid var(--border-color);
-    border-radius: 6px;
+    background: #b91c1c;
+    border: none;
+    border-radius: 8px;
+    color: white;
+    font-weight: 700;
     cursor: pointer;
 }
 
-.td-lane {
+/* ─── Battlefield Grid ──────────────────────── */
+.td-battlefield-wrapper {
+    flex: 1;
     display: flex;
     align-items: center;
-    margin-top: 4rem;
-    height: 100px;
-    background: var(--bg-surface);
-    border: 2px solid var(--border-color);
-    border-radius: 12px;
-    padding: 0 1rem;
+    justify-content: center;
+    overflow: hidden;
     position: relative;
+}
+
+.td-grid-container {
+    width: 100%;
+    /* Keep aspect ratio matching grid (12x8) */
+    aspect-ratio: 12 / 8;
+    max-height: 100%;
+    background: #1e293b;
+    border: 2px solid #334155;
+    border-radius: 8px;
+    display: grid;
+    position: relative; /* For absolutely positioned entities */
+    overflow: hidden;
+    box-shadow: inset 0 0 20px rgba(0,0,0,0.5), 0 10px 30px rgba(0,0,0,0.5);
+}
+
+/* Grid Cells */
+.td-cell {
+    border: 1px dashed rgba(255, 255, 255, 0.05);
+    position: relative;
+}
+
+.td-cell.buildable {
+    cursor: pointer;
+    background: rgba(34, 197, 94, 0.02);
+}
+
+.td-cell.buildable:hover {
+    background: rgba(34, 197, 94, 0.1);
+    border: 1px solid rgba(34, 197, 94, 0.5);
+    z-index: 1;
+}
+
+.td-cell.path {
+    background: #334155;
+    border: none;
+    box-shadow: inset 0 0 10px rgba(0,0,0,0.3);
+}
+
+.td-cell.selected {
+    background: rgba(250, 204, 21, 0.2) !important;
+    border: 2px solid #facc15 !important;
+    z-index: 2;
+}
+
+.base-icon {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    pointer-events: none;
+}
+
+.spawn-icon {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    opacity: 0.5;
+    pointer-events: none;
+}
+
+/* ─── Entities overlay ──────────────────────── */
+.td-entity {
+    position: absolute;
+    pointer-events: none; /* Let clicks pass to grid unless specified */
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    transform: translate(-50%, -50%); /* Center on coordinates */
+    margin-left: calc(100% / 24); /* Half a cell width (12 grid) */
+    margin-top: calc(100% / 16);  /* Half a cell height (8 grid) */
+}
+
+/* Towers */
+.td-entity.tower {
+    pointer-events: auto; /* Clickable */
+    cursor: pointer;
+    z-index: 5;
+    transition: transform 0.1s;
+}
+
+.td-entity.tower:hover {
+    transform: translate(-50%, -50%) scale(1.1);
+}
+
+.tower-icon {
+    width: 80%;
+    height: 80%;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.2rem;
+    border: 2px solid rgba(255, 255, 255, 0.5);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.5);
+    position: relative;
+    background-color: #334155; /* fallback */
+}
+
+.tower-level {
+    position: absolute;
+    bottom: -4px;
+    right: -4px;
+    background: #f59e0b;
+    color: #fff;
+    font-size: 0.6rem;
+    font-weight: 900;
+    border-radius: 50%;
+    width: 16px;
+    height: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid #78350f;
+}
+
+/* Enemies */
+.td-entity.enemy {
+    z-index: 4;
+}
+
+.td-entity.enemy.slowed {
+    filter: drop-shadow(0 0 4px #7dd3fc);
+}
+
+.enemy-sprite {
+    font-size: 1.5rem;
+    filter: drop-shadow(0 2px 2px rgba(0,0,0,0.5));
+}
+
+.enemy-hp-bar-bg {
+    width: 80%;
+    height: 4px;
+    background: rgba(0,0,0,0.8);
+    border-radius: 2px;
+    margin-top: 2px;
     overflow: hidden;
 }
 
-.td-lane-path {
-    flex: 1;
-    position: relative;
+.enemy-hp-bar-fill {
     height: 100%;
+    background: #ef4444;
+    transition: width 0.1s linear;
 }
 
-.td-enemy {
+/* Projectiles */
+.td-projectile {
     position: absolute;
-    top: 50%;
-    transform: translateY(-50%);
-    transition: left 0.5s linear;
+    height: 2px;
+    transform-origin: left center;
+    z-index: 3;
+    pointer-events: none;
+    box-shadow: 0 0 8px currentColor;
+    border-radius: 2px;
+    opacity: 0.8;
 }
 
-.td-base {
-    width: 60px;
+/* ─── Floating Shop/Upgrade Panels ──────────────────────── */
+.td-shop-panel {
+    position: absolute;
+    bottom: 2rem;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(15, 23, 42, 0.95);
+    border: 1px solid #475569;
+    border-radius: 12px;
+    padding: 1rem;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.8);
+    z-index: 100;
+    width: 90%;
+    max-width: 500px;
+    backdrop-filter: blur(8px);
+}
+
+.panel-header {
     display: flex;
-    justify-content: center;
+    justify-content: space-between;
     align-items: center;
-    z-index: 2;
+    margin-bottom: 1rem;
+    border-bottom: 1px solid #334155;
+    padding-bottom: 0.5rem;
+}
+
+.panel-header h3 {
+    margin: 0;
+    font-size: 1.1rem;
+    color: #f8fafc;
+}
+
+.close-btn {
+    background: transparent;
+    border: none;
+    color: #94a3b8;
+    cursor: pointer;
+}
+
+.tower-options {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 0.5rem;
+}
+
+.tower-build-btn {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+    background: rgba(0, 0, 0, 0.5);
+    border: 1px solid #334155;
+    border-radius: 8px;
+    padding: 0.75rem;
+    color: #e2e8f0;
+    cursor: pointer;
+    transition: background 0.2s;
+    text-align: center;
+}
+
+.tower-build-btn:hover:not(:disabled) {
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.tower-build-btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+    filter: grayscale(1);
+}
+
+.tower-icon-preview {
+    font-size: 2rem;
+}
+
+.tower-info h4 {
+    margin: 0;
+    font-size: 0.9rem;
+}
+
+.tower-info p {
+    margin: 0.2rem 0;
+    font-size: 0.7rem;
+    color: #94a3b8;
+}
+
+.tower-info .cost {
+    color: #c084fc;
+}
+
+.tower-info .stats {
+    font-size: 0.65rem;
+    color: #64748b;
+    margin-top: 0.25rem;
+}
+
+.panel-actions {
+    display: flex;
+    gap: 1rem;
+}
+
+.action-btn {
+    flex: 1;
+    padding: 0.75rem;
+    border: none;
+    border-radius: 8px;
+    font-weight: 700;
+    color: white;
+    cursor: pointer;
+}
+
+.action-btn.upgrade {
+    background: #2563eb;
+}
+
+.action-btn.upgrade:disabled {
+    background: #334155;
+    color: #94a3b8;
+    cursor: not-allowed;
+}
+
+.action-btn.sell {
+    background: #dc2626;
+}
+
+/* ─── Mobile Adjustments ──────────────────────── */
+@media (max-width: 768px) {
+    .td-header {
+        padding: 0.75rem;
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+
+    .td-stats {
+        width: 100%;
+        justify-content: space-between;
+    }
+
+    .td-grid-container {
+        /* Allow it to constrain naturally */
+        max-height: 50vh;
+    }
+
+    .tower-icon {
+        font-size: 1rem;
+    }
+
+    .enemy-sprite {
+        font-size: 1.2rem;
+    }
+}
+
+/* ─── Modifier Chips ──────────────────────── */
+.map-mod-display {
+    color: #e2e8f0;
+    border-color: rgba(226, 232, 240, 0.3) !important;
+    background: rgba(226, 232, 240, 0.1) !important;
+    cursor: help;
+}
+
+.wave-preview-chip {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-left: 1rem;
+    padding: 0.5rem 1rem;
+    background: rgba(220, 38, 38, 0.15);
+    border: 1px dashed #ef4444;
+    border-radius: 8px;
+    color: #fca5a5;
+    animation: pulseBorder 2s infinite;
+}
+
+.wave-preview-chip .wave-icon {
+    font-size: 1.5rem;
+}
+
+.wave-preview-chip strong {
+    display: block;
+    font-size: 0.9rem;
+    color: #f87171;
+}
+
+.wave-preview-chip p {
+    margin: 0;
+    font-size: 0.75rem;
+    color: #fecaca;
+    opacity: 0.8;
+}
+
+@keyframes pulseBorder {
+    0% { border-color: rgba(239, 68, 68, 0.4); }
+    50% { border-color: rgba(239, 68, 68, 1); }
+    100% { border-color: rgba(239, 68, 68, 0.4); }
 }

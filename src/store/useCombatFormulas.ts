@@ -5,13 +5,14 @@
  * combat stat breakdowns. Not a Zustand store itself.
  */
 
+import { AURAS, useAuraStore } from './useAuraStore';
+import { useBookTrophyStore } from './useBookTrophyStore';
+import { useConsistencyStore } from './useConsistencyStore';
 import { useGameStore, type SkillName } from './useGameStore';
 import { getPassiveBonuses } from './usePassiveEffects';
-import { useSkillTrophyStore } from './useSkillTrophyStore';
-import { useBookTrophyStore } from './useBookTrophyStore';
 import { useRoomStore } from './useRoomStore';
-import { useAuraStore, AURAS } from './useAuraStore';
-import { useConsistencyStore } from './useConsistencyStore';
+import { useSkillTrophyStore } from './useSkillTrophyStore';
+import { useRiskStore } from './useRiskStore';
 
 // ═══════════════════════════════════════════
 // SKILL IDENTITY ROLES
@@ -154,6 +155,7 @@ export function getDetailedCombatBreakdown(): CombatBreakdown {
     const roomBonuses = useRoomStore.getState().getRoomCombatBonuses();
     const auraStore = useAuraStore.getState();
     const consistencyStore = useConsistencyStore.getState();
+    const activeRiskRegions = useRiskStore.getState().getActiveRegionBonuses();
     const { skills, defenseDecayAmount } = gameStore;
 
     const activeAura = AURAS.find(a => a.id === auraStore.activeAuraId);
@@ -176,6 +178,12 @@ export function getDetailedCombatBreakdown(): CombatBreakdown {
     ];
 
     let atkSubtotal = baseAtk + equipAtk + trophyAtk;
+
+    if (activeRiskRegions.includes('start')) {
+        const riskAtkVal = Math.round(atkSubtotal * 0.05);
+        atkSources.push({ label: 'Risk Vanguard (+5%)', value: riskAtkVal });
+        atkSubtotal += riskAtkVal;
+    }
 
     if (roomAtkPercent > 0) {
         const roomAtkVal = Math.round(atkSubtotal * roomAtkPercent / 100);
@@ -233,6 +241,12 @@ export function getDetailedCombatBreakdown(): CombatBreakdown {
 
     let defSubtotal = Math.max(1, baseDef + equipDef + trophyDef);
 
+    if (activeRiskRegions.includes('iron')) {
+        const riskDefVal = Math.round(defSubtotal * 0.10);
+        defSources.push({ label: 'Risk Iron Ridge (+10%)', value: riskDefVal });
+        defSubtotal += riskDefVal;
+    }
+
     if (roomBonuses.defPercent > 0) {
         const roomDefVal = Math.round(defSubtotal * roomBonuses.defPercent / 100);
         defSources.push({ label: `Room (+${roomBonuses.defPercent}%)`, value: roomDefVal });
@@ -266,6 +280,10 @@ export function getDetailedCombatBreakdown(): CombatBreakdown {
         { label: 'Trophies', value: trophyHp },
         { label: 'Equipment', value: equipHp },
     ];
+
+    if (activeRiskRegions.includes('demon')) {
+        hpSources.push({ label: 'Risk Demon Citadel', value: 5 });
+    }
 
     // ── SPD ──────────────────────────────
     const baseSpd = Math.round(flexLevel * 2 + 50);

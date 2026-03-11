@@ -5,6 +5,13 @@ import { PERSIST_REGISTRY } from '../data/persistRegistry';
 
 export type TerritoryTrait = 'fortified' | 'resource' | 'mystic' | 'none';
 export type SoldierCard = 'knight' | 'shieldbearer' | 'scout' | 'general';
+export type RegionId = 'start' | 'ash' | 'iron' | 'frost' | 'demon';
+
+export interface RegionDef {
+    id: RegionId;
+    name: string;
+    bonusDescription: string;
+}
 
 export interface TerritoryNode {
     id: string;
@@ -13,6 +20,7 @@ export interface TerritoryNode {
     neighbors: string[];
     owner: 'player' | 'enemy';
     trait?: TerritoryTrait;
+    region: RegionId;
 }
 
 export interface BattleResult {
@@ -23,6 +31,7 @@ export interface BattleResult {
     totalDamage: number;
     targetDefense: number;
     cardEffectsTriggered: string[];
+    fortifiedEnemyNodes: string[];
     reward?: 'sigil' | 'card';
 }
 
@@ -31,24 +40,46 @@ export interface RiskState {
     playerArmySize: number;
     inventoryCards: SoldierCard[];
     equippedCards: SoldierCard[];
+    ascensionLevel: number;
 
     initializeMap: () => void;
-    resolveBattle: (id: string) => BattleResult | null;
+    resetAndAscendMap: () => void;
+    resolveBattle: (id: string, heroAtkBonus?: number) => BattleResult | null;
     equipCard: (card: SoldierCard) => void;
     unequipCard: (card: SoldierCard) => void;
     gainCard: (card: SoldierCard) => void;
 
     getUnlockedArmySize: () => number;
     getSoldierDiceSides: () => number;
+    getActiveRegionBonuses: () => RegionId[];
 }
 
-const PROTOTYPE_MAP: Record<string, TerritoryNode> = {
-    't1': { id: 't1', name: 'Start Hold', defenseValue: 0, neighbors: ['t2', 't3'], owner: 'player', trait: 'none' },
-    't2': { id: 't2', name: 'Valley of Ash', defenseValue: 8, neighbors: ['t1', 't4'], owner: 'enemy', trait: 'resource' },
-    't3': { id: 't3', name: 'Iron Ridge', defenseValue: 12, neighbors: ['t1', 't5'], owner: 'enemy', trait: 'fortified' },
-    't4': { id: 't4', name: 'Sunken Ruins', defenseValue: 16, neighbors: ['t2', 't6'], owner: 'enemy', trait: 'mystic' },
-    't5': { id: 't5', name: 'Frost Pass', defenseValue: 18, neighbors: ['t3', 't6'], owner: 'enemy', trait: 'none' },
-    't6': { id: 't6', name: 'Demon Citadel', defenseValue: 25, neighbors: ['t4', 't5'], owner: 'enemy', trait: 'fortified' },
+export const REGIONS: Record<RegionId, RegionDef> = {
+    'start': { id: 'start', name: 'The Vanguard', bonusDescription: '+5% ATK' },
+    'ash': { id: 'ash', name: 'Ashlands', bonusDescription: '+10% Gold' },
+    'iron': { id: 'iron', name: 'Iron Ridge', bonusDescription: '+10% DEF' },
+    'frost': { id: 'frost', name: 'Frost Passages', bonusDescription: '+10% XP' },
+    'demon': { id: 'demon', name: 'Demon Citadel', bonusDescription: '+5 Max HP' }
+};
+
+const DEFAULT_MAP: Record<string, TerritoryNode> = {
+    // Start Region
+    't1': { id: 't1', name: 'Start Hold', defenseValue: 0, neighbors: ['t2', 't3'], owner: 'player', trait: 'none', region: 'start' },
+    't2': { id: 't2', name: 'Outpost Alpha', defenseValue: 5, neighbors: ['t1', 't4'], owner: 'enemy', trait: 'resource', region: 'start' },
+    // Ash Region
+    't3': { id: 't3', name: 'Valley of Ash', defenseValue: 8, neighbors: ['t1', 't5'], owner: 'enemy', trait: 'none', region: 'ash' },
+    't4': { id: 't4', name: 'Cinder Ruins', defenseValue: 12, neighbors: ['t2', 't6'], owner: 'enemy', trait: 'mystic', region: 'ash' },
+    // Iron Region
+    't5': { id: 't5', name: 'Iron Ridge', defenseValue: 15, neighbors: ['t3', 't7'], owner: 'enemy', trait: 'fortified', region: 'iron' },
+    't6': { id: 't6', name: 'Rust Canyon', defenseValue: 18, neighbors: ['t4', 't7'], owner: 'enemy', trait: 'resource', region: 'iron' },
+    // Frost Region
+    't7': { id: 't7', name: 'Frost Pass', defenseValue: 22, neighbors: ['t5', 't6', 't8', 't9'], owner: 'enemy', trait: 'none', region: 'frost' },
+    't8': { id: 't8', name: 'Glacier Peak', defenseValue: 26, neighbors: ['t7', 't10'], owner: 'enemy', trait: 'mystic', region: 'frost' },
+    't9': { id: 't9', name: 'Frozen Lake', defenseValue: 24, neighbors: ['t7', 't11'], owner: 'enemy', trait: 'resource', region: 'frost' },
+    // Demon Region
+    't10': { id: 't10', name: 'Abyssal Gate', defenseValue: 30, neighbors: ['t8', 't12'], owner: 'enemy', trait: 'fortified', region: 'demon' },
+    't11': { id: 't11', name: 'Void Shrine', defenseValue: 32, neighbors: ['t9', 't12'], owner: 'enemy', trait: 'mystic', region: 'demon' },
+    't12': { id: 't12', name: 'Demon Citadel', defenseValue: 40, neighbors: ['t10', 't11'], owner: 'enemy', trait: 'fortified', region: 'demon' },
 };
 
 export const useRiskStore = create<RiskState>()(
@@ -58,12 +89,38 @@ export const useRiskStore = create<RiskState>()(
             playerArmySize: 0,
             inventoryCards: [],
             equippedCards: [],
+            ascensionLevel: 0,
 
             initializeMap: () => {
                 const { mapNodes } = get();
                 if (Object.keys(mapNodes).length === 0) {
-                    set({ mapNodes: PROTOTYPE_MAP });
+                    set({ mapNodes: DEFAULT_MAP });
+                } else {
+                    // Quick migration helper for old 6-node prototype saves
+                    const oldNodes = Object.keys(mapNodes);
+                    if (oldNodes.length < 12) {
+                        const merged = { ...DEFAULT_MAP };
+                        for (const key of oldNodes) {
+                            if (merged[key]) {
+                                merged[key].owner = mapNodes[key].owner;
+                            }
+                        }
+                        set({ mapNodes: merged });
+                    }
                 }
+            },
+
+            resetAndAscendMap: () => {
+                const { ascensionLevel } = get();
+                const newLevel = ascensionLevel + 1;
+                const newMap = { ...DEFAULT_MAP };
+                // Scale enemy defenses based on ascension
+                Object.keys(newMap).forEach(k => {
+                    if (newMap[k].owner === 'enemy') {
+                        newMap[k].defenseValue = Math.floor(newMap[k].defenseValue * (1 + (newLevel * 0.5)));
+                    }
+                });
+                set({ mapNodes: newMap, ascensionLevel: newLevel });
             },
 
             equipCard: (card) => {
@@ -96,7 +153,7 @@ export const useRiskStore = create<RiskState>()(
                 set(state => ({ inventoryCards: [...state.inventoryCards, card] }));
             },
 
-            resolveBattle: (id: string) => {
+            resolveBattle: (id: string, heroAtkBonus: number = 0) => {
                 const state = get();
                 const node = state.mapNodes[id];
                 if (!node || node.owner === 'player') return null;
@@ -124,6 +181,13 @@ export const useRiskStore = create<RiskState>()(
 
                 // Crits add +1 damage
                 baseDamage += crits;
+
+                // Heroic Bonus (from player ATK)
+                if (heroAtkBonus > 0) {
+                    const roundedBonus = Math.floor(heroAtkBonus);
+                    baseDamage += roundedBonus;
+                    triggeredEffects.push(`Heroic Presence: +${roundedBonus} Dmg`);
+                }
 
                 // Card: Knight (+1 static damage)
                 if (state.equippedCards.includes('knight')) {
@@ -169,6 +233,19 @@ export const useRiskStore = create<RiskState>()(
                     }));
                 }
 
+                // Enemy AI: 15% chance for unowned nodes to Fortify
+                const fortifiedEnemyNodes: string[] = [];
+                set((s) => {
+                    const nextNodes = { ...s.mapNodes };
+                    Object.keys(nextNodes).forEach(k => {
+                        if (nextNodes[k].owner === 'enemy' && k !== node.id && Math.random() < 0.15) {
+                            nextNodes[k] = { ...nextNodes[k], defenseValue: nextNodes[k].defenseValue + 1 };
+                            fortifiedEnemyNodes.push(k);
+                        }
+                    });
+                    return { mapNodes: nextNodes };
+                });
+
                 return {
                     success,
                     partial,
@@ -177,6 +254,7 @@ export const useRiskStore = create<RiskState>()(
                     totalDamage: baseDamage,
                     targetDefense,
                     cardEffectsTriggered: triggeredEffects,
+                    fortifiedEnemyNodes,
                     reward
                 };
             },
@@ -195,10 +273,35 @@ export const useRiskStore = create<RiskState>()(
                 if (strategyXp >= 30) return 9;
                 if (strategyXp >= 15) return 6;
                 return 3;
+            },
+
+            getActiveRegionBonuses: () => {
+                const { mapNodes } = get();
+                const regions: Record<RegionId, string[]> = {
+                    start: [], ash: [], iron: [], frost: [], demon: []
+                };
+
+                // Group nodes by region
+                Object.values(mapNodes).forEach(n => regions[n.region].push(n.owner));
+
+                const active: RegionId[] = [];
+                (Object.keys(regions) as RegionId[]).forEach(rId => {
+                    const owners = regions[rId];
+                    if (owners.length > 0 && owners.every(o => o === 'player')) {
+                        active.push(rId);
+                    }
+                });
+                return active;
             }
         }),
         {
-            name: PERSIST_REGISTRY.risk.persistKey
+            name: PERSIST_REGISTRY.risk.persistKey,
+            partialize: (state) => ({
+                mapNodes: state.mapNodes,
+                inventoryCards: state.inventoryCards,
+                equippedCards: state.equippedCards,
+                ascensionLevel: state.ascensionLevel || 0
+            })
         }
     )
 );

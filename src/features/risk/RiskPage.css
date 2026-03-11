@@ -116,3 +116,14 @@
 .risk-attack-btn:hover {
     filter: brightness(1.2);
 }
+
+.risk-ascend-panel {
+    border: 2px solid var(--accent-gold);
+    box-shadow: 0 0 20px rgba(255, 215, 0, 0.2);
+    animation: pulseGlow 2s infinite alternate;
+}
+
+@keyframes pulseGlow {
+    from { box-shadow: 0 0 10px rgba(255, 215, 0, 0.1); }
+    to { box-shadow: 0 0 30px rgba(255, 215, 0, 0.4); }
+}

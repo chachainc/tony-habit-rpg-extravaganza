@@ -28,6 +28,15 @@ export interface MemoryLog {
     mostSigilsInRun: number;
 }
 
+export type RunBuffType = 'strength' | 'defense' | 'wealth' | 'curse';
+
+export interface RunBuff {
+    id: string;
+    type: RunBuffType;
+    label: string;
+    amount: number;
+}
+
 export interface ConquestState {
     // Currency
     sigils: number;
@@ -52,6 +61,32 @@ export interface ConquestState {
     diceCount: number;  // Number of d6 rolled (default 2, upgradeable)
     morale: number;       // 0-100
 
+    // Map Actions
+    initMap: () => void;
+    rollMapDice: () => number | null;
+    getReachableNodes: () => string[];
+    movePlayer: (nodeId: string) => void;
+    grantSpireReward: (gold: number, sigils: number, gems?: number) => void;
+
+    // Run State (Slay the Spire style)
+    runHP: number;
+    runMaxHP: number;
+    runFloor: number;
+    runBuffs: RunBuff[];
+    runComplete: 'none' | 'victory' | 'defeat';
+    
+    // Meta Progression
+    runsCompleted: number;
+    bestFloor: number;
+
+    // Run Actions
+    startRun: () => void;
+    takeDamage: (amount: number) => void;
+    healHP: (amount: number) => void;
+    addRunBuff: (buff: RunBuff) => void;
+    completeRun: (victory: boolean) => void;
+    resetRun: () => void;
+
     // Memory Log
     memoryLog: MemoryLog;
 
@@ -69,12 +104,7 @@ export interface ConquestState {
     initRegions: () => void;
     conquestAttack: () => ConquestCombatResult;
 
-    // Map Actions
-    initMap: () => void;
-    rollMapDice: () => number | null;
-    getReachableNodes: () => string[];
-    movePlayer: (nodeId: string) => void;
-    grantSpireReward: (gold: number, sigils: number, gems?: number) => void;
+
 
     // Getters
     getPowerScore: () => number;
@@ -207,6 +237,17 @@ export const useConquestStore = create<ConquestState>()(
                 mostSigilsInRun: 0,
             },
 
+            // Run State
+            runHP: 100,
+            runMaxHP: 100,
+            runFloor: 0,
+            runBuffs: [],
+            runComplete: 'none',
+
+            // Meta
+            runsCompleted: 0,
+            bestFloor: 0,
+
             addSigils: (amount) => set(s => ({ sigils: s.sigils + amount })),
 
             spendSigils: (amount) => {
@@ -223,7 +264,9 @@ export const useConquestStore = create<ConquestState>()(
                     currentNodeId: 'start',
                     completedNodes: ['start'],
                     activeDiceRoll: null,
-                    diceRolls: 0
+                    diceRolls: 0,
+                    runFloor: 0,
+                    runComplete: 'none'
                 });
             },
 
@@ -236,10 +279,17 @@ export const useConquestStore = create<ConquestState>()(
             movePlayer: (nodeId: string) => {
                 const state = get();
                 if (!state.completedNodes.includes(nodeId)) {
+                    // Find node to get its tier
+                    const nodeDef = CONQUEST_MAP_NODES.find(n => n.id === nodeId);
+                    const newFloor = nodeDef ? nodeDef.tier : state.runFloor;
+                    const newBestFloor = Math.max(state.bestFloor, newFloor);
+
                     set({
                         currentNodeId: nodeId,
                         completedNodes: [...state.completedNodes, nodeId],
-                        activeDiceRoll: null
+                        activeDiceRoll: null,
+                        runFloor: newFloor,
+                        bestFloor: newBestFloor
                     });
                 }
             },
@@ -258,6 +308,61 @@ export const useConquestStore = create<ConquestState>()(
                 if (sigils > 0) {
                     get().addSigils(sigils);
                 }
+
+                // 25% chance to drop a Risk card as connective progression
+                if (Math.random() < 0.25) {
+                    import('./useRiskStore').then(({ useRiskStore }) => {
+                        const cards: Array<'knight'|'shieldbearer'|'scout'|'general'> = ['knight', 'shieldbearer', 'scout', 'general'];
+                        const drop = cards[Math.floor(Math.random() * cards.length)];
+                        useRiskStore.getState().gainCard(drop);
+                    }).catch(() => {});
+                }
+            },
+
+            // ─── RUN ACTIONS ───
+            startRun: () => {
+                set({
+                    runHP: get().runMaxHP,
+                    runFloor: 0,
+                    runBuffs: [],
+                    runComplete: 'none',
+                    currentNodeId: 'start',
+                    completedNodes: ['start'],
+                    activeDiceRoll: null
+                });
+            },
+
+            takeDamage: (amount: number) => {
+                if (amount <= 0) return;
+                const state = get();
+                const newHP = Math.max(0, state.runHP - amount);
+                set({ 
+                    runHP: newHP,
+                    runComplete: newHP <= 0 ? 'defeat' : state.runComplete
+                });
+            },
+
+            healHP: (amount: number) => {
+                if (amount <= 0) return;
+                const state = get();
+                set({ runHP: Math.min(state.runMaxHP, state.runHP + amount) });
+            },
+
+            addRunBuff: (buff: RunBuff) => {
+                const state = get();
+                set({ runBuffs: [...state.runBuffs, buff] });
+            },
+
+            completeRun: (victory: boolean) => {
+                const state = get();
+                set({ 
+                    runComplete: victory ? 'victory' : 'defeat',
+                    runsCompleted: victory ? state.runsCompleted + 1 : state.runsCompleted
+                });
+            },
+
+            resetRun: () => {
+                get().startRun();
             },
 
             recruitSoldier: (name, role) => {
