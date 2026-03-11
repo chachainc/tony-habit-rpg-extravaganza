@@ -14,6 +14,34 @@
   <link rel="apple-touch-icon" href="/icons/icon-192.png" />
   <link rel="manifest" href="/manifest.json" />
   <title>Tony's Habit RPG</title>
+  <script>
+    // Mobile debugging URL flags
+    (function () {
+      try {
+        const params = new URLSearchParams(window.location.search);
+
+        // 1. Force clear all app data
+        if (params.get('clearAppData') === '1') {
+          console.log('[BOOT] URL flag clearAppData=1 detected. Clearing local storage...');
+          localStorage.clear(); // Clears all persisted Zustand stores and flags
+          localStorage.setItem('DISABLE_SW', 'true'); // Also bypass SW for the clean boot
+
+          // Strip the query param to prevent infinite reload loop
+          const cleanUrl = window.location.origin + window.location.pathname;
+          window.location.replace(cleanUrl);
+          return;
+        }
+
+        // 2. Disable Service Worker only
+        if (params.get('disableSW') === '1') {
+          console.log('[BOOT] Service worker disabled by URL flag');
+          localStorage.setItem('DISABLE_SW', 'true');
+        }
+      } catch (e) {
+        console.warn('[BOOT] Error processing URL debug flags:', e);
+      }
+    })();
+  </script>
 </head>
 
 <body>
@@ -29,7 +57,7 @@
             console.log('[BOOT] Service Worker registration skipped (DISABLE_SW is set).');
             return;
           }
-          navigator.serviceWorker.register('/sw.js').catch((e) => { 
+          navigator.serviceWorker.register('/sw.js').catch((e) => {
             console.warn('[BOOT] Service Worker registration failed:', e);
           });
         } catch (e) {
