@@ -72,29 +72,28 @@ a:hover {
 
 body {
   margin: 0;
-  padding: var(--safe-top) var(--safe-right) var(--safe-bottom) var(--safe-left);
+  padding: var(--safe-top, 0px) var(--safe-right, 0px) var(--safe-bottom, 0px) var(--safe-left, 0px);
   min-width: 320px;
   height: 100%;
   overflow: hidden;
   position: fixed;
   width: 100%;
   overscroll-behavior: none;
-  background: var(--gacha-bg-deep);
+  background-color: #0a0a0f;
+  background: var(--gacha-bg-deep, #0a0a0f);
 }
 
-/* Gacha Vignette + Noise Overlay */
-body::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  z-index: 9999;
-  background: radial-gradient(ellipse at center, transparent 30%, rgba(0, 0, 0, 0.6) 100%);
-  mix-blend-mode: multiply;
-}
+/*
+ * DISABLED: Gacha Vignette overlay was at z-index 9999 with mix-blend-mode: multiply.
+ * This covered ALL content with a dark gradient, causing a black screen appearance
+ * on mobile Safari when there was any rendering delay or crash.
+ * To re-enable, move this to a React component that renders AFTER confirmed first paint.
+ */
 
 html {
   height: 100%;
+  min-height: 100vh;
+  min-height: 100dvh;
   overflow: hidden;
 }
 

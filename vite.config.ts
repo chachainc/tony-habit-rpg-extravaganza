@@ -10,6 +10,12 @@ export default defineConfig({
       'zustand/middleware': path.resolve(__dirname, './src/mock-middleware.ts')
     }
   },
+  build: {
+    // Target Safari 14+ and ES2020 to avoid emitting ES2022 syntax
+    // (class static blocks, Object.hasOwn, etc.) that older iPhone Safari
+    // versions cannot parse — which would cause a complete black screen.
+    target: ['es2020', 'safari14'],
+  },
   server: {
     proxy: {
       '/api': {

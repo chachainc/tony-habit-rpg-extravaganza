@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import type { SkillName } from './useGameStore';
 import { PERSIST_REGISTRY } from '../data/persistRegistry';
+import { safeUUID } from '../utils/safeUUID';
 
 export type BundleType = 'morning' | 'afternoon' | 'night';
 
@@ -411,7 +412,7 @@ export const useRecurringTasksStore = create<RecurringTasksState>()(
 
             addCustomRecurringTask: (title, bundle, rewards) => {
                 const newTask: RecurringTask = {
-                    id: `custom-${crypto.randomUUID()}`,
+                    id: `custom-${safeUUID()}`,
                     title,
                     bundle,
                     type: 'daily',

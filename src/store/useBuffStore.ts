@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { PERSIST_REGISTRY } from '../data/persistRegistry';
+import { safeUUID } from '../utils/safeUUID';
 
 export type BuffType =
     | 'xp_boost'
@@ -63,7 +64,7 @@ export const useBuffStore = create<BuffState>()(
             doubleXpNextHabit: false,
 
             addBuff: (type, value, durationHours, name, stat) => {
-                const id = crypto.randomUUID();
+                const id = safeUUID();
                 const expiresAt = Date.now() + (durationHours * 60 * 60 * 1000);
 
                 const newBuff: Buff = {

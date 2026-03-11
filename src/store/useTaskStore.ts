@@ -3,6 +3,7 @@ import { persist } from 'zustand/middleware';
 import { useGameStore, type SkillName } from './useGameStore';
 import { useConsistencyStore } from './useConsistencyStore';
 import { PERSIST_REGISTRY } from '../data/persistRegistry';
+import { safeUUID } from '../utils/safeUUID';
 
 export type TaskDifficulty = 'small' | 'medium' | 'hard' | 'very_hard';
 
@@ -76,7 +77,7 @@ export const useTaskStore = create<TaskState>()(
 
             addTask: (title, difficulty, skillId) => {
                 const newTask: Task = {
-                    id: crypto.randomUUID(),
+                    id: safeUUID(),
                     title,
                     completed: false,
                     difficulty,

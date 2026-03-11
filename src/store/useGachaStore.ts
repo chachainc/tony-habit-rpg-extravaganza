@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import { safeStorage } from '../utils/safeStorage';
+import { safeUUID } from '../utils/safeUUID';
 
 console.log('[BOOT] useGachaStore module load started');
 import { useFusionStore } from './useFusionStore';
@@ -262,7 +263,7 @@ function executePull(
 
     // Record pull
     const pull: GachaPull = {
-        id: crypto.randomUUID(),
+        id: safeUUID(),
         itemId: item.id,
         rarity: item.rarity,
         wasDuplicate,

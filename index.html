@@ -14,39 +14,94 @@
   <link rel="apple-touch-icon" href="/icons/icon-192.png" />
   <link rel="manifest" href="/manifest.json" />
   <title>Tony's Habit RPG</title>
+
+  <!-- BOOT PHASE 0: Pre-JS error capture + safe mode + clear data flags -->
   <script>
-    // Mobile debugging URL flags
+    // Capture errors BEFORE any module code runs
+    window.__bootErrors = [];
+    window.__bootLog = [];
+    window.__SAFE_MODE = false;
+
+    window.onerror = function (msg, src, line, col, err) {
+      var entry = { msg: String(msg), src: String(src || ''), line: line, col: col, err: String(err || '') };
+      window.__bootErrors.push(entry);
+      // Show error overlay if it exists
+      var el = document.getElementById('boot-error-display');
+      if (el) {
+        el.style.display = 'block';
+        el.textContent = 'JS Error: ' + entry.msg + ' at ' + entry.src + ':' + entry.line;
+      }
+      return false;
+    };
+
+    window.onunhandledrejection = function (event) {
+      var reason = event && event.reason ? String(event.reason) : 'Unknown rejection';
+      window.__bootErrors.push({ msg: 'Unhandled rejection: ' + reason });
+      var el = document.getElementById('boot-error-display');
+      if (el) {
+        el.style.display = 'block';
+        el.textContent = 'Promise Error: ' + reason;
+      }
+    };
+
+    // Boot logger
+    window.__logBoot = function (message) {
+      window.__bootLog.push({ t: Date.now(), m: message });
+      var el = document.getElementById('boot-status-text');
+      if (el) el.textContent = message;
+    };
+
     (function () {
       try {
-        const params = new URLSearchParams(window.location.search);
+        var params = new URLSearchParams(window.location.search);
 
-        // 1. Force clear all app data
+        // Safe mode
+        if (params.get('safe') === '1') {
+          window.__SAFE_MODE = true;
+        }
+
+        // Force clear all app data
         if (params.get('clearAppData') === '1') {
-          console.log('[BOOT] URL flag clearAppData=1 detected. Clearing local storage...');
-          localStorage.clear(); // Clears all persisted Zustand stores and flags
-          localStorage.setItem('DISABLE_SW', 'true'); // Also bypass SW for the clean boot
-
-          // Strip the query param to prevent infinite reload loop
-          const cleanUrl = window.location.origin + window.location.pathname;
+          localStorage.clear();
+          var cleanUrl = window.location.origin + window.location.pathname;
           window.location.replace(cleanUrl);
           return;
         }
 
-        // 2. Disable Service Worker only
+        // Disable Service Worker only
         if (params.get('disableSW') === '1') {
-          console.log('[BOOT] Service worker disabled by URL flag');
           localStorage.setItem('DISABLE_SW', 'true');
         }
       } catch (e) {
-        console.warn('[BOOT] Error processing URL debug flags:', e);
+        // localStorage might be blocked in private browsing - that's OK
       }
     })();
   </script>
 </head>
 
 <body>
-  <div id="root"></div>
+  <!-- BOOT PHASE 1: Visible content BEFORE any JS modules load -->
+  <div id="root">
+    <div id="boot-splash" style="
+      position: fixed; inset: 0; z-index: 99999;
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      background: #0a0a0f; color: #a0a8b8;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+      font-size: 14px; text-align: center; padding: 24px;
+    ">
+      <div style="font-size: 20px; color: #e5e5e5; margin-bottom: 8px;">Tony's Habit RPG</div>
+      <div id="boot-status-text" style="color: #647082; font-size: 12px;">Loading...</div>
+      <div id="boot-error-display" style="
+        display: none; margin-top: 16px; padding: 12px 16px;
+        background: #1a0000; border: 1px solid #991b1b; border-radius: 8px;
+        color: #fca5a5; font-size: 12px; max-width: 90vw; word-break: break-word;
+        text-align: left;
+      "></div>
+    </div>
+  </div>
+
   <script type="module" src="/src/main.tsx"></script>
+
   <script>
     // Service worker registration intentionally disabled while mobile Safari stability is being validated.
     console.info('[BOOT] Service worker registration is disabled in this build.');

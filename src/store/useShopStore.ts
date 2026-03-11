@@ -3,6 +3,7 @@ import { persist } from 'zustand/middleware';
 import { getShopItemPool } from '../data/rewardTables';
 import type { ItemDef } from './useInventoryStore';
 import { PERSIST_REGISTRY } from '../data/persistRegistry';
+import { safeUUID } from '../utils/safeUUID';
 
 export interface ShopItem {
     id: string; // The specific UUID of this instance in the shop to track purchase state
@@ -54,7 +55,7 @@ export const useShopStore = create<ShopState>()(
                 for (let i = 0; i < count; i++) {
                     const item = shuffled[i];
                     newStock.push({
-                        id: crypto.randomUUID(),
+                        id: safeUUID(),
                         itemDefId: item.id,
                         price: generatePrice(item),
                         purchased: false
