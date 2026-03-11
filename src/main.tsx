@@ -1,15 +1,10 @@
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
-import './styles/global.css'
-import App from './App.tsx'
-import { BootErrorBoundary } from './components/ui/BootErrorBoundary';
-
-console.log('[BOOT] app bundle started');
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    <BootErrorBoundary>
-      <App />
-    </BootErrorBoundary>
+    <div style={{ padding: 20, fontSize: 24, background: '#fff', color: '#000', height: '100vh' }}>
+      SAFE BOOT TEST
+    </div>
   </StrictMode>,
 )
