@@ -1,5 +1,8 @@
 import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
+import { persist, createJSONStorage } from 'zustand/middleware';
+import { safeStorage } from '../utils/safeStorage';
+
+console.log('[BOOT] useCodexStore module load started');
 import { PERSIST_REGISTRY } from '../data/persistRegistry';
 
 // ─── CODEX STORE ──────────────────────────────────────────────────────────────
@@ -61,6 +64,14 @@ export const useCodexStore = create<CodexState>()(
                 return [];
             },
         }),
-        { name: PERSIST_REGISTRY.codex.persistKey }
+        {
+            name: PERSIST_REGISTRY.codex.persistKey,
+            storage: createJSONStorage(() => safeStorage),
+            onRehydrateStorage: () => () => {
+                console.log('[BOOT] useCodexStore hydration finished');
+            }
+        }
     )
 );
+
+console.log('[BOOT] useCodexStore module load finished');

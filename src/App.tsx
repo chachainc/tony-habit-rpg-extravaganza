@@ -68,6 +68,7 @@ function App() {
   const [showWakeUp, setShowWakeUp] = useState(false);
 
   useEffect(() => {
+    console.log('[BOOT] App mounted');
     // Check if it's a new day on mount
     if (isNewDay()) {
       setShowWakeUp(true);
@@ -177,6 +178,10 @@ function App() {
           <Route path="showcase" element={<UIShowcase />} />
         </Route>
       </Routes>
+      {(() => {
+        console.log('[BOOT] route registration complete');
+        return null;
+      })()}
     </Router>
   );
 }

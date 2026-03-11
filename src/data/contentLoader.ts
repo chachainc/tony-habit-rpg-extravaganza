@@ -28,133 +28,151 @@ const rawData = gameContent as ExternalItemData[];
 // ── Merge Functions ──
 
 export function mergeExternalPets(hardcodedPets: Record<string, PetDef>): Record<string, PetDef> {
-    const combined = { ...hardcodedPets };
-    let loadedCount = 0;
+    console.log('[BOOT] contentLoader - mergeExternalPets started');
+    try {
+        const combined = { ...hardcodedPets };
+        let loadedCount = 0;
 
-    rawData.forEach(item => {
-        if (item.type !== 'pet') return;
+        rawData.forEach(item => {
+            if (item.type !== 'pet') return;
 
-        // 1. Duplicate ID Safety
-        if (combined[item.id]) {
-            console.warn(`[Content Loader] Skipping Pet collision. ID '${item.id}' already exists natively.`);
-            return;
-        }
-
-        // 2. Map structure safely
-        const petInfo: PetDef = {
-            id: item.id,
-            name: item.name,
-            rarity: (item.rarity as PetDef['rarity']) || 'common',
-            icon: item.icon || '🐾',
-            description: item.description || '',
-            source: item.source,
-            passiveBonus: {
-                type: 'attack', // Fallback
-                value: item.effectValue || 0
+            // 1. Duplicate ID Safety
+            if (combined[item.id]) {
+                console.warn(`[Content Loader] Skipping Pet collision. ID '${item.id}' already exists natively.`);
+                return;
             }
-        };
 
-        if (item.effectType === 'gold_gain' || item.effectType === 'xp_gain' || item.effectType === 'defense' || item.effectType === 'skill_xp') {
-            petInfo.passiveBonus.type = item.effectType;
-        }
+            // 2. Map structure safely
+            const petInfo: PetDef = {
+                id: item.id,
+                name: item.name,
+                rarity: (item.rarity as PetDef['rarity']) || 'common',
+                icon: item.icon || '🐾',
+                description: item.description || '',
+                source: item.source,
+                passiveBonus: {
+                    type: 'attack', // Fallback
+                    value: item.effectValue || 0
+                }
+            };
 
-        combined[petInfo.id] = petInfo;
-        loadedCount++;
-    });
+            if (item.effectType === 'gold_gain' || item.effectType === 'xp_gain' || item.effectType === 'defense' || item.effectType === 'skill_xp') {
+                petInfo.passiveBonus.type = item.effectType;
+            }
 
-    console.log(`[Content Loader] Successfully merged ${loadedCount} external pets.`);
-    return combined;
+            combined[petInfo.id] = petInfo;
+            loadedCount++;
+        });
+
+        console.log(`[BOOT] contentLoader - Successfully merged ${loadedCount} external pets.`);
+        return combined;
+    } catch (e) {
+        console.error('[BOOT] contentLoader - Error merging external pets:', e);
+        return hardcodedPets;
+    }
 }
 
 export function mergeExternalItems(hardcodedItems: Record<string, ItemDef>): Record<string, ItemDef> {
-    const combined = { ...hardcodedItems };
-    let loadedCount = 0;
+    console.log('[BOOT] contentLoader - mergeExternalItems started');
+    try {
+        const combined = { ...hardcodedItems };
+        let loadedCount = 0;
 
-    rawData.forEach(item => {
-        if (!['book', 'weapon', 'armor', 'relic', 'furniture', 'pet_gear', 'ticket'].includes(item.type)) return;
+        rawData.forEach(item => {
+            if (!['book', 'weapon', 'armor', 'relic', 'furniture', 'pet_gear', 'ticket'].includes(item.type)) return;
 
-        // 1. Duplicate ID Safety
-        if (combined[item.id]) {
-            console.warn(`[Content Loader] Skipping Item collision. ID '${item.id}' already exists natively.`);
-            return;
-        }
+            // 1. Duplicate ID Safety
+            if (combined[item.id]) {
+                console.warn(`[Content Loader] Skipping Item collision. ID '${item.id}' already exists natively.`);
+                return;
+            }
 
-        // 2. Map structure safely
-        const itemInfo: ItemDef = {
-            id: item.id,
-            name: item.name,
-            type: item.type as ItemType,
-            rarity: item.rarity as ItemRarity,
-            shopCategory: (item.shopCategory || 'general') as ShopCategory,
-            value: item.value || 0,
-            price: item.price || 0,
-            critChance: item.critChance,
-            icon: item.icon || (item.type === 'weapon' ? '🗡️' : item.type === 'book' ? '📘' : '📦'),
-            description: item.description || '',
-            category: item.category as any,
-            level: item.level,
-            fusionRequired: item.fusionRequirement,
-            effect: item.effectType ? `+${item.effectValue} ${item.effectType}` : undefined,
-            source: item.source
-        };
+            // 2. Map structure safely
+            const itemInfo: ItemDef = {
+                id: item.id,
+                name: item.name,
+                type: item.type as ItemType,
+                rarity: item.rarity as ItemRarity,
+                shopCategory: (item.shopCategory || 'general') as ShopCategory,
+                value: item.value || 0,
+                price: item.price || 0,
+                critChance: item.critChance,
+                icon: item.icon || (item.type === 'weapon' ? '🗡️' : item.type === 'book' ? '📘' : '📦'),
+                description: item.description || '',
+                category: item.category as any,
+                level: item.level,
+                fusionRequired: item.fusionRequirement,
+                effect: item.effectType ? `+${item.effectValue} ${item.effectType}` : undefined,
+                source: item.source
+            };
 
-        combined[itemInfo.id] = itemInfo;
-        loadedCount++;
-    });
+            combined[itemInfo.id] = itemInfo;
+            loadedCount++;
+        });
 
-    console.log(`[Content Loader] Successfully merged ${loadedCount} external items.`);
-    return combined;
+        console.log(`[BOOT] contentLoader - Successfully merged ${loadedCount} external items.`);
+        return combined;
+    } catch (e) {
+        console.error('[BOOT] contentLoader - Error merging external items:', e);
+        return hardcodedItems;
+    }
 }
 
 export function mergeExternalCodex(hardcodedCodex: CodexEntry[]): CodexEntry[] {
-    const combined = [...hardcodedCodex];
-    let loadedCount = 0;
+    console.log('[BOOT] contentLoader - mergeExternalCodex started');
+    try {
+        const combined = [...hardcodedCodex];
+        let loadedCount = 0;
 
-    // Create a Set of existing IDs for fast O(1) collision checking
-    const existingIds = new Set(combined.map(entry => entry.id));
+        // Create a Set of existing IDs for fast O(1) collision checking
+        const existingIds = new Set(combined.map(entry => entry.id));
 
-    rawData.forEach(item => {
-        let entryId = '';
-        let section = '';
+        rawData.forEach(item => {
+            let entryId = '';
+            let section = '';
 
-        if (item.type === 'pet') {
-            entryId = `codex_pet_${item.id}`;
-            section = 'pets';
-        } else {
-            const sectionMap: Record<string, string> = {
-                'book': 'books',
-                'weapon': 'artifacts',
-                'armor': 'artifacts',
-                'relic': 'relics',
-                'furniture': 'relics'
-            };
-            if (!sectionMap[item.type]) return;
-            entryId = `codex_${item.type}_${item.id}`;
-            section = sectionMap[item.type];
-        }
+            if (item.type === 'pet') {
+                entryId = `codex_pet_${item.id}`;
+                section = 'pets';
+            } else {
+                const sectionMap: Record<string, string> = {
+                    'book': 'books',
+                    'weapon': 'artifacts',
+                    'armor': 'artifacts',
+                    'relic': 'relics',
+                    'furniture': 'relics'
+                };
+                if (!sectionMap[item.type]) return;
+                entryId = `codex_${item.type}_${item.id}`;
+                section = sectionMap[item.type];
+            }
 
-        // 1. Duplicate ID Safety
-        if (existingIds.has(entryId)) {
-            // No warning needed here; the pet/item mergers already threw one for this ID
-            return;
-        }
+            // 1. Duplicate ID Safety
+            if (existingIds.has(entryId)) {
+                // No warning needed here; the pet/item mergers already threw one for this ID
+                return;
+            }
 
-        // 2. Auto-Entry Stub mapping
-        combined.push({
-            id: entryId,
-            name: item.name,
-            icon: item.icon || (item.type === 'pet' ? '🐾' : item.type === 'weapon' ? '🗡️' : item.type === 'book' ? '📘' : '📦'),
-            section: section as CodexSection,
-            rarity: item.rarity as CodexRarity,
-            description: item.description || 'A mysterious object of unknown origin.', // Fallback description stub
-            sources: [(item.source as CodexSource) || (item.type === 'pet' ? 'daily_spin' : 'marketplace')],
-            obtainHint: `Acquired from ${item.source || 'Unknown Route'}.`, // Fallback hint
-            dupeMatters: item.type === 'pet' || item.type === 'book'
+            // 2. Auto-Entry Stub mapping
+            combined.push({
+                id: entryId,
+                name: item.name,
+                icon: item.icon || (item.type === 'pet' ? '🐾' : item.type === 'weapon' ? '🗡️' : item.type === 'book' ? '📘' : '📦'),
+                section: section as CodexSection,
+                rarity: item.rarity as CodexRarity,
+                description: item.description || 'A mysterious object of unknown origin.', // Fallback description stub
+                sources: [(item.source as CodexSource) || (item.type === 'pet' ? 'daily_spin' : 'marketplace')],
+                obtainHint: `Acquired from ${item.source || 'Unknown Route'}.`, // Fallback hint
+                dupeMatters: item.type === 'pet' || item.type === 'book'
+            });
+
+            loadedCount++;
         });
 
-        loadedCount++;
-    });
-
-    console.log(`[Content Loader] Successfully generated ${loadedCount} external Codex stubs.`);
-    return combined;
+        console.log(`[BOOT] contentLoader - Successfully generated ${loadedCount} external Codex stubs.`);
+        return combined;
+    } catch (e) {
+        console.error('[BOOT] contentLoader - Error merging external codex:', e);
+        return hardcodedCodex;
+    }
 }

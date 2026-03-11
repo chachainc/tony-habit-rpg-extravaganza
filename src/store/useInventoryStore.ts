@@ -1,5 +1,8 @@
 import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
+import { persist, createJSONStorage } from 'zustand/middleware';
+import { safeStorage } from '../utils/safeStorage';
+
+console.log('[BOOT] useInventoryStore module load started');
 import { ITEM_DATABASE } from '../data/items';
 import { useCurrencyStore } from './useCurrencyStore';
 import type { SkillName } from './useGameStore';
@@ -306,6 +309,12 @@ export const useInventoryStore = create<InventoryState>()(
         }),
         {
             name: PERSIST_REGISTRY.inventory.persistKey, // Reset for economy overhaul
+            storage: createJSONStorage(() => safeStorage),
+            onRehydrateStorage: () => () => {
+                console.log('[BOOT] useInventoryStore hydration finished');
+            }
         }
     )
 );
+
+console.log('[BOOT] useInventoryStore module load finished');

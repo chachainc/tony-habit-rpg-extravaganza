@@ -23,7 +23,18 @@
     // Register service worker
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
-        navigator.serviceWorker.register('/sw.js').catch(() => { });
+        try {
+          // Allow disabling SW temporarily on mobile via localStorage
+          if (localStorage.getItem('DISABLE_SW')) {
+            console.log('[BOOT] Service Worker registration skipped (DISABLE_SW is set).');
+            return;
+          }
+          navigator.serviceWorker.register('/sw.js').catch((e) => { 
+            console.warn('[BOOT] Service Worker registration failed:', e);
+          });
+        } catch (e) {
+          console.warn('[BOOT] Service Worker registration crashed synchronously:', e);
+        }
       });
     }
   </script>

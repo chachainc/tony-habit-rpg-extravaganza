@@ -1,5 +1,8 @@
 import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
+import { persist, createJSONStorage } from 'zustand/middleware';
+import { safeStorage } from '../utils/safeStorage';
+
+console.log('[BOOT] useGachaStore module load started');
 import { useFusionStore } from './useFusionStore';
 
 export interface GachaPull {
@@ -206,9 +209,15 @@ export const useGachaStore = create<GachaState>()(
         }),
         {
             name: PERSIST_REGISTRY.gacha.persistKey,
+            storage: createJSONStorage(() => safeStorage),
+            onRehydrateStorage: () => () => {
+                console.log('[BOOT] useGachaStore hydration finished');
+            }
         }
     )
 );
+
+console.log('[BOOT] useGachaStore module load finished');
 
 import { getDailySpinPetPool } from '../data/rewardTables';
 import { PERSIST_REGISTRY } from '../data/persistRegistry';
