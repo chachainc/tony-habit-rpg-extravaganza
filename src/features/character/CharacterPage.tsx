@@ -29,6 +29,17 @@ export const CharacterPage = () => {
     const navigate = useNavigate();
     const heroImage = useHeroImage();
 
+    // Dynamic rank icon based on global level
+    const getRankIcon = () => {
+        const level = game.getGlobalLevel();
+        if (level >= 50) return '💎'; // Diamond
+        if (level >= 30) return '🥇'; // Gold
+        if (level >= 20) return '🥈'; // Silver
+        if (level >= 10) return '🥉'; // Bronze
+        if (level >= 5)  return '⭐'; // Rising
+        return '🗡️';                  // Adventurer / no rank
+    };
+
     const { skills, getAttack, getDefense, getMagicAttack, getMaxMP, getGlobalLevel, isDefenseSuppressed, defenseDecayAmount } = game;
     const equipBonuses = getPassiveBonuses();
 
@@ -143,7 +154,7 @@ export const CharacterPage = () => {
             <div className="char-content">
                 {/* Header */}
                 <div className="char-header">
-                    <div className="char-avatar">⚔️</div>
+                    <div className="char-avatar" title={`Level ${game.getGlobalLevel()}`}>{getRankIcon()}</div>
                     <div className="char-info">
                         <h1>Your Character</h1>
                         <p className="char-subtitle">Level {getGlobalLevel()} Adventurer</p>

@@ -198,6 +198,22 @@ button:active {
   pointer-events: none;
 }
 
+/* Centered overlay inside the modal itself (not fixed to screen) */
+.board-reward-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.75);
+  backdrop-filter: blur(4px);
+  padding: 12px;
+  border-radius: inherit;
+  pointer-events: all;
+}
+
+
 .modal-reward-card {
   width: min(100%, 420px);
   max-height: min(88vh, 88dvh);

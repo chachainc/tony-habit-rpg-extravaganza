@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useInventoryStore, ITEM_DB, type EquipmentSlot, type ItemDef, formatStatBonuses, getStatDelta } from '../../store/useInventoryStore';
 import { useGachaStore, PET_DB } from '../../store/useGachaStore';
+import { useHeroImage } from '../../hooks/useHeroImage';
 import { Sword, Shield, Gem, Sparkles, Dog, X, BookOpen, Gem as JewelIcon } from 'lucide-react';
 import './EquipmentPanel.css';
 
@@ -30,6 +31,7 @@ interface DisplayItem {
 export const EquipmentPanel = () => {
     const inventory = useInventoryStore();
     const gacha = useGachaStore();
+    const heroImage = useHeroImage();
     const [activeModalSlot, setActiveModalSlot] = useState<EquipmentSlot | null>(null);
 
     const handleEquip = (itemId: string, slot: EquipmentSlot) => {
@@ -183,8 +185,11 @@ export const EquipmentPanel = () => {
             <h3><Shield size={18} /> Active Equipment</h3>
             <p className="equipment-desc">Equip items to gain passive bonuses across all combat modes.</p>
 
-            <div className="equipment-grid">
-                {SLOT_ORDER.map(renderSlotCard)}
+            <div className="equipment-stage">
+                <img className="player-backdrop" src={heroImage} alt="Player Backdrop" />
+                <div className="equipment-grid">
+                    {SLOT_ORDER.map(renderSlotCard)}
+                </div>
             </div>
 
             {activeModalSlot && (

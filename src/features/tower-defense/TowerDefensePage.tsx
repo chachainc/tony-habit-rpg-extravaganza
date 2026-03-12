@@ -96,11 +96,12 @@ export const TowerDefensePage = () => {
     };
 
     const handlePointerDownShop = (e: React.PointerEvent, type: TowerType) => {
-        // Prevent default touch actions like scrolling while dragging
         document.body.style.userSelect = 'none';
         
         const cost = TD_TOWERS[type].cost;
-        if (currStore.shmeckles < cost) return;
+        const ownedCount = td.towerInventory[type] ?? 0;
+        // Allow drag if: has owned inventory OR has enough Schmeckles to buy
+        if (ownedCount === 0 && currStore.shmeckles < cost) return;
 
         setDragState({
             isDragging: true,
@@ -170,20 +171,21 @@ export const TowerDefensePage = () => {
 
     return (
         <div className="td-page">
-            <div className="td-header">
-                <div className="td-header-left">
-                    <button className="td-back" onClick={() => navigate('/combat')}>
-                        <ArrowLeft size={24} /> Back
-                    </button>
-                    <h1><Castle size={24} style={{ display: 'inline', verticalAlign: 'middle', marginRight: '0.5rem' }} /> Tower Defense</h1>
-                </div>
-                <div className="td-stats">
-                    <span className="mana-display">🐌 {currStore.shmeckles}</span>
-                    <span className="wave-display">Wave: {td.currentWave}</span>
-                    <span className="health-display">❤️ Base HP: {td.baseHealth}/{td.maxBaseHealth}</span>
+            {/* ── Compact Header ── */}
+            <div className="td-header-compact">
+                <button className="td-back" onClick={() => navigate('/combat')}>
+                    <ArrowLeft size={18} /> Back
+                </button>
+                <span className="td-title-compact">
+                    <Castle size={15} /> Tower Defense
+                </span>
+                <div className="td-header-chips">
+                    <span className="td-chip mana">🐌 {currStore.shmeckles}</span>
+                    <span className="td-chip wave">Wave {td.currentWave}</span>
+                    <span className="td-chip hp">❤️ {td.baseHealth}</span>
                     {td.currentMapModifier !== 'none' && (
-                        <span className="map-mod-display" title={TD_MAP_MODIFIERS[td.currentMapModifier].description}>
-                            {TD_MAP_MODIFIERS[td.currentMapModifier].icon} {TD_MAP_MODIFIERS[td.currentMapModifier].name}
+                        <span className="td-chip mod" title={TD_MAP_MODIFIERS[td.currentMapModifier].description}>
+                            {TD_MAP_MODIFIERS[td.currentMapModifier].icon}
                         </span>
                     )}
                 </div>
@@ -356,21 +358,30 @@ export const TowerDefensePage = () => {
                 {/* Bottom Drawer Shop */}
                 <div className="td-drawer-shop">
                     <div className="td-shop-scroll">
-                        {(Object.values(TD_TOWERS) as TowerDef[]).map(def => (
-                            <div 
-                                key={def.type}
-                                className={`shop-item ${currStore.shmeckles < def.cost ? 'disabled' : ''}`}
-                                onPointerDown={(e) => handlePointerDownShop(e, def.type)}
-                            >
-                                <div className="shop-item-icon" style={{ borderColor: def.color }}>
-                                    {def.icon}
+                        {(Object.values(TD_TOWERS) as TowerDef[]).map(def => {
+                            const ownedCount = td.towerInventory[def.type] ?? 0;
+                            const canAfford = currStore.shmeckles >= def.cost;
+                            const canDrag = ownedCount > 0 || canAfford;
+                            return (
+                                <div 
+                                    key={def.type}
+                                    className={`shop-item ${!canDrag ? 'disabled' : ''} ${ownedCount > 0 ? 'owned' : ''}`}
+                                    onPointerDown={(e) => handlePointerDownShop(e, def.type)}
+                                >
+                                    <div className="shop-item-icon" style={{ borderColor: def.color }}>
+                                        {def.icon}
+                                    </div>
+                                    <div className="shop-item-details">
+                                        <div className="shop-item-name">{def.name}</div>
+                                        {ownedCount > 0 ? (
+                                            <div className="shop-item-owned">Owned: {ownedCount}</div>
+                                        ) : (
+                                            <div className="shop-item-cost">🐌 {def.cost}</div>
+                                        )}
+                                    </div>
                                 </div>
-                                <div className="shop-item-details">
-                                    <div className="shop-item-name">{def.name}</div>
-                                    <div className="shop-item-cost">🐌 {def.cost}</div>
-                                </div>
-                            </div>
-                        ))}
+                            );
+                        })}
                     </div>
                 </div>
 

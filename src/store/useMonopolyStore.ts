@@ -18,6 +18,7 @@ export interface BoardReward {
     gold?: number;
     shmeckles?: number;
     tickets?: number;
+    sigils?: number;
     // Trophies / cosmetics specific to the board theme
     petId?: string;
     cosmeticId?: string;
@@ -36,11 +37,12 @@ export interface BoardSpace {
 // ── Drop Tables & Odds ─────────────────────────────────────────
 
 export const BOARD_ODDS = {
-    common: 0.60,
-    uncommon: 0.25,
-    rare: 0.10,
-    epic: 0.04,
-    ultra_rare: 0.01
+    ultra_rare: 0.00001, // 1/100,000 — Ethereal Cow
+    epic:       0.005,   // 0.5%
+    rare:       0.01,    // 1%
+    uncommon:   0.08,    // 8%
+    // common is the remainder: ~90.499%
+    get common() { return 1 - this.ultra_rare - this.epic - this.rare - this.uncommon; }
 };
 
 export interface MysteryRollResult {
@@ -250,21 +252,31 @@ export const useMonopolyStore = create<MonopolyState>()(
                 const boardCol = useBoardCollectionStore.getState();
 
                 if (rarity === 'common') {
-                    if (Math.random() > 0.5) {
-                        result.reward.gold = Math.floor(Math.random() * 8) + 1;
+                    // 1-9 Gold, OR 1 Shmeckle, OR 1 Sigil
+                    const pick = Math.floor(Math.random() * 3);
+                    if (pick === 0) {
+                        result.reward.gold = Math.floor(Math.random() * 9) + 1;
                         result.message = `Found a small pouch of gold! (+${result.reward.gold} Gold)`;
+                    } else if (pick === 1) {
+                        result.reward.shmeckles = 1;
+                        result.message = `Found a tiny Schmeckle! (+1 Schmeckle)`;
                     } else {
-                        result.reward.shmeckles = Math.floor(Math.random() * 2) + 1;
-                        result.message = `Found a tiny Shmeckle! (+${result.reward.shmeckles} Shmeckles)`;
+                        result.reward.sigils = 1;
+                        result.message = `A Sigil appeared! (+1 Sigil)`;
                     }
                 } 
                 else if (rarity === 'uncommon') {
-                    if (Math.random() > 0.5) {
-                        result.reward.gold = Math.floor(Math.random() * 8) + 8; // 8-15
-                        result.message = `Found a muddy coin purse! (+${result.reward.gold} Gold)`;
+                    // 2–3 Sigils, 2–3 Schmeckles, or 10–15 Gold
+                    const pick = Math.floor(Math.random() * 3);
+                    if (pick === 0) {
+                        result.reward.sigils = Math.floor(Math.random() * 2) + 2;
+                        result.message = `Found a Sigil cache! (+${result.reward.sigils} Sigils)`;
+                    } else if (pick === 1) {
+                        result.reward.shmeckles = Math.floor(Math.random() * 2) + 2;
+                        result.message = `A handful of Schmeckles! (+${result.reward.shmeckles} Schmeckles)`;
                     } else {
-                        result.reward.shmeckles = Math.floor(Math.random() * 4) + 2;
-                        result.message = `Found a handful of Shmeckles! (+${result.reward.shmeckles} Shmeckles)`;
+                        result.reward.gold = Math.floor(Math.random() * 6) + 10;
+                        result.message = `Found a muddy coin purse! (+${result.reward.gold} Gold)`;
                     }
                 }
                 else if (rarity === 'rare') {
@@ -315,26 +327,15 @@ export const useMonopolyStore = create<MonopolyState>()(
                     }
                 }
                 else if (rarity === 'ultra_rare') {
-                    const type = Math.random() > 0.5 ? 'pet' : 'banner';
-                    if (type === 'pet') {
-                        result.reward.petId = 'board_farm_ethereal_cow';
-                        result.message = `🌌✨ UNIVERSE LUCK! Unlocked the ETHEREAL COW!`;
-                        if (boardCol.ownedPets.includes(result.reward.petId)) {
-                            result.isDuplicate = true;
-                            result.reward.gold = 50;
-                            result.message = `You already own the Ethereal Cow... +50 Gold.`;
-                        } else {
-                            boardCol.unlockPet(result.reward.petId);
-                        }
+                    // Always Ethereal Cow — 1 in 100,000
+                    result.reward.petId = 'board_farm_ethereal_cow';
+                    result.message = `🌌✨ UNIVERSE LUCK! Unlocked the ETHEREAL COW! (1 in 100,000)`;
+                    if (boardCol.ownedPets.includes(result.reward.petId)) {
+                        result.isDuplicate = true;
+                        result.reward.gold = 100;
+                        result.message = `You already own the Ethereal Cow... +100 Gold (consolation).`;
                     } else {
-                        result.reward.bannerId = 'board_farm_barn_banner';
-                        result.message = `✨ Unlocked the exclusive Barn Banner!`;
-                        if (boardCol.ownedBanners.includes(result.reward.bannerId)) {
-                            result.isDuplicate = true;
-                            result.reward.gold = 50;
-                        } else {
-                            boardCol.unlockBanner(result.reward.bannerId);
-                        }
+                        boardCol.unlockPet(result.reward.petId);
                     }
                 }
 

@@ -3,166 +3,443 @@
     inset: 0;
     background: var(--bg-base);
     color: var(--text-primary);
-    overflow-y: auto;
-    padding: 2rem;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
     z-index: 100;
 }
 
-.risk-header {
+/* ── Compact Header ── */
+.risk-header-compact {
     display: flex;
-    justify-content: space-between;
     align-items: center;
-    margin-bottom: 2rem;
-    padding-bottom: 1rem;
-    border-bottom: 1px solid var(--border-color);
+    gap: 0.5rem;
+    padding: 0.4rem 0.75rem;
+    background: rgba(15, 20, 35, 0.95);
+    border-bottom: 1px solid rgba(139, 92, 246, 0.2);
+    flex-shrink: 0;
+    z-index: 10;
 }
 
 .risk-back {
     display: flex;
     align-items: center;
-    gap: 0.5rem;
+    gap: 0.25rem;
     background: none;
     border: none;
     color: var(--text-secondary);
     cursor: pointer;
-    font-size: 1.1rem;
+    font-size: 0.9rem;
+    flex-shrink: 0;
 }
+.risk-back:hover { color: var(--text-primary); }
 
-.risk-back:hover {
-    color: var(--text-primary);
-}
-
-.risk-stats {
+.risk-title-compact {
     display: flex;
-    gap: 1.5rem;
-    font-weight: bold;
-}
-
-.sigils-display {
-    color: var(--accent-gold);
-}
-
-.army-display {
-    color: var(--text-primary);
-}
-
-.risk-battle-result {
-    padding: 1rem;
-    background: var(--bg-surface);
-    border: 1px solid var(--accent-gold);
-    border-radius: 8px;
-    margin-bottom: 2rem;
-    text-align: center;
-    font-weight: bold;
-    color: var(--accent-gold);
-}
-
-/* Scadrosharial World Map Styles */
-.risk-map-container {
-    display: flex;
-    justify-content: center;
     align-items: center;
+    gap: 0.3rem;
+    font-size: 0.95rem;
+    font-weight: 800;
+    color: var(--accent-gold);
+    flex-shrink: 0;
 }
 
-.scadrosharial-map-wrapper {
+.risk-header-right {
+    display: flex;
+    gap: 0.35rem;
+    margin-left: auto;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+}
+
+.risk-stat-chip {
+    background: rgba(255,255,255,0.06);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 999px;
+    padding: 0.18rem 0.5rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--accent-gold);
+    white-space: nowrap;
+}
+
+/* ── Scrollable Content ── */
+.risk-content {
+    flex: 1;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    padding: 0.5rem 0.5rem 5rem;
+    gap: 0.75rem;
+}
+
+/* ── Army Panel ── */
+.risk-army-panel {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+    background: rgba(0,0,0,0.25);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 10px;
+    padding: 0.6rem 0.75rem;
+    flex-shrink: 0;
+}
+
+.army-info {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.army-label {
+    font-size: 0.88rem;
+    color: var(--text-primary);
+}
+
+.army-hint {
+    font-size: 0.72rem;
+    color: #f59e0b;
+    font-style: italic;
+}
+
+.hire-btn {
+    background: #f59e0b;
+    color: #000;
+    border: none;
+    border-radius: 8px;
+    padding: 0.4rem 0.75rem;
+    font-weight: 800;
+    font-size: 0.82rem;
+    cursor: pointer;
+    flex-shrink: 0;
+    transition: filter 0.2s;
+    white-space: nowrap;
+}
+.hire-btn:hover:not(:disabled) { filter: brightness(1.15); }
+.hire-btn:disabled { background: rgba(255,255,255,0.1); color: rgba(255,255,255,0.3); cursor: not-allowed; }
+
+/* ── Map Viewport ── */
+.risk-map-viewport {
     position: relative;
     width: 100%;
-    aspect-ratio: 4/3;
-    max-width: 800px;
-    border-radius: 12px;
-    background: #111;
+    height: 55vw;
+    min-height: 260px;
+    max-height: 420px;
     overflow: hidden;
-    box-shadow: 0 0 30px rgba(0,0,0,0.8);
-    border: 3px solid var(--accent-gold);
+    border-radius: 12px;
+    border: 2px solid rgba(139,92,246,0.3);
+    background: radial-gradient(ellipse at center, #0f1a2e 0%, #060c18 100%);
+    cursor: grab;
+    flex-shrink: 0;
+    touch-action: none;
 }
 
-.scadrosharial-backdrop {
+.risk-map-viewport:active { cursor: grabbing; }
+
+/* ── Map Canvas (panned inner layer) ── */
+.risk-map-canvas {
+    position: absolute;
+    width: 1200px;
+    height: 900px;
+    will-change: transform;
+    transition: none;
+}
+
+/* SVG path overlay */
+.map-paths-svg {
     position: absolute;
     inset: 0;
-    background-image: url('/assets/risk/scadrosharial_map.png');
-    background-size: cover;
-    background-position: center;
-    filter: sepia(0.2) contrast(1.1) brightness(0.9);
 }
 
-/* Map Pins */
-.map-pin {
+/* ── Node Pins ── */
+.map-node-pin {
     position: absolute;
-    width: 32px;
-    height: 32px;
-    border-radius: 50%;
     transform: translate(-50%, -50%);
-    background: transparent;
-    border: none;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    background: rgba(10, 15, 30, 0.85);
+    border: 2px solid #64748b;
+    border-radius: 10px;
+    padding: 5px 6px;
+    min-width: 68px;
+    max-width: 84px;
     cursor: pointer;
     z-index: 5;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    transition: all 0.2s ease;
+    transition: transform 0.15s, box-shadow 0.2s;
 }
 
-.map-pin.player {
-    filter: drop-shadow(0 0 8px var(--accent-primary));
-}
+.map-node-pin:hover:not([disabled]) { transform: translate(-50%, -50%) scale(1.12); }
 
-.map-pin.player .pin-blip {
-    width: 16px;
-    height: 16px;
-    background: var(--accent-primary);
-    border: 2px solid white;
-    border-radius: 50%;
-    box-shadow: inset 0 0 4px rgba(0,0,0,0.5);
-}
-
-.map-pin.enemy {
-    filter: drop-shadow(0 0 8px var(--danger-color));
-}
-
-.map-pin.enemy .pin-blip {
-    width: 14px;
-    height: 14px;
-    background: var(--danger-color);
-    border: 2px solid white;
-    border-radius: 50%;
-}
-
-.map-pin.attackable {
-    z-index: 10;
-    animation: pulsePin 1.5s infinite alternate;
-}
-
-.map-pin.attackable .pin-blip {
-    border-color: var(--accent-gold);
-    box-shadow: 0 0 15px var(--accent-gold);
-}
-
-.map-pin.locked {
-    opacity: 0.6;
-    pointer-events: none;
-    filter: grayscale(1) brightness(0.5);
-}
-
-.map-pin.selected {
-    transform: translate(-50%, -50%) scale(1.4);
+.map-node-pin.selected {
+    transform: translate(-50%, -50%) scale(1.2);
     z-index: 20;
+    outline: 2px solid white;
 }
 
-.map-pin.selected .pin-blip {
-    border-color: white;
-    box-shadow: 0 0 20px white;
+.map-node-pin.owned {
+    background: rgba(16, 185, 129, 0.15);
+}
+
+.map-node-pin.attackable {
+    animation: pulsePin 1.4s infinite alternate;
+    z-index: 10;
+}
+
+.map-node-pin.locked {
+    opacity: 0.25;
+    filter: grayscale(1) brightness(0.4);
+    pointer-events: none;
+}
+
+.map-node-pin.node-boss {
+    border-width: 3px;
+    min-width: 76px;
 }
 
 @keyframes pulsePin {
-    0% { transform: translate(-50%, -50%) scale(1); }
-    100% { transform: translate(-50%, -50%) scale(1.15); }
+    from { transform: translate(-50%, -50%) scale(1); }
+    to   { transform: translate(-50%, -50%) scale(1.1); }
 }
 
-/* Node Focus Modal */
+.pin-type-icon {
+    font-size: 1.2rem;
+    line-height: 1;
+}
+
+.pin-name {
+    font-size: 0.55rem;
+    font-weight: 700;
+    color: #fff;
+    text-align: center;
+    line-height: 1.2;
+    max-width: 76px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.pin-soldiers {
+    font-size: 0.5rem;
+    color: #f87171;
+    font-weight: 600;
+    text-align: center;
+    white-space: nowrap;
+}
+
+/* ── Ascend Panel ── */
+.risk-ascend-panel {
+    background: rgba(10, 15, 30, 0.95);
+    border: 2px solid var(--accent-gold);
+    border-radius: 12px;
+    padding: 1.5rem;
+    text-align: center;
+    animation: pulseGlow 2s infinite alternate;
+}
+
+@keyframes pulseGlow {
+    from { box-shadow: 0 0 10px rgba(255,215,0,0.1); }
+    to   { box-shadow: 0 0 30px rgba(255,215,0,0.4); }
+}
+
+/* ── Region Toast ── */
+.region-conquer-toast {
+    position: absolute;
+    top: 12px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(16,185,129,0.95);
+    color: #fff;
+    padding: 0.6rem 1.25rem;
+    border-radius: 8px;
+    text-align: center;
+    white-space: nowrap;
+    z-index: 100;
+    animation: slideDown 0.4s ease forwards;
+    border: 2px solid var(--accent-gold);
+    font-size: 0.9rem;
+}
+
+@keyframes slideDown {
+    from { opacity: 0; transform: translateX(-50%) translateY(-16px); }
+    to   { opacity: 1; transform: translateX(-50%) translateY(0); }
+}
+
+/* ── Cards Panel ── */
+.risk-cards-panel {
+    background: rgba(0,0,0,0.2);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 12px;
+    padding: 0.85rem;
+}
+
+.cards-panel-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 0.25rem;
+}
+
+.cards-panel-header h3 {
+    margin: 0;
+    font-size: 0.95rem;
+    color: var(--accent-gold);
+}
+
+.card-help-btn {
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+    background: none;
+    border: 1px solid rgba(255,255,255,0.15);
+    border-radius: 999px;
+    color: var(--text-secondary);
+    font-size: 0.7rem;
+    padding: 0.18rem 0.55rem;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+.card-help-btn:hover { color: var(--text-primary); border-color: var(--accent-gold); }
+
+.cards-explainer {
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+    margin: 0 0 0.75rem;
+    font-style: italic;
+}
+
+/* Equipped Slots */
+.card-slot-row {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0.4rem;
+    margin-bottom: 0.75rem;
+}
+
+.card-slot-box {
+    border: 2px dashed rgba(255,255,255,0.12);
+    border-radius: 10px;
+    min-height: 72px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0,0,0,0.15);
+}
+
+.card-slot-box.filled {
+    border-style: solid;
+    border-color: var(--accent-gold);
+    background: rgba(245,158,11,0.08);
+}
+
+.card-slot-inner {
+    width: 100%;
+    height: 100%;
+    min-height: 72px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 2px;
+    padding: 0.4rem 0.2rem;
+    background: none;
+    border: none;
+    cursor: pointer;
+}
+
+.card-slot-name {
+    font-size: 0.65rem;
+    font-weight: 700;
+    color: #fff;
+    text-align: center;
+}
+
+.card-slot-badge {
+    font-size: 0.55rem;
+    color: var(--accent-gold);
+    background: rgba(245,158,11,0.15);
+    border-radius: 4px;
+    padding: 1px 4px;
+}
+
+.card-slot-empty-label {
+    font-size: 0.72rem;
+    color: rgba(255,255,255,0.2);
+    font-style: italic;
+}
+
+.card-icon-lg { font-size: 1.3rem; line-height: 1; }
+
+/* Owned Card Thumbnails */
+.owned-cards-section h4 {
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin: 0 0 0.5rem;
+}
+
+.owned-card-thumbs {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+    gap: 0.4rem;
+}
+
+.card-thumb {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 3px;
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 8px;
+    padding: 0.4rem 0.3rem;
+}
+
+.card-thumb.equipped {
+    border-color: var(--accent-gold);
+    background: rgba(245,158,11,0.08);
+}
+
+.card-thumb-icon { font-size: 1.4rem; line-height: 1; }
+
+.card-thumb-name {
+    font-size: 0.6rem;
+    font-weight: 700;
+    color: #fff;
+    text-align: center;
+    line-height: 1.2;
+}
+
+.card-thumb-btn {
+    background: var(--accent-primary);
+    color: #000;
+    border: none;
+    border-radius: 4px;
+    padding: 2px 6px;
+    font-size: 0.58rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: filter 0.15s;
+    width: 100%;
+}
+.card-thumb-btn:hover:not(:disabled) { filter: brightness(1.2); }
+.card-thumb-btn:disabled { background: rgba(255,255,255,0.08); color: rgba(255,255,255,0.25); cursor: not-allowed; }
+
+.cards-empty-hint {
+    font-size: 0.78rem;
+    color: var(--text-secondary);
+    font-style: italic;
+    text-align: center;
+}
+
+/* ── Node Modal ── */
 .risk-node-modal {
     position: fixed;
     inset: 0;
-    background: rgba(0, 0, 0, 0.7);
+    background: rgba(0,0,0,0.7);
     backdrop-filter: blur(4px);
     display: flex;
     justify-content: center;
@@ -174,27 +451,58 @@
     background: var(--bg-surface);
     border: 2px solid var(--border-color);
     border-radius: 12px;
-    padding: 2rem;
+    padding: 1.25rem;
     width: 90%;
-    max-width: 400px;
+    max-width: 420px;
+    max-height: 88vh;
+    overflow-y: auto;
     position: relative;
     box-shadow: 0 0 40px rgba(0,0,0,0.8);
 }
 
 .close-btn {
     position: absolute;
-    top: 1rem;
-    right: 1rem;
+    top: 0.75rem;
+    right: 0.75rem;
     background: transparent;
     border: none;
     color: var(--text-secondary);
     cursor: pointer;
 }
+.close-btn:hover { color: white; }
 
-.close-btn:hover {
-    color: white;
+/* Node enemy info */
+.node-enemy-info {
+    background: rgba(239,68,68,0.1);
+    border: 1px solid rgba(239,68,68,0.3);
+    border-radius: 8px;
+    padding: 0.75rem;
+    margin-bottom: 0.75rem;
 }
 
+.enemy-soldiers-row {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 0.5rem;
+}
+
+.enemy-soldier-count {
+    font-size: 2.5rem;
+    font-weight: 900;
+    color: #ef4444;
+    line-height: 1;
+}
+
+.dice-preview {
+    display: flex;
+    gap: 1rem;
+    font-size: 0.82rem;
+    color: #94a3b8;
+    flex-wrap: wrap;
+}
+
+/* Attack button */
 .risk-attack-btn {
     display: flex;
     align-items: center;
@@ -202,48 +510,95 @@
     gap: 0.5rem;
     width: 100%;
     padding: 0.75rem;
-    margin-top: 1rem;
     background: var(--danger-color);
     color: white;
     border: none;
-    border-radius: 6px;
+    border-radius: 8px;
     cursor: pointer;
-    font-weight: bold;
+    font-weight: 700;
+    font-size: 1rem;
+    transition: filter 0.2s;
+    margin-top: 1rem;
+}
+.risk-attack-btn:hover { filter: brightness(1.2); }
+
+/* Battle Result */
+.risk-battle-result {
+    padding: 0.75rem;
+    background: var(--bg-surface);
+    border-radius: 8px;
+    text-align: center;
+}
+.risk-battle-result.victory { border: 1px solid #10b981; color: #10b981; }
+.risk-battle-result.defeat  { border: 1px solid #ef4444; color: #f87171; }
+
+.battle-reward {
+    margin-top: 0.4rem;
+    padding: 0.35rem;
+    background: rgba(16,185,129,0.15);
+    border-radius: 6px;
+    color: #10b981;
+    font-size: 0.85rem;
+}
+
+/* Card shop / inventory rows */
+.card-item-rich {
+    display: flex;
+    align-items: center;
+    gap: 0.65rem;
+    background: rgba(0,0,0,0.25);
+    border: 1px solid rgba(255,255,255,0.07);
+    border-radius: 10px;
+    padding: 0.6rem;
+    border-left: 3px solid rgba(255,255,255,0.15);
+}
+
+.owned-card-row { border-left-color: #10b981 !important; }
+
+.card-item-info {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.card-item-title {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+}
+
+.card-item-name { font-weight: 700; font-size: 0.88rem; color: #fff; }
+
+.card-rarity-badge {
+    font-size: 0.62rem;
+    padding: 1px 5px;
+    border-radius: 4px;
+    font-weight: 600;
+}
+
+.card-item-effect { font-size: 0.76rem; color: #a3e635; margin: 0; line-height: 1.3; }
+
+.card-equip-btn {
+    background: var(--accent-primary);
+    color: #000;
+    border: none;
+    border-radius: 6px;
+    padding: 0.3rem 0.55rem;
+    font-size: 0.75rem;
+    font-weight: 700;
+    cursor: pointer;
+    flex-shrink: 0;
     transition: filter 0.2s;
 }
+.card-equip-btn:hover:not(:disabled) { filter: brightness(1.2); }
+.card-equip-btn:disabled { background: rgba(255,255,255,0.1); color: rgba(255,255,255,0.25); cursor: not-allowed; }
 
-.risk-attack-btn:hover {
-    filter: brightness(1.2);
+/* Card help modal */
+.card-help-list {
+    padding-left: 1.2rem;
+    color: var(--text-secondary);
+    font-size: 0.82rem;
+    line-height: 1.9;
 }
-
-.region-conquer-toast {
-    position: absolute;
-    top: -80px;
-    left: 50%;
-    transform: translateX(-50%);
-    background: rgba(16, 185, 129, 0.9);
-    color: white;
-    padding: 1rem 2rem;
-    border-radius: 8px;
-    border: 2px solid var(--accent-gold);
-    text-align: center;
-    box-shadow: 0 4px 15px rgba(0,0,0,0.5);
-    z-index: 100;
-    animation: slideDownToast 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
-}
-
-@keyframes slideDownToast {
-    from { top: -100px; opacity: 0; }
-    to { top: 20px; opacity: 1; }
-}
-
-.risk-ascend-panel {
-    border: 2px solid var(--accent-gold);
-    box-shadow: 0 0 20px rgba(255, 215, 0, 0.2);
-    animation: pulseGlow 2s infinite alternate;
-}
-
-@keyframes pulseGlow {
-    from { box-shadow: 0 0 10px rgba(255, 215, 0, 0.1); }
-    to { box-shadow: 0 0 30px rgba(255, 215, 0, 0.4); }
-}
+.card-help-list li strong { color: var(--text-primary); }

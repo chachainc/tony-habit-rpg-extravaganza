@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Dices, Info, ChevronDown, ChevronUp, X } from 'lucide-react';
-import { useMonopolyStore, BOARD, type BoardSpace, type MysteryRollResult, BOARD_ODDS } from '../../store/useMonopolyStore';
+import { useMonopolyStore, BOARD, type BoardSpace, type MysteryRollResult } from '../../store/useMonopolyStore';
 import { useCurrencyStore } from '../../store/useCurrencyStore';
 import './MonopolyBoard.css';
 
@@ -26,6 +26,10 @@ export const MonopolyBoard = ({ onClose }: { onClose: () => void }) => {
     const { dailyTickets, currentPosition, rollDice, movePlayer, canRoll, rollMysteryBox,
         streakMultiplierActive, totalLifetimeRolls } = useMonopolyStore();
     const { addGold, addShmeckles, addTickets } = useCurrencyStore();
+    // Sigil addition — imported lazily to avoid circular dep issues
+    const addSigils = (n: number) => {
+        try { require('../../store/useConquestStore').useConquestStore.getState().addSigils(n); } catch {}
+    };
     
     const [isRolling, setIsRolling] = useState(false);
     const [diceResult, setDiceResult] = useState<number | null>(null);
@@ -68,6 +72,7 @@ export const MonopolyBoard = ({ onClose }: { onClose: () => void }) => {
             if (space.baseReward.gold) addGold(space.baseReward.gold);
             if (space.baseReward.shmeckles) addShmeckles(space.baseReward.shmeckles);
             if (space.baseReward.tickets) addTickets(space.baseReward.tickets);
+            if ((space.baseReward as any).sigils && addSigils) addSigils((space.baseReward as any).sigils);
 
             // Handle Mystery Box Tile
             if (space.type === 'mystery') {
@@ -92,6 +97,7 @@ export const MonopolyBoard = ({ onClose }: { onClose: () => void }) => {
                         // Apply Mystery Rewards After Spin finishes
                         if (mystery.reward.gold) addGold(mystery.reward.gold);
                         if (mystery.reward.shmeckles) addShmeckles(mystery.reward.shmeckles);
+                        if ((mystery.reward as any).sigils && addSigils) addSigils((mystery.reward as any).sigils);
                         // Pets/Cosmetics handled inside the store
 
                         setIsRolling(false);
@@ -259,26 +265,24 @@ export const MonopolyBoard = ({ onClose }: { onClose: () => void }) => {
                         >
                             <div className="rewards-section-label">🌾 Theme: The Daily Harvest</div>
                             <div className="rewards-row">
-                                <div className="reward-info-item"><span>Common ({(BOARD_ODDS.common * 100).toFixed(0)}%)</span><span>Small Gold / Shmeckles</span></div>
-                                <div className="reward-info-item"><span>Uncommon ({(BOARD_ODDS.uncommon * 100).toFixed(0)}%)</span><span>Large Gold / Shmeckles</span></div>
+                                <div className="reward-info-item"><span>Ultra Rare (0.001%) – Ethereal Cow Pet</span></div>
                             </div>
                             <div className="rewards-row">
-                                <div className="reward-info-item" style={{color:'#60a5fa'}}><span>Rare ({(BOARD_ODDS.rare * 100).toFixed(0)}%)</span><span>Farm Pets (Cow, Pig, Sheep)</span></div>
-                                <div className="reward-info-item" style={{color:'#c084fc'}}><span>Epic ({(BOARD_ODDS.epic * 100).toFixed(0)}%)</span><span>Straw Hat, Titles</span></div>
+                                <div className="reward-info-item" style={{color:'#c084fc'}}><span>Epic (0.5%) – Straw Hat / Tiles</span></div>
+                                <div className="reward-info-item" style={{color:'#60a5fa'}}><span>Rare (1%) – Farm Pets (Cow, Pig, Sheep)</span></div>
                             </div>
-                            <div className="luck-rolls-row luck-rolls-row--rare">
-                                <span>🌌 <strong>Ultra Rare ({(BOARD_ODDS.ultra_rare * 100).toFixed(0)}%)</strong> = Ethereal Cow Pet / Barn Banner!</span>
+                            <div className="rewards-row">
+                                <div className="reward-info-item" style={{color:'#a3e635'}}><span>Uncommon (8%) – 2–3 Sigils / 2–3 Schmeckles / 10–15 Gold</span></div>
+                                <div className="reward-info-item"><span>Common (90.499%) – 1–9 Gold / 1 Schmeckle / 1 Sigil</span></div>
                             </div>
                         </motion.div>
                     )}
                 </AnimatePresence>
 
-            </motion.div>
-
-            {/* Mystery Event Popup */}
+                {/* Mystery Event Popup — centered overlay inside modal */}
             <AnimatePresence>
                 {mysteryEvent && finalRng && (
-                    <div className="modal-reward-shell">
+                    <div className="board-reward-overlay">
                         <motion.div
                             className={`luck-event-popup modal-reward-card ${mysteryEvent.rarity}`}
                             initial={{ scale: 0.5, opacity: 0 }}
@@ -302,7 +306,8 @@ export const MonopolyBoard = ({ onClose }: { onClose: () => void }) => {
                             <div className="luck-rewards">
                                 <div className="luck-xp">
                                     {mysteryEvent.reward.gold && <span>+{mysteryEvent.reward.gold} Gold</span>}
-                                    {mysteryEvent.reward.shmeckles && <span>+{mysteryEvent.reward.shmeckles} Shmeckles</span>}
+                                    {mysteryEvent.reward.shmeckles && <span>+{mysteryEvent.reward.shmeckles} Schmeckles</span>}
+                                    {(mysteryEvent.reward as any).sigils && <span>+{(mysteryEvent.reward as any).sigils} 🔱 Sigils</span>}
                                 </div>
                                 {(mysteryEvent.reward.petId || mysteryEvent.reward.cosmeticId || mysteryEvent.reward.titleId) && (
                                     <div className="pet-unlock">
@@ -321,10 +326,10 @@ export const MonopolyBoard = ({ onClose }: { onClose: () => void }) => {
                 )}
             </AnimatePresence>
 
-            {/* Base Reward Popup */}
+            {/* Base Reward Popup — centered overlay inside modal */}
             <AnimatePresence>
                 {showReward && landedSpace && !mysteryEvent && (
-                    <div className="modal-reward-shell">
+                    <div className="board-reward-overlay">
                         <motion.div
                             className="reward-popup modal-reward-card"
                             initial={{ scale: 0, opacity: 0 }}
@@ -343,7 +348,7 @@ export const MonopolyBoard = ({ onClose }: { onClose: () => void }) => {
                                 )}
                                 {landedSpace.baseReward.shmeckles && (
                                     <div className="reward-item">
-                                        <span>🐌 Shmeckles:</span>
+                                        <span>🐌 Schmeckles:</span>
                                         <span className="reward-value">+{landedSpace.baseReward.shmeckles}</span>
                                     </div>
                                 )}
@@ -366,6 +371,8 @@ export const MonopolyBoard = ({ onClose }: { onClose: () => void }) => {
                     </div>
                 )}
             </AnimatePresence>
-        </div>
+        </motion.div>
+    </div>
     );
 };
+

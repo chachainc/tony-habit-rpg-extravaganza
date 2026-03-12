@@ -43,6 +43,9 @@ export interface TowerDefenseState {
     enemies: ActiveEnemy[];
     projectiles: { id: string, x: number, y: number, targetId: string, color: string }[];
     
+    // Tower Inventory (owned but not placed)
+    towerInventory: Partial<Record<TowerType, number>>;
+
     // Wave Management
     enemyQueue: EnemyType[];
     lastSpawnTime: number;
@@ -71,6 +74,7 @@ export const useTowerDefenseStore = create<TowerDefenseState>()(
             towers: [],
             enemies: [],
             projectiles: [],
+            towerInventory: {},
             
             enemyQueue: [],
             lastSpawnTime: 0,
@@ -82,25 +86,35 @@ export const useTowerDefenseStore = create<TowerDefenseState>()(
                 const def = TD_TOWERS[type];
                 const costMod = state.currentMapModifier === 'fortified_path' ? 1.1 : 1.0;
                 const finalCost = Math.floor(def.cost * costMod);
+                const ownedCount = state.towerInventory[type] ?? 0;
 
-                const currStore = useCurrencyStore.getState();
-                if (currStore.shmeckles < finalCost) return false;
                 if (state.towers.some(t => t.x === x && t.y === y)) return false;
 
-                currStore.spendShmeckles(finalCost);
-                set({
-                    towers: [...state.towers, {
-                        id: `tower_${Date.now()}_${x}_${y}`,
-                        type,
-                        towerType: type,
-                        x, y,
-                        level: 1,
-                        upgradeLevel: 1,
-                        upgradePath: null,
-                        specializationBranch: null,
-                        lastFired: 0
-                    }]
-                });
+                if (ownedCount > 0) {
+                    // Place from inventory for free
+                    set(s => ({
+                        towers: [...s.towers, {
+                            id: `tower_${Date.now()}_${x}_${y}`,
+                            type, towerType: type, x, y,
+                            level: 1, upgradeLevel: 1,
+                            upgradePath: null, specializationBranch: null, lastFired: 0
+                        }],
+                        towerInventory: { ...s.towerInventory, [type]: ownedCount - 1 }
+                    }));
+                } else {
+                    // Purchase new tower
+                    const currStore = useCurrencyStore.getState();
+                    if (currStore.shmeckles < finalCost) return false;
+                    currStore.spendShmeckles(finalCost);
+                    set(s => ({
+                        towers: [...s.towers, {
+                            id: `tower_${Date.now()}_${x}_${y}`,
+                            type, towerType: type, x, y,
+                            level: 1, upgradeLevel: 1,
+                            upgradePath: null, specializationBranch: null, lastFired: 0
+                        }]
+                    }));
+                }
                 return true;
             },
 
@@ -114,9 +128,11 @@ export const useTowerDefenseStore = create<TowerDefenseState>()(
                 const refund = Math.floor((def.cost * Math.pow(1.5, tower.level - 1)) * refundRate);
 
                 useCurrencyStore.getState().addShmeckles(refund);
-                set({
-                    towers: state.towers.filter(t => t.id !== id)
-                });
+                const currentInv = state.towerInventory[tower.type] ?? 0;
+                set(s => ({
+                    towers: s.towers.filter(t => t.id !== id),
+                    towerInventory: { ...s.towerInventory, [tower.type]: currentInv + 1 }
+                }));
             },
 
             upgradeTower: (id) => {
@@ -357,7 +373,8 @@ export const useTowerDefenseStore = create<TowerDefenseState>()(
             partialize: (state) => ({
                 currentWave: state.currentWave,
                 towers: state.towers,
-                baseHealth: state.baseHealth
+                baseHealth: state.baseHealth,
+                towerInventory: state.towerInventory
             })
         }
     )

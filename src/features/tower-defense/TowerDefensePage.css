@@ -11,12 +11,60 @@
     overflow: hidden;
 }
 
-/* ─── Header ──────────────────────── */
+/* ─── Compact Header ──────────────────────── */
+.td-header-compact {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.4rem 0.75rem;
+    background: rgba(15, 20, 35, 0.95);
+    border-bottom: 1px solid rgba(139, 92, 246, 0.2);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+    z-index: 10;
+    flex-shrink: 0;
+}
+
+.td-title-compact {
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+    font-size: 0.95rem;
+    font-weight: 800;
+    color: #f59e0b;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    flex-shrink: 0;
+}
+
+.td-header-chips {
+    display: flex;
+    gap: 0.35rem;
+    margin-left: auto;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+}
+
+.td-chip {
+    padding: 0.18rem 0.5rem;
+    background: rgba(0, 0, 0, 0.4);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 999px;
+    font-weight: 700;
+    font-size: 0.75rem;
+    white-space: nowrap;
+}
+
+.td-chip.mana  { color: #c084fc; border-color: rgba(192, 132, 252, 0.3); }
+.td-chip.wave  { color: #fcd34d; }
+.td-chip.hp    { color: #f87171; }
+.td-chip.mod   { color: #e2e8f0; }
+
+/* ─── Legacy Header (kept for reference, not rendered) ────── */
 .td-header {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 1rem 1.5rem;
+    padding: 0.6rem 1rem;
     background: rgba(15, 20, 35, 0.95);
     border-bottom: 1px solid rgba(139, 92, 246, 0.2);
     box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
@@ -337,18 +385,16 @@
 /* ─── Bottom Drawer Shop ──────────────────────── */
 .td-drawer-shop {
     position: fixed;
-    bottom: 0;
+    /* Sit above bottom nav bar (~56px) + device safe-area inset */
+    bottom: calc(56px + env(safe-area-inset-bottom, 0px));
     left: 0;
     right: 0;
-    background: rgba(15, 20, 35, 0.95);
-    border-top: 1px solid rgba(139, 92, 246, 0.2);
-    box-shadow: 0 -4px 16px rgba(0, 0, 0, 0.4);
+    background: rgba(15, 20, 35, 0.97);
+    border-top: 1px solid rgba(139, 92, 246, 0.3);
+    box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.5);
     z-index: 100;
-    padding: 0.75rem;
-    padding-bottom: env(safe-area-inset-bottom, 1rem); /* iPhone notch safe area */
+    padding: 0.5rem 0.75rem;
     backdrop-filter: blur(8px);
-    display: flex;
-    justify-content: center;
 }
 
 .td-shop-scroll {
@@ -407,15 +453,26 @@
 }
 
 .shop-item-name {
-    font-size: 0.85rem;
+    font-size: 0.8rem;
     font-weight: 700;
     color: #f1f5f9;
 }
 
 .shop-item-cost {
-    font-size: 0.75rem;
+    font-size: 0.72rem;
     font-weight: 600;
     color: #c084fc;
+}
+
+.shop-item-owned {
+    font-size: 0.72rem;
+    font-weight: 700;
+    color: #4ade80;
+}
+
+.shop-item.owned {
+    border-color: rgba(74, 222, 128, 0.4);
+    background: rgba(74, 222, 128, 0.08);
 }
 
 /* Floating Drag Element */
@@ -446,18 +503,14 @@
 /* ─── Mobile Adjustments ──────────────────────── */
 @media (max-width: 768px) {
     .td-header {
-        padding: 0.75rem;
-        flex-direction: column;
-        gap: 0.5rem;
+        padding: 0.4rem 0.75rem;
     }
 
     .td-stats {
-        width: 100%;
-        justify-content: space-between;
+        display: none; /* hidden — compact header is shown instead */
     }
 
     .td-grid-container {
-        /* Allow it to constrain naturally */
         max-height: 50vh;
     }
 
