@@ -150,6 +150,7 @@ button:active {
   backdrop-filter: blur(8px);
 }
 
+
 /* Glassmorphism Utility */
 .glass {
   background: var(--bg-glass);
@@ -157,7 +158,35 @@ button:active {
   border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
+/* Global Modal Overlay Rules */
+.modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.85);
+    backdrop-filter: blur(8px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    padding: env(safe-area-inset-top, 16px) 16px env(safe-area-inset-bottom, 16px) 16px;
+}
+
+.modal-content {
+    background: var(--bg-card);
+    border-radius: var(--radius-md);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: var(--shadow-card);
+    backdrop-filter: blur(8px);
+    max-height: 90vh;
+    max-height: 90dvh;
+    overflow-y: auto;
+    position: relative;
+    width: 100%;
+    /* Let specific modals define max-width */
+}
+
 /* Premium Scrollbar */
+
 ::-webkit-scrollbar {
   width: 8px;
   height: 8px;

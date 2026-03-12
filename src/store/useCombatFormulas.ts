@@ -179,9 +179,9 @@ export function getDetailedCombatBreakdown(): CombatBreakdown {
 
     let atkSubtotal = baseAtk + equipAtk + trophyAtk;
 
-    if (activeRiskRegions.includes('start')) {
+    if (activeRiskRegions.includes('verdant_plains')) {
         const riskAtkVal = Math.round(atkSubtotal * 0.05);
-        atkSources.push({ label: 'Risk Vanguard (+5%)', value: riskAtkVal });
+        atkSources.push({ label: 'Risk Verdant Plains (+5%)', value: riskAtkVal });
         atkSubtotal += riskAtkVal;
     }
 
@@ -241,9 +241,9 @@ export function getDetailedCombatBreakdown(): CombatBreakdown {
 
     let defSubtotal = Math.max(1, baseDef + equipDef + trophyDef);
 
-    if (activeRiskRegions.includes('iron')) {
+    if (activeRiskRegions.includes('iron_highlands')) {
         const riskDefVal = Math.round(defSubtotal * 0.10);
-        defSources.push({ label: 'Risk Iron Ridge (+10%)', value: riskDefVal });
+        defSources.push({ label: 'Risk Iron Highlands (+10%)', value: riskDefVal });
         defSubtotal += riskDefVal;
     }
 
@@ -281,8 +281,8 @@ export function getDetailedCombatBreakdown(): CombatBreakdown {
         { label: 'Equipment', value: equipHp },
     ];
 
-    if (activeRiskRegions.includes('demon')) {
-        hpSources.push({ label: 'Risk Demon Citadel', value: 5 });
+    if (activeRiskRegions.includes('sunken_expanse')) {
+        hpSources.push({ label: 'Risk Sunken Expanse', value: 5 });
     }
 
     // ── SPD ──────────────────────────────

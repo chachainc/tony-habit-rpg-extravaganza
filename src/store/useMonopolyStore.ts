@@ -1,67 +1,56 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { PERSIST_REGISTRY } from '../data/persistRegistry';
+import { useBoardCollectionStore } from './useBoardCollectionStore';
 
 // ── Tile Types ─────────────────────────────────────────────────
 export type BoardSpaceType =
-    | 'gold'
-    | 'stat_boost'
-    | 'double_xp'
-    | 'training_token'
-    | 'shop_discount'
-    | 'pet_shard'
-    | 'mystery_encounter'
-    | 'injury'
-    | 'ticket'
-    | 'gem'
     | 'go'
+    | 'gold'
+    | 'shmeckles'
+    | 'mystery'
+    | 'ticket'
     | 'empty';
 
-export type BoardRegion = 'early' | 'mid' | 'late';
+export type BoardRarity = 'common' | 'uncommon' | 'rare' | 'epic' | 'ultra_rare';
 
-export interface TileEffect {
+export interface BoardReward {
     gold?: number;
-    gems?: number;
+    shmeckles?: number;
     tickets?: number;
-    luckXp?: number;
-    statBoost?: { stat: string; value: number; durationHours: number };
-    doubleXpNextHabit?: boolean;
-    trainingTokens?: number;
-    shopDiscount?: { value: number; durationHours: number };
-    petShards?: number;
-    mysteryEncounter?: boolean;
-    injuryRest?: { defenseBonus: number; durationHours: number };
+    // Trophies / cosmetics specific to the board theme
+    petId?: string;
+    cosmeticId?: string;
+    titleId?: string;
+    bannerId?: string;
 }
 
 export interface BoardSpace {
     id: number;
     type: BoardSpaceType;
     name: string;
-    reward: TileEffect;
     icon: string;
-    region: BoardRegion;
+    baseReward: BoardReward;
 }
 
-// ── Luck Roll System ───────────────────────────────────────────
-export type LuckRollType = 'none' | 'insane' | 'godly' | 'universe';
+// ── Drop Tables & Odds ─────────────────────────────────────────
 
-export interface LuckRollResult {
-    type: LuckRollType;
-    message: string;
-    luckXpBonus: number;
-    unlockedPet?: string;
-    unlockedAuraId?: string;
-    unlockedBannerId?: string;
-}
-
-// ── Board Generation ───────────────────────────────────────────
-const getRegion = (id: number): BoardRegion => {
-    if (id <= 13) return 'early';
-    if (id <= 27) return 'mid';
-    return 'late';
+export const BOARD_ODDS = {
+    common: 0.60,
+    uncommon: 0.25,
+    rare: 0.10,
+    epic: 0.04,
+    ultra_rare: 0.01
 };
 
-const STAT_BOOST_OPTIONS = ['Strength', 'Cardio', 'Flexibility', 'Hygiene', 'Sleep'];
+export interface MysteryRollResult {
+    rarity: BoardRarity;
+    reward: BoardReward;
+    message: string;
+    isDuplicate?: boolean;
+}
+
+// ── Board Generation (40 spaces perimeter board) ───────────────
 
 const createBoard = (): BoardSpace[] => {
     const board: BoardSpace[] = [];
@@ -71,167 +60,61 @@ const createBoard = (): BoardSpace[] => {
         id: 0,
         type: 'go',
         name: 'GO',
-        reward: { luckXp: 1 },
-        icon: '🍀',
-        region: 'early',
+        icon: '🏠',
+        baseReward: { gold: 25 },
     });
 
     for (let i = 1; i < 40; i++) {
-        const region = getRegion(i);
         let space: BoardSpace = {
             id: i,
             type: 'empty',
-            name: 'Rest Stop',
-            reward: {},
-            icon: '○',
-            region,
+            name: 'Grass',
+            icon: '🌾',
+            baseReward: {},
         };
 
-        // ── Early Region (1-13): coins + small boosts ────────────
-        if (region === 'early') {
-            // Gold tiles (1-3g)
-            if (i === 2 || i === 5 || i === 8 || i === 11) {
-                space = {
-                    id: i, type: 'gold', name: 'Copper Coin', icon: '🪙', region,
-                    reward: { gold: Math.floor(Math.random() * 3) + 1 },
-                };
-            }
-            // Stat boost tiles
-            if (i === 3 || i === 9) {
-                const stat = STAT_BOOST_OPTIONS[Math.floor(Math.random() * STAT_BOOST_OPTIONS.length)];
-                space = {
-                    id: i, type: 'stat_boost', name: `${stat} Surge`, icon: '💎', region,
-                    reward: { statBoost: { stat, value: 0.01, durationHours: 24 } },
-                };
-            }
-            // Double XP
-            if (i === 6 || i === 12) {
-                space = {
-                    id: i, type: 'double_xp', name: 'Double XP', icon: '⚡', region,
-                    reward: { doubleXpNextHabit: true },
-                };
-            }
-            // Silver coin
-            if (i === 10) {
-                space = {
-                    id: i, type: 'gold', name: 'Silver Coin', icon: '💰', region,
-                    reward: { gold: Math.floor(Math.random() * 2) + 4 },
-                };
-            }
+        // Standard Gold Tiles
+        if (i % 6 === 0) {
+            space = {
+                id: i,
+                type: 'gold',
+                name: 'Small Coin',
+                icon: '🪙',
+                baseReward: { gold: Math.floor(Math.random() * 5) + 3 },
+            };
+        }
+        
+        // Shmeckles Tiles
+        if (i % 11 === 0) {
+            space = {
+                id: i,
+                type: 'shmeckles',
+                name: 'Small Shmeckle',
+                icon: '🐌',
+                baseReward: { shmeckles: Math.floor(Math.random() * 5) + 1 },
+            };
         }
 
-        // ── Mid Region (14-27): training tokens + shards ─────────
-        if (region === 'mid') {
-            // Gold
-            if (i === 15 || i === 22) {
-                space = {
-                    id: i, type: 'gold', name: 'Copper Coin', icon: '🪙', region,
-                    reward: { gold: Math.floor(Math.random() * 3) + 2 },
-                };
-            }
-            // Training tokens
-            if (i === 16 || i === 20 || i === 25) {
-                space = {
-                    id: i, type: 'training_token', name: 'Training Token', icon: '🎯', region,
-                    reward: { trainingTokens: 1 },
-                };
-            }
-            // Gem tile
-            if (i === 17) {
-                space = {
-                    id: i, type: 'gem', name: 'Hidden Gem', icon: '💎', region,
-                    reward: { gems: 1 },
-                };
-            }
-            // Shop discount
-            if (i === 18) {
-                space = {
-                    id: i, type: 'shop_discount', name: 'Merchant Favor', icon: '🏷️', region,
-                    reward: { shopDiscount: { value: 0.15, durationHours: 24 } },
-                };
-            }
-            // Stat boost
-            if (i === 21) {
-                const stat = STAT_BOOST_OPTIONS[Math.floor(Math.random() * STAT_BOOST_OPTIONS.length)];
-                space = {
-                    id: i, type: 'stat_boost', name: `${stat} Surge`, icon: '💎', region,
-                    reward: { statBoost: { stat, value: 0.01, durationHours: 24 } },
-                };
-            }
-            // Ticket
-            if (i === 24) {
-                space = {
-                    id: i, type: 'ticket', name: 'Lucky Find', icon: '🎫', region,
-                    reward: { tickets: 1 },
-                };
-            }
-            // Pet shard
-            if (i === 27) {
-                space = {
-                    id: i, type: 'pet_shard', name: 'Pet Shard', icon: '🔮', region,
-                    reward: { petShards: 1 },
-                };
-            }
+        // Mystery / Chest Tiles (Triggers drop tables)
+        if (i === 5 || i === 15 || i === 25 || i === 35) {
+            space = {
+                id: i,
+                type: 'mystery',
+                name: 'Mystery Crop',
+                icon: '🎁',
+                baseReward: {},
+            };
         }
 
-        // ── Late Region (28-39): rare shards + encounters ────────
-        if (region === 'late') {
-            // Gold
-            if (i === 28 || i === 35) {
-                space = {
-                    id: i, type: 'gold', name: 'Silver Coin', icon: '💰', region,
-                    reward: { gold: Math.floor(Math.random() * 3) + 3 },
-                };
-            }
-            // Pet shards
-            if (i === 30 || i === 36) {
-                space = {
-                    id: i, type: 'pet_shard', name: 'Rare Shard', icon: '🔮', region,
-                    reward: { petShards: 1 },
-                };
-            }
-            // Mystery encounter
-            if (i === 32 || i === 38) {
-                space = {
-                    id: i, type: 'mystery_encounter', name: 'Mystery Encounter', icon: '⚔️', region,
-                    reward: { mysteryEncounter: true },
-                };
-            }
-            // Injury tile
-            if (i === 33) {
-                space = {
-                    id: i, type: 'gem', name: 'Rare Gem', icon: '💎', region,
-                    reward: { gems: 2 },
-                };
-            }
-            if (i === 34) {
-                space = {
-                    id: i, type: 'injury', name: 'Injury', icon: '🩹', region,
-                    reward: { injuryRest: { defenseBonus: 0.05, durationHours: 24 } },
-                };
-            }
-            // Training token
-            if (i === 29 || i === 37) {
-                space = {
-                    id: i, type: 'training_token', name: 'Training Token', icon: '🎯', region,
-                    reward: { trainingTokens: 1 },
-                };
-            }
-            // Double XP
-            if (i === 31) {
-                space = {
-                    id: i, type: 'double_xp', name: 'Double XP', icon: '⚡', region,
-                    reward: { doubleXpNextHabit: true },
-                };
-            }
-            // Stat boost (late = stronger)
-            if (i === 39) {
-                const stat = STAT_BOOST_OPTIONS[Math.floor(Math.random() * STAT_BOOST_OPTIONS.length)];
-                space = {
-                    id: i, type: 'stat_boost', name: `${stat} Surge+`, icon: '💎', region,
-                    reward: { statBoost: { stat, value: 0.02, durationHours: 24 } },
-                };
-            }
+        // Ticket (Rare)
+        if (i === 20) {
+            space = {
+                id: i,
+                type: 'ticket',
+                name: 'Lost Ticket',
+                icon: '🎫',
+                baseReward: { tickets: 1 },
+            };
         }
 
         board.push(space);
@@ -262,25 +145,16 @@ interface MonopolyState {
     lastTicketResetDate: string | null;
     totalRollsToday: number;
     totalLifetimeRolls: number;
-    lastLuckRoll: LuckRollResult | null;
-
-    // New: streak multiplier tracking
+    lastLuckRoll: MysteryRollResult | null;
     streakMultiplierActive: boolean;
-
-    // New: accumulated resources
-    trainingTokens: number;
-    petShards: number;
 
     // Actions
     rollDice: () => number;
     movePlayer: (spaces: number) => BoardSpace;
     resetDailyTickets: () => void;
     canRoll: () => boolean;
-    checkLuckRoll: () => LuckRollResult;
     setStreakMultiplier: (active: boolean) => void;
-    addTrainingTokens: (amount: number) => void;
-    spendTrainingTokens: (amount: number) => boolean;
-    addPetShards: (amount: number) => void;
+    rollMysteryBox: () => MysteryRollResult;
 }
 
 export const useMonopolyStore = create<MonopolyState>()(
@@ -293,8 +167,6 @@ export const useMonopolyStore = create<MonopolyState>()(
             totalLifetimeRolls: 0,
             lastLuckRoll: null,
             streakMultiplierActive: false,
-            trainingTokens: 0,
-            petShards: 0,
 
             canRoll: () => {
                 const state = get();
@@ -327,25 +199,16 @@ export const useMonopolyStore = create<MonopolyState>()(
                 const newPosition = (state.currentPosition + spaces) % 40;
 
                 set({ currentPosition: newPosition });
-
                 const landedSpace = BOARD[newPosition];
 
-                // Auto-collect training tokens and pet shards
-                if (landedSpace.reward.trainingTokens) {
-                    set(s => ({ trainingTokens: s.trainingTokens + (landedSpace.reward.trainingTokens || 0) }));
-                }
-                if (landedSpace.reward.petShards) {
-                    set(s => ({ petShards: s.petShards + (landedSpace.reward.petShards || 0) }));
-                }
-
-                // Check if passed GO
+                // Check if passed GO (if position wraps around or lands exactly on 0)
                 if (state.currentPosition + spaces >= 40) {
                     const goSpace = BOARD[0];
                     return {
                         ...landedSpace,
-                        reward: {
-                            ...landedSpace.reward,
-                            luckXp: (landedSpace.reward.luckXp || 0) + (goSpace.reward.luckXp || 0),
+                        baseReward: {
+                            ...landedSpace.baseReward,
+                            gold: (landedSpace.baseReward.gold || 0) + (goSpace.baseReward.gold || 0),
                         }
                     };
                 }
@@ -366,103 +229,113 @@ export const useMonopolyStore = create<MonopolyState>()(
                 set({ streakMultiplierActive: active });
             },
 
-            addTrainingTokens: (amount) => {
-                set(s => ({ trainingTokens: s.trainingTokens + amount }));
-            },
-
-            spendTrainingTokens: (amount) => {
-                const state = get();
-                if (state.trainingTokens < amount) return false;
-                set({ trainingTokens: state.trainingTokens - amount });
-                return true;
-            },
-
-            addPetShards: (amount) => {
-                set(s => ({ petShards: s.petShards + amount }));
-            },
-
-            // LUCK ROLL SYSTEM - Check for ultra-rare events
-            checkLuckRoll: (): LuckRollResult => {
+            // ── Themed Board Mystery Roll Logic ───────────────────
+            rollMysteryBox: (): MysteryRollResult => {
                 const roll = Math.random();
-                let result: LuckRollResult = {
-                    type: 'none',
+                let rarity: BoardRarity = 'common';
+                
+                // Determine Rarities based on BOARD_ODDS
+                if (roll < BOARD_ODDS.ultra_rare) rarity = 'ultra_rare';
+                else if (roll < BOARD_ODDS.ultra_rare + BOARD_ODDS.epic) rarity = 'epic';
+                else if (roll < BOARD_ODDS.ultra_rare + BOARD_ODDS.epic + BOARD_ODDS.rare) rarity = 'rare';
+                else if (roll < BOARD_ODDS.ultra_rare + BOARD_ODDS.epic + BOARD_ODDS.rare + BOARD_ODDS.uncommon) rarity = 'uncommon';
+                
+                let result: MysteryRollResult = {
+                    rarity,
+                    reward: {},
                     message: '',
-                    luckXpBonus: 0,
+                    isDuplicate: false
                 };
 
-                // 1 in 250,000 - UNIVERSE ALTERING LUCK
-                if (roll < 0.000004) {
-                    result = {
-                        type: 'universe',
-                        message: '🌌✨ UNIVERSE ALTERING LUCK! You unlocked the ETHEREAL COW! 1 in 250,000!',
-                        luckXpBonus: 1000,
-                        unlockedPet: 'ethereal_cow',
-                    };
-                    import('./useSkillTrophyStore').then(({ useSkillTrophyStore }) => {
-                        useSkillTrophyStore.getState().recordRareRoll(250000);
-                    });
-                    import('./useAchievementTrophyStore').then(({ useAchievementTrophyStore }) => {
-                        useAchievementTrophyStore.getState().unlockEtherealCowTrophy();
-                    });
+                const boardCol = useBoardCollectionStore.getState();
+
+                if (rarity === 'common') {
+                    if (Math.random() > 0.5) {
+                        result.reward.gold = Math.floor(Math.random() * 8) + 1;
+                        result.message = `Found a small pouch of gold! (+${result.reward.gold} Gold)`;
+                    } else {
+                        result.reward.shmeckles = Math.floor(Math.random() * 2) + 1;
+                        result.message = `Found a tiny Shmeckle! (+${result.reward.shmeckles} Shmeckles)`;
+                    }
+                } 
+                else if (rarity === 'uncommon') {
+                    if (Math.random() > 0.5) {
+                        result.reward.gold = Math.floor(Math.random() * 8) + 8; // 8-15
+                        result.message = `Found a muddy coin purse! (+${result.reward.gold} Gold)`;
+                    } else {
+                        result.reward.shmeckles = Math.floor(Math.random() * 4) + 2;
+                        result.message = `Found a handful of Shmeckles! (+${result.reward.shmeckles} Shmeckles)`;
+                    }
                 }
-                // 1 in 10,000 - UNIQUE AURA DROP (Lucky Radiance)
-                else if (roll < 0.0001) {
-                    const auraId = 'lucky_radiance';
-                    result = {
-                        type: 'universe',
-                        message: `🌈✨ ULTRA-RARE! Lucky Radiance aura unlocked! 1 in 10,000 chance! Check your Wardrobe!`,
-                        luckXpBonus: 500,
-                        unlockedAuraId: auraId,
-                    };
-                    import('./useAuraStore').then(({ useAuraStore }) => {
-                        useAuraStore.getState().unlockAura(auraId);
-                    });
-                    import('./useSkillTrophyStore').then(({ useSkillTrophyStore }) => {
-                        useSkillTrophyStore.getState().recordRareRoll(10000);
-                    });
+                else if (rarity === 'rare') {
+                    const rareItems = ['cow', 'sheep', 'pig', 'chicken'];
+                    const drop = rareItems[Math.floor(Math.random() * rareItems.length)];
+                    result.reward.petId = `board_farm_${drop}`;
+                    result.message = `Found a stray ${drop}!`;
+                    
+                    if (boardCol.ownedPets.includes(result.reward.petId)) {
+                        result.isDuplicate = true;
+                        result.reward.gold = 15; // duplicate compensation
+                        result.message = `You already own the ${drop}. Converted to 15 Gold.`;
+                    } else {
+                        boardCol.unlockPet(result.reward.petId);
+                    }
                 }
-                // 1 in 5,000 - RARE BANNER DROP
-                else if (roll < 0.0002) {
-                    const bannerIds = ['crimson_dawn', 'void_walker', 'celestial_guard', 'iron_sentinel', 'storm_herald'];
-                    const bannerId = bannerIds[Math.floor(Math.random() * bannerIds.length)];
-                    result = {
-                        type: 'godly',
-                        message: `🏳️✨ RARE BANNER UNLOCKED! "${bannerId.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}"! 1 in 5,000!`,
-                        luckXpBonus: 250,
-                        unlockedBannerId: bannerId,
-                    };
-                    import('./useProfileStore').then(({ useProfileStore }) => {
-                        useProfileStore.getState().unlockBanner(bannerId);
-                    });
-                    import('./useSkillTrophyStore').then(({ useSkillTrophyStore }) => {
-                        useSkillTrophyStore.getState().recordRareRoll(5000);
-                    });
+                else if (rarity === 'epic') {
+                    const epicItems = ['goat', 'duck', 'straw_hat', 'farmer_title'];
+                    const drop = epicItems[Math.floor(Math.random() * epicItems.length)];
+
+                    if (drop === 'straw_hat') {
+                        result.reward.cosmeticId = 'board_farm_straw_hat';
+                        result.message = `Found a nice Straw Hat!`;
+                        if (boardCol.ownedCosmetics.includes(result.reward.cosmeticId)) {
+                            result.isDuplicate = true;
+                            result.reward.gold = 20;
+                        } else {
+                            boardCol.unlockCosmetic(result.reward.cosmeticId);
+                        }
+                    } else if (drop === 'farmer_title') {
+                        result.reward.titleId = 'board_farm_title';
+                        result.message = `Unlocked the "The Farmer" Title!`;
+                        if (boardCol.ownedTitles.includes(result.reward.titleId)) {
+                            result.isDuplicate = true;
+                            result.reward.gold = 20;
+                        } else {
+                            boardCol.unlockTitle(result.reward.titleId);
+                        }
+                    } else {
+                        result.reward.petId = `board_farm_${drop}`;
+                        result.message = `Found a rare ${drop}!`;
+                        if (boardCol.ownedPets.includes(result.reward.petId)) {
+                            result.isDuplicate = true;
+                            result.reward.gold = 20;
+                        } else {
+                            boardCol.unlockPet(result.reward.petId);
+                        }
+                    }
                 }
-                // 1 in 25,000 - GOLDEN GOLDFISH
-                else if (roll < 0.00004 + 0.0002) {
-                    result = {
-                        type: 'godly',
-                        message: '🐠✨ GOLDEN FORTUNE! You unlocked the GOLDEN GOLDFISH! 1 in 25,000!',
-                        luckXpBonus: 500,
-                        unlockedPet: 'golden_goldfish',
-                    };
-                    import('./useSkillTrophyStore').then(({ useSkillTrophyStore }) => {
-                        useSkillTrophyStore.getState().recordRareRoll(25000);
-                    });
-                    import('./useAchievementTrophyStore').then(({ useAchievementTrophyStore }) => {
-                        useAchievementTrophyStore.getState().unlockGoldenGoldfishTrophy();
-                    });
-                }
-                // 1 in 1,000 - INSANE LUCK
-                else if (roll < 0.001) {
-                    result = {
-                        type: 'insane',
-                        message: '✨ INSANE LUCK! 1 in 1,000 roll hit!',
-                        luckXpBonus: 50,
-                    };
-                    import('./useSkillTrophyStore').then(({ useSkillTrophyStore }) => {
-                        useSkillTrophyStore.getState().recordRareRoll(1000);
-                    });
+                else if (rarity === 'ultra_rare') {
+                    const type = Math.random() > 0.5 ? 'pet' : 'banner';
+                    if (type === 'pet') {
+                        result.reward.petId = 'board_farm_ethereal_cow';
+                        result.message = `🌌✨ UNIVERSE LUCK! Unlocked the ETHEREAL COW!`;
+                        if (boardCol.ownedPets.includes(result.reward.petId)) {
+                            result.isDuplicate = true;
+                            result.reward.gold = 50;
+                            result.message = `You already own the Ethereal Cow... +50 Gold.`;
+                        } else {
+                            boardCol.unlockPet(result.reward.petId);
+                        }
+                    } else {
+                        result.reward.bannerId = 'board_farm_barn_banner';
+                        result.message = `✨ Unlocked the exclusive Barn Banner!`;
+                        if (boardCol.ownedBanners.includes(result.reward.bannerId)) {
+                            result.isDuplicate = true;
+                            result.reward.gold = 50;
+                        } else {
+                            boardCol.unlockBanner(result.reward.bannerId);
+                        }
+                    }
                 }
 
                 set({ lastLuckRoll: result });
@@ -470,7 +343,7 @@ export const useMonopolyStore = create<MonopolyState>()(
             },
         }),
         {
-            name: PERSIST_REGISTRY.monopoly.persistKey, // v3 for board expansion
+            name: PERSIST_REGISTRY.monopoly.persistKey, // Keep v3 to reuse current tokens if possible, or v4 if breaking
         }
     )
 );

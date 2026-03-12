@@ -125,33 +125,26 @@ export const StatsPage = () => {
                                 const dailyUsed = getDailyXpEarned(skillName);
 
                                 return (
-                                    <Card key={skillName} className="skill-card">
-                                        <div className="skill-header">
-                                            <span className="skill-icon">{SKILL_ICONS[skillName]}</span>
-                                            <div className="skill-info">
-                                                <h3 className="skill-name">{skillName}</h3>
-                                                <span className="skill-level">Level {skill.level}</span>
+                                    <Card key={skillName} className="skill-card compact">
+                                        <div className="skill-header-compact">
+                                            <div className="skill-name-group">
+                                                <span className="skill-icon">{SKILL_ICONS[skillName]}</span>
+                                                <h3 className="skill-name">{skillName} <span className="skill-level">Lv {skill.level}</span></h3>
                                             </div>
+                                            <span className="skill-xp-ratio">{progress.current.toLocaleString()} / {progress.required.toLocaleString()} XP</span>
                                         </div>
 
-                                        <ProgressBar
-                                            current={progress.current}
-                                            max={progress.required}
-                                            label={`${progress.current.toLocaleString()} / ${progress.required.toLocaleString()} XP`}
-                                        />
-
-                                        <div className="daily-xp-info">
-                                            <span className="daily-label">Earned Today:</span>
-                                            <span className="daily-value">
-                                                +{dailyUsed.toLocaleString()} XP
-                                            </span>
+                                        <div className="skill-stats-compact">
+                                            <span>Today: +{dailyUsed.toLocaleString()}</span>
+                                            <span>Total XP: {skill.totalXp.toLocaleString()}</span>
                                         </div>
 
-                                        <div className="daily-xp-info" style={{ marginTop: '0.5rem' }}>
-                                            <span className="daily-label">Total XP:</span>
-                                            <span className="daily-value">
-                                                {skill.totalXp.toLocaleString()} XP
-                                            </span>
+                                        <div className="skill-progress-compact">
+                                            <ProgressBar
+                                                current={progress.current}
+                                                max={progress.required}
+                                                label=""
+                                            />
                                         </div>
 
                                         {(() => {
@@ -162,20 +155,21 @@ export const StatsPage = () => {
                                             const progressPct = Math.floor(milestoneInfo.progressToNext * 100);
 
                                             return (
-                                                <div className="milestone-tracker">
+                                                <div className="milestone-tracker compact">
                                                     <div className="milestone-label-row">
                                                         <span className="milestone-name">Next: {milestoneInfo.nextTier.name} (Lv.{milestoneInfo.nextTier.level})</span>
                                                     </div>
                                                     <div className="milestone-bar-bg">
                                                         <div className="milestone-bar-fill" style={{ width: `${progressPct}%` }} />
                                                     </div>
-                                                    <div className="milestone-reward-preview">
-                                                        ✨ {milestoneInfo.nextTier.reward} | 🪙 {milestoneInfo.nextTier.goldReward}
-                                                    </div>
+                                                    {milestoneInfo.nextTier.reward && (
+                                                        <div className="milestone-reward-preview">
+                                                            ✨ {milestoneInfo.nextTier.reward}
+                                                        </div>
+                                                    )}
                                                 </div>
                                             );
                                         })()}
-
                                     </Card>
                                 );
                             })}

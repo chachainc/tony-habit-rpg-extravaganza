@@ -1,4 +1,4 @@
-export type TowerType = 'archer' | 'mage' | 'frost' | 'cannon';
+export type TowerType = 'archer' | 'mage' | 'frost' | 'cannon' | 'ballista';
 export type EnemyType = 'goblin' | 'orc' | 'golem' | 'boss_slime';
 
 export interface GridPos {
@@ -32,7 +32,8 @@ export const TD_TOWERS: Record<TowerType, TowerDef> = {
     archer: { type: 'archer', name: 'Archer', icon: '🏹', color: '#16a34a', cost: 50, range: 3, damage: 15, cooldown: 600, description: 'Fast, single target.', projectileColor: '#86efac' },
     mage: { type: 'mage', name: 'Mage', icon: '🔮', color: '#9333ea', cost: 100, range: 4, damage: 40, cooldown: 1200, description: 'High damage, slow.', projectileColor: '#d8b4fe' },
     frost: { type: 'frost', name: 'Frost', icon: '❄️', color: '#0284c7', cost: 75, range: 2, damage: 5, cooldown: 1500, description: 'Slows enemies in range (NYI).', projectileColor: '#bae6fd' },
-    cannon: { type: 'cannon', name: 'Cannon', icon: '💣', color: '#b91c1c', cost: 150, range: 2.5, damage: 80, cooldown: 2000, description: 'Massive local damage.', projectileColor: '#fca5a5' }
+    cannon: { type: 'cannon', name: 'Cannon', icon: '💣', color: '#b91c1c', cost: 150, range: 2.5, damage: 80, cooldown: 2000, description: 'Massive local damage.', projectileColor: '#fca5a5' },
+    ballista: { type: 'ballista', name: 'Ballista', icon: '🏹', color: '#ea580c', cost: 200, range: 6, damage: 120, cooldown: 3000, description: 'Long range, high damage.', projectileColor: '#fdba74' }
 };
 
 export const TD_ENEMIES: Record<EnemyType, EnemyDef> = {

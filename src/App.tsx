@@ -24,6 +24,7 @@ import { Conquest } from './features/conquest/Conquest';
 import { CombatPage } from './features/combat/CombatPage';
 import { RiskPage } from './features/risk/RiskPage';
 import { TowerDefensePage } from './features/tower-defense/TowerDefensePage';
+import { StormTheFort } from './features/storm/StormTheFort';
 import { LoginScreen } from './features/auth/LoginScreen';
 import { CharacterCreation } from './features/onboarding/CharacterCreation';
 import { UIShowcase } from './features/showcase/UIShowcase';
@@ -39,6 +40,7 @@ import { PlayerRoom } from './features/room/PlayerRoom';
 import { useDayStore } from './store/useDayStore';
 import { useGameStore } from './store/useGameStore';
 import { useProfileStore, triggerAutoSync } from './store/useProfileStore';
+import { WelcomeTutorialModal } from './features/onboarding/WelcomeTutorialModal';
 
 // Town Hub wrapper to handle navigation
 const TownHubPage = () => {
@@ -112,7 +114,7 @@ function App() {
     return <LoginScreen />;
   }
 
-  // If no character selected, force onboarding
+  // If no character selected, force character onboarding
   if (isLoggedIn && !characterArchetype) {
     return (
       <Router>
@@ -122,7 +124,13 @@ function App() {
   }
 
   return (
-    <Router>
+    <>
+      {/* Show the onboarding tutorial if logged in, character created, but tutorial not seen */}
+      {isLoggedIn && characterArchetype && !useProfileStore.getState().hasSeenWelcomeTutorial && (
+        <WelcomeTutorialModal />
+      )}
+
+      <Router>
       {/* Toast notifications - always visible */}
       <ToastContainer />
 
@@ -163,6 +171,7 @@ function App() {
           <Route path="combat" element={<CombatPage />} />
           <Route path="risk" element={<RiskPage />} />
           <Route path="tower-defense" element={<TowerDefensePage />} />
+          <Route path="storm" element={<StormTheFort />} />
           <Route path="shop" element={<ShopModal category="general" onClose={() => window.history.back()} />} />
           <Route path="room" element={<PlayerRoomPage />} />
           <Route path="walkable-room" element={<WalkableRoom />} />
@@ -182,7 +191,8 @@ function App() {
         console.log('[BOOT] route registration complete');
         return null;
       })()}
-    </Router>
+      </Router>
+    </>
   );
 }
 

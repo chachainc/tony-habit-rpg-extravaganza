@@ -1,0 +1,132 @@
+.welcome-tutorial-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(0, 0, 0, 0.85);
+    backdrop-filter: blur(4px);
+    z-index: 9999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem;
+}
+
+.welcome-tutorial-modal {
+    background: #0f172a;
+    border: 1px solid var(--theme-color, #334155);
+    border-radius: 16px;
+    width: 100%;
+    max-width: 400px;
+    color: white;
+    box-shadow: 0 20px 40px rgba(0,0,0,0.5), 0 0 40px var(--theme-color, transparent);
+    overflow: hidden;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+}
+
+.wtm-header {
+    background: rgba(255, 255, 255, 0.03);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    padding: 2rem 1rem;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.wtm-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    animation: icon-float 3s ease-in-out infinite;
+}
+
+@keyframes icon-float {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-8px); }
+}
+
+.wtm-body {
+    padding: 2rem 1.5rem;
+    min-height: 200px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    position: relative;
+    overflow: hidden;
+}
+
+.wtm-content {
+    position: absolute;
+    inset: 0;
+    padding: 2rem 1.5rem;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    text-align: center;
+}
+
+.wtm-content h2 {
+    margin: 0 0 1rem 0;
+    font-size: 1.5rem;
+    font-weight: 700;
+}
+
+.wtm-text {
+    margin: 0;
+    color: #cbd5e1;
+    font-size: 1.05rem;
+    line-height: +1.5;
+}
+
+.wtm-text strong {
+    color: white;
+}
+
+.wtm-footer {
+    padding: 1rem 1.5rem 1.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+    align-items: center;
+}
+
+.wtm-dots {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.wtm-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #334155;
+    transition: all 0.3s ease;
+}
+
+.wtm-dot.active {
+    width: 24px;
+    border-radius: 4px;
+}
+
+.wtm-btn {
+    width: 100%;
+    border: none;
+    border-radius: 8px;
+    padding: 1rem;
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: white;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    transition: all 0.2s ease;
+}
+
+.wtm-btn:active {
+    transform: scale(0.98);
+}

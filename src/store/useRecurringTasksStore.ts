@@ -362,8 +362,20 @@ export const useRecurringTasksStore = create<RecurringTasksState>()(
                         import('./useGameStore').then(({ useGameStore }) => {
                             rewardsToGrant.forEach(r => {
                                 useGameStore.getState().addSkillXp(r.skillId, r.xp);
+                                // New Onboarding rules: Award a lvl 1 book whenever gaining Intelligence XP
+                                if (r.skillId === 'Intelligence') {
+                                    import('./useInventoryStore').then(({ useInventoryStore }) => {
+                                        useInventoryStore.getState().addItem('fantasy_book_1', 1);
+                                    });
+                                }
                             });
                         });
+
+                        if (id === 'read_10_min') {
+                            import('./useTraitStore').then(({ useTraitStore: ts }) => {
+                                ts.getState().logHabitCompletion('reading');
+                            }).catch(() => {});
+                        }
 
                         return { dailyTasks: newTasks, weightHistory: newWeightHistory };
                     }
@@ -377,6 +389,12 @@ export const useRecurringTasksStore = create<RecurringTasksState>()(
                         import('./useGameStore').then(({ useGameStore }) => {
                             newTasks[weeklyIndex].rewards.forEach(r => {
                                 useGameStore.getState().addSkillXp(r.skillId, r.xp);
+                                // New Onboarding rules: Award a lvl 1 book whenever gaining Intelligence XP
+                                if (r.skillId === 'Intelligence') {
+                                    import('./useInventoryStore').then(({ useInventoryStore }) => {
+                                        useInventoryStore.getState().addItem('fantasy_book_1', 1);
+                                    });
+                                }
                             });
                         });
 

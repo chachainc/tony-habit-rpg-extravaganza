@@ -11,6 +11,9 @@ interface ProfileState {
     lastSyncError: string | null;
     serverVersion: number;
 
+    // Has seen the 6-screen welcome tutorial
+    hasSeenWelcomeTutorial: boolean;
+
     // Character Onboarding
     characterArchetype: 'vanguard' | 'ranger' | 'duelist' | 'mystic' | null;
     appearance: { hairHue: number; skinHue: number };
@@ -28,6 +31,9 @@ interface ProfileState {
     syncToServer: () => Promise<void>;
     exportSave: () => void;
     importSave: (json: string) => Promise<boolean>;
+
+    // Tutorial Actions
+    completeWelcomeTutorial: () => void;
 
     // Onboarding Actions
     setCharacterArchetype: (archetype: ProfileState['characterArchetype']) => void;
@@ -128,6 +134,7 @@ export const useProfileStore = create<ProfileState>()(
             isSyncing: false,
             lastSyncError: null,
             serverVersion: 0,
+            hasSeenWelcomeTutorial: false,
 
             characterArchetype: null,
             appearance: { hairHue: 0, skinHue: 0 },
@@ -194,6 +201,7 @@ export const useProfileStore = create<ProfileState>()(
                     isSyncing: false,
                     lastSyncError: null,
                     serverVersion: 0,
+                    hasSeenWelcomeTutorial: false,
                     characterArchetype: null,
                     appearance: { hairHue: 0, skinHue: 0 },
                     healthTrackingMode: null,
@@ -266,6 +274,8 @@ export const useProfileStore = create<ProfileState>()(
                     return false;
                 }
             },
+
+            completeWelcomeTutorial: () => set({ hasSeenWelcomeTutorial: true }),
 
             setCharacterArchetype: (archetype) => set({ characterArchetype: archetype }),
             setAppearance: (appearance) => set({ appearance }),

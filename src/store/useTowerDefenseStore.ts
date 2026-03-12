@@ -3,15 +3,20 @@ import { persist } from 'zustand/middleware';
 import { getPassiveBonuses } from './usePassiveEffects';
 import { PERSIST_REGISTRY } from '../data/persistRegistry';
 import { useGameStore } from './useGameStore';
+import { useCurrencyStore } from './useCurrencyStore';
 import type { TowerType, EnemyType, MapModifierType, WaveModifierType } from '../data/towerDefense';
 import { TD_PATH, TD_TOWERS, TD_ENEMIES, getWaveComposition, rollMapModifier, rollWaveModifier } from '../data/towerDefense';
 
 export interface PlacedTower {
     id: string;
     type: TowerType;
+    towerType: TowerType; // Redundant explicit tracker for path logic
     x: number;
     y: number;
     level: number;
+    upgradeLevel: number;
+    upgradePath: string | null;
+    specializationBranch: string | null;
     lastFired: number; // timestamp
 }
 
@@ -30,7 +35,6 @@ export interface TowerDefenseState {
     // Core stats
     baseHealth: number;
     maxBaseHealth: number;
-    mana: number;           // In-game currency for towers
     currentWave: number;
     isWaveActive: boolean;
 
@@ -56,14 +60,11 @@ export interface TowerDefenseState {
     resetGame: () => void;
 }
 
-const STARTING_MANA = 100;
-
 export const useTowerDefenseStore = create<TowerDefenseState>()(
     persist(
         (set, get) => ({
             baseHealth: 100,
             maxBaseHealth: 100,
-            mana: STARTING_MANA,
             currentWave: 0,
             isWaveActive: false,
 
@@ -82,16 +83,21 @@ export const useTowerDefenseStore = create<TowerDefenseState>()(
                 const costMod = state.currentMapModifier === 'fortified_path' ? 1.1 : 1.0;
                 const finalCost = Math.floor(def.cost * costMod);
 
-                if (state.mana < finalCost) return false;
+                const currStore = useCurrencyStore.getState();
+                if (currStore.shmeckles < finalCost) return false;
                 if (state.towers.some(t => t.x === x && t.y === y)) return false;
 
+                currStore.spendShmeckles(finalCost);
                 set({
-                    mana: state.mana - finalCost,
                     towers: [...state.towers, {
                         id: `tower_${Date.now()}_${x}_${y}`,
                         type,
+                        towerType: type,
                         x, y,
                         level: 1,
+                        upgradeLevel: 1,
+                        upgradePath: null,
+                        specializationBranch: null,
                         lastFired: 0
                     }]
                 });
@@ -107,8 +113,8 @@ export const useTowerDefenseStore = create<TowerDefenseState>()(
                 const refundRate = state.currentMapModifier === 'drought' ? 1.0 : 0.5;
                 const refund = Math.floor((def.cost * Math.pow(1.5, tower.level - 1)) * refundRate);
 
+                useCurrencyStore.getState().addShmeckles(refund);
                 set({
-                    mana: state.mana + refund,
                     towers: state.towers.filter(t => t.id !== id)
                 });
             },
@@ -121,12 +127,13 @@ export const useTowerDefenseStore = create<TowerDefenseState>()(
                 const def = TD_TOWERS[tower.type];
                 const cost = Math.floor(def.cost * Math.pow(1.5, tower.level)); // 50 -> 75 -> 112
                 
-                if (state.mana < cost) return false;
+                const currStore = useCurrencyStore.getState();
+                if (currStore.shmeckles < cost) return false;
 
+                currStore.spendShmeckles(cost);
                 set({
-                    mana: state.mana - cost,
                     towers: state.towers.map(t => 
-                        t.id === id ? { ...t, level: t.level + 1 } : t
+                        t.id === id ? { ...t, level: t.level + 1, upgradeLevel: t.upgradeLevel + 1 } : t
                     )
                 });
                 return true;
@@ -162,12 +169,12 @@ export const useTowerDefenseStore = create<TowerDefenseState>()(
                 const state = get();
                 if (!state.isWaveActive && state.enemies.length === 0) return;
 
-                let { enemies, towers, enemyQueue, lastSpawnTime, baseHealth, mana } = state;
+                let { enemies, towers, enemyQueue, lastSpawnTime, baseHealth } = state;
                 let newEnemies = [...enemies];
                 let newTowers = [...towers];
                 let newProjectiles: any[] = [];
                 let damageTaken = 0;
-                let manaGained = 0;
+                let shmecklesGained = 0;
 
                 // 1. Spawning
                 if (enemyQueue.length > 0 && now - lastSpawnTime > 1200) { // spawn every 1.2s
@@ -282,9 +289,13 @@ export const useTowerDefenseStore = create<TowerDefenseState>()(
                 killed.forEach(k => {
                     let rwd = TD_ENEMIES[k.type].reward;
                     if (state.currentMapModifier === 'drought') rwd = Math.max(1, Math.floor(rwd * 0.9));
-                    manaGained += rwd;
+                    shmecklesGained += rwd;
                 });
                 newEnemies = newEnemies.filter(e => e.hp > 0);
+                
+                if (shmecklesGained > 0) {
+                    useCurrencyStore.getState().addShmeckles(shmecklesGained);
+                }
 
                 // Apply Base Damage
                 let newBaseHealth = baseHealth - damageTaken;
@@ -298,12 +309,14 @@ export const useTowerDefenseStore = create<TowerDefenseState>()(
                     const passives = getPassiveBonuses();
                     const sigils = Math.floor(state.currentWave / 2) + 1 + passives.sigil_bonus;
                     const gold = (state.currentWave * 5) + passives.gold_bonus;
+                    const shmeckles = (state.currentWave * 5) + passives.gold_bonus;
                     
                     import('./useConquestStore').then(({ useConquestStore: cs }) => {
                         cs.getState().addSigils(sigils);
                     });
                     import('./useCurrencyStore').then(({ useCurrencyStore: curr }) => {
                         curr.getState().addGold(gold);
+                        curr.getState().addShmeckles(shmeckles);
                     });
                 }
 
@@ -318,7 +331,6 @@ export const useTowerDefenseStore = create<TowerDefenseState>()(
                     enemyQueue,
                     lastSpawnTime,
                     baseHealth: newBaseHealth,
-                    mana: mana + manaGained,
                     isWaveActive,
                     projectiles: newProjectiles
                 });
@@ -327,13 +339,8 @@ export const useTowerDefenseStore = create<TowerDefenseState>()(
             takeDamage: (amount) => set(state => ({ baseHealth: Math.max(0, state.baseHealth - amount) })),
             
             resetGame: () => {
-                // Habit Synergy: Starting Mana scales with Habit Building Level!
-                const habitLevel = useGameStore.getState().skills['Habit Building'].level;
-                const habitManaBonus = Math.floor(habitLevel * 2);
-
                 set({
                     baseHealth: 100,
-                    mana: STARTING_MANA + habitManaBonus, 
                     currentWave: 0,
                     isWaveActive: false,
                     towers: [],
@@ -349,7 +356,6 @@ export const useTowerDefenseStore = create<TowerDefenseState>()(
             name: PERSIST_REGISTRY.towerDefense.persistKey,
             partialize: (state) => ({
                 currentWave: state.currentWave,
-                mana: state.mana,
                 towers: state.towers,
                 baseHealth: state.baseHealth
             })

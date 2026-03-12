@@ -271,6 +271,28 @@
     border: 1px solid #78350f;
 }
 
+/* Range Indicator */
+.td-range-indicator-grid {
+    position: absolute;
+    border-radius: 50%;
+    border: 1px solid rgba(255, 255, 255, 0.5);
+    background: rgba(255, 255, 255, 0.1);
+    pointer-events: none;
+    z-index: 10;
+}
+.td-range-indicator-grid.valid {
+    border-color: rgba(34, 197, 94, 0.8);
+    background: rgba(34, 197, 94, 0.15);
+}
+.td-range-indicator-grid.invalid {
+    border-color: rgba(239, 68, 68, 0.8);
+    background: rgba(239, 68, 68, 0.15);
+}
+
+.td-entity.ghost {
+    pointer-events: none !important;
+}
+
 /* Enemies */
 .td-entity.enemy {
     z-index: 4;
@@ -312,128 +334,113 @@
     opacity: 0.8;
 }
 
-/* ─── Floating Shop/Upgrade Panels ──────────────────────── */
-.td-shop-panel {
-    position: absolute;
-    bottom: 2rem;
-    left: 50%;
-    transform: translateX(-50%);
-    background: rgba(15, 23, 42, 0.95);
-    border: 1px solid #475569;
-    border-radius: 12px;
-    padding: 1rem;
-    box-shadow: 0 10px 25px rgba(0,0,0,0.8);
+/* ─── Bottom Drawer Shop ──────────────────────── */
+.td-drawer-shop {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: rgba(15, 20, 35, 0.95);
+    border-top: 1px solid rgba(139, 92, 246, 0.2);
+    box-shadow: 0 -4px 16px rgba(0, 0, 0, 0.4);
     z-index: 100;
-    width: 90%;
-    max-width: 500px;
-    backdrop-filter: blur(8px);
-}
-
-.panel-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 1rem;
-    border-bottom: 1px solid #334155;
-    padding-bottom: 0.5rem;
-}
-
-.panel-header h3 {
-    margin: 0;
-    font-size: 1.1rem;
-    color: #f8fafc;
-}
-
-.close-btn {
-    background: transparent;
-    border: none;
-    color: #94a3b8;
-    cursor: pointer;
-}
-
-.tower-options {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-    gap: 0.5rem;
-}
-
-.tower-build-btn {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 0.5rem;
-    background: rgba(0, 0, 0, 0.5);
-    border: 1px solid #334155;
-    border-radius: 8px;
     padding: 0.75rem;
-    color: #e2e8f0;
-    cursor: pointer;
-    transition: background 0.2s;
-    text-align: center;
+    padding-bottom: env(safe-area-inset-bottom, 1rem); /* iPhone notch safe area */
+    backdrop-filter: blur(8px);
+    display: flex;
+    justify-content: center;
 }
 
-.tower-build-btn:hover:not(:disabled) {
-    background: rgba(255, 255, 255, 0.1);
+.td-shop-scroll {
+    display: flex;
+    gap: 0.75rem;
+    overflow-x: auto;
+    max-width: 100%;
+    padding-bottom: 0.5rem;
+    scrollbar-width: none; /* Firefox */
 }
 
-.tower-build-btn:disabled {
+.td-shop-scroll::-webkit-scrollbar {
+    display: none; /* Chrome/Safari */
+}
+
+.shop-item {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    background: rgba(30, 41, 59, 0.8);
+    border: 1px solid #334155;
+    border-radius: 12px;
+    padding: 0.5rem 0.75rem;
+    min-width: 140px;
+    cursor: grab;
+    user-select: none;
+    transition: transform 0.1s, background 0.2s;
+}
+
+.shop-item:active {
+    cursor: grabbing;
+}
+
+.shop-item.disabled {
     opacity: 0.4;
     cursor: not-allowed;
-    filter: grayscale(1);
+    filter: grayscale(0.8);
 }
 
-.tower-icon-preview {
-    font-size: 2rem;
+.shop-item-icon {
+    width: 2.5rem;
+    height: 2.5rem;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.25rem;
+    background: #0f172a;
+    border: 2px solid;
+    flex-shrink: 0;
 }
 
-.tower-info h4 {
-    margin: 0;
-    font-size: 0.9rem;
+.shop-item-details {
+    display: flex;
+    flex-direction: column;
 }
 
-.tower-info p {
-    margin: 0.2rem 0;
-    font-size: 0.7rem;
-    color: #94a3b8;
+.shop-item-name {
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: #f1f5f9;
 }
 
-.tower-info .cost {
+.shop-item-cost {
+    font-size: 0.75rem;
+    font-weight: 600;
     color: #c084fc;
 }
 
-.tower-info .stats {
-    font-size: 0.65rem;
-    color: #64748b;
-    margin-top: 0.25rem;
+/* Floating Drag Element */
+.td-floating-ghost {
+    position: fixed;
+    pointer-events: none;
+    z-index: 9999;
+    transform: translate(-50%, -100%); /* Offset slightly above finger */
+    filter: drop-shadow(0 10px 15px rgba(0,0,0,0.5));
 }
 
-.panel-actions {
+/* ─── Upgrade Panel Adjustments ───────────────── */
+.upgrade-panel {
+    bottom: 6rem; /* Shifted up due to bottom drawer */
+}
+
+.tower-stats-preview {
     display: flex;
-    gap: 1rem;
-}
-
-.action-btn {
-    flex: 1;
-    padding: 0.75rem;
-    border: none;
+    justify-content: space-around;
+    padding: 0.5rem;
+    background: rgba(0,0,0,0.3);
     border-radius: 8px;
-    font-weight: 700;
-    color: white;
-    cursor: pointer;
-}
-
-.action-btn.upgrade {
-    background: #2563eb;
-}
-
-.action-btn.upgrade:disabled {
-    background: #334155;
+    margin-bottom: 1rem;
+    font-size: 0.85rem;
     color: #94a3b8;
-    cursor: not-allowed;
-}
-
-.action-btn.sell {
-    background: #dc2626;
 }
 
 /* ─── Mobile Adjustments ──────────────────────── */

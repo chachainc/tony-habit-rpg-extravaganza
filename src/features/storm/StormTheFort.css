@@ -1,0 +1,318 @@
+.storm-page {
+    display: flex;
+    flex-direction: column;
+    height: 100dvh;
+    background: #0f1115;
+    color: #f8fafc;
+    overflow: hidden;
+    font-family: system-ui, -apple-system, sans-serif;
+}
+
+/* Header HUD */
+.storm-hud {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.75rem 1rem;
+    background: #1e222b;
+    border-bottom: 2px solid #2d3748;
+}
+
+.storm-hud-left h2 {
+    margin: 0;
+    font-size: 1.1rem;
+    color: #e2e8f0;
+}
+
+.storm-wave-badge {
+    font-size: 0.8rem;
+    color: #a855f7;
+    font-weight: bold;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.storm-hud-center {
+    flex: 1;
+    display: flex;
+    justify-content: center;
+}
+
+.storm-fort-health {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    background: rgba(239, 68, 68, 0.1);
+    color: #ef4444;
+    padding: 0.25rem 0.75rem;
+    border-radius: 99px;
+    font-weight: bold;
+    font-size: 0.9rem;
+    border: 1px solid rgba(239, 68, 68, 0.2);
+}
+
+.storm-hud-right {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.storm-shmeckles {
+    font-weight: bold;
+    color: #fbbf24;
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    font-size: 1.1rem;
+}
+
+.storm-btn {
+    border: none;
+    border-radius: 6px;
+    padding: 0.5rem 1rem;
+    font-weight: bold;
+    cursor: pointer;
+    background: #334155;
+    color: white;
+    transition: 0.2s ease;
+}
+
+.storm-btn.icon {
+    padding: 0.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.storm-btn.primary {
+    background: #a855f7;
+}
+.storm-btn.danger {
+    background: #ef4444;
+}
+
+.storm-btn:hover {
+    filter: brightness(1.2);
+}
+
+/* Battlefield (Central) */
+.storm-battlefield {
+    flex: 1;
+    position: relative;
+    background: linear-gradient(to bottom, #111827 0%, #1e293b 80%, #334155 100%);
+    overflow: hidden;
+    border-bottom: 4px solid #475569;
+}
+
+.storm-spawn-zone {
+    position: absolute;
+    left: 1rem;
+    top: 50%;
+    transform: translateY(-50%);
+    opacity: 0.2;
+    font-size: 0.9rem;
+    font-weight: bold;
+    letter-spacing: 2px;
+}
+
+.storm-fort-zone {
+    position: absolute;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    width: 60px;
+    background: rgba(255,255,255,0.05);
+    border-left: 2px dashed rgba(239, 68, 68, 0.3);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.storm-fort-structure {
+    writing-mode: vertical-rl;
+    text-orientation: mixed;
+    color: #ef4444;
+    font-weight: bold;
+    letter-spacing: 4px;
+    text-transform: uppercase;
+}
+
+/* Entities */
+.storm-entity {
+    position: absolute;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 2rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    z-index: 10;
+}
+
+.storm-entity.storm-enemy {
+    z-index: 11;
+}
+
+.storm-hp-bar {
+    width: 100%;
+    height: 4px;
+    background: rgba(0,0,0,0.5);
+    border-radius: 2px;
+    margin-top: 2px;
+    overflow: hidden;
+}
+
+.storm-hp-fill {
+    height: 100%;
+    background: #ef4444;
+}
+
+.storm-defender .storm-hp-fill { background: #3b82f6; }
+.storm-obstacle .storm-hp-fill { background: #fbbf24; }
+
+.storm-obstacle {
+    font-size: 1.5rem;
+    top: auto;
+    bottom: 20%; /* scattered around baseline */
+    z-index: 5;
+    opacity: 0.8;
+}
+
+/* Overlays */
+.storm-overlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(15, 23, 42, 0.8);
+    backdrop-filter: blur(4px);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    z-index: 50;
+    padding: 2rem;
+}
+
+.storm-overlay h3 {
+    font-size: 2rem;
+    margin: 0 0 0.5rem;
+    color: #e2e8f0;
+}
+.storm-overlay p {
+    color: #94a3b8;
+    margin-bottom: 1.5rem;
+}
+
+.storm-overlay.success h3 { color: #22c55e; }
+.storm-overlay.danger h3 { color: #ef4444; }
+
+.storm-rewards {
+    display: flex;
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+    background: rgba(0,0,0,0.4);
+    padding: 1rem 1.5rem;
+    border-radius: 12px;
+    font-weight: bold;
+    font-size: 1.2rem;
+    color: #fbbf24;
+}
+
+.storm-rewards span:last-child {
+    color: #fcd34d;
+}
+
+/* Shop / Footer Panel */
+.storm-shop {
+    height: 250px;
+    background: #1e222b;
+    display: flex;
+    flex-direction: column;
+}
+
+.storm-shop-tabs {
+    display: flex;
+    background: #0f1115;
+}
+
+.storm-shop-tabs button {
+    flex: 1;
+    background: transparent;
+    border: none;
+    border-bottom: 2px solid transparent;
+    padding: 0.75rem;
+    color: #94a3b8;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+.storm-shop-tabs button.active {
+    color: #e2e8f0;
+    border-bottom-color: #a855f7;
+    background: rgba(168, 85, 247, 0.1);
+}
+
+.storm-shop-content {
+    flex: 1;
+    padding: 1rem;
+    overflow-y: auto;
+}
+
+.storm-shop-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+    gap: 0.75rem;
+}
+
+.storm-buy-card {
+    background: #2d3748;
+    border: 1px solid #475569;
+    border-radius: 8px;
+    padding: 0.75rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+    cursor: pointer;
+    text-align: center;
+    transition: 0.2s;
+    color: white;
+}
+
+.storm-buy-card:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+    filter: grayscale(1);
+}
+
+.storm-buy-card:not(:disabled):hover {
+    background: #334155;
+    transform: translateY(-2px);
+    border-color: #a855f7;
+}
+
+.storm-buy-card .icon {
+    font-size: 1.5rem;
+}
+
+.storm-buy-card .info h4 {
+    margin: 0;
+    font-size: 0.9rem;
+    color: #e2e8f0;
+}
+
+.storm-buy-card .info span {
+    font-size: 0.7rem;
+    color: #94a3b8;
+}
+
+.storm-buy-card .cost {
+    margin-top: auto;
+    font-weight: bold;
+    color: #fbbf24;
+    font-size: 0.85rem;
+    background: rgba(0,0,0,0.2);
+    padding: 0.25rem 0.5rem;
+    border-radius: 99px;
+}

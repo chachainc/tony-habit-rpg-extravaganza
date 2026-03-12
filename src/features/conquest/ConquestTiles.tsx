@@ -472,82 +472,58 @@ export const ConquestTiles = ({ onComplete, onClose, canPlay, canPlayImpossible 
 
     // ─── RENDER: GAME BOARD ───────────────────────
     const renderGame = () => (
-        <div className="tiles-game-area tiles-game-area--horizontal">
-            {/* Top row: Powers + Board */}
-            <div className="tiles-game-top">
-                {/* Left: Power buttons */}
+        <div className="tiles-game-area tiles-game-area--portrait">
+            {/* Top row: Combo Track */}
+            <div className="tiles-combo-container" style={{ height: 32, display: 'flex', justifyContent: 'center', alignItems: 'center', marginTop: '0.5rem' }}>
+                <AnimatePresence>
+                    {comboCount > 1 && (
+                        <motion.div
+                            initial={{ scale: 0.8, opacity: 0, y: -10 }}
+                            animate={{ scale: 1, opacity: 1, y: 0 }}
+                            exit={{ scale: 0.8, opacity: 0, y: -10 }}
+                            className="tiles-combo-badge"
+                        >
+                            <span>⚡ Combo x{comboCount}</span>
+                            <motion.div style={{ width: 40, height: 4, background: 'rgba(255,255,255,0.2)', borderRadius: 2, overflow: 'hidden' }}>
+                                <motion.div
+                                    initial={{ width: '100%' }} animate={{ width: '0%' }}
+                                    transition={{ duration: 2.5, ease: 'linear' }}
+                                    style={{ height: '100%', background: '#60a5fa', boxShadow: '0 0 8px #60a5fa' }}
+                                    key={`timer-${comboTimer}`}
+                                />
+                            </motion.div>
+                        </motion.div>
+                    )}
+                </AnimatePresence>
+            </div>
+
+            {/* Main Content Row */}
+            <div className="tiles-game-main">
+                {/* 1. Left: Power buttons */}
                 <div className="tiles-powers">
-                    <div style={{ position: 'relative' }}>
-                        <button
-                            className="tiles-power-btn"
-                            disabled={ownedRemove <= 0}
-                            onClick={useRemove}
-                        >
-                            🧲
-                            <span className="tiles-power-badge">{ownedRemove}</span>
-                            <span className="tiles-power-label">Remove</span>
+                    <div className="tiles-power-wrapper">
+                        <button className="tiles-power-btn" disabled={ownedRemove <= 0} onClick={useRemove}>
+                            🧲<span className="tiles-power-badge">{ownedRemove}</span>
                         </button>
-                        <div
-                            style={{
-                                position: 'absolute', top: -4, right: -14,
-                                width: 20, height: 20, borderRadius: '50%',
-                                background: 'rgba(245,158,11,0.9)', color: '#000',
-                                fontSize: '0.8rem', fontWeight: 800,
-                                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                cursor: 'pointer', border: '2px solid #0f2847',
-                            }}
-                            onClick={() => setPurchaseModal('remove')}
-                        >+</div>
+                        <div className="tiles-power-add" onClick={() => setPurchaseModal('remove')}>+</div>
                     </div>
 
-                    <div style={{ position: 'relative' }}>
-                        <button
-                            className="tiles-power-btn"
-                            disabled={ownedUndo <= 0 || history.current.length === 0}
-                            onClick={useUndo}
-                        >
-                            ↩️
-                            <span className="tiles-power-badge">{ownedUndo}</span>
-                            <span className="tiles-power-label">Undo</span>
+                    <div className="tiles-power-wrapper">
+                        <button className="tiles-power-btn" disabled={ownedUndo <= 0 || history.current.length === 0} onClick={useUndo}>
+                            ↩️<span className="tiles-power-badge">{ownedUndo}</span>
                         </button>
-                        <div
-                            style={{
-                                position: 'absolute', top: -4, right: -14,
-                                width: 20, height: 20, borderRadius: '50%',
-                                background: 'rgba(245,158,11,0.9)', color: '#000',
-                                fontSize: '0.8rem', fontWeight: 800,
-                                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                cursor: 'pointer', border: '2px solid #0f2847',
-                            }}
-                            onClick={() => setPurchaseModal('undo')}
-                        >+</div>
+                        <div className="tiles-power-add" onClick={() => setPurchaseModal('undo')}>+</div>
                     </div>
 
-                    <div style={{ position: 'relative' }}>
-                        <button
-                            className="tiles-power-btn"
-                            disabled={ownedShuffle <= 0}
-                            onClick={useShuffle}
-                        >
-                            🔀
-                            <span className="tiles-power-badge">{ownedShuffle}</span>
-                            <span className="tiles-power-label">Shuffle</span>
+                    <div className="tiles-power-wrapper">
+                        <button className="tiles-power-btn" disabled={ownedShuffle <= 0} onClick={useShuffle}>
+                            🔀<span className="tiles-power-badge">{ownedShuffle}</span>
                         </button>
-                        <div
-                            style={{
-                                position: 'absolute', top: -4, right: -14,
-                                width: 20, height: 20, borderRadius: '50%',
-                                background: 'rgba(245,158,11,0.9)', color: '#000',
-                                fontSize: '0.8rem', fontWeight: 800,
-                                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                cursor: 'pointer', border: '2px solid #0f2847',
-                            }}
-                            onClick={() => setPurchaseModal('shuffle')}
-                        >+</div>
+                        <div className="tiles-power-add" onClick={() => setPurchaseModal('shuffle')}>+</div>
                     </div>
                 </div>
 
-                {/* Center: Board */}
+                {/* 2. Center: Board */}
                 <div className="tiles-board-container">
                     <div className="tiles-board" style={{ width: boardWidth, height: boardHeight }}>
                         <AnimatePresence>
@@ -566,17 +542,19 @@ export const ConquestTiles = ({ onComplete, onClose, canPlay, canPlayImpossible 
                                         }}
                                         initial={{ scale: 0, opacity: 0 }}
                                         animate={{ scale: 1, opacity: 1 }}
-                                        exit={{ scale: 0, opacity: 0, y: -20 }}
+                                        exit={{ scale: 0.8, opacity: 0, x: 50, y: -20 }}
                                         transition={{ duration: 0.2 }}
                                         onClick={() => !blocked && selectTile(tile)}
-                                        whileHover={!blocked ? { scale: 1.1, y: -3 } : {}}
-                                        whileTap={!blocked ? { scale: 0.9 } : {}}
+                                        whileHover={!blocked ? { scale: 1.05, y: -2, zIndex: 9999 } : {}}
+                                        whileTap={!blocked ? { scale: 0.95 } : {}}
                                     >
-                                        {tile.symbol.imageSrc ? (
-                                            <img className="tile-face-img" src={tile.symbol.imageSrc} alt={tile.symbol.label} />
-                                        ) : (
-                                            <span className="tile-face">{tile.symbol.emoji}</span>
-                                        )}
+                                        <div className="tile-inner">
+                                            {tile.symbol.imageSrc ? (
+                                                <img className="tile-face-img" src={tile.symbol.imageSrc} alt={tile.symbol.label} />
+                                            ) : (
+                                                <span className="tile-face">{tile.symbol.emoji}</span>
+                                            )}
+                                        </div>
                                         <span className={`tile-rarity-dot ${tile.symbol.rarity}`} />
                                     </motion.div>
                                 );
@@ -584,89 +562,53 @@ export const ConquestTiles = ({ onComplete, onClose, canPlay, canPlayImpossible 
                         </AnimatePresence>
                     </div>
                 </div>
-            </div>
 
-            {/* Middle: Combo Track */}
-            <div style={{ height: 24, padding: '0 1rem', display: 'flex', justifyContent: 'flex-start', alignItems: 'center' }}>
-                <AnimatePresence>
-                    {comboCount > 1 && (
-                        <motion.div
-                            initial={{ scale: 0.8, opacity: 0, x: -20 }}
-                            animate={{ scale: 1, opacity: 1, x: 0 }}
-                            exit={{ scale: 0.8, opacity: 0, x: -20 }}
-                            style={{
-                                color: '#f59e0b', fontWeight: 'bold', fontSize: '0.9rem',
-                                background: 'rgba(0,0,0,0.5)', padding: '2px 8px', borderRadius: 4,
-                                border: '1px solid #f59e0b', display: 'flex', gap: 6, alignItems: 'center'
-                            }}
-                        >
-                            <span>🔥 Combo x{comboCount}</span>
-                            <motion.div
-                                style={{ width: 40, height: 4, background: '#444', borderRadius: 2, overflow: 'hidden' }}
-                            >
-                                <motion.div
-                                    initial={{ width: '100%' }}
-                                    animate={{ width: '0%' }}
-                                    transition={{ duration: 2.5, ease: 'linear' }}
-                                    style={{ height: '100%', background: '#f59e0b' }}
-                                    key={`timer-${comboTimer}`} // re-trigger animation on timer reset
-                                />
+                {/* 3. Right: Vertical Tray */}
+                <div className={`tiles-tray-bar ${trayFull ? 'tray-shake tray-flash' : ''}`}>
+                    <div className="tiles-tray-vertical">
+                        {Array.from({ length: trayCapacity }).map((_, i) => {
+                            const tile = tray[i];
+                            if (tile) {
+                                const isClearing = clearingIds.has(tile.uid);
+                                const matchCount = tray.filter(t => t.symbolId === tile.symbolId).length;
+                                const isMatching = matchCount >= 2 && !isClearing;
+                                return (
+                                    <motion.div
+                                        key={tile.uid}
+                                        className={`tiles-tray-tile ${isClearing ? 'clearing' : ''} ${isMatching ? 'matching' : ''}`}
+                                        initial={{ x: -20, opacity: 0, scale: 0.8 }}
+                                        animate={{ x: 0, opacity: 1, scale: 1 }}
+                                        transition={{ duration: 0.25, type: 'spring', stiffness: 300 }}
+                                        layout
+                                    >
+                                        <div className="tile-inner">
+                                            {tile.symbol.imageSrc ? (
+                                                <img className="tile-face-img" src={tile.symbol.imageSrc} alt={tile.symbol.label} />
+                                            ) : (
+                                                <span className="tile-face">{tile.symbol.emoji}</span>
+                                            )}
+                                        </div>
+                                    </motion.div>
+                                );
+                            }
+                            return <div key={`empty-${i}`} className="tiles-tray-slot" />;
+                        })}
+                    </div>
+                    {/* Tray Full Message */}
+                    <AnimatePresence>
+                        {trayFullMessage && (
+                            <motion.div className="tray-full-message" initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.8 }}>
+                                🚫 FULL!
                             </motion.div>
-                        </motion.div>
-                    )}
-                </AnimatePresence>
-            </div>
-
-            {/* Bottom: Horizontal Tray */}
-            <div className={`tiles-tray-bar ${trayFull ? 'tray-shake tray-flash' : ''}`}>
-                <div className="tiles-tray-label">
-                    Tray {tray.length}/{trayCapacity}
-                    <span style={{ marginLeft: '0.4rem', fontSize: '0.7rem', color: '#ef4444', opacity: tray.length >= trayCapacity - 2 ? 1 : 0.4 }}>
-                        {trayCapacity - tray.length === 0 ? '⚠ FULL' : `${trayCapacity - tray.length} left`}
-                    </span>
+                        )}
+                    </AnimatePresence>
+                    <div className="tiles-tray-label">
+                        <div className="tiles-tray-count">{tray.length}/{trayCapacity}</div>
+                        <span className="tiles-tray-left" style={{ opacity: tray.length >= trayCapacity - 2 ? 1 : 0.4 }}>
+                            {trayCapacity - tray.length === 0 ? 'FULL' : `${trayCapacity - tray.length} left`}
+                        </span>
+                    </div>
                 </div>
-                <div className="tiles-tray-horizontal" style={{ width: `${trayCapacity * 60}px` }}>
-                    {Array.from({ length: trayCapacity }).map((_, i) => {
-                        const tile = tray[i];
-                        if (tile) {
-                            const isClearing = clearingIds.has(tile.uid);
-                            const matchCount = tray.filter(t => t.symbolId === tile.symbolId).length;
-                            const isMatching = matchCount >= 2 && !isClearing;
-                            return (
-                                <motion.div
-                                    key={tile.uid}
-                                    className={`tiles-tray-tile ${isClearing ? 'clearing' : ''} ${isMatching ? 'matching' : ''}`}
-                                    initial={{ y: -30, opacity: 0, scale: 0.6 }}
-                                    animate={{ y: 0, opacity: 1, scale: 1 }}
-                                    transition={{ duration: 0.25, type: 'spring', stiffness: 300 }}
-                                    layout
-                                >
-                                    {tile.symbol.imageSrc ? (
-                                        <img className="tile-face-img" src={tile.symbol.imageSrc} alt={tile.symbol.label} style={{ width: 36, height: 36 }} />
-                                    ) : (
-                                        <span className="tile-face" style={{ fontSize: '1.3rem' }}>{tile.symbol.emoji}</span>
-                                    )}
-                                </motion.div>
-                            );
-                        }
-                        return (
-                            <div key={`empty-${i}`} className="tiles-tray-slot" />
-                        );
-                    })}
-                </div>
-                {/* Tray Full Message */}
-                <AnimatePresence>
-                    {trayFullMessage && (
-                        <motion.div
-                            className="tray-full-message"
-                            initial={{ opacity: 0, y: 10 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            exit={{ opacity: 0, y: -10 }}
-                        >
-                            🚫 TRAY FULL!
-                        </motion.div>
-                    )}
-                </AnimatePresence>
             </div>
 
             {/* Result overlay */}
@@ -728,10 +670,13 @@ export const ConquestTiles = ({ onComplete, onClose, canPlay, canPlayImpossible 
             <div className="tiles-top-bar">
                 <div className="tiles-title">
                     <span className="tiles-title-icon">🎴</span>
-                    Conquest Tiles
+                    <span className="tiles-title-text">Conquest Tiles</span>
                 </div>
                 {phase === 'playing' && (
-                    <div className="tiles-points">Points: <span>{points}</span></div>
+                    <div className="tiles-points-container">
+                        <div className="tiles-points-label">Score</div>
+                        <div className="tiles-points-value">{points}</div>
+                    </div>
                 )}
                 <button className="tiles-close-btn" onClick={onClose}>✕</button>
             </div>

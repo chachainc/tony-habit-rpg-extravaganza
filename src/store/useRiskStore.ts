@@ -5,7 +5,7 @@ import { PERSIST_REGISTRY } from '../data/persistRegistry';
 
 export type TerritoryTrait = 'fortified' | 'resource' | 'mystic' | 'none';
 export type SoldierCard = 'knight' | 'shieldbearer' | 'scout' | 'general';
-export type RegionId = 'start' | 'ash' | 'iron' | 'frost' | 'demon';
+export type RegionId = 'ashlands' | 'iron_highlands' | 'verdant_plains' | 'crystal_coast' | 'frozen_north' | 'sunken_expanse';
 
 export interface RegionDef {
     id: RegionId;
@@ -21,6 +21,8 @@ export interface TerritoryNode {
     owner: 'player' | 'enemy';
     trait?: TerritoryTrait;
     region: RegionId;
+    mapX?: number; // Visual X coordinate (0-100%)
+    mapY?: number; // Visual Y coordinate (0-100%)
 }
 
 export interface BattleResult {
@@ -55,32 +57,86 @@ export interface RiskState {
 }
 
 export const REGIONS: Record<RegionId, RegionDef> = {
-    'start': { id: 'start', name: 'The Vanguard', bonusDescription: '+5% ATK' },
-    'ash': { id: 'ash', name: 'Ashlands', bonusDescription: '+10% Gold' },
-    'iron': { id: 'iron', name: 'Iron Ridge', bonusDescription: '+10% DEF' },
-    'frost': { id: 'frost', name: 'Frost Passages', bonusDescription: '+10% XP' },
-    'demon': { id: 'demon', name: 'Demon Citadel', bonusDescription: '+5 Max HP' }
+    'ashlands': { id: 'ashlands', name: 'Ashlands', bonusDescription: '+10% Gold' },
+    'iron_highlands': { id: 'iron_highlands', name: 'Iron Highlands', bonusDescription: '+10% DEF' },
+    'verdant_plains': { id: 'verdant_plains', name: 'Verdant Plains', bonusDescription: '+5% ATK' },
+    'crystal_coast': { id: 'crystal_coast', name: 'Crystal Coast', bonusDescription: '+1 Sigil Per Win' },
+    'frozen_north': { id: 'frozen_north', name: 'Frozen North', bonusDescription: '+10% XP' },
+    'sunken_expanse': { id: 'sunken_expanse', name: 'Sunken Expanse', bonusDescription: '+5 Max HP' }
 };
 
-const DEFAULT_MAP: Record<string, TerritoryNode> = {
-    // Start Region
-    't1': { id: 't1', name: 'Start Hold', defenseValue: 0, neighbors: ['t2', 't3'], owner: 'player', trait: 'none', region: 'start' },
-    't2': { id: 't2', name: 'Outpost Alpha', defenseValue: 5, neighbors: ['t1', 't4'], owner: 'enemy', trait: 'resource', region: 'start' },
-    // Ash Region
-    't3': { id: 't3', name: 'Valley of Ash', defenseValue: 8, neighbors: ['t1', 't5'], owner: 'enemy', trait: 'none', region: 'ash' },
-    't4': { id: 't4', name: 'Cinder Ruins', defenseValue: 12, neighbors: ['t2', 't6'], owner: 'enemy', trait: 'mystic', region: 'ash' },
-    // Iron Region
-    't5': { id: 't5', name: 'Iron Ridge', defenseValue: 15, neighbors: ['t3', 't7'], owner: 'enemy', trait: 'fortified', region: 'iron' },
-    't6': { id: 't6', name: 'Rust Canyon', defenseValue: 18, neighbors: ['t4', 't7'], owner: 'enemy', trait: 'resource', region: 'iron' },
-    // Frost Region
-    't7': { id: 't7', name: 'Frost Pass', defenseValue: 22, neighbors: ['t5', 't6', 't8', 't9'], owner: 'enemy', trait: 'none', region: 'frost' },
-    't8': { id: 't8', name: 'Glacier Peak', defenseValue: 26, neighbors: ['t7', 't10'], owner: 'enemy', trait: 'mystic', region: 'frost' },
-    't9': { id: 't9', name: 'Frozen Lake', defenseValue: 24, neighbors: ['t7', 't11'], owner: 'enemy', trait: 'resource', region: 'frost' },
-    // Demon Region
-    't10': { id: 't10', name: 'Abyssal Gate', defenseValue: 30, neighbors: ['t8', 't12'], owner: 'enemy', trait: 'fortified', region: 'demon' },
-    't11': { id: 't11', name: 'Void Shrine', defenseValue: 32, neighbors: ['t9', 't12'], owner: 'enemy', trait: 'mystic', region: 'demon' },
-    't12': { id: 't12', name: 'Demon Citadel', defenseValue: 40, neighbors: ['t10', 't11'], owner: 'enemy', trait: 'fortified', region: 'demon' },
+// Base definitions for map generation
+const NODE_DEFS: Omit<TerritoryNode, 'owner' | 'neighbors'>[] = [
+    // Verdant Plains (Starting area)
+    { id: 'vp1', name: 'Start Hold', defenseValue: 0, trait: 'none', region: 'verdant_plains', mapX: 45, mapY: 80 },
+    { id: 'vp2', name: 'Greenveil', defenseValue: 5, trait: 'resource', region: 'verdant_plains', mapX: 55, mapY: 75 },
+    { id: 'vp3', name: 'Windswept Fields', defenseValue: 8, trait: 'none', region: 'verdant_plains', mapX: 35, mapY: 70 },
+    
+    // Ashlands
+    { id: 'al1', name: 'Valley of Ash', defenseValue: 12, trait: 'none', region: 'ashlands', mapX: 25, mapY: 55 },
+    { id: 'al2', name: 'Cinder Ruins', defenseValue: 15, trait: 'mystic', region: 'ashlands', mapX: 15, mapY: 45 },
+    { id: 'al3', name: 'Black Dunes', defenseValue: 18, trait: 'fortified', region: 'ashlands', mapX: 30, mapY: 35 },
+
+    // Iron Highlands
+    { id: 'ih1', name: 'Iron Ridge', defenseValue: 16, trait: 'fortified', region: 'iron_highlands', mapX: 50, mapY: 60 },
+    { id: 'ih2', name: 'Rust Canyon', defenseValue: 20, trait: 'resource', region: 'iron_highlands', mapX: 65, mapY: 50 },
+    { id: 'ih3', name: 'Granite Peaks', defenseValue: 24, trait: 'none', region: 'iron_highlands', mapX: 45, mapY: 40 },
+
+    // Crystal Coast
+    { id: 'cc1', name: 'Storm Coast', defenseValue: 22, trait: 'none', region: 'crystal_coast', mapX: 75, mapY: 70 },
+    { id: 'cc2', name: 'Lighthouse Watch', defenseValue: 25, trait: 'mystic', region: 'crystal_coast', mapX: 85, mapY: 55 },
+    { id: 'cc3', name: 'Siren Break', defenseValue: 28, trait: 'fortified', region: 'crystal_coast', mapX: 80, mapY: 35 },
+
+    // Frozen North
+    { id: 'fn1', name: 'Frostmarch', defenseValue: 30, trait: 'none', region: 'frozen_north', mapX: 40, mapY: 20 },
+    { id: 'fn2', name: 'Glacier Peak', defenseValue: 35, trait: 'mystic', region: 'frozen_north', mapX: 55, mapY: 15 },
+    { id: 'fn3', name: 'Howling Pass', defenseValue: 38, trait: 'fortified', region: 'frozen_north', mapX: 25, mapY: 15 },
+
+    // Sunken Expanse
+    { id: 'se1', name: 'Sunken Delta', defenseValue: 40, trait: 'resource', region: 'sunken_expanse', mapX: 70, mapY: 20 },
+    { id: 'se2', name: 'Abyssal Trench', defenseValue: 45, trait: 'fortified', region: 'sunken_expanse', mapX: 85, mapY: 15 },
+];
+
+// Fixed visual pathing configuration
+const ADJACENCY_MAP: Record<string, string[]> = {
+    'vp1': ['vp2', 'vp3', 'ih1'],
+    'vp2': ['vp1', 'ih1', 'cc1'],
+    'vp3': ['vp1', 'al1', 'ih1'],
+    'al1': ['vp3', 'al2', 'al3', 'ih1'],
+    'al2': ['al1', 'al3'],
+    'al3': ['al1', 'al2', 'ih3', 'fn3'],
+    'ih1': ['vp1', 'vp2', 'vp3', 'al1', 'ih2', 'ih3'],
+    'ih2': ['ih1', 'ih3', 'cc1', 'cc2'],
+    'ih3': ['ih1', 'ih2', 'al3', 'fn1'],
+    'cc1': ['vp2', 'ih2', 'cc2'],
+    'cc2': ['cc1', 'ih2', 'cc3'],
+    'cc3': ['cc2', 'se1', 'se2'],
+    'fn1': ['ih3', 'fn2', 'fn3', 'se1'],
+    'fn2': ['fn1', 'fn3', 'se1'],
+    'fn3': ['al3', 'fn1', 'fn2'],
+    'se1': ['fn1', 'fn2', 'cc3', 'se2'],
+    'se2': ['se1', 'cc3']
 };
+
+function generateScadrosharialMap(ascensionLevel: number): Record<string, TerritoryNode> {
+    const mapNodes: Record<string, TerritoryNode> = {};
+    
+    NODE_DEFS.forEach(def => {
+        let defVal = def.defenseValue;
+        if (def.id !== 'vp1') { // Start hold scales up initially, but stays 0 at asc 0
+             defVal = Math.floor(defVal * (1 + (ascensionLevel * 0.5)));
+        }
+        
+        mapNodes[def.id] = {
+            ...def,
+            defenseValue: defVal,
+            owner: def.id === 'vp1' ? 'player' : 'enemy', // Player always starts at vp1
+            neighbors: ADJACENCY_MAP[def.id] || []
+        };
+    });
+
+    return mapNodes;
+}
 
 export const useRiskStore = create<RiskState>()(
     persist(
@@ -92,34 +148,17 @@ export const useRiskStore = create<RiskState>()(
             ascensionLevel: 0,
 
             initializeMap: () => {
-                const { mapNodes } = get();
-                if (Object.keys(mapNodes).length === 0) {
-                    set({ mapNodes: DEFAULT_MAP });
-                } else {
-                    // Quick migration helper for old 6-node prototype saves
-                    const oldNodes = Object.keys(mapNodes);
-                    if (oldNodes.length < 12) {
-                        const merged = { ...DEFAULT_MAP };
-                        for (const key of oldNodes) {
-                            if (merged[key]) {
-                                merged[key].owner = mapNodes[key].owner;
-                            }
-                        }
-                        set({ mapNodes: merged });
-                    }
+                const { mapNodes, ascensionLevel } = get();
+                // If uninitialized, or using the old hardcoded DEFAULT_MAP IDs (like 't1', 't2')
+                if (Object.keys(mapNodes).length === 0 || mapNodes['t1']) {
+                    set({ mapNodes: generateScadrosharialMap(ascensionLevel || 0) });
                 }
             },
 
             resetAndAscendMap: () => {
                 const { ascensionLevel } = get();
                 const newLevel = ascensionLevel + 1;
-                const newMap = { ...DEFAULT_MAP };
-                // Scale enemy defenses based on ascension
-                Object.keys(newMap).forEach(k => {
-                    if (newMap[k].owner === 'enemy') {
-                        newMap[k].defenseValue = Math.floor(newMap[k].defenseValue * (1 + (newLevel * 0.5)));
-                    }
-                });
+                const newMap = generateScadrosharialMap(newLevel);
                 set({ mapNodes: newMap, ascensionLevel: newLevel });
             },
 
@@ -278,7 +317,7 @@ export const useRiskStore = create<RiskState>()(
             getActiveRegionBonuses: () => {
                 const { mapNodes } = get();
                 const regions: Record<RegionId, string[]> = {
-                    start: [], ash: [], iron: [], frost: [], demon: []
+                    ashlands: [], iron_highlands: [], verdant_plains: [], crystal_coast: [], frozen_north: [], sunken_expanse: []
                 };
 
                 // Group nodes by region

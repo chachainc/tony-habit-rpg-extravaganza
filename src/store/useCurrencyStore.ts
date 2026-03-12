@@ -13,6 +13,9 @@ export interface CurrencyState {
     // Rare - only from daily/weekly completion
     diamonds: number;
 
+    // Combat minigames
+    shmeckles: number;
+
     // Skill-bound tokens - earned by leveling skills
     tokens: Record<SkillName, number>;
 
@@ -20,11 +23,13 @@ export interface CurrencyState {
     addGold: (amount: number) => void;
     addTickets: (amount: number) => void;
     addDiamonds: (amount: number) => void;
+    addShmeckles: (amount: number) => void;
     addToken: (skill: SkillName, amount: number) => void;
 
     spendGold: (amount: number) => boolean;
     spendTickets: (amount: number) => boolean;
     spendDiamonds: (amount: number) => boolean;
+    spendShmeckles: (amount: number) => boolean;
     spendToken: (skill: SkillName, amount: number) => boolean;
 
     canAfford: (cost: CurrencyCost) => boolean;
@@ -35,6 +40,7 @@ export interface CurrencyCost {
     gold?: number;
     tickets?: number;
     diamonds?: number;
+    shmeckles?: number;
     tokens?: Partial<Record<SkillName, number>>;
 }
 
@@ -44,6 +50,7 @@ export const useCurrencyStore = create<CurrencyState>()(
             gold: 0,
             tickets: 0,
             diamonds: 0,
+            shmeckles: 0,
             tokens: {
                 'Sleep': 0,
                 'Hygiene': 0,
@@ -63,6 +70,7 @@ export const useCurrencyStore = create<CurrencyState>()(
             addGold: (amount) => set((state) => ({ gold: state.gold + amount })),
             addTickets: (amount) => set((state) => ({ tickets: state.tickets + amount })),
             addDiamonds: (amount) => set((state) => ({ diamonds: state.diamonds + amount })),
+            addShmeckles: (amount) => set((state) => ({ shmeckles: state.shmeckles + amount })),
             addToken: (skill, amount) => set((state) => ({
                 tokens: {
                     ...state.tokens,
@@ -97,6 +105,15 @@ export const useCurrencyStore = create<CurrencyState>()(
                 return false;
             },
 
+            spendShmeckles: (amount) => {
+                const state = get();
+                if (state.shmeckles >= amount) {
+                    set({ shmeckles: state.shmeckles - amount });
+                    return true;
+                }
+                return false;
+            },
+
             spendToken: (skill, amount) => {
                 const state = get();
                 if (state.tokens[skill] >= amount) {
@@ -117,6 +134,7 @@ export const useCurrencyStore = create<CurrencyState>()(
                 if (cost.gold && state.gold < cost.gold) return false;
                 if (cost.tickets && state.tickets < cost.tickets) return false;
                 if (cost.diamonds && state.diamonds < cost.diamonds) return false;
+                if (cost.shmeckles && state.shmeckles < cost.shmeckles) return false;
 
                 if (cost.tokens) {
                     for (const [skill, amount] of Object.entries(cost.tokens)) {
@@ -133,6 +151,7 @@ export const useCurrencyStore = create<CurrencyState>()(
                 if (cost.gold) get().spendGold(cost.gold);
                 if (cost.tickets) get().spendTickets(cost.tickets);
                 if (cost.diamonds) get().spendDiamonds(cost.diamonds);
+                if (cost.shmeckles) get().spendShmeckles(cost.shmeckles);
 
                 if (cost.tokens) {
                     for (const [skill, amount] of Object.entries(cost.tokens)) {

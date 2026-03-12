@@ -15,6 +15,7 @@ export interface PersistConfig {
 export const PERSIST_REGISTRY: Record<string, PersistConfig> = {
     achievements: { storeName: "useAchievementTrophyStore", persistKey: "gl-achievement-trophies-v2", syncEnabled: true, restoreEnabled: true },
     auras: { storeName: "useAuraStore", persistKey: "gl-auras-v1", syncEnabled: true, restoreEnabled: true },
+    boardCollection: { storeName: "useBoardCollectionStore", persistKey: "gl-board-collection-v1", syncEnabled: true, restoreEnabled: true },
     books: { storeName: "useBookStore", persistKey: "gl-books-storage-v2", syncEnabled: true, restoreEnabled: true },
     bookTrophies: { storeName: "useBookTrophyStore", persistKey: "gl-book-trophy-v1", syncEnabled: true, restoreEnabled: true },
     buffs: { storeName: "useBuffStore", persistKey: "gl-buffs-v2", syncEnabled: true, restoreEnabled: true },

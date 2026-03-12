@@ -143,6 +143,7 @@ interface EquipmentState {
     equippedArmor: string | null;
     equippedAccessory: string | null;
     equipmentLevels: Record<string, number>;
+    equipmentSets: Record<string, Record<string, string | null>>;
 
     // Gacha
     equipmentPity: number;  // Counter for pity system
@@ -153,6 +154,7 @@ interface EquipmentState {
     equipItem: (equipmentId: string) => void;
     unequipSlot: (slot: EquipmentSlot) => void;
     upgradeEquipment: (equipmentId: string) => boolean;
+    saveEquipmentSet: (setName: string, snapshot: Record<string, string | null>) => void;
 
     // Getters
     getEquipmentBonuses: () => { atk: number; def: number; hp: number };
@@ -167,6 +169,12 @@ export const useEquipmentStore = create<EquipmentState>()(
             equippedArmor: null,
             equippedAccessory: null,
             equipmentLevels: {},
+            equipmentSets: {
+                'Combat Set': {},
+                'Gym Set': {},
+                'Study Set': {},
+                'Sleep Set': {}
+            },
             equipmentPity: 0,
             essence: 0,
 
@@ -279,6 +287,15 @@ export const useEquipmentStore = create<EquipmentState>()(
                 });
 
                 return true;
+            },
+
+            saveEquipmentSet: (setName: string, snapshot: Record<string, string | null>) => {
+                set((state) => ({
+                    equipmentSets: {
+                        ...state.equipmentSets,
+                        [setName]: snapshot
+                    }
+                }));
             },
 
             getEquipmentBonuses: () => {

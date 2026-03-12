@@ -8,7 +8,7 @@ import { useBookStore, BOOK_GLOBAL_XP_REWARD, BOOK_INTELLIGENCE_XP_REWARD, BOOK_
 import { useGameStore } from '../../store/useGameStore';
 import { useInventoryStore, ITEM_DB } from '../../store/useInventoryStore';
 import { Card } from '../../components/ui';
-import { BookFusionPanel } from './BookFusionPanel';
+import { SharedFusionPanel } from '../fusion/SharedFusionPanel';
 import './Library.css';
 
 type LibraryTab = 'reading' | 'fusion';
@@ -374,7 +374,7 @@ export const Library = () => {
                 {activeTab === 'fusion' && (
                     <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}>
                         <Card variant="elevated">
-                            <BookFusionPanel />
+                            <SharedFusionPanel mode="book" />
                         </Card>
                     </motion.div>
                 )}

@@ -1,6 +1,7 @@
 import { useInventoryStore, ITEM_DB, type ItemStatBonuses } from './useInventoryStore';
 import { PET_DB } from './useGachaStore';
 import { useRiskStore } from './useRiskStore';
+import { useTraitStore } from './useTraitStore';
 
 export interface PassiveBonuses {
     attack_bonus: number;
@@ -106,13 +107,27 @@ export const getPassiveBonuses = (): PassiveBonuses => {
         }
     }
 
+    // Process Traits
+    const ts = useTraitStore.getState();
+    if (ts.hasTrait('iron_discipline')) bonuses.attack_bonus += Math.floor(bonuses.attack_bonus * 0.05) || 2;
+    if (ts.hasTrait('steady_hands')) bonuses.defense_bonus += Math.floor(bonuses.defense_bonus * 0.05) || 2;
+    if (ts.hasTrait('warriors_body')) bonuses.max_hp_bonus += 20;
+    if (ts.hasTrait('rested_mind')) bonuses.xp_multiplier += 5;
+    if (ts.hasTrait('scholars_mind')) bonuses.xp_multiplier += 5;
+    if (ts.hasTrait('master_of_order')) {
+        bonuses.attack_bonus += Math.floor(bonuses.attack_bonus * 0.02) || 1;
+        bonuses.defense_bonus += Math.floor(bonuses.defense_bonus * 0.02) || 1;
+        bonuses.max_hp_bonus += 10;
+        bonuses.xp_multiplier += 2;
+    }
+
     // Process Risk Map Region Bonuses
     const activeRiskRegions = useRiskStore.getState().getActiveRegionBonuses();
-    if (activeRiskRegions.includes('start')) bonuses.attack_bonus += Math.floor(bonuses.attack_bonus * 0.05) || 1; // +5% ATK
-    if (activeRiskRegions.includes('ash')) bonuses.gold_multiplier += 10; // +10% Gold
-    if (activeRiskRegions.includes('iron')) bonuses.defense_bonus += Math.floor(bonuses.defense_bonus * 0.10) || 1; // +10% DEF 
-    if (activeRiskRegions.includes('frost')) bonuses.xp_multiplier += 10; // +10% XP
-    if (activeRiskRegions.includes('demon')) bonuses.max_hp_bonus += 5; // +5 Max HP
+    if (activeRiskRegions.includes('verdant_plains')) bonuses.attack_bonus += Math.floor(bonuses.attack_bonus * 0.05) || 1; // +5% ATK
+    if (activeRiskRegions.includes('ashlands')) bonuses.gold_multiplier += 10; // +10% Gold
+    if (activeRiskRegions.includes('iron_highlands')) bonuses.defense_bonus += Math.floor(bonuses.defense_bonus * 0.10) || 1; // +10% DEF 
+    if (activeRiskRegions.includes('frozen_north')) bonuses.xp_multiplier += 10; // +10% XP
+    if (activeRiskRegions.includes('sunken_expanse')) bonuses.max_hp_bonus += 5; // +5 Max HP
 
     return bonuses;
 };

@@ -1,6 +1,7 @@
 import { useNavigate } from 'react-router-dom';
 import { useEffect, useState, useRef } from 'react';
 import { useTowerDefenseStore } from '../../store/useTowerDefenseStore';
+import { useCurrencyStore } from '../../store/useCurrencyStore';
 import type { PlacedTower } from '../../store/useTowerDefenseStore';
 import { TD_GRID_WIDTH, TD_GRID_HEIGHT, isPath, TD_TOWERS, TD_ENEMIES, TD_MAP_MODIFIERS, TD_WAVE_MODIFIERS, TD_PATH } from '../../data/towerDefense';
 import type { TowerType, TowerDef } from '../../data/towerDefense';
@@ -10,11 +11,22 @@ import './TowerDefensePage.css';
 export const TowerDefensePage = () => {
     const navigate = useNavigate();
     const td = useTowerDefenseStore();
+    const currStore = useCurrencyStore();
     const animationRef = useRef<number>(0);
+    const gridRef = useRef<HTMLDivElement>(null);
 
     // UI State
-    const [selectedTile, setSelectedTile] = useState<{ x: number, y: number } | null>(null);
     const [selectedTower, setSelectedTower] = useState<PlacedTower | null>(null);
+
+    const [dragState, setDragState] = useState<{
+        isDragging: boolean;
+        towerType: TowerType | null;
+        mouseX: number;
+        mouseY: number;
+        gridX: number;
+        gridY: number;
+        isValid: boolean;
+    }>({ isDragging: false, towerType: null, mouseX: 0, mouseY: 0, gridX: -1, gridY: -1, isValid: false });
 
     useEffect(() => {
         let lastTime = performance.now();
@@ -32,25 +44,80 @@ export const TowerDefensePage = () => {
         };
     }, []);
 
+    useEffect(() => {
+        const handlePointerMove = (e: PointerEvent) => {
+            if (!dragState.isDragging || !dragState.towerType) return;
+            
+            let gX = -1, gY = -1, valid = false;
+            if (gridRef.current) {
+                const rect = gridRef.current.getBoundingClientRect();
+                if (e.clientX >= rect.left && e.clientX <= rect.right && e.clientY >= rect.top && e.clientY <= rect.bottom) {
+                    const cellW = rect.width / TD_GRID_WIDTH;
+                    const cellH = rect.height / TD_GRID_HEIGHT;
+                    gX = Math.floor((e.clientX - rect.left) / cellW);
+                    gY = Math.floor((e.clientY - rect.top) / cellH);
+                    valid = !isPath(gX, gY) && !td.towers.some(t => t.x === gX && t.y === gY);
+                }
+            }
+
+            setDragState(prev => ({ ...prev, mouseX: e.clientX, mouseY: e.clientY, gridX: gX, gridY: gY, isValid: valid }));
+        };
+
+        const handlePointerUp = () => {
+            if (!dragState.isDragging || !dragState.towerType) return;
+            
+            setDragState(prev => {
+                if (prev.isValid && prev.gridX >= 0 && prev.gridY >= 0 && currStore.shmeckles >= TD_TOWERS[prev.towerType!].cost) {
+                    td.buildTower(prev.towerType!, prev.gridX, prev.gridY);
+                }
+                return { ...prev, isDragging: false, towerType: null };
+            });
+        };
+
+        if (dragState.isDragging) {
+            window.addEventListener('pointermove', handlePointerMove);
+            window.addEventListener('pointerup', handlePointerUp);
+        }
+        return () => {
+            window.removeEventListener('pointermove', handlePointerMove);
+            window.removeEventListener('pointerup', handlePointerUp);
+        };
+    }, [dragState.isDragging, dragState.towerType, td.towers, currStore.shmeckles]);
+
     const handleTileClick = (x: number, y: number) => {
         if (isPath(x, y)) return;
 
         const existingTower = td.towers.find(t => t.x === x && t.y === y);
         if (existingTower) {
             setSelectedTower(existingTower);
-            setSelectedTile(null);
         } else {
-            setSelectedTile({ x, y });
             setSelectedTower(null);
         }
     };
 
-    const handleBuild = (type: TowerType) => {
-        if (!selectedTile) return;
-        if (td.buildTower(type, selectedTile.x, selectedTile.y)) {
-            setSelectedTile(null);
-        }
+    const handlePointerDownShop = (e: React.PointerEvent, type: TowerType) => {
+        // Prevent default touch actions like scrolling while dragging
+        document.body.style.userSelect = 'none';
+        
+        const cost = TD_TOWERS[type].cost;
+        if (currStore.shmeckles < cost) return;
+
+        setDragState({
+            isDragging: true,
+            towerType: type,
+            mouseX: e.clientX,
+            mouseY: e.clientY,
+            gridX: -1,
+            gridY: -1,
+            isValid: false
+        });
     };
+
+    useEffect(() => {
+        if (!dragState.isDragging) {
+            document.body.style.userSelect = '';
+        }
+    }, [dragState.isDragging]);
 
     const handleUpgrade = () => {
         if (!selectedTower) return;
@@ -65,18 +132,21 @@ export const TowerDefensePage = () => {
         setSelectedTower(null);
     };
 
-    // Calculate grid cell size relative to container (using standard % approach in CSS)
     const renderGrid = () => {
         const cells = [];
         for (let y = 0; y < TD_GRID_HEIGHT; y++) {
             for (let x = 0; x < TD_GRID_WIDTH; x++) {
                 const path = isPath(x, y);
-                const isSelected = selectedTile?.x === x && selectedTile?.y === y;
+                const isDragTarget = dragState.isDragging && dragState.gridX === x && dragState.gridY === y;
+                let ghostClass = '';
+                if (isDragTarget) {
+                    ghostClass = dragState.isValid ? 'drag-valid' : 'drag-invalid';
+                }
                 
                 cells.push(
                     <div
                         key={`${x}-${y}`}
-                        className={`td-cell ${path ? 'path' : 'buildable'} ${isSelected ? 'selected' : ''}`}
+                        className={`td-cell ${path ? 'path' : 'buildable'} ${ghostClass}`}
                         onClick={() => handleTileClick(x, y)}
                         style={{
                             gridColumn: x + 1,
@@ -108,7 +178,7 @@ export const TowerDefensePage = () => {
                     <h1><Castle size={24} style={{ display: 'inline', verticalAlign: 'middle', marginRight: '0.5rem' }} /> Tower Defense</h1>
                 </div>
                 <div className="td-stats">
-                    <span className="mana-display">🔮 {td.mana} Mana</span>
+                    <span className="mana-display">🐌 {currStore.shmeckles}</span>
                     <span className="wave-display">Wave: {td.currentWave}</span>
                     <span className="health-display">❤️ Base HP: {td.baseHealth}/{td.maxBaseHealth}</span>
                     {td.currentMapModifier !== 'none' && (
@@ -154,6 +224,7 @@ export const TowerDefensePage = () => {
                 <div className="td-battlefield-wrapper">
                     <div 
                         className="td-grid-container"
+                        ref={gridRef}
                         style={{
                             gridTemplateColumns: `repeat(${TD_GRID_WIDTH}, 1fr)`,
                             gridTemplateRows: `repeat(${TD_GRID_HEIGHT}, 1fr)`
@@ -165,10 +236,11 @@ export const TowerDefensePage = () => {
                         {/* 2. Towers Layer */}
                         {td.towers.map(tower => {
                             const def = TD_TOWERS[tower.type];
+                            const isSelected = selectedTower?.id === tower.id;
                             return (
                                 <div 
                                     key={tower.id}
-                                    className="td-entity tower"
+                                    className={`td-entity tower ${isSelected ? 'selected' : ''}`}
                                     onClick={(e) => { e.stopPropagation(); handleTileClick(tower.x, tower.y); }}
                                     style={{
                                         left: `${(tower.x / TD_GRID_WIDTH) * 100}%`,
@@ -177,6 +249,14 @@ export const TowerDefensePage = () => {
                                         height: `${100 / TD_GRID_HEIGHT}%`
                                     }}
                                 >
+                                    {isSelected && (
+                                        <div className="td-range-indicator-grid" style={{
+                                            width: `${def.range * 200}%`,
+                                            height: `${def.range * 200}%`,
+                                            marginLeft: `calc(50% - ${def.range * 100}%)`,
+                                            marginTop: `calc(50% - ${def.range * 100}%)`
+                                        }} />
+                                    )}
                                     <div className="tower-icon" style={{ backgroundColor: def.color }}>
                                         {def.icon}
                                         <div className="tower-level">{tower.level}</div>
@@ -246,48 +326,80 @@ export const TowerDefensePage = () => {
                                 />
                             );
                         })}
+                        {/* 5. Drag Ghost Preview */}
+                        {dragState.isDragging && dragState.towerType && dragState.gridX >= 0 && dragState.gridY >= 0 && (
+                            <div 
+                                className="td-entity tower ghost"
+                                style={{
+                                    left: `${(dragState.gridX / TD_GRID_WIDTH) * 100}%`,
+                                    top: `${(dragState.gridY / TD_GRID_HEIGHT) * 100}%`,
+                                    width: `${100 / TD_GRID_WIDTH}%`,
+                                    height: `${100 / TD_GRID_HEIGHT}%`,
+                                    opacity: 0.8
+                                }}
+                            >
+                                <div className={`td-range-indicator-grid ${dragState.isValid ? 'valid' : 'invalid'}`} style={{
+                                    width: `${TD_TOWERS[dragState.towerType].range * 200}%`,
+                                    height: `${TD_TOWERS[dragState.towerType].range * 200}%`,
+                                    marginLeft: `calc(50% - ${TD_TOWERS[dragState.towerType].range * 100}%)`,
+                                    marginTop: `calc(50% - ${TD_TOWERS[dragState.towerType].range * 100}%)`
+                                }} />
+                                <div className="tower-icon" style={{ backgroundColor: TD_TOWERS[dragState.towerType].color }}>
+                                    {TD_TOWERS[dragState.towerType].icon}
+                                </div>
+                            </div>
+                        )}
+
                     </div>
                 </div>
 
-                {/* Modals Float over everything */}
-                {selectedTile && (
-                    <div className="td-shop-panel">
-                        <div className="panel-header">
-                            <h3>Build Tower</h3>
-                            <button className="close-btn" onClick={() => setSelectedTile(null)}><X size={16}/></button>
-                        </div>
-                        <div className="tower-options">
-                            {(Object.values(TD_TOWERS) as TowerDef[]).map(def => (
-                                <button 
-                                    key={def.type}
-                                    className="tower-build-btn"
-                                    onClick={() => handleBuild(def.type)}
-                                    disabled={td.mana < def.cost}
-                                    style={{ borderColor: def.color }}
-                                >
-                                    <div className="tower-icon-preview">{def.icon}</div>
-                                    <div className="tower-info">
-                                        <h4>{def.name} <span className="cost">({def.cost} 🔮)</span></h4>
-                                        <p>{def.description}</p>
-                                        <div className="stats">Dmg: {def.damage} | Rng: {def.range}</div>
-                                    </div>
-                                </button>
-                            ))}
+                {/* Bottom Drawer Shop */}
+                <div className="td-drawer-shop">
+                    <div className="td-shop-scroll">
+                        {(Object.values(TD_TOWERS) as TowerDef[]).map(def => (
+                            <div 
+                                key={def.type}
+                                className={`shop-item ${currStore.shmeckles < def.cost ? 'disabled' : ''}`}
+                                onPointerDown={(e) => handlePointerDownShop(e, def.type)}
+                            >
+                                <div className="shop-item-icon" style={{ borderColor: def.color }}>
+                                    {def.icon}
+                                </div>
+                                <div className="shop-item-details">
+                                    <div className="shop-item-name">{def.name}</div>
+                                    <div className="shop-item-cost">🐌 {def.cost}</div>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+
+                {/* Absolute Drag Visualizer (Follows Mouse out-of-bounds) */}
+                {dragState.isDragging && dragState.towerType && (
+                    <div className="td-floating-ghost" style={{ left: dragState.mouseX, top: dragState.mouseY }}>
+                        <div className="tower-icon" style={{ backgroundColor: TD_TOWERS[dragState.towerType].color, transform: 'scale(1.5)' }}>
+                            {TD_TOWERS[dragState.towerType].icon}
                         </div>
                     </div>
                 )}
+
+                {/* Modals Float over everything */}
 
                 {selectedTower && (() => {
                     const def = TD_TOWERS[selectedTower.type];
                     const upgCost = Math.floor(def.cost * Math.pow(1.5, selectedTower.level));
                     const refund = Math.floor((def.cost * Math.pow(1.5, selectedTower.level - 1)) * 0.5);
-                    const canUpgrade = selectedTower.level < 3 && td.mana >= upgCost;
+                    const canUpgrade = selectedTower.level < 3 && currStore.shmeckles >= upgCost;
 
                     return (
-                        <div className="td-shop-panel">
+                        <div className="td-shop-panel upgrade-panel">
                             <div className="panel-header">
                                 <h3>{def.icon} {def.name} Tower (Lv {selectedTower.level})</h3>
                                 <button className="close-btn" onClick={() => setSelectedTower(null)}><X size={16}/></button>
+                            </div>
+                            <div className="tower-stats-preview">
+                                <span>Damage: {Math.floor(def.damage * Math.pow(1.5, selectedTower.level - 1))} {selectedTower.level < 3 ? `→ ${Math.floor(def.damage * Math.pow(1.5, selectedTower.level))}` : ''}</span>
+                                <span>Range: {def.range}</span>
                             </div>
                             <div className="panel-actions">
                                 {selectedTower.level < 3 ? (
@@ -296,13 +408,13 @@ export const TowerDefensePage = () => {
                                         disabled={!canUpgrade}
                                         onClick={handleUpgrade}
                                     >
-                                        Upgrade (Cost: {upgCost} 🔮)
+                                        Upgrade <br/>(🐌 {upgCost})
                                     </button>
                                 ) : (
                                     <button className="action-btn upgrade" disabled>Max Level Reached</button>
                                 )}
                                 <button className="action-btn sell" onClick={handleSell}>
-                                    Sell (Refund: {refund} 🔮)
+                                    Sell <br/>(+🐌 {refund})
                                 </button>
                             </div>
                         </div>

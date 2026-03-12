@@ -1,0 +1,392 @@
+.loadout-panel {
+    display: flex;
+    flex-direction: column;
+    padding: 1.5rem;
+    color: #cbd5e1;
+    height: 100%;
+    overflow-y: auto;
+}
+
+.loadout-panel-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid rgba(245, 158, 11, 0.3);
+    padding-bottom: 0.75rem;
+    margin-bottom: 1.5rem;
+}
+
+.loadout-panel-header h2 {
+    font-family: 'Cinzel', serif;
+    font-size: 1.5rem;
+    color: #f59e0b;
+    margin: 0;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+}
+
+.loadout-panel-content {
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
+    flex: 1;
+}
+
+@media (min-width: 768px) {
+    .loadout-panel-content {
+        flex-direction: row;
+        align-items: flex-start;
+    }
+}
+
+/* ── Center Radial Area (RuneScape Style) ── */
+.loadout-radial-area {
+    flex: 1;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    position: relative;
+    min-height: 400px;
+    background: radial-gradient(circle at center, rgba(30,30,40,0.8) 0%, rgba(10,15,30,0.6) 70%);
+    border-radius: 12px;
+    border: 1px solid rgba(255,255,255,0.05);
+    box-shadow: inset 0 0 20px rgba(0,0,0,0.5);
+}
+
+.loadout-character-avatar {
+    position: absolute;
+    width: 120px;
+    height: 120px;
+    z-index: 10;
+    pointer-events: none;
+    filter: drop-shadow(0 10px 15px rgba(0,0,0,0.6));
+}
+
+.loadout-character-avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+}
+
+/* Layout slots in a static grid crossing around the center */
+.loadout-slots-container {
+    display: grid;
+    grid-template-columns: repeat(3, 64px);
+    grid-template-rows: repeat(5, 64px);
+    gap: 1.5rem;
+    z-index: 20;
+    align-items: center;
+    justify-items: center;
+}
+
+/* Connecting lines like RS */
+.loadout-slots-container::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 160px;
+    height: 240px;
+    border: 2px solid rgba(100, 116, 139, 0.2);
+    border-radius: 8px;
+    z-index: -1;
+}
+
+/* Slot Positions mapped to grid */
+.ls-head    { grid-column: 2; grid-row: 1; }
+.ls-cape    { grid-column: 1; grid-row: 2; }
+.ls-amulet  { grid-column: 2; grid-row: 2; }
+.ls-ammo    { grid-column: 3; grid-row: 2; margin-top: -30px; } /* Using as Pet/Artifact offset */
+
+.ls-weapon  { grid-column: 1; grid-row: 3; }
+.ls-body    { grid-column: 2; grid-row: 3; }
+.ls-shield  { grid-column: 3; grid-row: 3; }
+
+.ls-legs    { grid-column: 2; grid-row: 4; }
+.ls-gloves  { grid-column: 1; grid-row: 5; }
+.ls-boots   { grid-column: 2; grid-row: 5; }
+.ls-ring    { grid-column: 3; grid-row: 5; }
+
+/* Additional custom RPG slots spread near edges */
+.ls-pet     { position: absolute; left: 1rem; bottom: 1rem; }
+.ls-book    { position: absolute; right: 1rem; top: 1rem; }
+.ls-relic   { position: absolute; right: 1rem; bottom: 1rem; }
+.ls-artifact{ position: absolute; left: 1rem; top: 1rem; }
+
+/* The Slot Box */
+.loadout-slot {
+    width: 52px;
+    height: 52px;
+    background: #1e293b;
+    border: 2px solid #334155;
+    border-radius: 8px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+    transition: all 0.2s;
+    box-shadow: inset 0 2px 4px rgba(0,0,0,0.5), 0 4px 6px rgba(0,0,0,0.3);
+    position: relative;
+}
+
+.loadout-slot:hover {
+    border-color: #60a5fa;
+    transform: translateY(-2px);
+    box-shadow: 0 0 10px rgba(96, 165, 250, 0.4);
+}
+
+.loadout-slot.empty {
+    background: #0f172a;
+    border-color: #1e293b;
+}
+
+.loadout-slot.empty .slot-placeholder {
+    opacity: 0.3;
+    font-size: 1.5rem;
+    filter: grayscale(100%);
+}
+
+.loadout-slot-icon {
+    font-size: 1.8rem;
+    filter: drop-shadow(0 2px 2px rgba(0,0,0,0.8));
+}
+
+.slot-label-tooltip {
+    position: absolute;
+    bottom: -24px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(0,0,0,0.8);
+    color: #fff;
+    font-size: 0.7rem;
+    padding: 2px 6px;
+    border-radius: 4px;
+    white-space: nowrap;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s;
+    z-index: 30;
+}
+
+.loadout-slot:hover .slot-label-tooltip {
+    opacity: 1;
+}
+
+/* ── Right Side Stats Area ── */
+.loadout-stats-area {
+    width: 280px;
+    background: rgba(15, 23, 42, 0.8);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    padding: 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+}
+
+@media (max-width: 767px) {
+    .loadout-stats-area {
+        width: 100%;
+    }
+}
+
+.stat-category {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.stat-category h4 {
+    color: #f59e0b; /* Gold */
+    font-size: 0.9rem;
+    margin: 0 0 0.25rem 0;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    border-bottom: 1px solid rgba(245, 158, 11, 0.2);
+    padding-bottom: 2px;
+}
+
+.stat-row {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.85rem;
+    color: #cbd5e1;
+}
+
+.stat-row.total, .stat-row.skill-row {
+    margin-top: 0.2rem;
+}
+
+.stat-row .val {
+    color: #fff;
+    font-weight: 500;
+}
+
+.stat-row .val.pos { color: #4ade80; }
+.stat-row .val.neg { color: #f87171; }
+
+
+/* ── Popover Modal for Selection ── */
+.loadout-selection-modal {
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(0,0,0,0.8);
+    z-index: 100;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    border-radius: 12px;
+}
+
+.ls-modal-content {
+    background: #1e293b;
+    border: 2px solid #3b82f6;
+    border-radius: 12px;
+    width: 90%;
+    max-width: 400px;
+    max-height: 80%;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.8);
+}
+
+.ls-modal-header {
+    padding: 1rem;
+    border-bottom: 1px solid rgba(255,255,255,0.1);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.ls-modal-header h3 {
+    margin: 0;
+    color: #fff;
+    font-size: 1.1rem;
+}
+
+.ls-modal-list {
+    padding: 1rem;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.ls-item-row {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 0.75rem;
+    background: rgba(0,0,0,0.2);
+    border: 1px solid rgba(255,255,255,0.05);
+    border-radius: 8px;
+    color: #fff;
+    cursor: pointer;
+    transition: background 0.2s;
+    text-align: left;
+}
+
+.ls-item-row:hover {
+    background: rgba(59, 130, 246, 0.2);
+    border-color: #3b82f6;
+}
+
+.ls-item-row.unequip {
+    background: rgba(239, 68, 68, 0.1);
+    color: #fca5a5;
+    border-color: rgba(239, 68, 68, 0.3);
+}
+
+.ls-item-icon {
+    font-size: 1.5rem;
+}
+
+.ls-item-details {
+    display: flex;
+    flex-direction: column;
+}
+
+.ls-item-name {
+    font-weight: bold;
+    font-size: 0.95rem;
+}
+
+.ls-item-stats {
+    font-size: 0.75rem;
+    color: #94a3b8;
+}
+
+/* ── Equipment Sets (Fast Loadouts) ── */
+.loadout-sets-container {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    margin-top: 1.5rem;
+    border-top: 1px solid rgba(245, 158, 11, 0.2);
+    padding-top: 1rem;
+}
+
+.loadout-sets-container h4 {
+    color: #f59e0b;
+    font-size: 0.9rem;
+    margin: 0;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.loadout-sets-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.5rem;
+}
+
+.loadout-set-btn {
+    background: rgba(30, 41, 59, 0.8);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: #e2e8f0;
+    border-radius: 6px;
+    padding: 0.4rem;
+    font-size: 0.75rem;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.loadout-set-btn:hover {
+    background: rgba(59, 130, 246, 0.2);
+    border-color: #3b82f6;
+    color: #fff;
+}
+
+.loadout-set-btn-save {
+    background: none;
+    border: none;
+    color: #94a3b8;
+    cursor: pointer;
+    font-size: 0.9rem;
+    padding: 0.1rem 0.3rem;
+    border-radius: 4px;
+    transition: color 0.2s, background 0.2s;
+}
+
+.loadout-set-btn-save:hover {
+    color: #10b981;
+    background: rgba(16, 185, 129, 0.1);
+}
+
+/* ── Floating Stat Popup Feedback ── */
+.floating-stat-popup {
+    position: absolute;
+    right: 20px;
+    font-weight: 800;
+    font-size: 1.1rem;
+    text-shadow: 0 2px 4px rgba(0,0,0,0.8);
+    pointer-events: none;
+    z-index: 50;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+}

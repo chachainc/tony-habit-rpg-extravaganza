@@ -15,6 +15,7 @@ import { SleepPanel } from './SleepPanel';
 import { TrophyPanel } from './TrophyPanel';
 import { ShopModal } from '../shop/ShopModal';
 import { FurniturePlacementPanel, DraggableFurniturePiece } from './FurniturePlacementPanel';
+import { LoadoutPanel } from '../character/LoadoutPanel';
 
 // AI-generated assets
 import homeCampBg from '../../assets/backgrounds/home_camp.png';
@@ -25,7 +26,7 @@ import './WalkableRoom.css';
 import './PlayerRoom.css';
 import './FurniturePlacementPanel.css';
 
-type ActivePanel = 'wardrobe' | 'bookshelf' | 'sleep' | 'trophy' | 'store' | 'body' | 'furniture_edit' | null;
+type ActivePanel = 'wardrobe' | 'bookshelf' | 'sleep' | 'trophy' | 'store' | 'body' | 'furniture_edit' | 'loadout' | null;
 
 /* ── Inline Body Panel (calorie + weight) ── */
 const BodyPanel = ({ onClose }: { onClose: () => void }) => {
@@ -286,7 +287,7 @@ export const PlayerRoom = ({ onClose }: { onClose: () => void }) => {
                         </div>
 
                         {/* Player Info */}
-                        <div className="room-mobile-player-card">
+                        <div className="room-mobile-player-card" onClick={() => setActivePanel('loadout')} style={{ cursor: 'pointer' }}>
                             <img src={heroImage} alt="Player" className="mobile-player-sprite" />
                             <div className="mobile-player-info">
                                 {activeTitleDef && <span className="mobile-title-tag">{activeTitleDef.name}</span>}
@@ -577,6 +578,7 @@ export const PlayerRoom = ({ onClose }: { onClose: () => void }) => {
                             {activePanel === 'trophy' && <TrophyPanel onClose={() => setActivePanel(null)} />}
                             {activePanel === 'store' && <ShopModal category="furniture" onClose={() => setActivePanel(null)} />}
                             {activePanel === 'body' && <BodyPanel onClose={() => setActivePanel(null)} />}
+                            {activePanel === 'loadout' && <LoadoutPanel onClose={() => setActivePanel(null)} />}
                             {activePanel === 'furniture_edit' && (
                                 <FurniturePlacementPanel
                                     onClose={() => { setActivePanel(null); }}

@@ -435,13 +435,13 @@
     }
 
     .unit-sprite img {
-        max-width: 100%;
-        height: min(125px, 20vh);
+        max-width: 80%;
+        height: min(90px, 15vh);
         object-fit: contain;
     }
 
     .unit-sprite.player img {
-        height: min(110px, 18vh);
+        height: min(80px, 13vh);
     }
 
     .vs-text {
