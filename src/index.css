@@ -180,6 +180,7 @@ button:active {
     max-height: 90vh;
     max-height: 90dvh;
     overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
     position: relative;
     width: 100%;
     /* Let specific modals define max-width */

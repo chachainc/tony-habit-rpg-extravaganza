@@ -89,6 +89,7 @@
 .modal__content {
     padding: var(--space-lg);
     overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
     flex: 1;
 }
 
