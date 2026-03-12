@@ -254,7 +254,6 @@ export const useGameStore = create<GameState>()(
                 finalAmount = Math.floor(finalAmount);
                 const actualXp = finalAmount;
                 const overflowAmount = 0;
-                const currentDailyXp = state.dailyXpGained[skillName] || 0;
 
                 const skill = state.skills[skillName];
                 const oldLevel = skill.level;
