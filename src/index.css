@@ -185,6 +185,37 @@ button:active {
     /* Let specific modals define max-width */
 }
 
+
+.modal-reward-shell {
+  position: fixed;
+  inset: 0;
+  z-index: 1200;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: max(env(safe-area-inset-top, 0px), 12px) 16px max(env(safe-area-inset-bottom, 0px), 12px);
+  pointer-events: none;
+}
+
+.modal-reward-card {
+  width: min(100%, 420px);
+  max-height: min(88vh, 88dvh);
+  overflow-y: auto;
+  pointer-events: auto;
+}
+
+@media (max-width: 480px) {
+  .modal-reward-shell {
+    padding-inline: 12px;
+    padding-block: max(env(safe-area-inset-top, 0px), 10px) max(env(safe-area-inset-bottom, 0px), 10px);
+  }
+
+  .modal-reward-card {
+    width: min(100%, 360px);
+    max-height: min(86vh, 86dvh);
+  }
+}
+
 /* Premium Scrollbar */
 
 ::-webkit-scrollbar {
