@@ -254,49 +254,7 @@ export const WakeUpModal = ({ onComplete }: { onComplete: () => void }) => {
                     </motion.div>
                 )}
 
-                {/* Check-in reward popup overlay */}
-                <AnimatePresence>
-                    {showCheckInReward && checkInReward && (
-                        <motion.div
-                            className="wake-checkin__reward-overlay"
-                            initial={{ scale: 0, opacity: 0 }}
-                            animate={{ scale: 1, opacity: 1 }}
-                            exit={{ scale: 0, opacity: 0 }}
-                        >
-                            <div className="wake-checkin__reward-glow" />
-                            <h3>🎉 Reward Claimed!</h3>
-                            <div className="wake-checkin__reward-list">
-                                <div className="wake-checkin__reward-item">
-                                    <span>💰 Gold:</span>
-                                    <span className="wake-checkin__reward-value">+{checkInReward.gold}</span>
-                                </div>
-                                <div className="wake-checkin__reward-item">
-                                    <span>✨ XP:</span>
-                                    <span className="wake-checkin__reward-value">+{checkInReward.xp}</span>
-                                </div>
-                                {checkInReward.buffType && (
-                                    <div className="wake-checkin__reward-item">
-                                        <span>🔥 Buff:</span>
-                                        <span className="wake-checkin__reward-value">
-                                            {checkInReward.buffType === 'xp_boost' && '+5% XP'}
-                                            {checkInReward.buffType === 'gold_boost' && '+10% Gold'}
-                                            {' for ' + checkInReward.buffDuration + 'h'}
-                                        </span>
-                                    </div>
-                                )}
-                                {checkInReward.gachaTicket && (
-                                    <div className="wake-checkin__reward-item wake-checkin__reward-item--special">
-                                        <span>🎫 Gacha Ticket:</span>
-                                        <span className="wake-checkin__reward-value">+1</span>
-                                    </div>
-                                )}
-                            </div>
-                            <button className="wake-checkin__reward-continue" onClick={handleCheckInRewardContinue}>
-                                Continue
-                            </button>
-                        </motion.div>
-                    )}
-                </AnimatePresence>
+                {/* (Reward popup moved to root level overlay) */}
 
                 {/* ===== STAGE 3: WEIGHT LOG ===== */}
                 {stage === 'weight' && (
@@ -407,6 +365,50 @@ export const WakeUpModal = ({ onComplete }: { onComplete: () => void }) => {
                     </motion.div>
                 )}
             </motion.div>
+
+            {/* Check-in reward popup overlay */}
+            <AnimatePresence>
+                {showCheckInReward && checkInReward && (
+                    <motion.div
+                        className="wake-checkin__reward-overlay"
+                        initial={{ scale: 0, opacity: 0 }}
+                        animate={{ scale: 1, opacity: 1 }}
+                        exit={{ scale: 0, opacity: 0 }}
+                    >
+                        <div className="wake-checkin__reward-glow" />
+                        <h3>🎉 Reward Claimed!</h3>
+                        <div className="wake-checkin__reward-list">
+                            <div className="wake-checkin__reward-item">
+                                <span>💰 Gold:</span>
+                                <span className="wake-checkin__reward-value">+{checkInReward.gold}</span>
+                            </div>
+                            <div className="wake-checkin__reward-item">
+                                <span>✨ XP:</span>
+                                <span className="wake-checkin__reward-value">+{checkInReward.xp}</span>
+                            </div>
+                            {checkInReward.buffType && (
+                                <div className="wake-checkin__reward-item">
+                                    <span>🔥 Buff:</span>
+                                    <span className="wake-checkin__reward-value">
+                                        {checkInReward.buffType === 'xp_boost' && '+5% XP'}
+                                        {checkInReward.buffType === 'gold_boost' && '+10% Gold'}
+                                        {' for ' + checkInReward.buffDuration + 'h'}
+                                    </span>
+                                </div>
+                            )}
+                            {checkInReward.gachaTicket && (
+                                <div className="wake-checkin__reward-item wake-checkin__reward-item--special">
+                                    <span>🎫 Gacha Ticket:</span>
+                                    <span className="wake-checkin__reward-value">+1</span>
+                                </div>
+                            )}
+                        </div>
+                        <button className="wake-checkin__reward-continue" onClick={handleCheckInRewardContinue}>
+                            Continue
+                        </button>
+                    </motion.div>
+                )}
+            </AnimatePresence>
         </div>
     );
 };

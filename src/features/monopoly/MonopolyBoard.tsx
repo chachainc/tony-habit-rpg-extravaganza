@@ -273,10 +273,12 @@ export const MonopolyBoard = ({ onClose }: { onClose: () => void }) => {
                     )}
                 </AnimatePresence>
 
-                {/* Mystery Event Popup */}
-                <AnimatePresence>
-                    {mysteryEvent && finalRng && (
-                        <div className="modal-reward-shell">
+            </motion.div>
+
+            {/* Mystery Event Popup */}
+            <AnimatePresence>
+                {mysteryEvent && finalRng && (
+                    <div className="modal-reward-shell">
                         <motion.div
                             className={`luck-event-popup modal-reward-card ${mysteryEvent.rarity}`}
                             initial={{ scale: 0.5, opacity: 0 }}
@@ -293,8 +295,8 @@ export const MonopolyBoard = ({ onClose }: { onClose: () => void }) => {
                             </motion.div>
                             <h2>
                                 {mysteryEvent.rarity === 'ultra_rare' ? 'UNIVERSE DROP!' :
-                                    mysteryEvent.rarity === 'epic' ? 'EPIC DROP!' : 
-                                    mysteryEvent.rarity === 'rare' ? 'RARE DROP!' : 'MYSTERY RESULT'}
+                                    mysteryEvent.rarity === 'epic' ? 'EPIC DROP!' :
+                                        mysteryEvent.rarity === 'rare' ? 'RARE DROP!' : 'MYSTERY RESULT'}
                             </h2>
                             <p className="luck-message">{mysteryEvent.message}</p>
                             <div className="luck-rewards">
@@ -315,14 +317,14 @@ export const MonopolyBoard = ({ onClose }: { onClose: () => void }) => {
                                 Awesome!
                             </button>
                         </motion.div>
-                        </div>
-                    )}
-                </AnimatePresence>
+                    </div>
+                )}
+            </AnimatePresence>
 
-                {/* Base Reward Popup */}
-                <AnimatePresence>
-                    {showReward && landedSpace && !mysteryEvent && (
-                        <div className="modal-reward-shell">
+            {/* Base Reward Popup */}
+            <AnimatePresence>
+                {showReward && landedSpace && !mysteryEvent && (
+                    <div className="modal-reward-shell">
                         <motion.div
                             className="reward-popup modal-reward-card"
                             initial={{ scale: 0, opacity: 0 }}
@@ -361,10 +363,9 @@ export const MonopolyBoard = ({ onClose }: { onClose: () => void }) => {
                                 Continue
                             </button>
                         </motion.div>
-                        </div>
-                    )}
-                </AnimatePresence>
-            </motion.div>
+                    </div>
+                )}
+            </AnimatePresence>
         </div>
     );
 };

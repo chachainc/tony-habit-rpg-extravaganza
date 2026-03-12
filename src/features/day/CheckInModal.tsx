@@ -105,9 +105,11 @@ export const CheckInModal = ({ onClose }: { onClose: () => void }) => {
                     </div>
                 )}
 
-                <AnimatePresence>
-                    {showReward && lastReward && (
-                        <div className="modal-reward-shell">
+            </motion.div>
+
+            <AnimatePresence>
+                {showReward && lastReward && (
+                    <div className="modal-reward-shell">
                         <motion.div
                             className="reward-popup modal-reward-card"
                             initial={{ scale: 0, opacity: 0 }}
@@ -152,10 +154,9 @@ export const CheckInModal = ({ onClose }: { onClose: () => void }) => {
                                 Continue
                             </button>
                         </motion.div>
-                        </div>
-                    )}
-                </AnimatePresence>
-            </motion.div>
+                    </div>
+                )}
+            </AnimatePresence>
         </div>
     );
 };
