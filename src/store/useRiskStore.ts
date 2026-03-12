@@ -74,6 +74,7 @@ export interface RiskState {
     resolveRiskBattle: (nodeId: string) => RiskBattleResult | null;
     buySoldier: () => boolean;
     buyCard: (id: RiskCardId) => boolean;
+    gainCard: (id: RiskCardId) => void;
     equipCard: (id: RiskCardId) => void;
     unequipCard: (id: RiskCardId) => void;
     getSoldierLabel: (count: number) => string;
@@ -224,6 +225,10 @@ export const useRiskStore = create<RiskState>()(
                 cs.addSigils(-cost);
                 set(s => ({ ownedCards: [...s.ownedCards, id] }));
                 return true;
+            },
+
+            gainCard: (id: RiskCardId) => {
+                set(state => (state.ownedCards.includes(id) ? state : { ownedCards: [...state.ownedCards, id] }));
             },
 
             equipCard: (id: RiskCardId) => {

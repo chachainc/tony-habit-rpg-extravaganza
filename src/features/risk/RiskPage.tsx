@@ -2,7 +2,7 @@ import { useNavigate } from 'react-router-dom';
 import { useEffect, useRef, useState } from 'react';
 import { useRiskStore, RISK_CARDS, REGIONS, type TerritoryNode, type RegionId, type RiskBattleResult, type RiskCardId } from '../../store/useRiskStore';
 import { useConquestStore } from '../../store/useConquestStore';
-import { Map as MapIcon, ArrowLeft, Swords, Shield, Pickaxe, Sparkles, TrendingUp, X, ShoppingCart, HelpCircle } from 'lucide-react';
+import { Map as MapIcon, ArrowLeft, Swords, TrendingUp, X, ShoppingCart, HelpCircle } from 'lucide-react';
 import './RiskPage.css';
 
 // Map canvas dimensions (pixels)

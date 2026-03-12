@@ -312,7 +312,7 @@ export const useConquestStore = create<ConquestState>()(
                 // 25% chance to drop a Risk card as connective progression
                 if (Math.random() < 0.25) {
                     import('./useRiskStore').then(({ useRiskStore }) => {
-                        const cards: Array<'knight'|'shieldbearer'|'scout'|'general'> = ['knight', 'shieldbearer', 'scout', 'general'];
+                        const cards = ['blitz', 'iron_discipline', 'medic', 'war_banner', 'treasurer', 'recruiter', 'warlord_sigil', 'tank_tactics'] as const;
                         const drop = cards[Math.floor(Math.random() * cards.length)];
                         useRiskStore.getState().gainCard(drop);
                     }).catch(() => {});
