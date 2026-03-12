@@ -115,7 +115,7 @@
 
 .farm-backdrop {
     /* Generated AI Image hook */
-    background-image: url('/assets/board/farm_theme_bg.png');
+    background-image: url('../../assets/backgrounds/monopoly-bg.jpg');
     background-size: cover;
     background-position: center;
 }
