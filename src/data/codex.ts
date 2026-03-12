@@ -5,6 +5,9 @@
 import { AURAS } from '../store/useAuraStore';
 import { TITLES } from '../store/useTitleStore';
 import { PET_DB } from '../store/useGachaStore';
+import { ITEM_DB } from '../store/useInventoryStore';
+import { EQUIPMENT_DB } from '../store/useEquipmentStore';
+import { ROOM_FURNITURE_CATALOG } from '../store/useRoomStore';
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -16,7 +19,11 @@ export type CodexSection =
     | 'artifacts'
     | 'relics'
     | 'cosmetics'
-    | 'books';
+    | 'books'
+    | 'weapons'
+    | 'armor'
+    | 'jewelry'
+    | 'furniture';
 
 export type CodexRarity = 'common' | 'uncommon' | 'rare' | 'epic' | 'legendary' | 'mythic';
 
@@ -29,7 +36,8 @@ export type CodexSource =
     | 'secret'
     | 'event'
     | 'starter'
-    | 'library';
+    | 'library'
+    | 'board';
 
 export interface CodexEntry {
     id: string;
@@ -170,6 +178,18 @@ const ULTRA_RARE_PET_ENTRIES: CodexEntry[] = [
     },
 ];
 
+// ── BOARD PETS (from Board Theme) ──────────────────────────────────────────
+
+const BOARD_PET_ENTRIES: CodexEntry[] = [
+    { id: 'codex_pet_board_farm_cow', name: 'Farm Cow', icon: '🐮', section: 'pets', rarity: 'rare', description: 'A sturdy farm cow.', sources: ['board'], obtainHint: 'Rare drop from The Daily Harvest board.', dupeMatters: true },
+    { id: 'codex_pet_board_farm_sheep', name: 'Farm Sheep', icon: '🐑', section: 'pets', rarity: 'rare', description: 'A fluffy farm sheep.', sources: ['board'], obtainHint: 'Rare drop from The Daily Harvest board.', dupeMatters: true },
+    { id: 'codex_pet_board_farm_pig', name: 'Farm Pig', icon: '🐷', section: 'pets', rarity: 'rare', description: 'A happy farm pig.', sources: ['board'], obtainHint: 'Rare drop from The Daily Harvest board.', dupeMatters: true },
+    { id: 'codex_pet_board_farm_chicken', name: 'Farm Chicken', icon: '🐔', section: 'pets', rarity: 'rare', description: 'A clucking farm chicken.', sources: ['board'], obtainHint: 'Rare drop from The Daily Harvest board.', dupeMatters: true },
+    { id: 'codex_pet_board_farm_goat', name: 'Farm Goat', icon: '🐐', section: 'pets', rarity: 'epic', description: 'A stubborn farm goat.', sources: ['board'], obtainHint: 'Epic drop from The Daily Harvest board.', dupeMatters: true },
+    { id: 'codex_pet_board_farm_duck', name: 'Farm Duck', icon: '🦆', section: 'pets', rarity: 'epic', description: 'A quacking farm duck.', sources: ['board'], obtainHint: 'Epic drop from The Daily Harvest board.', dupeMatters: true },
+    { id: 'codex_pet_board_farm_ethereal_cow', name: 'Ethereal Farm Cow', icon: '🌌🐮', section: 'pets', rarity: 'mythic', description: 'A cosmic bovine anomaly.', sources: ['board'], obtainHint: 'Ultra-rare jackpot drop from The Daily Harvest board!', spinOdds: '1:100 on Epic Tile', dupeMatters: true },
+];
+
 // ── AURAS (from AURAS array) ──────────────────────────────────────────────────
 
 const AURA_SOURCE_MAP: Record<string, { sources: CodexSource[]; hint: string; spinOdds?: string }> = {
@@ -295,6 +315,17 @@ const BANNER_ENTRIES: CodexEntry[] = [
         sources: ['conquest'],
         obtainHint: 'Win 10 Conquest Tiles games.',
     },
+    {
+        id: 'codex_banner_board_farm_barn_banner',
+        name: 'Barn Banner',
+        icon: '🌾',
+        section: 'banners',
+        rarity: 'mythic',
+        description: 'The ultimate symbol of a dedicated harvester.',
+        sources: ['board'],
+        obtainHint: 'Ultra-rare jackpot drop from The Daily Harvest board.',
+        spinOdds: '1:100 on Epic Tile'
+    }
 ];
 
 // ── TITLES (from TITLES array) ────────────────────────────────────────────────
@@ -361,6 +392,16 @@ const EXTRA_TITLE_ENTRIES: CodexEntry[] = [
         sources: ['achievement'],
         obtainHint: 'Complete a 30-day consecutive daily login streak.',
     },
+    {
+        id: 'codex_title_board_farm_title',
+        name: 'The Farmer',
+        icon: '👨‍🌾',
+        section: 'titles',
+        rarity: 'epic',
+        description: 'A title proving your dedication to the daily harvest.',
+        sources: ['board'],
+        obtainHint: 'Epic drop from The Daily Harvest board.'
+    }
 ];
 
 // ── ARTIFACTS (equippable for battle) ─────────────────────────────────────────
@@ -412,61 +453,6 @@ const ARTIFACT_ENTRIES: CodexEntry[] = [
 // ── RELICS (placeable in room) ────────────────────────────────────────────────
 
 const RELIC_ENTRIES: CodexEntry[] = [
-    {
-        id: 'codex_relic_fireplace',
-        name: 'Fireplace',
-        icon: '🔥',
-        section: 'relics',
-        rarity: 'uncommon',
-        description: 'A warm fireplace to place in your room. Cozy and inviting.',
-        sources: ['marketplace'],
-        obtainHint: 'Purchase from the Furniture Store.',
-        priceHint: '8,000 gold',
-    },
-    {
-        id: 'codex_relic_pet_bed',
-        name: 'Pet Bed',
-        icon: '🛏️',
-        section: 'relics',
-        rarity: 'common',
-        description: 'A soft bed for your pet to rest in.',
-        sources: ['marketplace'],
-        obtainHint: 'Purchase from the Furniture Store.',
-        priceHint: '2,000 gold',
-    },
-    {
-        id: 'codex_relic_guitar',
-        name: 'Guitar',
-        icon: '🎸',
-        section: 'relics',
-        rarity: 'uncommon',
-        description: 'A decorative guitar for your room. Your hero can play it!',
-        sources: ['marketplace'],
-        obtainHint: 'Purchase from the Furniture Store.',
-        priceHint: '5,000 gold',
-    },
-    {
-        id: 'codex_relic_arcane_bookshelf',
-        name: 'Arcane Bookshelf',
-        icon: '📚',
-        section: 'relics',
-        rarity: 'legendary',
-        description: 'Holds knowledge from ancient times. Grants bonus Intelligence XP.',
-        sources: ['marketplace'],
-        obtainHint: 'Purchase from the Furniture Store. Requires Housemaid Lv.25.',
-        priceHint: '80,000 gold + 100 diamonds',
-    },
-    {
-        id: 'codex_relic_celestial_chandelier',
-        name: 'Celestial Chandelier',
-        icon: '💎',
-        section: 'relics',
-        rarity: 'legendary',
-        description: 'Radiates a Cleanliness Aura. Grants +10% HP/MP regen while resting.',
-        sources: ['marketplace'],
-        obtainHint: 'Purchase from the Furniture Store. Requires Housemaid Lv.30.',
-        priceHint: '150,000 gold + 250 diamonds',
-    },
     {
         id: 'codex_relic_trophy_case',
         name: 'Trophy Case',
@@ -557,64 +543,171 @@ const COSMETIC_ENTRIES: CodexEntry[] = [
         obtainHint: 'Legendary Daily Spin reward.',
         spinOdds: '~1:2,000',
     },
+    {
+        id: 'codex_cosmetic_board_farm_straw_hat',
+        name: 'Straw Hat',
+        icon: '👒',
+        section: 'cosmetics',
+        rarity: 'epic',
+        description: 'A cool, breezy straw hat perfect for farming.',
+        sources: ['board'],
+        obtainHint: 'Epic drop from The Daily Harvest board.',
+    }
 ];
 
-// ── BOOK ARTIFACTS (from Library) ────────────────────────────────────────────
-// Each book type has levels 1-5 in the codex; owned based on useBookArtifactStore
+// ── BOOK ITEMS (from Library) ────────────────────────────────────────────
+// Each book type has levels 1-3 in the codex; owned based on useInventoryStore
 
 const BOOK_CODEX_ENTRIES: CodexEntry[] = [
     // Fantasy Book
-    ...([1, 2, 3, 4, 5].map(lv => ({
+    ...([1, 2, 3].map(lv => ({
         id: `codex_book_fantasy_lv${lv}`,
-        name: `Fantasy Book — Level ${lv}`,
+        name: `Fantasy Tome ${lv === 1 ? 'I' : lv === 2 ? 'II' : 'III'}`,
         icon: '📘',
         section: 'books' as CodexSection,
-        rarity: (['common', 'uncommon', 'rare', 'epic', 'legendary'] as CodexRarity[])[lv - 1],
-        description: `A Fantasy Book at Level ${lv}. Grants +${[0.05, 1, 2, 3.5, 5][lv - 1]}% Arena Combat XP.`,
+        rarity: (['common', 'rare', 'epic'] as CodexRarity[])[lv - 1],
+        description: `A Fantasy Tome at Level ${lv}. Grants +${lv === 1 ? 2 : lv === 2 ? 5 : 10} Intelligence.`,
         sources: ['library'] as CodexSource[],
-        obtainHint: lv === 1 ? 'Complete any Fantasy book in the Library.' : `Fuse ${lv} Fantasy Books of the previous level.`,
+        obtainHint: lv === 1 ? 'Complete any Fantasy book in the Library.' : `Fuse 3 Fantasy Tomes of the previous level.`,
     }))),
     // History Book
-    ...([1, 2, 3, 4, 5].map(lv => ({
+    ...([1, 2, 3].map(lv => ({
         id: `codex_book_history_lv${lv}`,
-        name: `History Book — Level ${lv}`,
+        name: `History Tome ${lv === 1 ? 'I' : lv === 2 ? 'II' : 'III'}`,
         icon: '📖',
         section: 'books' as CodexSection,
-        rarity: (['common', 'uncommon', 'rare', 'epic', 'legendary'] as CodexRarity[])[lv - 1],
-        description: `A History Book at Level ${lv}. Grants +${[0.05, 1, 2, 3.5, 5][lv - 1]}% Boss Damage.`,
+        rarity: (['common', 'rare', 'epic'] as CodexRarity[])[lv - 1],
+        description: `A History Tome at Level ${lv}. Grants +${lv === 1 ? 2 : lv === 2 ? 5 : 10} Intelligence.`,
         sources: ['library'] as CodexSource[],
-        obtainHint: lv === 1 ? 'Complete any History book in the Library.' : `Fuse ${lv} History Books of the previous level.`,
+        obtainHint: lv === 1 ? 'Complete any History book in the Library.' : `Fuse 3 History Tomes of the previous level.`,
     }))),
     // Business Book
-    ...([1, 2, 3, 4, 5].map(lv => ({
+    ...([1, 2, 3].map(lv => ({
         id: `codex_book_business_lv${lv}`,
-        name: `Business Book — Level ${lv}`,
+        name: `Business Tome ${lv === 1 ? 'I' : lv === 2 ? 'II' : 'III'}`,
         icon: '📓',
         section: 'books' as CodexSection,
-        rarity: (['common', 'uncommon', 'rare', 'epic', 'legendary'] as CodexRarity[])[lv - 1],
-        description: `A Business Book at Level ${lv}. Grants +${[0.05, 1, 2, 3.5, 5][lv - 1]}% Marketplace Rewards.`,
+        rarity: (['common', 'rare', 'epic'] as CodexRarity[])[lv - 1],
+        description: `A Business Tome at Level ${lv}. Grants +${lv === 1 ? 2 : lv === 2 ? 5 : 10} Intelligence and Strategy XP.`,
         sources: ['library'] as CodexSource[],
-        obtainHint: lv === 1 ? 'Complete any Business book in the Library.' : `Fuse ${lv} Business Books of the previous level.`,
+        obtainHint: lv === 1 ? 'Complete any Business book in the Library.' : `Fuse 3 Business Tomes of the previous level.`,
     }))),
-    // Self-Help Book
-    ...([1, 2, 3, 4, 5].map(lv => ({
-        id: `codex_book_selfhelp_lv${lv}`,
-        name: `Self-Help Book — Level ${lv}`,
+    // Self-Improvement Book
+    ...([1, 2, 3].map(lv => ({
+        id: `codex_book_self-improvement_lv${lv}`,
+        name: `Self-Improvement Tome ${lv === 1 ? 'I' : lv === 2 ? 'II' : 'III'}`,
         icon: '📒',
         section: 'books' as CodexSection,
-        rarity: (['common', 'uncommon', 'rare', 'epic', 'legendary'] as CodexRarity[])[lv - 1],
-        description: `A Self-Help Book at Level ${lv}. Grants +${[0.05, 1, 2, 3.5, 5][lv - 1]}% overall Skill XP gain.`,
+        rarity: (['common', 'rare', 'epic'] as CodexRarity[])[lv - 1],
+        description: `A Self-Improvement Tome at Level ${lv}. Grants +${lv === 1 ? 2 : lv === 2 ? 5 : 10} Intelligence.`,
         sources: ['library'] as CodexSource[],
-        obtainHint: lv === 1 ? 'Complete any Self-Help/Improvement book in the Library.' : `Fuse ${lv} Self-Help Books of the previous level.`,
+        obtainHint: lv === 1 ? 'Complete any Self-Improvement book in the Library.' : `Fuse 3 Self-Improvement Tomes of the previous level.`,
+    }))),
+    // Philosophy Book
+    ...([1, 2, 3].map(lv => ({
+        id: `codex_book_philosophy_lv${lv}`,
+        name: `Philosophy Tome ${lv === 1 ? 'I' : lv === 2 ? 'II' : 'III'}`,
+        icon: '📚',
+        section: 'books' as CodexSection,
+        rarity: (['common', 'rare', 'epic'] as CodexRarity[])[lv - 1],
+        description: `A Philosophy Tome at Level ${lv}. Grants +${lv === 1 ? 2 : lv === 2 ? 5 : 10} Intelligence.`,
+        sources: ['library'] as CodexSource[],
+        obtainHint: lv === 1 ? 'Complete any Philosophy book in the Library.' : `Fuse 3 Philosophy Tomes of the previous level.`,
     }))),
 ];
 
+// ── EQUIPMENT (Weapons, Armor, Jewelry) ───────────────────────────────────────
+const ITEM_WEAPONS: CodexEntry[] = Object.values(ITEM_DB).filter(i => i.type === 'weapon').map(w => ({
+    id: `codex_item_${w.id}`,
+    name: w.name,
+    icon: w.icon || '⚔️',
+    section: 'weapons',
+    rarity: w.rarity as CodexRarity,
+    description: w.description || '',
+    sources: ['marketplace'],
+    obtainHint: w.requiredEnemy ? `Defeat ${w.requiredEnemy} then purchase from Blacksmith.` : 'Purchase from the Blacksmith.',
+    priceHint: `${w.price} gold`,
+}));
+const EQUIP_WEAPONS: CodexEntry[] = Object.values(EQUIPMENT_DB).filter(e => e.slot === 'weapon').map(w => ({
+    id: `codex_equip_${w.id}`,
+    name: w.name,
+    icon: w.icon,
+    section: 'weapons',
+    rarity: w.rarity as CodexRarity,
+    description: w.description,
+    sources: ['arena'],
+    obtainHint: 'Drop from Arena victories.',
+}));
+const WEAPON_ENTRIES = [...ITEM_WEAPONS, ...EQUIP_WEAPONS];
+
+const ITEM_ARMOR: CodexEntry[] = Object.values(ITEM_DB).filter(i => i.type === 'armor').map(a => ({
+    id: `codex_item_${a.id}`,
+    name: a.name,
+    icon: a.icon || '🛡️',
+    section: 'armor',
+    rarity: a.rarity as CodexRarity,
+    description: a.description || '',
+    sources: ['marketplace'],
+    obtainHint: a.requiredEnemy ? `Defeat ${a.requiredEnemy} then purchase from Armory.` : 'Purchase from the Armory.',
+    priceHint: `${a.price} gold`,
+}));
+const EQUIP_ARMOR: CodexEntry[] = Object.values(EQUIPMENT_DB).filter(e => e.slot === 'armor').map(a => ({
+    id: `codex_equip_${a.id}`,
+    name: a.name,
+    icon: a.icon,
+    section: 'armor',
+    rarity: a.rarity as CodexRarity,
+    description: a.description,
+    sources: ['arena'],
+    obtainHint: 'Drop from Arena victories.',
+}));
+const ARMOR_ENTRIES = [...ITEM_ARMOR, ...EQUIP_ARMOR];
+
+const ITEM_JEWELRY: CodexEntry[] = Object.values(ITEM_DB).filter(i => i.type === 'jewelry').map(j => ({
+    id: `codex_item_${j.id}`,
+    name: j.name,
+    icon: j.icon || '💍',
+    section: 'jewelry',
+    rarity: j.rarity as CodexRarity,
+    description: j.description || j.flavorText || '',
+    sources: ['marketplace'],
+    obtainHint: 'Purchase from the Jeweler.',
+    priceHint: `${j.price} gold`,
+}));
+const EQUIP_ACCESSORY: CodexEntry[] = Object.values(EQUIPMENT_DB).filter(e => e.slot === 'accessory').map(a => ({
+    id: `codex_equip_${a.id}`,
+    name: a.name,
+    icon: a.icon,
+    section: 'jewelry',
+    rarity: a.rarity as CodexRarity,
+    description: a.description,
+    sources: ['arena'],
+    obtainHint: 'Drop from Arena victories.',
+}));
+const JEWELRY_ENTRIES = [...ITEM_JEWELRY, ...EQUIP_ACCESSORY];
+
+// ── FURNITURE ────────────────────────────────────────────────────────────────
+const FURNITURE_ENTRIES: CodexEntry[] = ROOM_FURNITURE_CATALOG.map(f => ({
+    id: `codex_furn_${f.id}`,
+    name: f.name,
+    icon: f.icon,
+    section: 'furniture',
+    rarity: f.rarity as CodexRarity,
+    description: f.description,
+    sources: ['marketplace'],
+    obtainHint: `Purchase from the Furniture Store.${f.requirementLabel ? ' ' + f.requirementLabel : ''}`,
+    priceHint: `${f.goldCost > 0 ? f.goldCost + ' gold' : ''}${f.gemCost ? (f.goldCost > 0 ? ' + ' : '') + f.gemCost + ' diamonds' : ''}`,
+}));
+
 // ── COMBINED CODEX ────────────────────────────────────────────────────────────
 
-export const CODEX_ENTRIES: CodexEntry[] = [
+import { mergeExternalCodex } from './contentLoader';
+
+export const CODEX_ENTRIES: CodexEntry[] = mergeExternalCodex([
     ...PET_ENTRIES,
     ...MARKETPLACE_PET_ENTRIES,
     ...ULTRA_RARE_PET_ENTRIES,
+    ...BOARD_PET_ENTRIES,
     ...AURA_ENTRIES,
     ...EXTRA_AURA_ENTRIES,
     ...BANNER_ENTRIES,
@@ -624,7 +717,11 @@ export const CODEX_ENTRIES: CodexEntry[] = [
     ...RELIC_ENTRIES,
     ...COSMETIC_ENTRIES,
     ...BOOK_CODEX_ENTRIES,
-];
+    ...WEAPON_ENTRIES,
+    ...ARMOR_ENTRIES,
+    ...JEWELRY_ENTRIES,
+    ...FURNITURE_ENTRIES,
+]);
 
 export function getCodexBySection(section: CodexSection): CodexEntry[] {
     return CODEX_ENTRIES.filter(e => e.section === section);
@@ -639,6 +736,10 @@ export const CODEX_SECTIONS: { id: CodexSection; label: string; icon: string }[]
     { id: 'relics', label: 'Relics', icon: '🏺' },
     { id: 'cosmetics', label: 'Cosmetics', icon: '🎭' },
     { id: 'books', label: 'Books', icon: '📚' },
+    { id: 'weapons', label: 'Weapons', icon: '⚔️' },
+    { id: 'armor', label: 'Armor', icon: '🛡️' },
+    { id: 'jewelry', label: 'Jewelry', icon: '💍' },
+    { id: 'furniture', label: 'Furniture', icon: '🪑' },
 ];
 
 export const RARITY_ORDER: CodexRarity[] = ['common', 'uncommon', 'rare', 'epic', 'legendary', 'mythic'];
@@ -671,4 +772,5 @@ export const SOURCE_LABELS: Record<CodexSource, string> = {
     event: '🎉 Event',
     starter: '🎁 Starter',
     library: '📚 Library',
+    board: '🎲 Daily Board',
 };

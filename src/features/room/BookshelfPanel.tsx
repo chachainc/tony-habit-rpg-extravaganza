@@ -3,7 +3,7 @@ import { Plus, X, List, Check } from 'lucide-react';
 import { useBookStore } from '../../store/useBookStore';
 import { useBookTrophyStore } from '../../store/useBookTrophyStore';
 import { useGameStore } from '../../store/useGameStore';
-import { BOOK_TYPES, type BookType } from '../../store/useBookArtifactStore';
+import { BOOK_TYPES, type BookType } from '../../store/useBookStore';
 import dayjs from 'dayjs';
 import { Panel } from '../../components/ui/Panel';
 import './RoomPanels.css';

@@ -4,6 +4,7 @@
 
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
+import { PERSIST_REGISTRY } from '../data/persistRegistry';
 
 // ── Fusion Definition ─────────────────────────────────────────────────────────
 
@@ -256,6 +257,6 @@ export const useFusionStore = create<FusionState>()(
                 return { level, copies, nextThreshold, copiesNeeded, canFuse, isMaxLevel };
             },
         }),
-        { name: 'gl-fusion-v1' }
+        { name: PERSIST_REGISTRY.fusion.persistKey }
     )
 );

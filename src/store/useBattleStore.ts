@@ -36,7 +36,21 @@ export interface Combatant {
     damageReductionTurns: number; // Turns remaining for damage reduction
     manaShieldActive: boolean; // True if mana shield is absorbing damage
     manaShieldTurns: number; // Turns remaining for mana shield
+    scalingFactor: number; // Used for dynamic reward scaling
 }
+
+export const calculateEffectiveDefense = (defender: Combatant, isMagic: boolean = false): number => {
+    let effectiveDef = defender.def;
+    defender.buffs.forEach(b => { if (b.stat === 'def') effectiveDef += b.amount; });
+    defender.debuffs.forEach(d => { if (d.stat === 'def') effectiveDef -= d.amount; });
+
+    // Temporary bridge: magic defense is half of physical defense.
+    if (isMagic) {
+        effectiveDef = Math.round(effectiveDef * 0.5);
+    }
+
+    return Math.max(0, effectiveDef);
+};
 
 export interface CombatLog {
     message: string;
@@ -74,7 +88,7 @@ interface BattleState {
     activeRunBuffs: any[]; // Use RunBuff[] if imported, or any
 
     // Actions
-    initBattle: (enemyId: string) => void;
+    initBattle: (enemyId: string, options?: { context?: 'arena' | 'conquest' | 'conquest_elite'; conquestTier?: number }) => void;
     selectAbility: (ability: Ability) => void;
     executePlayerAction: () => void;
     executeEnemyAction: () => void;
@@ -87,6 +101,9 @@ interface BattleState {
     restoreMP: (amount: number) => void; // Restore MP (used by room resting)
     startBattle: () => void;
     introGracePeriod: boolean; // Tower Expansion: Transition from prep to combat
+    context: 'arena' | 'conquest' | 'conquest_elite' | 'risk' | 'tower-defense';
+    conquestTier: number | null;
+    conquestEnemyPower?: number;
 }
 
 // Player abilities - Replaced with the 3 distinct actions
@@ -152,8 +169,10 @@ export const useBattleStore = create<BattleState>()((set, get) => ({
     activeFloorModifier: null,
     activeRunBuffs: [],
     introGracePeriod: false,
+    context: 'arena',
+    conquestTier: null,
 
-    initBattle: (enemyId: string) => {
+    initBattle: (enemyId: string, options?: { context?: 'arena' | 'conquest' | 'conquest_elite'; conquestTier?: number }) => {
         const enemyDef = ENEMY_DB[enemyId];
         if (!enemyDef) return;
 
@@ -170,7 +189,7 @@ export const useBattleStore = create<BattleState>()((set, get) => ({
         const levelScaleHp = 1 + (globalLevel * 0.10);
         const levelScaleStats = 1 + (globalLevel * 0.05);
 
-        let playerHp = Math.round((gameStore.skills.Cardio.level * 15) + 80);
+        let playerHp = Math.round((gameStore.skills.Cardio.level * 2) + 80);
         let playerAtk = Math.round(gameStore.getAttack());
         let playerDef = Math.round(gameStore.getDefense());
         let playerSpd = Math.round((gameStore.skills.Flexibility.level * 2) + 50);
@@ -218,20 +237,40 @@ export const useBattleStore = create<BattleState>()((set, get) => ({
             damageReductionTurns: 0,
             manaShieldActive: false,
             manaShieldTurns: 0,
+            scalingFactor: 1.0,
         };
+
+        const context = options?.context || 'arena';
+        const conquestTier = options?.conquestTier || null;
+
+        let enemyMaxHp = Math.round(enemyDef.baseHp * levelScaleHp + xpScaling * 2);
+        let enemyAtk = Math.round(enemyDef.baseAtk * levelScaleStats + xpScaling * 0.5);
+        let enemyDef_stat = Math.round(enemyDef.baseDef * levelScaleStats + xpScaling * 0.5);
+        let conquestEnemyPower = undefined;
+
+        if (context === 'conquest' && conquestTier !== null) {
+            // Target curve: Node 1 (~10), Node 2 (~13), Node 3 (~17), Node 4 (~22), Boss (~30).
+            const tierCurve = { 1: 10, 2: 13, 3: 17, 4: 22, 5: 30 };
+            conquestEnemyPower = tierCurve[conquestTier as keyof typeof tierCurve] || 30;
+
+            // Map power roughly to stats
+            enemyMaxHp = Math.round(conquestEnemyPower * 10);
+            enemyAtk = Math.round(conquestEnemyPower * 0.6);
+            enemyDef_stat = Math.round(conquestEnemyPower * 0.4);
+        }
 
         const enemy: Combatant = {
             id: enemyDef.id,
             name: enemyDef.name,
             icon: enemyDef.icon,
             element: enemyDef.element,
-            maxHp: Math.round(enemyDef.baseHp * levelScaleHp + xpScaling * 2),
-            hp: Math.round(enemyDef.baseHp * levelScaleHp + xpScaling * 2),
+            maxHp: enemyMaxHp,
+            hp: enemyMaxHp,
             maxMana: 50,
             mana: 50,
             manaRegen: 5,
-            atk: Math.round(enemyDef.baseAtk * levelScaleStats + xpScaling * 0.5),
-            def: Math.round(enemyDef.baseDef * levelScaleStats + xpScaling * 0.5),
+            atk: enemyAtk,
+            def: enemyDef_stat,
             spd: Math.round(enemyDef.baseSpd * levelScaleStats),
             critRate: enemyDef.critRate,
             critDmg: enemyDef.critDmg,
@@ -251,6 +290,7 @@ export const useBattleStore = create<BattleState>()((set, get) => ({
             damageReductionTurns: 0,
             manaShieldActive: false,
             manaShieldTurns: 0,
+            scalingFactor: Math.max(1, levelScaleStats + (xpScaling * 0.02)),
         };
 
         // Psychological Profile Logic
@@ -263,11 +303,26 @@ export const useBattleStore = create<BattleState>()((set, get) => ({
         const playerDamageModifier = weaknessActive ? 1.08 : 1.0;
         const enemyDamageModifier = affinityActive ? 1.08 : 1.0;
 
-        // Apply Floor Modifier
+        // Apply Floor Modifiers natively
         const activeFloorModifier = campaignStore.currentFloorModifier;
-        if (activeFloorModifier?.effect.stat === 'hp') {
-            enemy.maxHp = Math.round(enemy.maxHp * (activeFloorModifier.effect.multiplier || 1));
-            enemy.hp = enemy.maxHp;
+        if (activeFloorModifier && context === 'arena') {
+            const effect = activeFloorModifier.effect;
+            const mult = effect.multiplier || 1.0;
+
+            if (effect.stat === 'hp') {
+                enemy.maxHp = Math.round(enemy.maxHp * mult);
+                enemy.hp = enemy.maxHp;
+            } else if (effect.stat === 'atk') {
+                if (mult < 1.0) player.atk = Math.round(player.atk * mult); // 'Void Aura' nerfs player
+                else enemy.atk = Math.round(enemy.atk * mult);
+            } else if (effect.stat === 'def') {
+                enemy.def = Math.round(enemy.def * mult);
+            } else if (effect.stat === 'spd') {
+                player.spd = Math.round(player.spd * mult);
+                enemy.spd = Math.round(enemy.spd * mult);
+            } else if (effect.stat === 'mana') {
+                player.manaRegen = Math.round(player.manaRegen * mult);
+            }
         }
 
         const isGoldenSlime = enemyId === 'golden_slime';
@@ -304,6 +359,9 @@ export const useBattleStore = create<BattleState>()((set, get) => ({
             affinityActive,
             activeFloorModifier,
             activeRunBuffs: campaignStore.activeRunBuffs,
+            context,
+            conquestTier,
+            conquestEnemyPower,
         });
     },
 
@@ -744,44 +802,51 @@ export const useBattleStore = create<BattleState>()((set, get) => ({
     applyDamage: (attacker: Combatant, defender: Combatant, ability: Ability) => {
         // Calculate effective stats
         let effectiveAtk = attacker.atk;
+        if (ability.isMagic && attacker.isPlayer) {
+            effectiveAtk = useGameStore.getState().getMagicAttack();
+        }
+
         attacker.buffs.forEach(b => { if (b.stat === 'atk') effectiveAtk += b.amount; });
         attacker.debuffs.forEach(d => { if (d.stat === 'atk') effectiveAtk -= d.amount; });
 
-        let effectiveDef = defender.def;
-        defender.buffs.forEach(b => { if (b.stat === 'def') effectiveDef += b.amount; });
-        defender.debuffs.forEach(d => { if (d.stat === 'def') effectiveDef -= d.amount; });
+        const effectiveDef = calculateEffectiveDefense(defender, ability.isMagic);
 
-        // Crit check
-        const isCrit = Math.random() < attacker.critRate;
+        // Crit check - spells don't crit
+        const isCrit = ability.isMagic ? false : Math.random() < attacker.critRate;
         const critMult = isCrit ? attacker.critDmg : 1.0;
 
-        // Base Damage Formula: (ATK * Crit) - DEF
-        // Ensure at least 1 damage
-        let baseDamage = Math.max(1, (effectiveAtk * critMult) - effectiveDef);
-
-        // Multipliers
-        let finalDamage = baseDamage * ability.damageMultiplier;
-
         // Tower Expansion Modifiers
+        let towerMult = 1.0;
         if (attacker.isPlayer) {
-            finalDamage *= get().playerDamageModifier;
+            towerMult = get().playerDamageModifier;
         } else {
-            finalDamage *= get().enemyDamageModifier;
+            towerMult = get().enemyDamageModifier;
         }
 
         // Element multiplier
         const elementMult = getElementMultiplier(ability.element, defender.element);
-        finalDamage *= elementMult;
+
+        // New Mitigation-based Formula
+        const rawDamage = effectiveAtk * ability.damageMultiplier * critMult * elementMult * towerMult;
+        const mitigatedDamage = rawDamage * (100 / (100 + effectiveDef));
+
+        // Incoming damage modifiers
+        let incomingModifiers = 1.0;
 
         // Defensive Stance (50% reduction)
         if (defender.isDefending) {
-            finalDamage *= 0.5;
+            incomingModifiers *= 0.5;
         }
 
         // Pet ability damage reduction
         if (defender.damageReduction > 0 && defender.damageReductionTurns > 0) {
-            finalDamage *= (1 - defender.damageReduction / 100);
+            incomingModifiers *= (1 - defender.damageReduction / 100);
         }
+
+        // Variance (+/- 5%)
+        incomingModifiers *= (0.95 + Math.random() * 0.1);
+
+        let finalDamage = Math.max(1, Math.round(mitigatedDamage * incomingModifiers));
 
         // Mana Shield absorption (2 MP = 1 HP damage absorbed)
         let mpAbsorbed = 0;
@@ -798,11 +863,7 @@ export const useBattleStore = create<BattleState>()((set, get) => ({
             }
         }
 
-        // Variance (+/- 5%)
-        const variance = 0.95 + Math.random() * 0.1;
-        finalDamage *= variance;
-
-        // Round to whole number for clean display
+        // Ensure final damage is rounded
         finalDamage = Math.round(finalDamage);
 
         // Apply HP deduction
@@ -937,10 +998,16 @@ export const useBattleStore = create<BattleState>()((set, get) => ({
         // Deduct MP
         const newMP = currentMP - spell.mpCost;
 
-        const logs: CombatLog[] = [];
-        logs.push({
+        const initialLogs: CombatLog[] = [{
             message: `${player.name} casts ${spell.icon} ${spell.name}!`,
             type: 'info'
+        }];
+
+        // Consume MP and start action
+        set({
+            combatLog: [...get().combatLog, ...initialLogs],
+            currentMP: newMP,
+            phase: 'executing'
         });
 
         let updatedPlayer = { ...player };
@@ -951,61 +1018,50 @@ export const useBattleStore = create<BattleState>()((set, get) => ({
             const healAmount = Math.round(player.maxHp * (spell.effect.value / 100));
             const newHp = Math.min(player.maxHp, player.hp + healAmount);
             updatedPlayer.hp = newHp;
-            logs.push({
-                message: `Healed ${healAmount} HP!`,
-                type: 'heal',
-                value: healAmount
+            set({
+                player: updatedPlayer,
+                combatLog: [...get().combatLog, {
+                    message: `Healed ${healAmount} HP!`,
+                    type: 'heal',
+                    value: healAmount
+                }]
             });
         } else if (spell.effect.type === 'damage') {
-            // Get magic attack
-            const gameStore = useGameStore.getState();
-            const magicAtk = gameStore.getMagicAttack();
+            const tempAbility: Ability = {
+                id: spell.id,
+                name: spell.name,
+                type: 'skill',
+                description: spell.description,
+                icon: spell.icon,
+                element: 'neutral', // Spells currently default to neutral
+                isMagic: true, // Flags for MATK and temporary MDEF
+                damageMultiplier: spell.effect.value,
+                cooldown: 0,
+                energyCost: 0,
+            };
 
-            // Calculate damage: Magic ATK × spell multiplier, spells bypass 50% of defense
-            const effectiveDef = Math.round(enemy.def * 0.5);
-            let damage = Math.max(1, Math.round((magicAtk * spell.effect.value) - effectiveDef));
+            // applyDamage mutates updatedEnemy's HP and pushes its own logs
+            get().applyDamage(updatedPlayer, updatedEnemy, tempAbility);
 
-            // Add variance
-            damage = Math.round(damage * (0.95 + Math.random() * 0.1));
+            // Sync mutated objects to store
+            set({ enemy: updatedEnemy, player: updatedPlayer });
 
-            updatedEnemy.hp = Math.max(0, enemy.hp - damage);
-
-            logs.push({
-                message: `Dealt ${damage} magic damage!`,
-                type: 'damage',
-                value: damage
-            });
-
-            // Update lastDamage for visual effects
-            set({
-                lastDamage: {
-                    target: enemy.id,
-                    amount: damage,
-                    isCrit: false,
-                    elementBonus: 1,
-                },
-            });
         } else if (spell.effect.type === 'shield') {
-            // Activate mana shield for X turns
             updatedPlayer.manaShieldActive = true;
             updatedPlayer.manaShieldTurns = spell.effect.value;
-            logs.push({
-                message: `Mana Shield activated for ${spell.effect.value} turns!`,
-                type: 'buff'
+            set({
+                player: updatedPlayer,
+                combatLog: [...get().combatLog, {
+                    message: `Mana Shield activated for ${spell.effect.value} turns!`,
+                    type: 'buff'
+                }]
             });
         }
 
         // Add extra energy for casting spells (+15% faster ultimate)
         const bonusEnergy = Math.min(100 - updatedPlayer.energy, 15);
         updatedPlayer.energy += bonusEnergy;
-
-        set({
-            player: updatedPlayer,
-            enemy: updatedEnemy,
-            currentMP: newMP,
-            combatLog: [...get().combatLog, ...logs],
-            phase: 'executing',
-        });
+        set({ player: updatedPlayer }); // Final player sync
 
         // Check for victory
         if (updatedEnemy.hp <= 0) {

@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
+import { PERSIST_REGISTRY } from '../data/persistRegistry';
 
 // ─── TYPES ────────────────────────────────────
 
@@ -23,6 +24,7 @@ export interface StrategyState {
     recordChessResult: (result: 'win' | 'draw' | 'loss', difficulty?: 1 | 2 | 3) => void;
     canPlayChessToday: () => boolean;
     getStrategyXpForLevel: (level: number) => number;
+    addStrategyXp: (amount: number) => void;
 
     // Tiles actions
     recordTilesResult: (result: 'win' | 'loss', difficulty: 1 | 2 | 3 | 4) => void;
@@ -53,6 +55,25 @@ export const useStrategyStore = create<StrategyState>()(
             tilesHardWins: 0,
 
             getStrategyXpForLevel: (level: number) => level * level * 30,
+
+            addStrategyXp: (amount: number) => {
+                const state = get();
+                let newXp = state.strategyXp + amount;
+                let newLevel = state.strategyLevel;
+                let threshold = get().getStrategyXpForLevel(newLevel);
+
+                while (newXp >= threshold && newLevel < 50) {
+                    newXp -= threshold;
+                    newLevel++;
+                    threshold = get().getStrategyXpForLevel(newLevel);
+                }
+
+                set({
+                    strategyXp: newXp,
+                    strategyLevel: newLevel,
+                    strategyTotalXp: state.strategyTotalXp + amount,
+                });
+            },
 
             recordChessResult: (result, difficulty = 1) => {
                 const today = getEasternDateString();
@@ -176,7 +197,7 @@ export const useStrategyStore = create<StrategyState>()(
             },
         }),
         {
-            name: 'gl-strategy-storage-v1',
+            name: PERSIST_REGISTRY.strategy.persistKey,
         }
     )
 );

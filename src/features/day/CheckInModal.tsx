@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Calendar, Gift, Flame, Trophy } from 'lucide-react';
+import { Calendar, Flame, Trophy } from 'lucide-react';
 import { useCheckInStore } from '../../store/useCheckInStore';
 import './CheckInModal.css';
 import './CheckInModalTapHint.css';
@@ -85,17 +85,6 @@ export const CheckInModal = ({ onClose }: { onClose: () => void }) => {
                     })}
                 </div>
 
-                {canCheckIn && !showReward && (
-                    <motion.button
-                        className="checkin-btn"
-                        onClick={handleCheckIn}
-                        whileHover={{ scale: 1.05 }}
-                        whileTap={{ scale: 0.95 }}
-                    >
-                        <Gift size={20} />
-                        Check In Now
-                    </motion.button>
-                )}
 
                 {!canCheckIn && !showReward && (
                     <div className="already-claimed">
@@ -105,10 +94,13 @@ export const CheckInModal = ({ onClose }: { onClose: () => void }) => {
                     </div>
                 )}
 
-                <AnimatePresence>
-                    {showReward && lastReward && (
+            </motion.div>
+
+            <AnimatePresence>
+                {showReward && lastReward && (
+                    <div className="board-reward-overlay">
                         <motion.div
-                            className="reward-popup"
+                            className="reward-popup modal-reward-card"
                             initial={{ scale: 0, opacity: 0 }}
                             animate={{ scale: 1, opacity: 1 }}
                             exit={{ scale: 0, opacity: 0 }}
@@ -151,9 +143,9 @@ export const CheckInModal = ({ onClose }: { onClose: () => void }) => {
                                 Continue
                             </button>
                         </motion.div>
-                    )}
-                </AnimatePresence>
-            </motion.div>
+                    </div>
+                )}
+            </AnimatePresence>
         </div>
     );
 };

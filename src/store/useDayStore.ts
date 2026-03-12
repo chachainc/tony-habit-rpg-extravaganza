@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
+import { PERSIST_REGISTRY } from '../data/persistRegistry';
 
 // Get current date string in Eastern Time
 const getEasternDateString = (): string => {
@@ -159,7 +160,7 @@ export const useDayStore = create<DayState>()(
             },
         }),
         {
-            name: 'gl-day-v3', // Version bump for new fields
+            name: PERSIST_REGISTRY.day.persistKey, // Version bump for new fields
         }
     )
 );

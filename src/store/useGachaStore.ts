@@ -1,6 +1,11 @@
 import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
+import { persist, createJSONStorage } from 'zustand/middleware';
+import { safeStorage } from '../utils/safeStorage';
+import { safeUUID } from '../utils/safeUUID';
+
+console.log('[BOOT] useGachaStore module load started');
 import { useFusionStore } from './useFusionStore';
+import { PERSIST_REGISTRY } from '../data/persistRegistry';
 
 export interface GachaPull {
     id: string;
@@ -21,10 +26,13 @@ export interface PetDef {
         skillName?: string; // For skill-specific bonuses
     };
     description: string;
+    source?: string;
 }
 
+import { mergeExternalPets } from '../data/contentLoader';
+
 // Pet collection for gacha rewards
-export const PET_DB: Record<string, PetDef> = {
+export const PET_DB: Record<string, PetDef> = mergeExternalPets({
     'pixel_cat': {
         id: 'pixel_cat',
         name: 'Pixel Cat',
@@ -94,7 +102,7 @@ export const PET_DB: Record<string, PetDef> = {
         },
         description: '🌌 ULTRA RARE! Stellar Grazing: +25% Housemaid & Strength XP. The cosmos favors you.',
     },
-};
+});
 
 interface GachaState {
     tickets: number;
@@ -202,10 +210,25 @@ export const useGachaStore = create<GachaState>()(
             },
         }),
         {
-            name: 'gl-gacha-v1',
+            name: PERSIST_REGISTRY.gacha.persistKey,
+            storage: createJSONStorage(() => safeStorage),
+            onRehydrateStorage: () => () => {
+                console.log('[BOOT] useGachaStore hydration finished');
+            }
         }
     )
 );
+
+console.log('[BOOT] useGachaStore module load finished');
+
+const getDailySpinPetPool = (): PetDef[] => {
+    // Keep this local to avoid a startup circular dependency:
+    // useGachaStore -> rewardTables -> codex -> useGachaStore.
+    // External pets default to daily-spin if source metadata is missing.
+    return Object.values(PET_DB).filter((pet) => {
+        return pet.source === 'gacha' || pet.source === 'daily_spin' || !pet.source;
+    });
+};
 
 // Helper function to execute gacha pull logic
 function executePull(
@@ -229,10 +252,12 @@ function executePull(
     }
 
     // Filter pet pool by rarity
-    const pool = Object.values(PET_DB).filter((p) => p.rarity === rarity);
+    const basePool = getDailySpinPetPool();
+    const pool = basePool.filter((p) => p.rarity === rarity);
+
     if (pool.length === 0) {
         // Fallback to common
-        const commonPool = Object.values(PET_DB).filter((p) => p.rarity === 'common');
+        const commonPool = basePool.filter((p) => p.rarity === 'common');
         rarity = 'common';
         pool.push(...commonPool);
     }
@@ -245,7 +270,7 @@ function executePull(
 
     // Record pull
     const pull: GachaPull = {
-        id: crypto.randomUUID(),
+        id: safeUUID(),
         itemId: item.id,
         rarity: item.rarity,
         wasDuplicate,

@@ -1,0 +1,38 @@
+[
+    {
+        "id": "ember_fox",
+        "type": "pet",
+        "category": "elemental",
+        "name": "Ember Fox",
+        "rarity": "rare",
+        "effectType": "arena_crit",
+        "effectValue": 0.05,
+        "source": "daily_spin",
+        "description": "A fox made of pure heat. Grants +5% Arena Crit Chance."
+    },
+    {
+        "id": "shadow_blade",
+        "type": "weapon",
+        "shopCategory": "blacksmith",
+        "name": "Shadow Blade",
+        "rarity": "epic",
+        "value": 25,
+        "critChance": 0.2,
+        "price": 5000,
+        "source": "marketplace",
+        "description": "A blade forged in the void. Highly lethal."
+    },
+    {
+        "id": "celestial_tome",
+        "type": "book",
+        "category": "fantasy",
+        "name": "Celestial Tome I",
+        "level": 1,
+        "fusionRequirement": 3,
+        "rarity": "legendary",
+        "effectType": "intelligence",
+        "effectValue": 50,
+        "source": "library",
+        "description": "An ancient masterwork of arcane literature."
+    }
+]

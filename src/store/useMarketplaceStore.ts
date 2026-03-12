@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
+import { PERSIST_REGISTRY } from '../data/persistRegistry';
 
 interface MarketplaceState {
     // Player position in marketplace (grid coordinates)
@@ -35,7 +36,7 @@ export const useMarketplaceStore = create<MarketplaceState>()(
             closeStore: () => set({ activeStore: null }),
         }),
         {
-            name: 'gl-marketplace-v1',
+            name: PERSIST_REGISTRY.marketplace.persistKey,
         }
     )
 );

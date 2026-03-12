@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
+import { PERSIST_REGISTRY } from '../data/persistRegistry';
 
 interface SoundState {
     isMuted: boolean;
@@ -114,7 +115,7 @@ export const useSoundStore = create<SoundState>()(
             },
         }),
         {
-            name: 'gl-sound-v1',
+            name: PERSIST_REGISTRY.sound.persistKey,
         }
     )
 );

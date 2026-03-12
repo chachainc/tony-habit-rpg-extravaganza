@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
+import { PERSIST_REGISTRY } from '../data/persistRegistry';
 
 // ── Pet Ability Types ──────────────────────────────────────────
 export type AbilityScalingStat = 'Strength' | 'Cardio' | 'Flexibility' | 'Sleep' | 'Hygiene' | 'Intelligence';
@@ -800,7 +801,7 @@ export const usePetStore = create<PetState>()(
             },
         }),
         {
-            name: 'gl-pet-storage-v3', // v3 for stat scaling overhaul
+            name: PERSIST_REGISTRY.pets.persistKey, // v3 for stat scaling overhaul
         }
     )
 );

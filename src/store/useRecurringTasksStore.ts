@@ -1,6 +1,8 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import type { SkillName } from './useGameStore';
+import { PERSIST_REGISTRY } from '../data/persistRegistry';
+import { safeUUID } from '../utils/safeUUID';
 
 export type BundleType = 'morning' | 'afternoon' | 'night';
 
@@ -360,8 +362,20 @@ export const useRecurringTasksStore = create<RecurringTasksState>()(
                         import('./useGameStore').then(({ useGameStore }) => {
                             rewardsToGrant.forEach(r => {
                                 useGameStore.getState().addSkillXp(r.skillId, r.xp);
+                                // New Onboarding rules: Award a lvl 1 book whenever gaining Intelligence XP
+                                if (r.skillId === 'Intelligence') {
+                                    import('./useInventoryStore').then(({ useInventoryStore }) => {
+                                        useInventoryStore.getState().addItem('fantasy_book_1', 1);
+                                    });
+                                }
                             });
                         });
+
+                        if (id === 'read_10_min') {
+                            import('./useTraitStore').then(({ useTraitStore: ts }) => {
+                                ts.getState().logHabitCompletion('reading');
+                            }).catch(() => {});
+                        }
 
                         return { dailyTasks: newTasks, weightHistory: newWeightHistory };
                     }
@@ -375,6 +389,12 @@ export const useRecurringTasksStore = create<RecurringTasksState>()(
                         import('./useGameStore').then(({ useGameStore }) => {
                             newTasks[weeklyIndex].rewards.forEach(r => {
                                 useGameStore.getState().addSkillXp(r.skillId, r.xp);
+                                // New Onboarding rules: Award a lvl 1 book whenever gaining Intelligence XP
+                                if (r.skillId === 'Intelligence') {
+                                    import('./useInventoryStore').then(({ useInventoryStore }) => {
+                                        useInventoryStore.getState().addItem('fantasy_book_1', 1);
+                                    });
+                                }
                             });
                         });
 
@@ -410,7 +430,7 @@ export const useRecurringTasksStore = create<RecurringTasksState>()(
 
             addCustomRecurringTask: (title, bundle, rewards) => {
                 const newTask: RecurringTask = {
-                    id: `custom-${crypto.randomUUID()}`,
+                    id: `custom-${safeUUID()}`,
                     title,
                     bundle,
                     type: 'daily',
@@ -541,7 +561,7 @@ export const useRecurringTasksStore = create<RecurringTasksState>()(
             },
         }),
         {
-            name: 'gl-recurring-tasks-v3', // Bumped version to force fresh reset with new task IDs
+            name: PERSIST_REGISTRY.recurringTasks.persistKey, // Bumped version to force fresh reset with new task IDs
         }
     )
 );

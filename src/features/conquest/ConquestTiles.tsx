@@ -7,10 +7,13 @@ import {
     DIFFICULTY_PRESETS,
     POWER_COSTS,
     createSeededRng,
+    checkIsSolvable,
+    shuffleBoardState,
     type BoardTile,
     type Difficulty,
 } from './tileConfig';
 import { useConquestStore } from '../../store/useConquestStore';
+import { useToastStore } from '../../components/ui/Toast';
 import './ConquestTiles.css';
 
 // ─── PROPS ────────────────────────────────────────
@@ -34,6 +37,7 @@ export const ConquestTiles = ({ onComplete, onClose, canPlay, canPlayImpossible 
     const [points, setPoints] = useState(0);
     const [comboTimer, setComboTimer] = useState<number | null>(null);
     const [comboCount, setComboCount] = useState(0);
+    const [maxCombo, setMaxCombo] = useState(0);
     const [result, setResult] = useState<'win' | 'loss' | null>(null);
     const [clearingIds, setClearingIds] = useState<Set<number>>(new Set());
     const [seed] = useState(() => Math.floor(Math.random() * 2147483647));
@@ -50,6 +54,7 @@ export const ConquestTiles = ({ onComplete, onClose, canPlay, canPlayImpossible 
     const history = useRef<{ tile: BoardTile; traySnapshot: BoardTile[] }[]>([]);
 
     const conquest = useConquestStore();
+    const addToast = useToastStore(s => s.addToast);
 
     // ─── START GAME ───────────────────────────────
     const startGame = useCallback((diff: Difficulty) => {
@@ -59,6 +64,7 @@ export const ConquestTiles = ({ onComplete, onClose, canPlay, canPlayImpossible 
         setTray([]);
         setPoints(0);
         setComboCount(0);
+        setMaxCombo(0);
         setComboTimer(null);
         setResult(null);
         setClearingIds(new Set());
@@ -68,33 +74,61 @@ export const ConquestTiles = ({ onComplete, onClose, canPlay, canPlayImpossible 
 
     // ─── CHECK TRIPLE CLEAR ──────────────────────
     const checkAndClearTriples = useCallback((currentTray: BoardTile[]): { newTray: BoardTile[]; cleared: boolean } => {
-        // Count by symbolId
         const counts = new Map<string, number>();
+        let wildcardCount = 0;
+
         for (const t of currentTray) {
-            counts.set(t.symbolId, (counts.get(t.symbolId) || 0) + 1);
+            if (t.symbolId === 'special_wildcard') {
+                wildcardCount++;
+            } else {
+                counts.set(t.symbolId, (counts.get(t.symbolId) || 0) + 1);
+            }
         }
 
-        // Find first triple
+        let targetSymbolId: string | null = null;
+
+        // 1. Try to form a triple using normal symbols + wildcards
         for (const [symbolId, count] of counts) {
-            if (count >= 3) {
-                // Mark the first 3 as clearing
-                const toRemove: number[] = [];
-                for (const t of currentTray) {
-                    if (t.symbolId === symbolId && toRemove.length < 3) {
-                        toRemove.push(t.uid);
-                    }
-                }
-
-                setClearingIds(new Set(toRemove));
-
-                // After animation, remove them
-                setTimeout(() => {
-                    setClearingIds(new Set());
-                }, 350);
-
-                const newTray = currentTray.filter(t => !toRemove.includes(t.uid));
-                return { newTray, cleared: true };
+            if (count + wildcardCount >= 3) {
+                targetSymbolId = symbolId;
+                break;
             }
+        }
+
+        // 2. If no normal symbol works, maybe we have 3 wildcards?
+        if (!targetSymbolId && wildcardCount >= 3) {
+            targetSymbolId = 'special_wildcard';
+        }
+
+        if (targetSymbolId) {
+            // Collect exactly 3 tiles to remove
+            const toRemove: number[] = [];
+            let normalTaken = 0;
+
+            for (const t of currentTray) {
+                if (t.symbolId === targetSymbolId && normalTaken < 3) {
+                    toRemove.push(t.uid);
+                    normalTaken++;
+                }
+            }
+
+            let wildcardsNeeded = 3 - normalTaken;
+            for (const t of currentTray) {
+                if (t.symbolId === 'special_wildcard' && wildcardsNeeded > 0 && !toRemove.includes(t.uid)) {
+                    toRemove.push(t.uid);
+                    wildcardsNeeded--;
+                }
+            }
+
+            setClearingIds(new Set(toRemove));
+
+            // After animation, remove them
+            setTimeout(() => {
+                setClearingIds(new Set());
+            }, 350);
+
+            const newTray = currentTray.filter(t => !toRemove.includes(t.uid));
+            return { newTray, cleared: true };
         }
         return { newTray: currentTray, cleared: false };
     }, []);
@@ -107,37 +141,83 @@ export const ConquestTiles = ({ onComplete, onClose, canPlay, canPlayImpossible 
         // Save history
         history.current.push({ tile, traySnapshot: [...tray] });
 
-        // Remove from board
+        // Check specials that don't go to the tray
+        if (tile.symbolId === 'special_bomb') {
+            const boardAfterBomb = board.map(t => t.uid === tile.uid ? { ...t, removed: true } : t);
+            const detonationIds = new Set<number>([tile.uid]);
+            for (const t of boardAfterBomb) {
+                if (!t.removed) {
+                    const dx = t.x - tile.x;
+                    const dy = t.y - tile.y;
+                    const dist = Math.sqrt(dx * dx + dy * dy);
+                    if (dist < 2.0) detonationIds.add(t.uid); // Circular explosion radius
+                }
+            }
+
+            const newBoard = boardAfterBomb.map(t => detonationIds.has(t.uid) ? { ...t, removed: true } : t);
+            setBoard(newBoard);
+            setPoints(p => p + (detonationIds.size * 5));
+            addToast({ message: `💥 Bomb detonated! Cleared ${detonationIds.size - 1} tiles!`, type: 'info' });
+
+            if (newBoard.filter(t => !t.removed).length === 0 && tray.length === 0) {
+                setResult('win');
+                setPhase('result');
+            }
+            return;
+        }
+
+        if (tile.symbolId === 'special_shuffle') {
+            const boardAfterClick = board.map(t => t.uid === tile.uid ? { ...t, removed: true } : t);
+            const shuffled = shuffleBoardState(boardAfterClick);
+            setBoard(shuffled);
+            setPoints(p => p + 15);
+            addToast({ message: '🔀 Board Shuffled!', type: 'info' });
+
+            if (shuffled.filter(t => !t.removed).length === 0 && tray.length === 0) {
+                setResult('win');
+                setPhase('result');
+            }
+            return;
+        }
+
+        // Normal tile execution
         const newBoard = board.map(t => t.uid === tile.uid ? { ...t, removed: true } : t);
         setBoard(newBoard);
 
-        // Add to tray
         const newTray = [...tray, tile];
+        const trayCapacityLimit = difficulty >= 3 ? 6 : TRAY_CAPACITY;
 
-        // Check for triple
         const { newTray: afterClear, cleared } = checkAndClearTriples(newTray);
+
+        const applyAutoShuffle = (b: BoardTile[], t: BoardTile[]) => {
+            if (b.filter(x => !x.removed).length > 0 && !checkIsSolvable(b, t, trayCapacityLimit)) {
+                setTimeout(() => {
+                    setBoard(shuffleBoardState(b));
+                    addToast({ message: 'No moves detected - Auto Shuffled!', type: 'warning' });
+                }, 500);
+            }
+        };
 
         if (cleared) {
             // Award points
             const now = Date.now();
             let bonus = 0;
-            if (comboTimer && now - comboTimer < 2000) {
-                bonus = 5 * (comboCount + 1);
-                setComboCount(c => c + 1);
-            } else {
-                setComboCount(1);
+            let currentCombo = 1;
+
+            if (comboTimer && now - comboTimer < 2500) {
+                currentCombo = comboCount + 1;
+                bonus = 5 * currentCombo;
             }
+
+            setComboCount(currentCombo);
+            setMaxCombo(m => Math.max(m, currentCombo));
             setComboTimer(now);
             setPoints(p => p + 10 + bonus);
 
-            // Delayed tray update for animation
             setTimeout(() => {
                 setTray(afterClear);
-
-                // Check win after clear
                 const remainingBoard = newBoard.filter(t => !t.removed);
                 if (remainingBoard.length === 0) {
-                    // Check if remaining tray tiles can form triples
                     let finalTray = afterClear;
                     let keepChecking = true;
                     while (keepChecking) {
@@ -154,14 +234,13 @@ export const ConquestTiles = ({ onComplete, onClose, canPlay, canPlayImpossible 
                         setResult('win');
                         setPhase('result');
                     }
+                } else {
+                    applyAutoShuffle(newBoard, afterClear);
                 }
             }, 380);
         } else {
             setTray(newTray);
-
-            // Check lose: tray full
-            if (newTray.length >= trayCapacity) {
-                // Trigger failure animation
+            if (newTray.length >= trayCapacityLimit) {
                 setTrayFull(true);
                 setTrayFullMessage(true);
                 setTimeout(() => setTrayFull(false), 600);
@@ -170,16 +249,16 @@ export const ConquestTiles = ({ onComplete, onClose, canPlay, canPlayImpossible 
                     setResult('loss');
                     setPhase('result');
                 }, 800);
-            }
-
-            // Check win: board clear
-            const remainingBoard = newBoard.filter(t => !t.removed);
-            if (remainingBoard.length === 0 && newTray.length === 0) {
-                setResult('win');
-                setPhase('result');
+            } else {
+                applyAutoShuffle(newBoard, newTray);
+                const remainingBoard = newBoard.filter(t => !t.removed);
+                if (remainingBoard.length === 0 && newTray.length === 0) {
+                    setResult('win');
+                    setPhase('result');
+                }
             }
         }
-    }, [phase, result, board, tray, comboTimer, comboCount, checkAndClearTriples]);
+    }, [phase, result, board, tray, comboTimer, comboCount, checkAndClearTriples, difficulty, addToast]);
 
     // ─── POWER: REMOVE ───────────────────────────
     const useRemove = useCallback(() => {
@@ -244,12 +323,24 @@ export const ConquestTiles = ({ onComplete, onClose, canPlay, canPlayImpossible 
         setPurchaseModal(null);
     }, [conquest]);
 
+    // ─── COMBO EXPIRY EFFECT ──────────────────────
+    useEffect(() => {
+        if (!comboTimer) return;
+        const interval = setInterval(() => {
+            if (Date.now() - comboTimer >= 2500) {
+                setComboCount(0);
+                setComboTimer(null);
+            }
+        }, 100);
+        return () => clearInterval(interval);
+    }, [comboTimer]);
+
     // ─── TRIGGER RESULT CALLBACK ──────────────────
     useEffect(() => {
         if (result && phase === 'result') {
             onComplete(result, difficulty);
         }
-    }, [result, phase]);
+    }, [result, phase, difficulty, onComplete]);
 
     // ─── TRAY CAPACITY (difficulty-scaled) ─────────
     const trayCapacity = difficulty >= 3 ? 6 : TRAY_CAPACITY;
@@ -268,9 +359,15 @@ export const ConquestTiles = ({ onComplete, onClose, canPlay, canPlayImpossible 
         boardHeight = (maxY + 1) * gap + tileSize;
     }
 
-    // ─── SIGIL / GEM REWARD CALC ──────────────────
+    // ─── SIGIL / GEM / XP REWARD CALC ─────────────
     const preset = DIFFICULTY_PRESETS[difficulty];
-    const gemReward = result === 'win' ? preset.gemReward : 0;
+    const XP_MULTIPLIER: Record<number, number> = { 1: 1, 2: 2, 3: 3, 4: 4 };
+    const getXP = () => {
+        if (result !== 'win') return 0;
+        const base = XP_MULTIPLIER[difficulty] || 1;
+        const comboBonus = Math.floor(maxCombo / 3);
+        return base + comboBonus;
+    };
 
     // ─── RENDER: DIFFICULTY SELECT ────────────────
     const renderDifficultySelect = () => (
@@ -375,82 +472,58 @@ export const ConquestTiles = ({ onComplete, onClose, canPlay, canPlayImpossible 
 
     // ─── RENDER: GAME BOARD ───────────────────────
     const renderGame = () => (
-        <div className="tiles-game-area tiles-game-area--horizontal">
-            {/* Top row: Powers + Board */}
-            <div className="tiles-game-top">
-                {/* Left: Power buttons */}
+        <div className="tiles-game-area tiles-game-area--portrait">
+            {/* Top row: Combo Track */}
+            <div className="tiles-combo-container" style={{ height: 32, display: 'flex', justifyContent: 'center', alignItems: 'center', marginTop: '0.5rem' }}>
+                <AnimatePresence>
+                    {comboCount > 1 && (
+                        <motion.div
+                            initial={{ scale: 0.8, opacity: 0, y: -10 }}
+                            animate={{ scale: 1, opacity: 1, y: 0 }}
+                            exit={{ scale: 0.8, opacity: 0, y: -10 }}
+                            className="tiles-combo-badge"
+                        >
+                            <span>⚡ Combo x{comboCount}</span>
+                            <motion.div style={{ width: 40, height: 4, background: 'rgba(255,255,255,0.2)', borderRadius: 2, overflow: 'hidden' }}>
+                                <motion.div
+                                    initial={{ width: '100%' }} animate={{ width: '0%' }}
+                                    transition={{ duration: 2.5, ease: 'linear' }}
+                                    style={{ height: '100%', background: '#60a5fa', boxShadow: '0 0 8px #60a5fa' }}
+                                    key={`timer-${comboTimer}`}
+                                />
+                            </motion.div>
+                        </motion.div>
+                    )}
+                </AnimatePresence>
+            </div>
+
+            {/* Main Content Row */}
+            <div className="tiles-game-main">
+                {/* 1. Left: Power buttons */}
                 <div className="tiles-powers">
-                    <div style={{ position: 'relative' }}>
-                        <button
-                            className="tiles-power-btn"
-                            disabled={ownedRemove <= 0}
-                            onClick={useRemove}
-                        >
-                            🧲
-                            <span className="tiles-power-badge">{ownedRemove}</span>
-                            <span className="tiles-power-label">Remove</span>
+                    <div className="tiles-power-wrapper">
+                        <button className="tiles-power-btn" disabled={ownedRemove <= 0} onClick={useRemove}>
+                            🧲<span className="tiles-power-badge">{ownedRemove}</span>
                         </button>
-                        <div
-                            style={{
-                                position: 'absolute', top: -4, right: -14,
-                                width: 20, height: 20, borderRadius: '50%',
-                                background: 'rgba(245,158,11,0.9)', color: '#000',
-                                fontSize: '0.8rem', fontWeight: 800,
-                                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                cursor: 'pointer', border: '2px solid #0f2847',
-                            }}
-                            onClick={() => setPurchaseModal('remove')}
-                        >+</div>
+                        <div className="tiles-power-add" onClick={() => setPurchaseModal('remove')}>+</div>
                     </div>
 
-                    <div style={{ position: 'relative' }}>
-                        <button
-                            className="tiles-power-btn"
-                            disabled={ownedUndo <= 0 || history.current.length === 0}
-                            onClick={useUndo}
-                        >
-                            ↩️
-                            <span className="tiles-power-badge">{ownedUndo}</span>
-                            <span className="tiles-power-label">Undo</span>
+                    <div className="tiles-power-wrapper">
+                        <button className="tiles-power-btn" disabled={ownedUndo <= 0 || history.current.length === 0} onClick={useUndo}>
+                            ↩️<span className="tiles-power-badge">{ownedUndo}</span>
                         </button>
-                        <div
-                            style={{
-                                position: 'absolute', top: -4, right: -14,
-                                width: 20, height: 20, borderRadius: '50%',
-                                background: 'rgba(245,158,11,0.9)', color: '#000',
-                                fontSize: '0.8rem', fontWeight: 800,
-                                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                cursor: 'pointer', border: '2px solid #0f2847',
-                            }}
-                            onClick={() => setPurchaseModal('undo')}
-                        >+</div>
+                        <div className="tiles-power-add" onClick={() => setPurchaseModal('undo')}>+</div>
                     </div>
 
-                    <div style={{ position: 'relative' }}>
-                        <button
-                            className="tiles-power-btn"
-                            disabled={ownedShuffle <= 0}
-                            onClick={useShuffle}
-                        >
-                            🔀
-                            <span className="tiles-power-badge">{ownedShuffle}</span>
-                            <span className="tiles-power-label">Shuffle</span>
+                    <div className="tiles-power-wrapper">
+                        <button className="tiles-power-btn" disabled={ownedShuffle <= 0} onClick={useShuffle}>
+                            🔀<span className="tiles-power-badge">{ownedShuffle}</span>
                         </button>
-                        <div
-                            style={{
-                                position: 'absolute', top: -4, right: -14,
-                                width: 20, height: 20, borderRadius: '50%',
-                                background: 'rgba(245,158,11,0.9)', color: '#000',
-                                fontSize: '0.8rem', fontWeight: 800,
-                                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                cursor: 'pointer', border: '2px solid #0f2847',
-                            }}
-                            onClick={() => setPurchaseModal('shuffle')}
-                        >+</div>
+                        <div className="tiles-power-add" onClick={() => setPurchaseModal('shuffle')}>+</div>
                     </div>
                 </div>
 
-                {/* Center: Board */}
+                {/* 2. Center: Board */}
                 <div className="tiles-board-container">
                     <div className="tiles-board" style={{ width: boardWidth, height: boardHeight }}>
                         <AnimatePresence>
@@ -469,17 +542,19 @@ export const ConquestTiles = ({ onComplete, onClose, canPlay, canPlayImpossible 
                                         }}
                                         initial={{ scale: 0, opacity: 0 }}
                                         animate={{ scale: 1, opacity: 1 }}
-                                        exit={{ scale: 0, opacity: 0, y: -20 }}
+                                        exit={{ scale: 0.8, opacity: 0, x: 50, y: -20 }}
                                         transition={{ duration: 0.2 }}
                                         onClick={() => !blocked && selectTile(tile)}
-                                        whileHover={!blocked ? { scale: 1.1, y: -3 } : {}}
-                                        whileTap={!blocked ? { scale: 0.9 } : {}}
+                                        whileHover={!blocked ? { scale: 1.05, y: -2, zIndex: 9999 } : {}}
+                                        whileTap={!blocked ? { scale: 0.95 } : {}}
                                     >
-                                        {tile.symbol.imageSrc ? (
-                                            <img className="tile-face-img" src={tile.symbol.imageSrc} alt={tile.symbol.label} />
-                                        ) : (
-                                            <span className="tile-face">{tile.symbol.emoji}</span>
-                                        )}
+                                        <div className="tile-inner">
+                                            {tile.symbol.imageSrc ? (
+                                                <img className="tile-face-img" src={tile.symbol.imageSrc} alt={tile.symbol.label} />
+                                            ) : (
+                                                <span className="tile-face">{tile.symbol.emoji}</span>
+                                            )}
+                                        </div>
                                         <span className={`tile-rarity-dot ${tile.symbol.rarity}`} />
                                     </motion.div>
                                 );
@@ -487,58 +562,53 @@ export const ConquestTiles = ({ onComplete, onClose, canPlay, canPlayImpossible 
                         </AnimatePresence>
                     </div>
                 </div>
-            </div>
 
-            {/* Bottom: Horizontal Tray */}
-            <div className={`tiles-tray-bar ${trayFull ? 'tray-shake tray-flash' : ''}`}>
-                <div className="tiles-tray-label">
-                    Tray {tray.length}/{trayCapacity}
-                    <span style={{ marginLeft: '0.4rem', fontSize: '0.7rem', color: '#ef4444', opacity: tray.length >= trayCapacity - 2 ? 1 : 0.4 }}>
-                        {trayCapacity - tray.length === 0 ? '⚠ FULL' : `${trayCapacity - tray.length} left`}
-                    </span>
+                {/* 3. Right: Vertical Tray */}
+                <div className={`tiles-tray-bar ${trayFull ? 'tray-shake tray-flash' : ''}`}>
+                    <div className="tiles-tray-vertical">
+                        {Array.from({ length: trayCapacity }).map((_, i) => {
+                            const tile = tray[i];
+                            if (tile) {
+                                const isClearing = clearingIds.has(tile.uid);
+                                const matchCount = tray.filter(t => t.symbolId === tile.symbolId).length;
+                                const isMatching = matchCount >= 2 && !isClearing;
+                                return (
+                                    <motion.div
+                                        key={tile.uid}
+                                        className={`tiles-tray-tile ${isClearing ? 'clearing' : ''} ${isMatching ? 'matching' : ''}`}
+                                        initial={{ x: -20, opacity: 0, scale: 0.8 }}
+                                        animate={{ x: 0, opacity: 1, scale: 1 }}
+                                        transition={{ duration: 0.25, type: 'spring', stiffness: 300 }}
+                                        layout
+                                    >
+                                        <div className="tile-inner">
+                                            {tile.symbol.imageSrc ? (
+                                                <img className="tile-face-img" src={tile.symbol.imageSrc} alt={tile.symbol.label} />
+                                            ) : (
+                                                <span className="tile-face">{tile.symbol.emoji}</span>
+                                            )}
+                                        </div>
+                                    </motion.div>
+                                );
+                            }
+                            return <div key={`empty-${i}`} className="tiles-tray-slot" />;
+                        })}
+                    </div>
+                    {/* Tray Full Message */}
+                    <AnimatePresence>
+                        {trayFullMessage && (
+                            <motion.div className="tray-full-message" initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.8 }}>
+                                🚫 FULL!
+                            </motion.div>
+                        )}
+                    </AnimatePresence>
+                    <div className="tiles-tray-label">
+                        <div className="tiles-tray-count">{tray.length}/{trayCapacity}</div>
+                        <span className="tiles-tray-left" style={{ opacity: tray.length >= trayCapacity - 2 ? 1 : 0.4 }}>
+                            {trayCapacity - tray.length === 0 ? 'FULL' : `${trayCapacity - tray.length} left`}
+                        </span>
+                    </div>
                 </div>
-                <div className="tiles-tray-horizontal" style={{ width: `${trayCapacity * 60}px` }}>
-                    {Array.from({ length: trayCapacity }).map((_, i) => {
-                        const tile = tray[i];
-                        if (tile) {
-                            const isClearing = clearingIds.has(tile.uid);
-                            const matchCount = tray.filter(t => t.symbolId === tile.symbolId).length;
-                            const isMatching = matchCount >= 2 && !isClearing;
-                            return (
-                                <motion.div
-                                    key={tile.uid}
-                                    className={`tiles-tray-tile ${isClearing ? 'clearing' : ''} ${isMatching ? 'matching' : ''}`}
-                                    initial={{ y: -30, opacity: 0, scale: 0.6 }}
-                                    animate={{ y: 0, opacity: 1, scale: 1 }}
-                                    transition={{ duration: 0.25, type: 'spring', stiffness: 300 }}
-                                    layout
-                                >
-                                    {tile.symbol.imageSrc ? (
-                                        <img className="tile-face-img" src={tile.symbol.imageSrc} alt={tile.symbol.label} style={{ width: 36, height: 36 }} />
-                                    ) : (
-                                        <span className="tile-face" style={{ fontSize: '1.3rem' }}>{tile.symbol.emoji}</span>
-                                    )}
-                                </motion.div>
-                            );
-                        }
-                        return (
-                            <div key={`empty-${i}`} className="tiles-tray-slot" />
-                        );
-                    })}
-                </div>
-                {/* Tray Full Message */}
-                <AnimatePresence>
-                    {trayFullMessage && (
-                        <motion.div
-                            className="tray-full-message"
-                            initial={{ opacity: 0, y: 10 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            exit={{ opacity: 0, y: -10 }}
-                        >
-                            🚫 TRAY FULL!
-                        </motion.div>
-                    )}
-                </AnimatePresence>
             </div>
 
             {/* Result overlay */}
@@ -561,13 +631,14 @@ export const ConquestTiles = ({ onComplete, onClose, canPlay, canPlayImpossible 
                                 {result === 'win' && (
                                     <>
                                         <div className="tiles-reward-row highlight">🔱 Sigils Earned!</div>
-                                        {gemReward > 0 && (
-                                            <div className="tiles-reward-row highlight">💎 +{gemReward} Gems</div>
+                                        <div className="tiles-reward-row highlight">🎯 +{getXP()} Strategy XP {maxCombo >= 3 ? `(Combo Bonus!)` : ''}</div>
+                                        {preset.gemReward > 0 && (
+                                            <div className="tiles-reward-row highlight">💎 +{preset.gemReward} Gems</div>
                                         )}
                                     </>
                                 )}
                                 {result === 'loss' && (
-                                    <div className="tiles-reward-row">Tray filled up — better luck next time!</div>
+                                    <div className="tiles-reward-row">Tray filled up — zero Strategy XP!</div>
                                 )}
                             </div>
                             <button className="tiles-play-again-btn" onClick={onClose}>
@@ -599,10 +670,13 @@ export const ConquestTiles = ({ onComplete, onClose, canPlay, canPlayImpossible 
             <div className="tiles-top-bar">
                 <div className="tiles-title">
                     <span className="tiles-title-icon">🎴</span>
-                    Conquest Tiles
+                    <span className="tiles-title-text">Conquest Tiles</span>
                 </div>
                 {phase === 'playing' && (
-                    <div className="tiles-points">Points: <span>{points}</span></div>
+                    <div className="tiles-points-container">
+                        <div className="tiles-points-label">Score</div>
+                        <div className="tiles-points-value">{points}</div>
+                    </div>
                 )}
                 <button className="tiles-close-btn" onClick={onClose}>✕</button>
             </div>

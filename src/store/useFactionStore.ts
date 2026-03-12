@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import type { SkillName } from './useGameStore';
+import { PERSIST_REGISTRY } from '../data/persistRegistry';
 
 // ===================================
 // FACTION REPUTATION SYSTEM
@@ -160,7 +161,7 @@ export const useFactionStore = create<FactionState>()(
             },
         }),
         {
-            name: 'gl-factions-v1',
+            name: PERSIST_REGISTRY.factions.persistKey,
         }
     )
 );

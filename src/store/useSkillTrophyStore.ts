@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
+import { PERSIST_REGISTRY } from '../data/persistRegistry';
 
 // ==================== TROPHY DEFINITIONS ====================
 
@@ -260,7 +261,7 @@ export const useSkillTrophyStore = create<SkillTrophyState>()(
             },
         }),
         {
-            name: 'gl-skill-trophy-v1',
+            name: PERSIST_REGISTRY.skillTrophies.persistKey,
         }
     )
 );

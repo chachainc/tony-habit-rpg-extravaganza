@@ -4,6 +4,7 @@ import { motion } from 'framer-motion';
 import { Plus, Gift, CheckCircle, Circle, Sun, Sunset, Moon, Star, MinusCircle, Trash2, Pencil, Dices, CalendarDays } from 'lucide-react';
 import { Card } from '../../components/ui';
 import { useGameStore, type SkillName } from '../../store/useGameStore';
+import { safeUUID } from '../../utils/safeUUID';
 
 import { useRecurringTasksStore, type BundleType } from '../../store/useRecurringTasksStore';
 import { useCalendarStore } from '../../store/useCalendarStore';
@@ -133,7 +134,7 @@ export const TasksPage = () => {
             }]);
         } else if (taskType === 'today') {
             const newTask = {
-                id: crypto.randomUUID(),
+                id: safeUUID(),
                 text: taskTitle,
                 completed: false,
                 skillId: selectedSkill,
@@ -143,7 +144,7 @@ export const TasksPage = () => {
         } else {
             // Calendar Day
             const newTask = {
-                id: crypto.randomUUID(),
+                id: safeUUID(),
                 text: taskTitle,
                 completed: false,
                 skillId: selectedSkill,

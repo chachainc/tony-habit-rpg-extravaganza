@@ -1,19 +1,17 @@
 import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { Swords, Shield, Zap, X, Sparkles, BookOpen, ChevronUp, ChevronDown } from 'lucide-react';
 import { useGameStore } from '../../store/useGameStore';
-import { useCurrencyStore as _useCurrencyStore } from '../../store/useCurrencyStore';
 import { useBattleStore } from '../../store/useBattleStore';
 import { useEnemyStore, ENEMY_DB, ELEMENT_ICONS } from '../../store/useEnemyStore';
-import { useAuraStore, AURAS } from '../../store/useAuraStore';
 import { useCurrencyStore } from '../../store/useCurrencyStore';
 import { useCampaignStore } from '../../store/useCampaignStore';
 import { usePetStore, PET_DATABASE } from '../../store/usePetStore';
 import { useMagicStore } from '../../store/useMagicStore';
-import { ITEM_DATABASE } from '../../data/items';
 import { ArenaBattlefieldLayout } from './ArenaBattlefieldLayout';
 import { getDetailedCombatBreakdown, type StatBreakdown } from '../../store/useCombatFormulas';
+import { getPassiveBonuses } from '../../store/usePassiveEffects';
 import { WeaponEquipWidget } from './WeaponEquipWidget';
 import { useXpWeaponStore } from '../../store/useXpWeaponStore';
 import { Panel } from '../../components/ui/Panel';
@@ -21,8 +19,6 @@ import { Panel } from '../../components/ui/Panel';
 import { GachaButton } from '../../components/ui/GachaButton';
 import './Arena.css';
 
-
-const USE_BATTLEFIELD_LAYOUT = true;
 
 // Background images - imported directly for Vite bundling
 import forestRuinsBg from '../../assets/backgrounds/forest_ruins.png';
@@ -90,16 +86,6 @@ const ENEMY_IMAGES: Record<string, string> = {
     'flicker_of_burnout': flickerBurnoutImg,
 };
 
-// Tower Expansion: Environmental Debris
-const ENVIRONMENT_DEBRIS = [
-    { icon: '🪨', top: '15%', left: '10%', size: '1.5rem', rot: '15deg' },
-    { icon: '🦴', top: '25%', left: '85%', size: '1.2rem', rot: '-20deg' },
-    { icon: '📦', top: '75%', left: '15%', size: '1.8rem', rot: '10deg' },
-    { icon: '🏺', top: '65%', left: '80%', size: '1.4rem', rot: '-5deg' },
-    { icon: '🕸️', top: '5%', left: '75%', size: '2rem', rot: '0deg' },
-    { icon: '⛓️', top: '40%', left: '5%', size: '2.5rem', rot: '45deg' },
-];
-
 /**
  * Calculates a win probability percentage based on combatant stats.
  * Weighted primarily on ATK vs DEF and HP pools.
@@ -135,6 +121,7 @@ const getWinChanceColor = (chance: number): string => {
 
 export const Arena = ({ onClose }: { onClose: () => void }) => {
     const navigate = useNavigate();
+    const location = useLocation();
     const heroImage = useHeroImage();
     const { addGlobalXp } = useGameStore();
     const { addGold } = useCurrencyStore();
@@ -142,21 +129,22 @@ export const Arena = ({ onClose }: { onClose: () => void }) => {
     const {
         currentFloor,
         highestFloorCleared,
+        currentStreak, // New
         unlockNextFloor,
         getEnemyForFloor,
         checkForGoldenSlime,
-        recordGoldenSlimeEncounter
+        recordGoldenSlimeEncounter,
+        incrementStreak, // New
+        resetStreak // New
     } = useCampaignStore();
 
     // Pet companion
-    const { activePet, name: petName } = usePetStore();
-    const petItem = ITEM_DATABASE[activePet];
+    const { activePet } = usePetStore();
 
     const {
         phase,
         player,
         enemy,
-        turnNumber,
         combatLog,
         lastDamage,
         initBattle,
@@ -164,8 +152,6 @@ export const Arena = ({ onClose }: { onClose: () => void }) => {
         selectAbility,
         playerDefend,
         resetBattle,
-        isGoldenSlime,
-        goldenSlimeTurnsRemaining,
         petAbilityCooldown,
         usePetAbility,
         castSpell,
@@ -173,7 +159,6 @@ export const Arena = ({ onClose }: { onClose: () => void }) => {
         maxMP: battleMaxMP,
         equippedSpells,
         startBattle,
-        bossPhase,
     } = useBattleStore();
 
     // Get pet ability info
@@ -184,20 +169,7 @@ export const Arena = ({ onClose }: { onClose: () => void }) => {
     const { ownedSpells, getOwnedSpells } = useMagicStore();
     const [showSpellMenu, setShowSpellMenu] = useState(false);
 
-    // Log Collapse State
-    const [isLogCollapsed, setIsLogCollapsed] = useState(() => window.innerWidth <= 768);
-    const [lastReadLogLength, setLastReadLogLength] = useState(0);
-
-    // Update unread count
-    useEffect(() => {
-        if (!isLogCollapsed) {
-            setLastReadLogLength(combatLog.length);
-        }
-    }, [combatLog.length, isLogCollapsed]);
-
-    const unreadLogCount = combatLog.length - lastReadLogLength;
-
-    const [view, setView] = useState<'map' | 'battle'>('map');
+    const [view, setView] = useState<'map' | 'battle'>(location.state?.startBattle ? 'battle' : 'map');
     const [autoAttack, setAutoAttack] = useState(false);
     const [showPowerDetails, setShowPowerDetails] = useState(false);
 
@@ -278,59 +250,116 @@ export const Arena = ({ onClose }: { onClose: () => void }) => {
     };
 
     // Handle Victory
-
     const handleVictory = () => {
+        const battleState = useBattleStore.getState();
+        const isConquest = battleState.context === 'conquest';
+        const passives = getPassiveBonuses();
+
         if (enemy) {
             const enemyDef = ENEMY_DB[enemy.id];
             if (enemyDef) {
                 markDefeated(enemy.id);
-                addGold(enemyDef.goldReward);
-                addGlobalXp(enemyDef.xpReward);
+                const scaling = enemy.scalingFactor || 1.0;
 
-                // Unlock next floor if this was the current floor
-                if (currentFloor <= highestFloorCleared + 1) { // Logic check
-                    unlockNextFloor();
-                }
-
-                // Gem rewards for boss floors (every 10th floor)
-                // 3rd boss+ (floor 30+) awards increasingly more gems
-                if (enemyDef.floor > 0 && enemyDef.floor % 10 === 0) {
-                    const bossNumber = enemyDef.floor / 10; // 1 = floor 10, 2 = floor 20, etc.
-                    const gemReward = bossNumber <= 2 ? 1 : bossNumber - 1; // 1,1,2,3,4...
-                    import('../../store/useGameStore').then(({ useGameStore: gs }) => {
-                        gs.getState().addGems(gemReward);
-                    });
-                    import('../../components/ui/Toast').then(({ useToastStore }) => {
-                        useToastStore.getState().addToast({
-                            type: 'success',
-                            message: `💎 Boss Floor ${enemyDef.floor} Cleared! +${gemReward} Gem${gemReward > 1 ? 's' : ''}!`,
-                            duration: 5000,
+                if (isConquest) {
+                    // Conquest specific rewards
+                    const sigils = Math.floor(Math.random() * 3) + passives.sigil_bonus; // 0-2
+                    if (sigils > 0) {
+                        import('../../store/useConquestStore').then(({ useConquestStore: cs }) => {
+                            cs.getState().addSigils(sigils);
                         });
-                    }).catch(() => { });
+                        import('../../components/ui/Toast').then(({ useToastStore }) => {
+                            useToastStore.getState().addToast({
+                                type: 'success',
+                                message: `Conquest Victory! Found ${sigils} Sigil${sigils > 1 ? 's' : ''}!`,
+                                duration: 5000,
+                            });
+                        }).catch(() => { });
+                    }
+                } else {
+                    // Arena Rewards with Streak Multiplier
+                    incrementStreak();
+                    const streakCount = useCampaignStore.getState().currentStreak;
+                    const streakMultiplier = 1.0 + (Math.min(streakCount, 10) * 0.05); // Cap at +50%
+
+                    const totalGold = Math.floor((Math.round(enemyDef.goldReward * scaling) + passives.gold_bonus) * streakMultiplier);
+                    const totalXp = Math.floor(Math.round(enemyDef.xpReward * scaling) * streakMultiplier);
+
+                    addGold(totalGold);
+                    addGlobalXp(totalXp);
+
+                    // Unlock next floor if this was the current floor
+                    if (currentFloor <= highestFloorCleared + 1) { // Logic check
+                        unlockNextFloor();
+                    }
+
+                    // Gem rewards for boss floors (every 10th floor)
+                    // 3rd boss+ (floor 30+) awards increasingly more gems
+                    if (enemyDef.floor > 0 && enemyDef.floor % 10 === 0) {
+                        const bossNumber = enemyDef.floor / 10; // 1 = floor 10, 2 = floor 20, etc.
+                        const gemReward = bossNumber <= 2 ? 1 : bossNumber - 1; // 1,1,2,3,4...
+                        import('../../store/useGameStore').then(({ useGameStore: gs }) => {
+                            gs.getState().addGems(gemReward);
+                        });
+                        import('../../components/ui/Toast').then(({ useToastStore }) => {
+                            useToastStore.getState().addToast({
+                                type: 'success',
+                                message: `💎 Boss Floor ${enemyDef.floor} Cleared! +${gemReward} Gem${gemReward > 1 ? 's' : ''}!`,
+                                duration: 5000,
+                            });
+                        }).catch(() => { });
+                    }
+
+                    // Arena victory sigil (0-1) - reduced base chance
+                    const sigilRoll = Math.random();
+                    const sigils = (sigilRoll < 0.25 ? 1 : 0) + passives.sigil_bonus;
+                    if (sigils > 0) {
+                        import('../../store/useConquestStore').then(({ useConquestStore: cs }) => {
+                            cs.getState().addSigils(sigils);
+                        });
+                    }
+
+                    // Native Equipment drop chance (20%)
+                    if (Math.random() < 0.20) {
+                        import('../../store/useEquipmentStore').then(({ useEquipmentStore: es }) => {
+                            const result = es.getState().pullEquipment();
+                            if (result) {
+                                import('../../components/ui/Toast').then(({ useToastStore }) => {
+                                    useToastStore.getState().addToast({
+                                        type: 'success',
+                                        message: `Loot: ${result.item.name}! ${result.wasDuplicate ? `(Converted to ${result.essenceGained} essence)` : ''}`,
+                                        duration: 5000,
+                                    });
+                                }).catch(() => { });
+                            }
+                        }).catch(() => { });
+                    }
                 }
             }
         }
-        setView('map');
-        resetBattle();
+
+        if (isConquest) {
+            navigate('/combat');
+            resetBattle();
+        } else {
+            setView('map');
+            resetBattle();
+        }
     };
 
     // Handle Defeat
     const handleDefeat = () => {
-        setView('map');
+        const isConquest = useBattleStore.getState().context === 'conquest';
+        if (isConquest) {
+            navigate('/combat');
+        } else {
+            resetStreak(); // Break streak on defeat
+            setView('map');
+        }
         resetBattle();
     };
 
     // --- RENDER HELPERS ---
-
-    const renderHealthBar = (current: number, max: number, type: 'player' | 'enemy') => (
-        <div className="health-bar-container">
-            <div
-                className={`health-fill ${type}`}
-                style={{ width: `${Math.max(0, (current / max) * 100)}%` }}
-            />
-            <span className="health-text">{Math.round(current)}/{Math.round(max)}</span>
-        </div>
-    );
 
     // --- CAMPAIGN MAP ---
     if (view === 'map') {
@@ -430,6 +459,11 @@ export const Arena = ({ onClose }: { onClose: () => void }) => {
                         <div className="campaign-header">
                             <h2>⚔️ The Tower of Discipline ⚔️</h2>
                             <p className="campaign-subtitle">Ascend through the floors and conquer your demons</p>
+                            {currentStreak > 0 && (
+                                <div className="streak-indicator" style={{ color: '#f59e0b', fontWeight: 'bold', marginTop: '0.5rem' }}>
+                                    🔥 Win Streak: {currentStreak} (+{Math.min(currentStreak * 5, 50)}% Rewards)
+                                </div>
+                            )}
                             <div className="campaign-header-buttons">
                                 <button
                                     className="tome-btn"
@@ -497,28 +531,18 @@ export const Arena = ({ onClose }: { onClose: () => void }) => {
                                             </div>
                                         </div>
                                         <div className="profile-content">
-                                            <div className="stat-grid">
-                                                <div className="intel-row">
-                                                    <span className="intel-label">HP</span>
-                                                    <span className="intel-status">{enemy.maxHp}</span>
-                                                </div>
-                                                <div className="intel-row">
-                                                    <span className="intel-label">ATK</span>
-                                                    <span className="intel-status">{enemy.atk}</span>
-                                                </div>
-                                                <div className="intel-row">
-                                                    <span className="intel-label">DEF</span>
-                                                    <span className="intel-status">{enemy.def}</span>
-                                                </div>
-                                                <div className="intel-row">
-                                                    <span className="intel-label">SPD</span>
-                                                    <span className="intel-status">{enemy.spd}</span>
-                                                </div>
-                                                <div className="intel-row">
-                                                    <span className="intel-label">Element</span>
-                                                    <span className="intel-status">✨ {enemyDef.element}</span>
-                                                </div>
+                                            <div className="stat-grid horizontal">
+                                                <div className="stat-pill"><span className="stat-icon">❤️</span> {enemy.maxHp}</div>
+                                                <div className="stat-pill"><span className="stat-icon">⚔️</span> {enemy.atk}</div>
+                                                <div className="stat-pill"><span className="stat-icon">🛡️</span> {enemy.def}</div>
+                                                <div className="stat-pill"><span className="stat-icon">💨</span> {enemy.spd}</div>
+                                                <div className="stat-pill"><span className="stat-icon">✨</span> {enemyDef.element}</div>
                                             </div>
+                                            {useBattleStore.getState().context === 'conquest' && (
+                                                <div className="synergy-banner" style={{ marginTop: '0.5rem', background: 'rgba(239, 68, 68, 0.2)' }}>
+                                                    [DEBUG] Conquest Enemy Power: {useBattleStore.getState().conquestEnemyPower}
+                                                </div>
+                                            )}
                                         </div>
                                     </Panel>
 
@@ -531,27 +555,12 @@ export const Arena = ({ onClose }: { onClose: () => void }) => {
                                             </div>
                                         </div>
                                         <div className="profile-content">
-                                            <div className="stat-grid">
-                                                <div className="intel-row">
-                                                    <span className="intel-label">HP</span>
-                                                    <span className="intel-status">{player.maxHp}/{player.maxHp}</span>
-                                                </div>
-                                                <div className="intel-row">
-                                                    <span className="intel-label">ATK</span>
-                                                    <span className="intel-status">{player.atk}</span>
-                                                </div>
-                                                <div className="intel-row">
-                                                    <span className="intel-label">DEF</span>
-                                                    <span className="intel-status">{player.def}</span>
-                                                </div>
-                                                <div className="intel-row">
-                                                    <span className="intel-label">SPD</span>
-                                                    <span className="intel-status">{player.spd}</span>
-                                                </div>
-                                                <div className="intel-row">
-                                                    <span className="intel-label">Element</span>
-                                                    <span className="intel-status">✨ neutral</span>
-                                                </div>
+                                            <div className="stat-grid horizontal">
+                                                <div className="stat-pill"><span className="stat-icon">❤️</span> {player.maxHp}</div>
+                                                <div className="stat-pill"><span className="stat-icon">⚔️</span> {player.atk}</div>
+                                                <div className="stat-pill"><span className="stat-icon">🛡️</span> {player.def}</div>
+                                                <div className="stat-pill"><span className="stat-icon">💨</span> {player.spd}</div>
+                                                <div className="stat-pill"><span className="stat-icon">🔮</span> neutral</div>
                                             </div>
 
                                             {/* Power Details Panel */}
@@ -678,230 +687,27 @@ export const Arena = ({ onClose }: { onClose: () => void }) => {
             <div className="modal-overlay arena-overlay">
                 <div className={`arena-modal ${lastDamage?.target === 'player' ? 'shake' : ''}`}>
                     <div className="battle-layout">
-                        {/* Interactive Squad Battlefield Layout */}
-                        {USE_BATTLEFIELD_LAYOUT ? (
-                            <div style={{ flex: 1, position: 'relative', overflow: 'hidden' }}>
-                                <ArenaBattlefieldLayout />
-                            </div>
-                        ) : (
-                            <div className={`battle-stage ${currentFloor >= 15 ? 'high-floor' : ''}`}>
-                                <div
-                                    className="battle-background"
-                                    style={{
-                                        backgroundImage: `url(${getBackgroundForFloor(currentFloor)})`,
-                                        backgroundSize: 'cover',
-                                        backgroundPosition: 'center'
-                                    }}
-                                />
-
-                                {/* Tower Expansion: Environmental Debris Layer */}
-                                <div className="environmental-debris">
-                                    {ENVIRONMENT_DEBRIS.map((item, i) => (
-                                        <div
-                                            key={i}
-                                            className="debris-item"
-                                            style={{
-                                                top: item.top,
-                                                left: item.left,
-                                                fontSize: item.size,
-                                                transform: `rotate(${item.rot})`
-                                            }}
-                                        >
-                                            {item.icon}
-                                        </div>
-                                    ))}
-                                </div>
-
-                                {player && enemy && (
-                                    <>
-                                        {/* Opening Dialogue Overlay */}
-                                        <AnimatePresence>
-                                            {turnNumber === 1 && phase !== 'prep' && (
-                                                <motion.div
-                                                    className="opening-dialogue-overlay"
-                                                    initial={{ opacity: 1 }}
-                                                    animate={{ opacity: 0 }}
-                                                    transition={{ duration: 1, delay: 2 }}
-                                                >
-                                                    <motion.div
-                                                        className="dialogue-box"
-                                                        initial={{ scale: 0.8, opacity: 0 }}
-                                                        animate={{ scale: 1, opacity: 1 }}
-                                                        exit={{ scale: 1.2, opacity: 0 }}
-                                                    >
-                                                        <div className="dialogue-icon">{enemy.icon}</div>
-                                                        <p className="dialogue-text">"{ENEMY_DB[enemy.id].openingLine}"</p>
-                                                    </motion.div>
-                                                </motion.div>
-                                            )}
-                                        </AnimatePresence>
-
-                                        {/* HUD */}
-                                        <div className="battle-hud">
-                                            {/* Timeline / Turn Indicator */}
-                                            <div className="timeline">
-                                                {/* Golden Slime Warning */}
-                                                {isGoldenSlime && (
-                                                    <div className="golden-slime-warning" style={{
-                                                        background: 'linear-gradient(90deg, #fbbf24, #f59e0b)',
-                                                        color: '#000',
-                                                        padding: '0.25rem 0.75rem',
-                                                        borderRadius: '8px',
-                                                        fontWeight: 'bold',
-                                                        marginBottom: '0.5rem',
-                                                        animation: 'pulse 1s infinite'
-                                                    }}>
-                                                        ⚠️ ESCAPES IN {goldenSlimeTurnsRemaining} TURN{goldenSlimeTurnsRemaining > 1 ? 'S' : ''}!
-                                                    </div>
-                                                )}
-                                                {/* Simple turn text for now */}
-                                                <div className="turn-text" style={{ color: 'white', fontWeight: 'bold' }}>
-                                                    Turn {turnNumber} • {phase === 'select_action' ? "YOUR TURN" : `${enemy.name}'s TURN`}
-                                                </div>
-                                            </div>
-
-                                            {/* Player Status */}
-                                            <div className="combatant-status player">
-                                                <div className="status-name">
-                                                    {player.name}
-                                                    {player.isBerserk && <span className="berserk-badge">🔥 BERSERK</span>}
-                                                </div>
-                                                {renderHealthBar(player.hp, player.maxHp, 'player')}
-                                                {/* Mana Bar */}
-                                                <div className="mana-bar" style={{ marginTop: '0.25rem', height: '6px', background: '#1e3a5f', width: '100%', borderRadius: '3px' }}>
-                                                    <div style={{ height: '100%', width: `${(player.mana / player.maxMana) * 100}%`, background: 'linear-gradient(90deg, #3b82f6, #60a5fa)', borderRadius: '3px' }} />
-                                                </div>
-                                                <div style={{ fontSize: '0.65rem', color: '#60a5fa', marginTop: '0.1rem' }}>
-                                                    {player.mana}/{player.maxMana} MP
-                                                </div>
-                                                {/* Rage Bar */}
-                                                <div className="rage-bar" style={{ marginTop: '0.25rem', height: '4px', background: '#333', width: '100%' }}>
-                                                    <div style={{ height: '100%', width: `${player.energy}%`, background: player.energy >= 100 ? '#fbbf24' : '#f59e0b' }} />
-                                                </div>
-                                            </div>
-
-                                            {/* Enemy Status */}
-                                            <div className="combatant-status enemy">
-                                                <div className="status-name">{enemy.name}</div>
-                                                {renderHealthBar(enemy.hp, enemy.maxHp, 'enemy')}
-                                            </div>
-                                        </div>
-
-                                        {/* Sprites with Tower Expansion Platforms */}
-                                        <div className="battle-stage-platforms">
-                                            {/* Player Platform */}
-                                            <div className="player-platform">
-                                                <div className="platform-ellipse" />
-                                                <div className="combatant-sprite player">
-                                                    <AnimatePresence>
-                                                        {(() => {
-                                                            const activeAuraId = useAuraStore.getState().activeAuraId;
-                                                            const activeAura = AURAS.find(a => a.id === activeAuraId);
-                                                            if (activeAura && activeAura.id !== 'none') {
-                                                                return (
-                                                                    <motion.div
-                                                                        className="battle-aura-effect"
-                                                                        initial={{ opacity: 0, scale: 0.8 }}
-                                                                        animate={{
-                                                                            opacity: [0.3, 0.6, 0.3],
-                                                                            scale: [1, 1.3, 1],
-                                                                            background: `radial-gradient(circle, ${activeAura.color} 0%, transparent 70%)`
-                                                                        }}
-                                                                        transition={{ duration: 2, repeat: Infinity }}
-                                                                    />
-                                                                );
-                                                            }
-                                                            return null;
-                                                        })()}
-                                                    </AnimatePresence>
-
-                                                    <motion.img
-                                                        src={heroImage}
-                                                        alt="Player"
-                                                        animate={lastDamage?.target === 'player' ? { x: [0, -10, 10, -10, 0] } : {}}
-                                                    />
-
-                                                    {petItem && (
-                                                        <div className="battle-pet">
-                                                            <span className="pet-icon">{petItem.icon}</span>
-                                                            <div className="pet-name-bubble">{petName}</div>
-                                                        </div>
-                                                    )}
-                                                </div>
-                                            </div>
-
-                                            {/* Enemy Platform */}
-                                            <div className={`enemy-platform ${bossPhase === 2 ? 'boss-enraged' : ''}`}>
-                                                <div className="platform-ellipse" />
-                                                <div className="combatant-sprite enemy">
-                                                    <motion.div
-                                                        className="enemy-sprite-wrap"
-                                                        animate={lastDamage?.target === enemy.id ? { x: [0, 10, -10, 10, 0], scale: [1, 1.1, 1] } : {}}
-                                                    >
-                                                        {ENEMY_IMAGES[enemy.id] ? (
-                                                            <img
-                                                                src={ENEMY_IMAGES[enemy.id]}
-                                                                alt={enemy.name}
-                                                                style={bossPhase === 2 ? { filter: 'sepia(1) saturate(5) hue-rotate(-50deg)' } : {}}
-                                                            />
-                                                        ) : (
-                                                            <div className="enemy-icon-fallback">{enemy.icon}</div>
-                                                        )}
-                                                    </motion.div>
-                                                </div>
-                                            </div>
-                                        </div>
-
-                                        {/* Floating Combat Text */}
-                                        <AnimatePresence>
-                                            {lastDamage && (
-                                                <motion.div
-                                                    key={turnNumber}
-                                                    className={`floating-text damage ${lastDamage.isCrit ? 'crit' : ''}`}
-                                                    style={{
-                                                        top: '40%',
-                                                        left: lastDamage.target === 'player' ? '25%' : '75%'
-                                                    }}
-                                                    initial={{ y: 0, opacity: 1, scale: 0.5 }}
-                                                    animate={{ y: -100, opacity: 0, scale: 1.5 }}
-                                                    transition={{ duration: 0.8 }}
-                                                >
-                                                    {lastDamage.amount}
-                                                </motion.div>
-                                            )}
-                                        </AnimatePresence>
-                                    </>
-                                )}
-                            </div>
-                        )}
-
-                        {/* COMMAND DECK (Bottom 40%) */}
-                        <div className="command-deck">
-                            {/* Battle Log Panel */}
-                            {/* Battle Log Panel */}
-                            <div className={`battle-log ${isLogCollapsed ? 'collapsed' : ''}`}>
-                                <div
-                                    className="battle-log-header"
-                                    onClick={() => setIsLogCollapsed(!isLogCollapsed)}
-                                >
-                                    <span>Combat Log</span>
-                                    <div className="log-controls">
-                                        {isLogCollapsed && unreadLogCount > 0 && (
-                                            <span className="unread-dot" />
-                                        )}
-                                        {isLogCollapsed ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+                        {/* TOP & BATTLEFIELD (60%) */}
+                        <div className="battlefield-container">
+                            <ArenaBattlefieldLayout />
+                        </div>
+                        {/* COMBAT LOG (15%) */}
+                        <div className="combat-log-container">
+                            <div className="combat-log-panel">
+                                {combatLog.slice(-10).map((log, i) => (
+                                    <div key={i} className={`log-entry log-${log.type}`}>
+                                        {log.type === 'damage' && <span className="log-icon">⚔️</span>}
+                                        {log.type === 'heal' && <span className="log-icon">💚</span>}
+                                        {log.type === 'buff' && <span className="log-icon">⬆️</span>}
+                                        {log.message}
                                     </div>
-                                </div>
-                                {!isLogCollapsed && (
-                                    <div className="battle-log-content">
-                                        {combatLog.slice(-15).map((log, i) => (
-                                            <div key={i} className={`log-entry log-${log.type}`}>
-                                                {log.message}
-                                            </div>
-                                        ))}
-                                    </div>
-                                )}
+                                ))}
                             </div>
+                        </div>
+
+                        {/* ACTION BAR (25%) */}
+                        <div className="action-bar-container">
+
 
                             {player && (
                                 <div className="action-buttons">
@@ -1060,11 +866,15 @@ export const Arena = ({ onClose }: { onClose: () => void }) => {
                                         <div className="result-rewards">
                                             <div className="reward-row">
                                                 <span>Gold</span>
-                                                <span>+{ENEMY_DB[enemy!.id].goldReward}</span>
+                                                <span>
+                                                    +{Math.floor((ENEMY_DB[enemy!.id].goldReward + getPassiveBonuses().gold_bonus) * (1.0 + Math.min(useCampaignStore.getState().currentStreak, 10) * 0.05))}
+                                                </span>
                                             </div>
                                             <div className="reward-row">
                                                 <span>XP</span>
-                                                <span>+{ENEMY_DB[enemy!.id].xpReward}</span>
+                                                <span>
+                                                    +{Math.floor(ENEMY_DB[enemy!.id].xpReward * (1.0 + Math.min(useCampaignStore.getState().currentStreak, 10) * 0.05))}
+                                                </span>
                                             </div>
                                         </div>
                                         {(() => {

@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
+import { PERSIST_REGISTRY } from '../data/persistRegistry';
 
 export type EquipmentRarity = 'common' | 'rare' | 'epic' | 'legendary';
 export type EquipmentSlot = 'weapon' | 'armor' | 'accessory';
@@ -141,6 +142,8 @@ interface EquipmentState {
     equippedWeapon: string | null;
     equippedArmor: string | null;
     equippedAccessory: string | null;
+    equipmentLevels: Record<string, number>;
+    equipmentSets: Record<string, Record<string, string | null>>;
 
     // Gacha
     equipmentPity: number;  // Counter for pity system
@@ -150,6 +153,8 @@ interface EquipmentState {
     pullEquipment: () => { item: Equipment; wasDuplicate: boolean; essenceGained: number } | null;
     equipItem: (equipmentId: string) => void;
     unequipSlot: (slot: EquipmentSlot) => void;
+    upgradeEquipment: (equipmentId: string) => boolean;
+    saveEquipmentSet: (setName: string, snapshot: Record<string, string | null>) => void;
 
     // Getters
     getEquipmentBonuses: () => { atk: number; def: number; hp: number };
@@ -163,6 +168,13 @@ export const useEquipmentStore = create<EquipmentState>()(
             equippedWeapon: null,
             equippedArmor: null,
             equippedAccessory: null,
+            equipmentLevels: {},
+            equipmentSets: {
+                'Combat Set': {},
+                'Gym Set': {},
+                'Study Set': {},
+                'Sleep Set': {}
+            },
             equipmentPity: 0,
             essence: 0,
 
@@ -262,6 +274,30 @@ export const useEquipmentStore = create<EquipmentState>()(
                 }
             },
 
+            upgradeEquipment: (equipmentId: string) => {
+                const state = get();
+                if (!state.ownedEquipment.includes(equipmentId)) return false;
+
+                const currentLevel = state.equipmentLevels[equipmentId] || 0;
+                set({
+                    equipmentLevels: {
+                        ...state.equipmentLevels,
+                        [equipmentId]: currentLevel + 1,
+                    },
+                });
+
+                return true;
+            },
+
+            saveEquipmentSet: (setName: string, snapshot: Record<string, string | null>) => {
+                set((state) => ({
+                    equipmentSets: {
+                        ...state.equipmentSets,
+                        [setName]: snapshot
+                    }
+                }));
+            },
+
             getEquipmentBonuses: () => {
                 const state = get();
                 let atk = 0, def = 0, hp = 0;
@@ -274,10 +310,12 @@ export const useEquipmentStore = create<EquipmentState>()(
 
                 for (const id of equipped) {
                     const item = EQUIPMENT_DB[id];
+                    const level = state.equipmentLevels[id] || 0;
                     if (item) {
-                        atk += item.atkBonus;
-                        def += item.defBonus;
-                        hp += item.hpBonus;
+                        const levelMult = 1 + (level * 0.10);
+                        atk += Math.floor(item.atkBonus * levelMult);
+                        def += Math.floor(item.defBonus * levelMult);
+                        hp += Math.floor(item.hpBonus * levelMult);
                     }
                 }
 
@@ -293,7 +331,7 @@ export const useEquipmentStore = create<EquipmentState>()(
             },
         }),
         {
-            name: 'gl-equipment-v1',
+            name: PERSIST_REGISTRY.equipment.persistKey,
         }
     )
 );

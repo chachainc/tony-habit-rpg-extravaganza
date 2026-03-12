@@ -1,544 +1,415 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Crown, Users, Map, Package, Zap, Heart } from 'lucide-react';
+import { Crown, Coins, Tent, Swords, Gem, MessageSquare, Gamepad2, Skull, Flame, Sparkles, AlertTriangle, Heart } from 'lucide-react';
 import { useConquestStore } from '../../store/useConquestStore';
-import type { ConquestCombatResult, ConquestNode, SoldierRole } from '../../store/useConquestStore';
-import { useStrategyStore } from '../../store/useStrategyStore';
+import { useCurrencyStore } from '../../store/useCurrencyStore';
+import { CONQUEST_MAP_NODES, CONQUEST_EVENT_TABLE, CONQUEST_NODE_PREVIEW, type ConquestNodeData } from '../../data/conquest';
+import { useHeroImage } from '../../hooks/useHeroImage';
 import { ConquestStoreUI } from './ConquestStore';
 import { ChessGame } from './ChessGame';
 import { ConquestTiles } from './ConquestTiles';
-import type { Difficulty } from './tileConfig';
-import { SoldierCard } from './SoldierCard';
+import { useStrategyStore } from '../../store/useStrategyStore';
+import { useNavigate } from 'react-router-dom';
+import { useBattleStore } from '../../store/useBattleStore';
+import { getPassiveBonuses } from '../../store/usePassiveEffects';
+import { useInventoryStore, type ItemDef } from '../../store/useInventoryStore';
+import { useToastStore } from '../../components/ui/Toast';
+import { getConquestRewardPool } from '../../data/rewardTables';
 import './Conquest.css';
 
 // AI-generated background
-import sandCombatBg from '../../assets/backgrounds/infernal_citadel.png';
+import bgMap from '../../assets/backgrounds/infernal_citadel.png';
 
-type ConquestView = 'map' | 'combat' | 'soldiers' | 'store' | 'chess';
-
-const TERRAIN_ICONS: Record<string, string> = {
-    plains: '🌾', swamp: '🐊', mountain: '⛰️', plague: '☠️',
-    night: '🌙', market: '🏪', forest: '🌲',
+const NODE_ICONS: Record<string, React.ReactNode> = {
+    start: <Tent size={24} />,
+    battle: <Swords size={24} />,
+    elite: <Swords className="elite-icon" size={28} color="#ef4444" />,
+    treasure: <Gem size={24} />,
+    event: <MessageSquare size={24} />,
+    minigame: <Gamepad2 size={24} />,
+    shop: <Coins size={24} />,
+    campfire: <Flame size={24} color="#f97316" />,
+    shrine: <Sparkles size={24} color="#fbbf24" />,
+    cursed: <AlertTriangle size={24} color="#a855f7" />,
+    boss: <Skull size={32} />
 };
-
-const NODE_TYPE_ICONS: Record<string, string> = {
-    normal: '⬡', resource: '💎', elite: '⚔️', boss: '👑', stronghold: '🏰',
-};
-
-const ROLE_ICONS: Record<SoldierRole, string> = {
-    scout: '🔭', morale: '📯', siege: '🏗️', healer: '💊',
-};
-
-const SOLDIER_NAMES = [
-    'Marcus', 'Elena', 'Theron', 'Sybil', 'Aldric', 'Renna',
-    'Gareth', 'Lyra', 'Daven', 'Isolde', 'Brecht', 'Kira',
-];
 
 export const Conquest = () => {
-    const [view, setView] = useState<ConquestView>('map');
-    const [selectedNode, setSelectedNode] = useState<ConquestNode | null>(null);
-    const [combatResult, setCombatResult] = useState<ConquestCombatResult | null>(null);
-    const [isRolling, setIsRolling] = useState(false);
-    const [heroRolled, setHeroRolled] = useState(false);
-    const [showChess, setShowChess] = useState(false);
-    const [showStore, setShowStore] = useState(false);
-    const [showTiles, setShowTiles] = useState(false);
-
-    const [rollingFaces, setRollingFaces] = useState<{ attacker: number[]; defender: number[] }>({ attacker: [], defender: [] });
-
     const conquest = useConquestStore();
+    const currency = useCurrencyStore();
     const strategy = useStrategyStore();
+    const navigate = useNavigate();
+    const heroImage = useHeroImage();
+    const mapContainerRef = useRef<HTMLDivElement>(null);
 
-    // Init regions on first mount
+    const [showStore, setShowStore] = useState(false);
+    const [showChess, setShowChess] = useState(false);
+    const [showTiles, setShowTiles] = useState(false);
+    const [activeEvent, setActiveEvent] = useState<string | null>(null);
+    const [showCampfire, setShowCampfire] = useState(false);
+    const [showShrine, setShowShrine] = useState(false);
+    const [showCursed, setShowCursed] = useState(false);
+    const [rewardModal, setRewardModal] = useState<{ gold: number, sigils: number, item?: ItemDef } | null>(null);
+    const [hasBounced, setHasBounced] = useState(false); // To handle initial scroll to bottom
+    const [hoveredNode, setHoveredNode] = useState<ConquestNodeData | null>(null);
+
     useEffect(() => {
-        conquest.initRegions();
+        conquest.initMap();
     }, []);
 
-    const region = conquest.regions[conquest.currentRegionIdx];
-    const totalForce = conquest.getTotalForce();
+    // Initial scroll to bottom where player starts
+    useEffect(() => {
+        if (!hasBounced && mapContainerRef.current) {
+            setTimeout(() => {
+                mapContainerRef.current!.scrollTop = mapContainerRef.current!.scrollHeight;
+                setHasBounced(true);
+            }, 100);
+        }
+    }, [hasBounced]);
 
-    const handleAttack = (node: ConquestNode) => {
-        setSelectedNode(node);
-        setView('combat');
-        setIsRolling(true);
-        setHeroRolled(false);
-        setCombatResult(null);
+    const reachableNodes = conquest.getReachableNodes();
 
-        // Enemy dice start spinning immediately
-        const diceCount = conquest.diceCount;
-        const rollInterval = setInterval(() => {
-            setRollingFaces(prev => ({
-                attacker: heroRolled
-                    ? prev.attacker   // keep hero fixed if already rolled
-                    : Array.from({ length: diceCount }, () => Math.floor(Math.random() * 6) + 1),
-                defender: Array.from({ length: 2 }, () => Math.floor(Math.random() * 6) + 1),
-            }));
-        }, 80);
+    const handleNodeClick = (node: ConquestNodeData) => {
+        console.log("Clicked node:", node.id, node.label);
+        console.log("Reachable nodes:", reachableNodes);
 
-        // Store interval ref so we can clear it when hero rolls
-        (handleAttack as any)._rollInterval = rollInterval;
-    };
-
-    const handleHeroRoll = () => {
-        if (!selectedNode || !isRolling || heroRolled) return;
-        setHeroRolled(true);
-
-        // Fix hero dice immediately
-        const diceCount = conquest.diceCount;
-        const fixedHeroDice = Array.from({ length: diceCount }, () => Math.floor(Math.random() * 6) + 1);
-        setRollingFaces(prev => ({ ...prev, attacker: fixedHeroDice }));
-
-        // Enemy keeps rolling for 1.2s more, then resolve
-        setTimeout(() => {
-            clearInterval((handleAttack as any)._rollInterval);
-            const result = conquest.conquestAttack(selectedNode.id);
-            setRollingFaces({ attacker: result.rolls.attackerDice, defender: result.rolls.defenderDice });
-            setCombatResult(result);
-            setIsRolling(false);
-        }, 1200);
-    };
-
-    const handleChessComplete = (result: 'win' | 'draw' | 'loss', difficulty: 1 | 2 | 3) => {
-        strategy.recordChessResult(result, difficulty);
-        setShowChess(false);
-    };
-
-    const handleTilesComplete = (result: 'win' | 'loss', difficulty: Difficulty) => {
-        strategy.recordTilesResult(result, difficulty);
-    };
-
-    // Die face display helper
-    const DICE_FACES = ['', '⚀', '⚁', '⚂', '⚃', '⚄', '⚅'];
-
-    // ─── MAP VIEW ───────────────────────────────
-    const renderMap = () => {
-        if (!region) return <div className="conquest-empty">Loading regions...</div>;
-
-        // Find the army position (rightmost conquered node index)
-        const conqueredIndices = region.nodes
-            .map((n, i) => (n.conquered ? i : -1))
-            .filter(i => i >= 0);
-        const armyIndex = conqueredIndices.length > 0 ? Math.max(...conqueredIndices) : -1;
-
-        return (
-            <div className="conquest-map-view">
-                <div className="conquest-map-header">
-                    <div className="region-info">
-                        <h2>📍 {region.name}</h2>
-                        <div className="region-progress">
-                            {region.nodes.filter(n => n.conquered).length} / {region.nodes.length} Nodes Conquered
-                        </div>
-                    </div>
-                    <div className="conquest-stats-bar">
-                        <div className="cq-stat">
-                            <Crown size={14} /> <span>{conquest.sigils} Sigils</span>
-                        </div>
-                        <div className="cq-stat">
-                            <Users size={14} /> <span>{conquest.soldiers.length}/{conquest.maxTeamSize} Soldiers</span>
-                        </div>
-                        <div className="cq-stat">
-                            <Heart size={14} /> <span>Morale: {conquest.morale}/100</span>
-                        </div>
-                        <div className="cq-stat">
-                            <Zap size={14} /> <span>Force: {totalForce}</span>
-                        </div>
-                    </div>
-                </div>
-
-                {/* Horizontal Scrolling Path */}
-                <div className="conquest-path-scroll">
-                    <div className="conquest-path-track">
-                        {/* SVG connecting line */}
-                        <svg className="conquest-path-line" preserveAspectRatio="none">
-                            <line
-                                x1="0" y1="50%"
-                                x2="100%" y2="50%"
-                                stroke="rgba(139,92,246,0.25)"
-                                strokeWidth="3"
-                                strokeDasharray="8,6"
-                            />
-                            {/* Conquered progress line */}
-                            {armyIndex >= 0 && (
-                                <line
-                                    x1="0" y1="50%"
-                                    x2={`${((armyIndex + 1) / region.nodes.length) * 100}%`} y2="50%"
-                                    stroke="rgba(34,197,94,0.6)"
-                                    strokeWidth="3"
-                                />
-                            )}
-                        </svg>
-
-                        {region.nodes.map((node, idx) => {
-                            const isAccessible = !node.conquered && (
-                                node.id === conquest.currentNodeId ||
-                                node.connections.some(c => {
-                                    const cn = region.nodes.find(n => n.id === c);
-                                    return cn?.conquered;
-                                }) ||
-                                (conquest.currentNodeId === null && idx === 0)
-                            );
-                            const isArmy = idx === armyIndex;
-
-                            return (
-                                <motion.div
-                                    key={node.id}
-                                    className={`conquest-path-node ${node.type} ${node.conquered ? 'conquered' : ''} ${isAccessible ? 'accessible' : ''} ${selectedNode?.id === node.id ? 'selected' : ''} ${node.isBoss ? 'boss-node' : ''}`}
-                                    whileHover={isAccessible ? { scale: 1.12, y: -4 } : {}}
-                                    onClick={() => isAccessible && setSelectedNode(node)}
-                                >
-                                    {/* Army marker */}
-                                    {isArmy && (
-                                        <motion.div
-                                            className="army-marker"
-                                            animate={{ y: [0, -4, 0] }}
-                                            transition={{ duration: 1.5, repeat: Infinity }}
-                                        >
-                                            ⚔️
-                                        </motion.div>
-                                    )}
-                                    <div className="path-node-icon">{NODE_TYPE_ICONS[node.type]}</div>
-                                    <div className="path-node-name">{node.name}</div>
-                                    <div className="path-node-terrain">{TERRAIN_ICONS[node.terrain]}</div>
-                                    {!node.conquered && (
-                                        <div className="path-node-force">⚔️ {node.enemyForce}</div>
-                                    )}
-                                    {node.conquered && <div className="path-node-check">✅</div>}
-                                    {!node.conquered && !isAccessible && <div className="path-node-lock">🔒</div>}
-                                </motion.div>
-                            );
-                        })}
-                    </div>
-                </div>
-
-                {/* Selected Node Detail */}
-                <AnimatePresence>
-                    {selectedNode && !selectedNode.conquered && (
-                        <motion.div
-                            className="node-detail-panel"
-                            initial={{ opacity: 0, y: 20 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            exit={{ opacity: 0, y: 20 }}
-                        >
-                            <h3>{NODE_TYPE_ICONS[selectedNode.type]} {selectedNode.name}</h3>
-                            <div className="node-detail-stats">
-                                <span>Terrain: {TERRAIN_ICONS[selectedNode.terrain]} {selectedNode.terrain}</span>
-                                <span>Enemy Force: ⚔️ {selectedNode.enemyForce}</span>
-                                <span>Your Force: 💪 {totalForce}</span>
-                                <span>Reward: 🪙 {selectedNode.goldReward || 0} Gold{selectedNode.gemReward ? ` + 💎 ${selectedNode.gemReward} Gems` : ''}</span>
-                                <span>Terrain Mod: {conquest.getTerrainModifier(selectedNode.terrain) >= 0 ? '+' : ''}{conquest.getTerrainModifier(selectedNode.terrain)}</span>
-                                <span>Morale Mod: {conquest.getMoraleModifier() >= 0 ? '+' : ''}{conquest.getMoraleModifier()}</span>
-                                <span>🎲 Dice: {conquest.diceCount}d6 vs 2d6</span>
-                            </div>
-                            <div className="node-detail-actions">
-                                <button className="cq-attack-btn" onClick={() => handleAttack(selectedNode)}>
-                                    ⚔️ ATTACK
-                                </button>
-                                <button className="cq-cancel-btn" onClick={() => setSelectedNode(null)}>
-                                    Cancel
-                                </button>
-                            </div>
-                        </motion.div>
-                    )}
-                </AnimatePresence>
-            </div>
-        );
-    };
-
-    // ─── COMBAT RESULT VIEW ─────────────────────
-    const renderCombatResult = () => {
-        const displayFaces = isRolling ? rollingFaces : (combatResult ? { attacker: combatResult.rolls.attackerDice, defender: combatResult.rolls.defenderDice } : rollingFaces);
-
-        if (isRolling || combatResult) {
-            return (
-                <div className="conquest-combat-result">
-                    <motion.div
-                        className={`combat-result-card ${isRolling ? 'rolling-card' : combatResult?.won ? 'victory' : 'defeat'}`}
-                        initial={{ scale: 0.8, opacity: 0 }}
-                        animate={{ scale: 1, opacity: 1 }}
-                    >
-                        <h2>{isRolling ? '⚔️ ENGAGING ENEMY...' : combatResult?.won ? '⚔️ VICTORY!' : '💀 DEFEAT'}</h2>
-
-                        {/* Animated Dice Section */}
-                        <div className="dice-rolling-container" style={{ display: 'flex', flexDirection: 'column', gap: '1rem', margin: '1rem 0' }}>
-                            {/* Attacker Dice */}
-                            <div style={{ textAlign: 'center' }}>
-                                <div style={{ fontSize: '0.7rem', color: '#60a5fa', fontWeight: 700, marginBottom: '0.3rem', textTransform: 'uppercase' }}>Your Roll ({conquest.diceCount}d6)</div>
-                                <div style={{ display: 'flex', justifyContent: 'center', gap: '0.4rem', flexWrap: 'wrap' }}>
-                                    {(displayFaces.attacker || []).map((face, i) => (
-                                        <motion.div
-                                            key={i}
-                                            animate={isRolling && !heroRolled ? { rotate: [0, 360], scale: [1, 1.2, 1] } : { rotate: 0, scale: 1 }}
-                                            transition={isRolling && !heroRolled ? { duration: 0.3, repeat: Infinity, delay: i * 0.05 } : { duration: 0.3 }}
-                                            style={{
-                                                fontSize: '2rem',
-                                                width: 48,
-                                                height: 48,
-                                                display: 'flex',
-                                                alignItems: 'center',
-                                                justifyContent: 'center',
-                                                background: isRolling && !heroRolled ? 'rgba(96,165,250,0.15)' : 'rgba(96,165,250,0.25)',
-                                                border: `2px solid ${isRolling && !heroRolled ? 'rgba(96,165,250,0.3)' : 'rgba(96,165,250,0.6)'}`,
-                                                borderRadius: '0.5rem',
-                                            }}
-                                        >
-                                            {DICE_FACES[face] || '🎲'}
-                                        </motion.div>
-                                    ))}
-                                    {!isRolling && combatResult && (
-                                        <div style={{ display: 'flex', alignItems: 'center', marginLeft: '0.3rem', fontSize: '1.1rem', color: '#60a5fa', fontWeight: 800 }}>
-                                            = {combatResult.rolls.attacker}
-                                        </div>
-                                    )}
-                                </div>
-                                {/* Hero roll button — shown while waiting */}
-                                {isRolling && !heroRolled && (
-                                    <motion.button
-                                        style={{
-                                            marginTop: '0.75rem',
-                                            padding: '0.5rem 1.5rem',
-                                            background: 'linear-gradient(135deg, #3b82f6, #2563eb)',
-                                            border: 'none',
-                                            borderRadius: '8px',
-                                            color: 'white',
-                                            fontWeight: 800,
-                                            fontSize: '0.9rem',
-                                            cursor: 'pointer',
-                                            boxShadow: '0 0 16px rgba(59,130,246,0.5)',
-                                        }}
-                                        animate={{ scale: [1, 1.04, 1] }}
-                                        transition={{ duration: 1.2, repeat: Infinity }}
-                                        onClick={handleHeroRoll}
-                                    >
-                                        🎲 Roll Hero Dice!
-                                    </motion.button>
-                                )}
-                                {isRolling && heroRolled && (
-                                    <div style={{ marginTop: '0.5rem', fontSize: '0.75rem', color: '#34d399' }}>Hero dice locked ✓</div>
-                                )}
-                            </div>
-
-                            <div style={{ textAlign: 'center', fontSize: '1.2rem', fontWeight: 800, color: '#94a3b8' }}>VS</div>
-
-                            {/* Defender Dice */}
-                            <div style={{ textAlign: 'center' }}>
-                                <div style={{ fontSize: '0.7rem', color: '#f87171', fontWeight: 700, marginBottom: '0.3rem', textTransform: 'uppercase' }}>Enemy Roll (2d6)</div>
-                                <div style={{ display: 'flex', justifyContent: 'center', gap: '0.4rem' }}>
-                                    {(displayFaces.defender || []).map((face, i) => (
-                                        <motion.div
-                                            key={i}
-                                            animate={isRolling ? { rotate: [0, -360], scale: [1, 1.2, 1] } : { rotate: 0, scale: 1 }}
-                                            transition={isRolling ? { duration: 0.3, repeat: Infinity, delay: i * 0.05 } : { duration: 0.3 }}
-                                            style={{
-                                                fontSize: '2rem',
-                                                width: 48,
-                                                height: 48,
-                                                display: 'flex',
-                                                alignItems: 'center',
-                                                justifyContent: 'center',
-                                                background: isRolling ? 'rgba(248,113,113,0.15)' : 'rgba(248,113,113,0.25)',
-                                                border: `2px solid ${isRolling ? 'rgba(248,113,113,0.3)' : 'rgba(248,113,113,0.6)'}`,
-                                                borderRadius: '0.5rem',
-                                            }}
-                                        >
-                                            {DICE_FACES[face] || '🎲'}
-                                        </motion.div>
-                                    ))}
-                                    {!isRolling && combatResult && (
-                                        <div style={{ display: 'flex', alignItems: 'center', marginLeft: '0.3rem', fontSize: '1.1rem', color: '#f87171', fontWeight: 800 }}>
-                                            = {combatResult.rolls.defender}
-                                        </div>
-                                    )}
-                                </div>
-                            </div>
-                        </div>
-
-                        {isRolling && <p className="rolling-text">Calculating Force & Morale...</p>}
-
-                        {!isRolling && combatResult && (
-                            <>
-                                {/* Math Breakdown */}
-                                <div style={{
-                                    background: 'rgba(15,23,42,0.6)',
-                                    border: '1px solid rgba(148,163,184,0.15)',
-                                    borderRadius: '0.75rem',
-                                    padding: '0.75rem',
-                                    margin: '0.5rem 0',
-                                    fontSize: '0.8rem',
-                                    color: '#94a3b8',
-                                    textAlign: 'center',
-                                    lineHeight: 1.8,
-                                }}>
-                                    <div>
-                                        <span style={{ color: '#60a5fa' }}>{combatResult.rolls.attacker}</span>
-                                        {' + '}
-                                        <span style={{ color: combatResult.modifiers.force >= 0 ? '#34d399' : '#f87171' }}>{combatResult.modifiers.force >= 0 ? '+' : ''}{combatResult.modifiers.force} force</span>
-                                        {' + '}
-                                        <span style={{ color: combatResult.modifiers.terrain >= 0 ? '#34d399' : '#f87171' }}>{combatResult.modifiers.terrain >= 0 ? '+' : ''}{combatResult.modifiers.terrain} terrain</span>
-                                        {' + '}
-                                        <span style={{ color: combatResult.modifiers.morale >= 0 ? '#34d399' : '#f87171' }}>{combatResult.modifiers.morale >= 0 ? '+' : ''}{combatResult.modifiers.morale} morale</span>
-                                        {' + '}
-                                        <span style={{ color: '#34d399' }}>+{combatResult.modifiers.recon} recon</span>
-                                        {' = '}
-                                        <span style={{ color: '#e2e8f0', fontWeight: 700 }}>{combatResult.rolls.attacker + combatResult.modifiers.force + combatResult.modifiers.terrain + combatResult.modifiers.morale + combatResult.modifiers.recon}</span>
-                                    </div>
-                                    <div style={{ color: '#64748b', fontSize: '0.75rem' }}>
-                                        vs Enemy: <span style={{ color: '#f87171', fontWeight: 700 }}>{combatResult.rolls.defender}</span>
-                                    </div>
-                                </div>
-
-                                <div className="result-details">
-                                    {combatResult.won && combatResult.sigilsEarned > 0 && (
-                                        <div className="result-row reward">🔱 +{combatResult.sigilsEarned} Sigils</div>
-                                    )}
-                                    {combatResult.won && combatResult.goldEarned > 0 && (
-                                        <div className="result-row reward">🪙 +{combatResult.goldEarned} Gold</div>
-                                    )}
-                                    {combatResult.won && combatResult.gemsEarned > 0 && (
-                                        <div className="result-row reward">💎 +{combatResult.gemsEarned} Gems</div>
-                                    )}
-                                    {combatResult.troopsLost > 0 && (
-                                        <div className="result-row loss">☠️ Lost {combatResult.troopsLost} soldier(s)</div>
-                                    )}
-                                    <div className={`result-row ${combatResult.moraleChange >= 0 ? 'reward' : 'loss'}`}>
-                                        ❤️ Morale {combatResult.moraleChange >= 0 ? '+' : ''}{combatResult.moraleChange}
-                                    </div>
-                                </div>
-
-                                <button className="cq-continue-btn" onClick={() => {
-                                    setCombatResult(null);
-                                    setSelectedNode(null);
-                                    setView('map');
-                                }}>
-                                    Continue
-                                </button>
-                            </>
-                        )}
-                    </motion.div>
-                </div>
-            );
+        if (!reachableNodes.includes(node.id)) {
+            console.error("Early return! Node is not in reachableNodes.");
+            return;
         }
 
-        return null;
+        console.log("Passed reachable check. Moving player to:", node.id);
+        // Move player
+        conquest.movePlayer(node.id);
+
+        console.log("Executing node effect:", node.type);
+        // Execute node effect
+        switch (node.type) {
+            case 'battle':
+            case 'elite':
+            case 'boss': {
+                const enemies = ['fatigue_wraith', 'chaos_of_clutter', 'sedentary_colossus', 'insomnia_echo', 'stress_phantom'];
+                let randomEnemy = enemies[Math.floor(Math.random() * enemies.length)];
+                
+                if (node.type === 'boss') randomEnemy = 'shadow_titan';
+                if (node.type === 'elite') randomEnemy = 'fatigue_wraith'; // Just an example elite for now
+
+                useBattleStore.getState().initBattle(randomEnemy, {
+                    context: node.type === 'elite' ? 'conquest_elite' : 'conquest',
+                    conquestTier: node.tier
+                });
+
+                navigate('/arena', { state: { startBattle: true } });
+                break;
+            }
+            case 'treasure': {
+                const passives = getPassiveBonuses();
+                const gold = Math.floor(Math.random() * 10) + 5 + passives.gold_bonus;
+                const sigils = Math.floor(Math.random() * 2) + 1 + passives.sigil_bonus;
+                conquest.grantSpireReward(gold, sigils);
+
+                // 15% chance for a low-rarity dynamic drop
+                let droppedItem: ItemDef | undefined;
+                if (Math.random() < 0.15) {
+                    const pool = getConquestRewardPool();
+                    if (pool.length > 0) {
+                        droppedItem = pool[Math.floor(Math.random() * pool.length)];
+                        useInventoryStore.getState().addItem(droppedItem.id, 1);
+
+                        useToastStore.getState().addToast({
+                            type: 'success',
+                            message: `New Item Obtained: ${droppedItem.icon} ${droppedItem.name} `,
+                            duration: 4000
+                        });
+                    }
+                }
+
+                setRewardModal({ gold, sigils, item: droppedItem });
+                break;
+            }
+            case 'event':
+                setActiveEvent(node.label);
+                break;
+            case 'shop':
+                setShowStore(true);
+                break;
+            case 'campfire':
+                setShowCampfire(true);
+                break;
+            case 'shrine':
+                setShowShrine(true);
+                break;
+            case 'cursed':
+                setShowCursed(true);
+                break;
+            case 'minigame':
+                // Randomly open chess or tiles based on game string or logic
+                if (node.label === 'Fae Mischief') {
+                    setShowTiles(true);
+                } else {
+                    setShowChess(true);
+                }
+                break;
+        }
     };
 
-    // ─── SOLDIERS VIEW ──────────────────────────
-    const renderSoldiers = () => {
-        const roles: SoldierRole[] = ['scout', 'morale', 'siege', 'healer'];
+    // Group nodes by tier to render them as rows (bottom to top visually means high tier at top)
+    const renderMapNodes = () => {
+        const tiers: Record<number, ConquestNodeData[]> = {};
+        CONQUEST_MAP_NODES.forEach(n => {
+            if (!tiers[n.tier]) tiers[n.tier] = [];
+            tiers[n.tier].push(n);
+        });
 
-        return (
-            <div className="conquest-soldiers-view">
-                <div className="soldiers-header">
-                    <h2>🛡️ Army Roster</h2>
-                    <div className="soldiers-summary">
-                        {conquest.soldiers.length}/{conquest.maxTeamSize} Soldiers • Army Bonus: +{Math.round(conquest.getArmyBonus() * 100)}%
-                    </div>
-                </div>
+        // Sort descending so highest tier (boss) is at top of flex column
+        const sortedTiers = Object.keys(tiers).map(Number).sort((a, b) => b - a);
 
-                {conquest.soldiers.length < conquest.maxTeamSize && (
-                    <div className="recruit-section">
-                        <h3>Recruit New Soldier (30 Sigils)</h3>
-                        <div className="recruit-options">
-                            {roles.map(role => (
-                                <button
-                                    key={role}
-                                    className="recruit-btn"
-                                    onClick={() => {
-                                        const name = SOLDIER_NAMES[Math.floor(Math.random() * SOLDIER_NAMES.length)];
-                                        conquest.recruitSoldier(name, role);
-                                    }}
-                                    disabled={conquest.sigils < 30}
-                                >
-                                    {ROLE_ICONS[role]} {role.charAt(0).toUpperCase() + role.slice(1)}
-                                </button>
-                            ))}
+        return sortedTiers.map(tier => (
+            <div key={`tier - ${tier} `} className="map-tier-row">
+                {tiers[tier].map(node => {
+                    const isCurrent = conquest.currentNodeId === node.id;
+                    const isCompleted = conquest.completedNodes.includes(node.id) && !isCurrent;
+                    const isReachable = reachableNodes.includes(node.id);
+
+                    return (
+                        <div key={node.id} className="map-node-wrapper">
+                            <motion.button
+                                className={`map-node ${node.type} ${isCurrent ? 'current' : ''} ${isCompleted ? 'completed' : ''} ${isReachable ? 'reachable' : ''}`}
+                                whileHover={isReachable ? { scale: 1.1 } : {}}
+                                whileTap={isReachable ? { scale: 0.95 } : {}}
+                                onClick={() => handleNodeClick(node)}
+                                onMouseEnter={() => setHoveredNode(node)}
+                                onMouseLeave={() => setHoveredNode(null)}
+                                disabled={(!isReachable && !isCurrent && !isCompleted) || false}
+                                style={{ pointerEvents: ((!isReachable && !isCurrent && !isCompleted) ? 'none' : 'auto') }}
+                            >
+                                <div className="node-icon">{NODE_ICONS[node.type]}</div>
+                                {isCurrent && (
+                                    <motion.img
+                                        src={heroImage}
+                                        alt="Player"
+                                        className="player-mini"
+                                        initial={{ y: -10, opacity: 0 }}
+                                        animate={{ y: [0, -4, 0], opacity: 1 }}
+                                        transition={{ duration: 1.5, repeat: Infinity }}
+                                    />
+                                )}
+                            </motion.button>
+                            <span className="node-label">{node.label}</span>
+                            
+                            {/* Hover Tooltip */}
+                            <AnimatePresence>
+                                {hoveredNode?.id === node.id && (
+                                    <motion.div 
+                                        className="node-preview-tooltip"
+                                        initial={{ opacity: 0, y: 10 }}
+                                        animate={{ opacity: 1, y: 0 }}
+                                        exit={{ opacity: 0, y: 10 }}
+                                    >
+                                        <div className="preview-type">{node.type.toUpperCase()}</div>
+                                        <div className="preview-risk">Risk: {CONQUEST_NODE_PREVIEW[node.type].risk}</div>
+                                        <div className="preview-reward">{CONQUEST_NODE_PREVIEW[node.type].reward}</div>
+                                    </motion.div>
+                                )}
+                            </AnimatePresence>
+                        </div>
+                    );
+                })}
+            </div>
+        ));
+    };
+
+    return (
+        <div className="conquest-spire-container" style={{ backgroundImage: `url(${bgMap})` }}>
+            <div className="bg-overlay" />
+
+            {/* Top HUD */}
+            <div className="top-hud">
+                <div className="hud-left">
+                    <img src={heroImage} alt="Hero" className="hud-hero" />
+                    <div className="hud-act-info">
+                        <h2>Act {conquest.act} <span className="floor-badge">Floor {conquest.runFloor}</span></h2>
+                        <div className="hud-hp-bar">
+                            <div className="hp-fill" style={{ width: `${(conquest.runHP / Math.max(1, conquest.runMaxHP)) * 100}%`, background: conquest.runHP < 30 ? '#ef4444' : '#22c55e' }} />
+                            <div className="hp-text"><Heart size={10}/> {conquest.runHP} / {conquest.runMaxHP}</div>
                         </div>
                     </div>
-                )}
-
-                <div className="soldiers-grid">
-                    {conquest.soldiers.map(soldier => (
-                        <SoldierCard
-                            key={soldier.id}
-                            soldier={soldier}
-                            onAction={() => conquest.upgradeSoldierRank(soldier.id)}
-                            actionLabel={soldier.rank === 'Warden' ? 'MAX RANK' : '⬆ Upgrade'}
-                            actionDisabled={soldier.rank === 'Warden'}
-                        />
+                </div>
+                <div className="hud-resources">
+                    {conquest.runBuffs.map(b => (
+                        <div key={b.id} className="run-buff-chip" title={b.label}>
+                            {b.type === 'strength' ? '⚔️' : b.type === 'defense' ? '🛡️' : b.type === 'curse' ? '☠️' : '✨'}
+                        </div>
                     ))}
-                    {conquest.soldiers.length === 0 && (
-                        <div className="no-soldiers">No soldiers recruited yet. Visit the store to recruit!</div>
-                    )}
-                </div>
-            </div>
-        );
-    };
-
-    // ─── MAIN RENDER ────────────────────────────
-    return (
-        <div
-            className="conquest-container has-bg"
-            style={{ backgroundImage: `url(${sandCombatBg})` }}
-        >
-            <div className="conquest-bg-overlay" />
-
-            {/* Top Navigation */}
-            <div className="conquest-top-nav">
-                <button className="cq-nav-btn cq-chess-btn" onClick={() => setShowChess(true)}>
-                    ♟️ Chess {strategy.canPlayChessToday() && <span className="chess-dot">●</span>}
-                </button>
-                <button className="cq-nav-btn cq-chess-btn" onClick={() => setShowTiles(true)}>
-                    🎴 Tiles {strategy.canPlayTilesToday() && <span className="chess-dot">●</span>}
-                </button>
-                <button className={`cq-nav-btn ${view === 'map' ? 'active' : ''}`} onClick={() => setView('map')}>
-                    <Map size={16} /> Map
-                </button>
-                <button className={`cq-nav-btn ${view === 'soldiers' ? 'active' : ''}`} onClick={() => setView('soldiers')}>
-                    <Users size={16} /> Army
-                </button>
-                <button className="cq-nav-btn" onClick={() => setShowStore(true)}>
-                    <Package size={16} /> Store
-                </button>
-                <div className="cq-nav-sigils">
-                    <Crown size={14} /> {conquest.sigils}
+                    <div className="hud-stat gold"><Coins size={14} /> {currency.gold}</div>
+                    <div className="hud-stat sigils"><Crown size={14} /> {conquest.sigils}</div>
                 </div>
             </div>
 
-            {/* Main Content */}
-            <div className="conquest-content">
-                {view === 'map' && renderMap()}
-                {view === 'combat' && renderCombatResult()}
-                {view === 'soldiers' && renderSoldiers()}
+            {/* Main Viewport Map */}
+            <div className="spire-map-viewport" ref={mapContainerRef}>
+                <div className="spire-map-content">
+                    {renderMapNodes()}
+                </div>
             </div>
 
-            {/* Chess Modal */}
+            {/* Action Footer */}
+            <div className="spire-footer">
+                <div className="dice-status" style={{ textAlign: 'center', width: '100%' }}>
+                    <span className="active-roll">
+                        {hoveredNode ? hoveredNode.description : 'Select your next destination.'}
+                    </span>
+                </div>
+            </div>
+
+            {/* Run Complete Overlay */}
             <AnimatePresence>
-                {showChess && (
-                    <ChessGame
-                        onComplete={handleChessComplete}
-                        onClose={() => setShowChess(false)}
-                        canPlay={strategy.canPlayChessToday()}
-                    />
+                {conquest.runComplete !== 'none' && (
+                    <motion.div className="modal-overlay" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+                        <div className="run-complete-modal map-modal">
+                            <h2>{conquest.runComplete === 'victory' ? 'VICTORY Achieved!' : 'Run Failed'}</h2>
+                            <p>You {conquest.runComplete === 'victory' ? 'conquered the map' : 'fell in battle'} on Floor {conquest.runFloor}.</p>
+                            <div className="run-stats">
+                                <div>Sigils Earned: {conquest.memoryLog.mostSigilsInRun}</div>
+                                <div>Best Floor: {conquest.bestFloor}</div>
+                                <div>Runs Completed: {conquest.runsCompleted}</div>
+                            </div>
+                            <button className="continue-btn" onClick={() => conquest.resetRun()}>
+                                Start New Run
+                            </button>
+                        </div>
+                    </motion.div>
                 )}
             </AnimatePresence>
 
-            {/* Store Modal */}
+            {/* Event Modal */}
             <AnimatePresence>
-                {showStore && (
-                    <ConquestStoreUI onClose={() => setShowStore(false)} />
+                {activeEvent && CONQUEST_EVENT_TABLE[activeEvent] && (
+                    <motion.div className="modal-overlay" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+                        <div className="event-modal map-modal">
+                            <h2>{activeEvent}</h2>
+                            <p>{CONQUEST_EVENT_TABLE[activeEvent].text}</p>
+                            <div className="event-options">
+                                {CONQUEST_EVENT_TABLE[activeEvent].options.map((opt, i) => (
+                                    <button key={i} onClick={() => {
+                                        if (opt.effect.type === 'gold') conquest.grantSpireReward(opt.effect.gold || 0, 0);
+                                        if (opt.effect.type === 'hp_and_sigils') {
+                                            conquest.grantSpireReward(0, opt.effect.sigils || 0);
+                                            if (opt.effect.hp < 0) conquest.takeDamage(-opt.effect.hp);
+                                            else conquest.healHP(opt.effect.hp);
+                                        }
+                                        if (opt.effect.type === 'heal') conquest.healHP(opt.effect.hp);
+                                        if (opt.effect.type === 'damage') conquest.takeDamage(opt.effect.hp);
+                                        setActiveEvent(null);
+                                    }}>
+                                        {opt.label}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+                    </motion.div>
                 )}
             </AnimatePresence>
 
-            {/* Tiles Modal */}
+            {/* Campfire Modal */}
             <AnimatePresence>
-                {showTiles && (
-                    <ConquestTiles
-                        onComplete={handleTilesComplete}
-                        onClose={() => setShowTiles(false)}
-                        canPlay={strategy.canPlayTilesToday()}
-                        canPlayImpossible={strategy.canPlayImpossible()}
-                    />
+                {showCampfire && (
+                    <motion.div className="modal-overlay" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+                        <div className="campfire-modal map-modal">
+                            <h2>Campfire</h2>
+                            <p>A warm fire flickers, offering a brief respite.</p>
+                            <div className="event-options">
+                                <button onClick={() => { conquest.healHP(20); setShowCampfire(false); }}>
+                                    <Heart size={16} /> Rest (+20 HP)
+                                </button>
+                                <button onClick={() => { 
+                                    conquest.addRunBuff({ id: `buff_${Date.now()}`, type: 'strength', label: 'Sharpened: +10% ATK', amount: 10 });
+                                    setShowCampfire(false); 
+                                }}>
+                                    <Swords size={16} /> Sharpen (+10% ATK Buff)
+                                </button>
+                            </div>
+                        </div>
+                    </motion.div>
                 )}
             </AnimatePresence>
+
+            {/* Shrine Modal */}
+            <AnimatePresence>
+                {showShrine && (
+                    <motion.div className="modal-overlay" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+                        <div className="shrine-modal map-modal">
+                            <h2>Sacred Shrine</h2>
+                            <p>You touch the cold stone and feel a blessing wash over you.</p>
+                            <div className="event-options">
+                                <button onClick={() => { 
+                                    conquest.addRunBuff({ id: `buff_${Date.now()}`, type: 'defense', label: 'Blessed: +10% DEF', amount: 10 });
+                                    setShowShrine(false); 
+                                }}>
+                                    Accept Blessing
+                                </button>
+                            </div>
+                        </div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
+
+            {/* Cursed Modal */}
+            <AnimatePresence>
+                {showCursed && (
+                    <motion.div className="modal-overlay" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+                        <div className="cursed-modal map-modal" style={{ borderColor: '#a855f7' }}>
+                            <h2 style={{ color: '#a855f7' }}>Dark Altar</h2>
+                            <p>Great power awaits... if you are willing to pay the price.</p>
+                            <div className="event-options">
+                                <button onClick={() => { 
+                                    conquest.takeDamage(20);
+                                    conquest.grantSpireReward(100, 20);
+                                    setShowCursed(false); 
+                                }}>
+                                    Sacrifice Blood (-20 HP, +100 Gold, +20 Sigils)
+                                </button>
+                                <button onClick={() => setShowCursed(false)}>
+                                    Leave it be
+                                </button>
+                            </div>
+                        </div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
+
+            {/* Treasure Reward Modal */}
+            <AnimatePresence>
+                {rewardModal && (
+                    <motion.div className="modal-overlay" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+                        <div className="treasure-modal map-modal">
+                            <h2>Chest Opened!</h2>
+                            <div className="loot-display">
+                                <span className="loot-item gold">+{rewardModal.gold} Gold</span>
+                                <span className="loot-item sigils">+{rewardModal.sigils} Sigils</span>
+                                {rewardModal.item && (
+                                    <span className={`loot-item item-drop rarity-${rewardModal.item.rarity}`}>
+                                        Found: {rewardModal.item.icon} {rewardModal.item.name}
+                                    </span>
+                                )}
+                            </div>
+                            <button className="continue-btn" onClick={() => setRewardModal(null)}>Continue</button>
+                        </div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
+
+            {/* Minigames / Shops */}
+            <AnimatePresence>
+                {showChess && <ChessGame onComplete={() => setShowChess(false)} onClose={() => setShowChess(false)} canPlay={strategy.canPlayChessToday()} />}
+            </AnimatePresence>
+            <AnimatePresence>
+                {showStore && <ConquestStoreUI onClose={() => setShowStore(false)} />}
+            </AnimatePresence>
+            <AnimatePresence>
+                {showTiles && <ConquestTiles onComplete={() => setShowTiles(false)} onClose={() => setShowTiles(false)} canPlay={strategy.canPlayTilesToday()} canPlayImpossible={strategy.canPlayImpossible()} />}
+            </AnimatePresence>
+
         </div>
     );
 };

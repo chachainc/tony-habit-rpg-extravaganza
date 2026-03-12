@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import type { SkillName } from './useGameStore';
+import { PERSIST_REGISTRY } from '../data/persistRegistry';
 
 // Element system with rock-paper-scissors advantages
 export type Element = 'fire' | 'water' | 'nature' | 'electric' | 'neutral';
@@ -45,6 +46,7 @@ export interface Ability {
     description: string;
     icon: string;
     element: Element;
+    isMagic?: boolean; // True if this ability uses MATK vs MDEF logic
     damageMultiplier: number; // Base ATK multiplier
     cooldown: number; // Turns before usable again (0 for attack)
     energyCost: number; // For ultimates (0-100 energy required)
@@ -1322,7 +1324,7 @@ export const useEnemyStore = create<EnemyState>()(
             },
         }),
         {
-            name: 'gl-enemies-v3', // Bump version for bestiary tracking
+            name: PERSIST_REGISTRY.enemies.persistKey, // Bump version for bestiary tracking
         }
     )
 );

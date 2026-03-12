@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { profileApi } from '../api/profileApi';
+import { PERSIST_REGISTRY } from '../data/persistRegistry';
 
 interface ProfileState {
     shareCode: string | null;
@@ -10,8 +11,11 @@ interface ProfileState {
     lastSyncError: string | null;
     serverVersion: number;
 
+    // Has seen the 6-screen welcome tutorial
+    hasSeenWelcomeTutorial: boolean;
+
     // Character Onboarding
-    characterArchetype: 'vanguard' | 'ranger' | 'duelist' | 'mystic' | null;
+    characterArchetype: 'iron_vanguard' | 'shadow_rogue' | 'arcane_scholar' | 'verdant_guardian' | null;
     appearance: { hairHue: number; skinHue: number };
     healthTrackingMode: 'sleep' | 'readiness' | 'none' | null;
 
@@ -27,6 +31,9 @@ interface ProfileState {
     syncToServer: () => Promise<void>;
     exportSave: () => void;
     importSave: (json: string) => Promise<boolean>;
+
+    // Tutorial Actions
+    completeWelcomeTutorial: () => void;
 
     // Onboarding Actions
     setCharacterArchetype: (archetype: ProfileState['characterArchetype']) => void;
@@ -44,64 +51,75 @@ interface ProfileState {
  */
 function collectStoreData(): Record<string, unknown> {
     const stores: Record<string, unknown> = {};
-    const storeKeys = [
-        'gl-game-storage-v7',
-        'gl-pet-storage-v3',
-        'gl-calendar-storage',
-        'gl-inventory-v4',
-        'gl-equipment-v1',
-        'gl-currency-v2',
-        'gl-enemies-v3',
-        'gl-books-storage-v1',
-        'gl-gym-v1',
-        'gl-tasks-storage-v4',
-        'gl-recurring-tasks-v2',
-        'gl-room-v1',
-        'gl-character-v1',
-        'gl-magic-storage-v1',
-        'gl-gacha-v1',
-        'gl-monopoly-v3',
-        'gl-sound-v1',
-        'gl-day-v3',
-        'gl-campaign-v2',
-        'gl-factions-v1',
-        'gl-marketplace-v1',
-        'gl-checkin-v1',
-        'gl-consistency-v1',
-        'gl-auras-v1',
-        'gl-buffs-v2',
-        'gl-titles-v1',
-        'gl-skill-trophy-v1',
-        'gl-book-trophy-v1',
-        'gl-achievement-trophies-v2',
-        'gl-conquest-storage-v1',
-        'gl-strategy-storage-v1',
-        'gl-health-v1',
-    ];
+    const found: string[] = [];
+    const missing: string[] = [];
 
-    for (const key of storeKeys) {
+    for (const entry of Object.values(PERSIST_REGISTRY)) {
+        if (!entry.syncEnabled) continue;
+
+        const key = entry.persistKey;
         const raw = localStorage.getItem(key);
         if (raw) {
             try {
                 stores[key] = JSON.parse(raw);
+                found.push(key);
             } catch {
-                // Skip corrupted data
+                missing.push(key);
+                console.error(`[Collection] Corrupted data skipped for key: ${key}`);
             }
+        } else {
+            missing.push(key);
         }
+    }
+
+    console.log(`[Collection Report] Collected: ${found.length}, Missing/Empty: ${missing.length}`);
+    if (missing.length > 0) {
+        console.warn('[Collection] Missing store keys (this is normal if the player has not interacted with these features yet):', missing);
     }
 
     return stores;
 }
 
 /**
- * Hydrate all stores from server data into localStorage.
+ * Hydrate all stores from server data into localStorage safely.
  */
 function hydrateStores(stores: Record<string, unknown>): void {
-    for (const [key, value] of Object.entries(stores)) {
-        if (value && typeof value === 'object') {
-            localStorage.setItem(key, JSON.stringify(value));
+    const success: string[] = [];
+    const failed: string[] = [];
+    const skipped: string[] = [];
+
+    for (const entry of Object.values(PERSIST_REGISTRY)) {
+        if (!entry.restoreEnabled) continue;
+
+        const key = entry.persistKey;
+        if (stores[key] !== undefined && stores[key] !== null) {
+            try {
+                // Merge-safe restore: attempt to preserve existing local data if possible
+                const existingRaw = localStorage.getItem(key);
+                let incomingValue = stores[key];
+
+                if (existingRaw) {
+                    const existing = JSON.parse(existingRaw);
+                    if (typeof existing === 'object' && typeof incomingValue === 'object' && !Array.isArray(incomingValue)) {
+                        // Shallow merge where incoming server payload overwrites local
+                        incomingValue = { ...existing, ...(incomingValue as object) };
+                    }
+                }
+
+                localStorage.setItem(key, JSON.stringify(incomingValue));
+                success.push(key);
+            } catch (e) {
+                failed.push(key);
+                console.error(`[Hydration] Failed to restore store: ${key}`, e);
+            }
+        } else {
+            // Incoming payload did not have this key
+            skipped.push(key);
         }
     }
+
+    console.log(`[Hydration Report] Success: ${success.length}, Skipped (not in payload): ${skipped.length}, Failed: ${failed.length}`);
+    if (failed.length > 0) console.error('[Hydration] Failed to parse/write keys:', failed);
 }
 
 // Debounce timer
@@ -116,6 +134,7 @@ export const useProfileStore = create<ProfileState>()(
             isSyncing: false,
             lastSyncError: null,
             serverVersion: 0,
+            hasSeenWelcomeTutorial: false,
 
             characterArchetype: null,
             appearance: { hairHue: 0, skinHue: 0 },
@@ -182,6 +201,7 @@ export const useProfileStore = create<ProfileState>()(
                     isSyncing: false,
                     lastSyncError: null,
                     serverVersion: 0,
+                    hasSeenWelcomeTutorial: false,
                     characterArchetype: null,
                     appearance: { hairHue: 0, skinHue: 0 },
                     healthTrackingMode: null,
@@ -255,6 +275,8 @@ export const useProfileStore = create<ProfileState>()(
                 }
             },
 
+            completeWelcomeTutorial: () => set({ hasSeenWelcomeTutorial: true }),
+
             setCharacterArchetype: (archetype) => set({ characterArchetype: archetype }),
             setAppearance: (appearance) => set({ appearance }),
             setHealthTrackingMode: (mode) => set({ healthTrackingMode: mode }),
@@ -271,6 +293,21 @@ export const useProfileStore = create<ProfileState>()(
         }),
         {
             name: 'gl-profile-storage',
+            version: 1,
+            migrate: (persistedState: any, version: number) => {
+                if (version === 0) {
+                    const translations: Record<string, string> = {
+                        vanguard: 'iron_vanguard',
+                        ranger: 'verdant_guardian',
+                        duelist: 'shadow_rogue',
+                        mystic: 'arcane_scholar'
+                    };
+                    if (persistedState.characterArchetype && translations[persistedState.characterArchetype]) {
+                        persistedState.characterArchetype = translations[persistedState.characterArchetype];
+                    }
+                }
+                return persistedState;
+            }
         }
     )
 );

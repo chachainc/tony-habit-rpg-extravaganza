@@ -72,29 +72,28 @@ a:hover {
 
 body {
   margin: 0;
-  padding: var(--safe-top) var(--safe-right) var(--safe-bottom) var(--safe-left);
+  padding: var(--safe-top, 0px) var(--safe-right, 0px) var(--safe-bottom, 0px) var(--safe-left, 0px);
   min-width: 320px;
   height: 100%;
   overflow: hidden;
   position: fixed;
   width: 100%;
   overscroll-behavior: none;
-  background: var(--gacha-bg-deep);
+  background-color: #0a0a0f;
+  background: var(--gacha-bg-deep, #0a0a0f);
 }
 
-/* Gacha Vignette + Noise Overlay */
-body::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  z-index: 9999;
-  background: radial-gradient(ellipse at center, transparent 30%, rgba(0, 0, 0, 0.6) 100%);
-  mix-blend-mode: multiply;
-}
+/*
+ * DISABLED: Gacha Vignette overlay was at z-index 9999 with mix-blend-mode: multiply.
+ * This covered ALL content with a dark gradient, causing a black screen appearance
+ * on mobile Safari when there was any rendering delay or crash.
+ * To re-enable, move this to a React component that renders AFTER confirmed first paint.
+ */
 
 html {
   height: 100%;
+  min-height: 100vh;
+  min-height: 100dvh;
   overflow: hidden;
 }
 
@@ -151,6 +150,7 @@ button:active {
   backdrop-filter: blur(8px);
 }
 
+
 /* Glassmorphism Utility */
 .glass {
   background: var(--bg-glass);
@@ -158,7 +158,83 @@ button:active {
   border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
+/* Global Modal Overlay Rules */
+.modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.85);
+    backdrop-filter: blur(8px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    padding: env(safe-area-inset-top, 16px) 16px env(safe-area-inset-bottom, 16px) 16px;
+}
+
+.modal-content {
+    background: var(--bg-card);
+    border-radius: var(--radius-md);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: var(--shadow-card);
+    backdrop-filter: blur(8px);
+    max-height: 90vh;
+    max-height: 90dvh;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    position: relative;
+    width: 100%;
+    /* Let specific modals define max-width */
+}
+
+
+.modal-reward-shell {
+  position: fixed;
+  inset: 0;
+  z-index: 1200;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: max(env(safe-area-inset-top, 0px), 12px) 16px max(env(safe-area-inset-bottom, 0px), 12px);
+  pointer-events: none;
+}
+
+/* Centered overlay inside the modal itself (not fixed to screen) */
+.board-reward-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.75);
+  backdrop-filter: blur(4px);
+  padding: 12px;
+  border-radius: inherit;
+  pointer-events: all;
+}
+
+
+.modal-reward-card {
+  width: min(100%, 420px);
+  max-height: min(88vh, 88dvh);
+  overflow-y: auto;
+  pointer-events: auto;
+}
+
+@media (max-width: 480px) {
+  .modal-reward-shell {
+    padding-inline: 12px;
+    padding-block: max(env(safe-area-inset-top, 0px), 10px) max(env(safe-area-inset-bottom, 0px), 10px);
+  }
+
+  .modal-reward-card {
+    width: min(100%, 360px);
+    max-height: min(86vh, 86dvh);
+  }
+}
+
 /* Premium Scrollbar */
+
 ::-webkit-scrollbar {
   width: 8px;
   height: 8px;

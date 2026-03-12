@@ -1,12 +1,27 @@
 import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
+import { persist, createJSONStorage } from 'zustand/middleware';
+import { safeStorage } from '../utils/safeStorage';
+
+console.log('[BOOT] useInventoryStore module load started');
 import { ITEM_DATABASE } from '../data/items';
 import { useCurrencyStore } from './useCurrencyStore';
 import type { SkillName } from './useGameStore';
 
-export type ItemType = 'food' | 'toy' | 'potion' | 'weapon' | 'armor' | 'pet_gear' | 'ticket' | 'furniture';
+export type ItemType = 'food' | 'toy' | 'potion' | 'weapon' | 'armor' | 'pet_gear' | 'ticket' | 'furniture' | 'book' | 'relic' | 'artifact' | 'jewelry';
 export type Rarity = 'common' | 'rare' | 'epic' | 'legendary';
-export type ShopCategory = 'blacksmith' | 'armory' | 'first_aid' | 'general' | 'furniture';
+export type ShopCategory = 'blacksmith' | 'armory' | 'first_aid' | 'general' | 'furniture' | 'library' | 'jeweler';
+
+/** Structured stat bonuses — used instead of (or alongside) the legacy `effect` string */
+export interface ItemStatBonuses {
+    attack?: number;
+    defense?: number;
+    hp?: number;
+    crit?: number;           // Flat crit chance bonus in percentage points (e.g. 5 = +5%)
+    xpMultiplier?: number;   // Percentage bonus to XP gains (e.g. 10 = +10%)
+    goldMultiplier?: number; // Percentage bonus to gold gains
+    intelligence?: number;   // Intelligence skill bonus
+    strategy?: number;       // Strategy XP bonus
+}
 
 export interface ItemDef {
     id: string;
@@ -20,27 +35,73 @@ export interface ItemDef {
     icon: string;
     description?: string;
     requiredEnemy?: string; // Enemy ID that must be defeated to unlock
+    flavorText?: string;    // Lore text for display
+
+    // Book specific fields
+    category?: 'fantasy' | 'business' | 'self-improvement' | 'history' | 'philosophy';
+    level?: number;
+    fusionRequired?: number;
+    effect?: string;
+    source?: string;
+
+    // Structured stat bonuses (used alongside or instead of effect string)
+    statBonuses?: ItemStatBonuses;
 }
 
-export const ITEM_DB: Record<string, ItemDef> = {
+import { mergeExternalItems } from '../data/contentLoader';
+import { PERSIST_REGISTRY } from '../data/persistRegistry';
+
+export const ITEM_DB: Record<string, ItemDef> = mergeExternalItems({
     // ========== WEAPONS (Blacksmith) ==========
-    'rusty_sword': { id: 'rusty_sword', name: 'Rusty Sword', type: 'weapon', rarity: 'common', shopCategory: 'blacksmith', value: 5, critChance: 0.05, price: 500, icon: '🗡️', description: 'A basic blade. Better than fists.' },
-    'iron_axe': { id: 'iron_axe', name: 'Iron Axe', type: 'weapon', rarity: 'common', shopCategory: 'blacksmith', value: 8, critChance: 0.10, price: 800, icon: '🪓', description: 'Heavy and brutal.' },
-    'battle_axe': { id: 'battle_axe', name: 'Battle Axe', type: 'weapon', rarity: 'rare', shopCategory: 'blacksmith', value: 15, critChance: 0.15, price: 2000, icon: '⚔️', description: 'Two-handed devastation.', requiredEnemy: 'stress_phantom' },
-    'spear': { id: 'spear', name: 'Spear', type: 'weapon', rarity: 'common', shopCategory: 'blacksmith', value: 10, critChance: 0.08, price: 1200, icon: '🔱', description: 'Reach advantage.' },
-    'mace': { id: 'mace', name: 'Mace', type: 'weapon', rarity: 'rare', shopCategory: 'blacksmith', value: 12, critChance: 0.20, price: 1500, icon: '🔨', description: 'Crushing blows.' },
-    'whip': { id: 'whip', name: 'Whip', type: 'weapon', rarity: 'rare', shopCategory: 'blacksmith', value: 6, critChance: 0.25, price: 900, icon: '〰️', description: 'High crit, low base damage.' },
-    'ban_hammer': { id: 'ban_hammer', name: 'The Ban Hammer', type: 'weapon', rarity: 'legendary', shopCategory: 'blacksmith', value: 30, critChance: 0.30, price: 10000, icon: '🔨', description: 'Legendary admin power.', requiredEnemy: 'procrastination_specter' },
+    'rusty_sword': { id: 'rusty_sword', name: 'Rusty Sword', type: 'weapon', rarity: 'common', shopCategory: 'blacksmith', value: 5, critChance: 0.05, price: 500, icon: '🗡️', description: 'A basic blade. Better than fists.', statBonuses: { attack: 5, crit: 5 } },
+    'iron_axe': { id: 'iron_axe', name: 'Iron Axe', type: 'weapon', rarity: 'common', shopCategory: 'blacksmith', value: 8, critChance: 0.10, price: 800, icon: '🪓', description: 'Heavy and brutal.', statBonuses: { attack: 8, crit: 10 } },
+    'battle_axe': { id: 'battle_axe', name: 'Battle Axe', type: 'weapon', rarity: 'rare', shopCategory: 'blacksmith', value: 15, critChance: 0.15, price: 2000, icon: '⚔️', description: 'Two-handed devastation.', requiredEnemy: 'stress_phantom', statBonuses: { attack: 15, crit: 15 } },
+    'spear': { id: 'spear', name: 'Spear', type: 'weapon', rarity: 'common', shopCategory: 'blacksmith', value: 10, critChance: 0.08, price: 1200, icon: '🔱', description: 'Reach advantage.', statBonuses: { attack: 10, crit: 8 } },
+    'mace': { id: 'mace', name: 'Mace', type: 'weapon', rarity: 'rare', shopCategory: 'blacksmith', value: 12, critChance: 0.20, price: 1500, icon: '🔨', description: 'Crushing blows.', statBonuses: { attack: 12, crit: 20 } },
+    'whip': { id: 'whip', name: 'Whip', type: 'weapon', rarity: 'rare', shopCategory: 'blacksmith', value: 6, critChance: 0.25, price: 900, icon: '〰️', description: 'High crit, low base damage.', statBonuses: { attack: 6, crit: 25 } },
+    'ban_hammer': { id: 'ban_hammer', name: 'The Ban Hammer', type: 'weapon', rarity: 'legendary', shopCategory: 'blacksmith', value: 30, critChance: 0.30, price: 10000, icon: '🔨', description: 'Legendary admin power.', requiredEnemy: 'procrastination_specter', statBonuses: { attack: 30, crit: 30 } },
 
     // ========== ARMOR (Armory) ==========
-    'leather_vest': { id: 'leather_vest', name: 'Leather Vest', type: 'armor', rarity: 'common', shopCategory: 'armory', value: 3, price: 400, icon: '🧥', description: 'Basic protection.' },
-    'iron_plate': { id: 'iron_plate', name: 'Iron Plate', type: 'armor', rarity: 'rare', shopCategory: 'armory', value: 10, price: 1800, icon: '🛡️', description: 'Solid defense.', requiredEnemy: 'stress_phantom' },
-    'mage_robe': { id: 'mage_robe', name: 'Mage Robe', type: 'armor', rarity: 'epic', shopCategory: 'armory', value: 5, price: 2500, icon: '👘', description: 'Light but mystical.', requiredEnemy: 'insomnia_echo' },
-    'knight_helm': { id: 'knight_helm', name: 'Knight Helm', type: 'armor', rarity: 'rare', shopCategory: 'armory', value: 6, price: 1200, icon: '⛑️', description: 'Protects your head.' },
+    'leather_vest': { id: 'leather_vest', name: 'Leather Vest', type: 'armor', rarity: 'common', shopCategory: 'armory', value: 3, price: 400, icon: '🧥', description: 'Basic protection.', statBonuses: { defense: 3, hp: 10 } },
+    'iron_plate': { id: 'iron_plate', name: 'Iron Plate', type: 'armor', rarity: 'rare', shopCategory: 'armory', value: 10, price: 1800, icon: '🛡️', description: 'Solid defense.', requiredEnemy: 'stress_phantom', statBonuses: { defense: 10, hp: 25 } },
+    'mage_robe': { id: 'mage_robe', name: 'Mage Robe', type: 'armor', rarity: 'epic', shopCategory: 'armory', value: 5, price: 2500, icon: '👘', description: 'Light but mystical.', requiredEnemy: 'insomnia_echo', statBonuses: { defense: 5, xpMultiplier: 10, intelligence: 5 } },
+    'knight_helm': { id: 'knight_helm', name: 'Knight Helm', type: 'armor', rarity: 'rare', shopCategory: 'armory', value: 6, price: 1200, icon: '⛑️', description: 'Protects your head.', statBonuses: { defense: 6, hp: 15 } },
 
     // ========== PET GEAR (Armory) ==========
     'pet_collar': { id: 'pet_collar', name: 'Spiked Collar', type: 'pet_gear', rarity: 'common', shopCategory: 'armory', value: 2, price: 300, icon: '📿', description: 'Your pet looks fierce.', requiredEnemy: 'sedentary_colossus' },
     'pet_vest': { id: 'pet_vest', name: 'Pet Battle Vest', type: 'pet_gear', rarity: 'rare', shopCategory: 'armory', value: 5, price: 800, icon: '🦺', description: 'Protection for your companion.', requiredEnemy: 'sedentary_colossus' },
+
+    // ========== JEWELRY (Jeweler) ==========
+    'iron_ring': {
+        id: 'iron_ring', name: 'Iron Ring', type: 'jewelry', rarity: 'common', shopCategory: 'jeweler',
+        value: 3, price: 350, icon: '💍', description: 'A simple iron band.',
+        flavorText: 'Soldiers wear these for luck.',
+        statBonuses: { attack: 3 },
+    },
+    'silver_band': {
+        id: 'silver_band', name: 'Silver Band', type: 'jewelry', rarity: 'rare', shopCategory: 'jeweler',
+        value: 5, price: 1200, icon: '🪙', description: 'Finely crafted silver.',
+        flavorText: 'Popular among adventurers.',
+        statBonuses: { attack: 5, defense: 3 },
+    },
+    'gold_chain': {
+        id: 'gold_chain', name: 'Gold Chain', type: 'jewelry', rarity: 'rare', shopCategory: 'jeweler',
+        value: 0, price: 1500, icon: '⛓️', description: 'Heavy links of pure gold.',
+        flavorText: 'Wealth and power combined.',
+        statBonuses: { goldMultiplier: 8 },
+    },
+    'emerald_pendant': {
+        id: 'emerald_pendant', name: 'Emerald Pendant', type: 'jewelry', rarity: 'epic', shopCategory: 'jeweler',
+        value: 0, price: 4000, icon: '💚', description: 'A pendant set with a polished emerald.',
+        flavorText: 'Grants wisdom to its wearer.',
+        statBonuses: { defense: 10, xpMultiplier: 10, intelligence: 3 },
+    },
+    'ruby_signet': {
+        id: 'ruby_signet', name: 'Ruby Signet Ring', type: 'jewelry', rarity: 'legendary', shopCategory: 'jeweler',
+        value: 0, price: 12000, icon: '❤️‍🔥', description: 'An ancient signet ring blazing with crimson fire.',
+        flavorText: 'Said to have belonged to a warrior king.',
+        statBonuses: { attack: 15, defense: 10, crit: 10 },
+    },
 
     // ========== CONSUMABLES (First Aid) ==========
     'health_potion': { id: 'health_potion', name: 'Health Potion', type: 'potion', rarity: 'common', shopCategory: 'first_aid', value: 30, price: 150, icon: '🧪', description: 'Restores 30 HP.' },
@@ -65,9 +126,61 @@ export const ITEM_DB: Record<string, ItemDef> = {
     'poster': { id: 'poster', name: 'Cool Poster', type: 'furniture', rarity: 'common', shopCategory: 'furniture', value: 1, price: 150, icon: '🖼️', description: 'Decorate your walls.', requiredEnemy: 'chaos_of_clutter' },
     'plant': { id: 'plant', name: 'Potted Plant', type: 'furniture', rarity: 'common', shopCategory: 'furniture', value: 1, price: 250, icon: '🪴', description: 'Brings life to the room.', requiredEnemy: 'chaos_of_clutter' },
     'bookshelf': { id: 'bookshelf', name: 'Bookshelf', type: 'furniture', rarity: 'rare', shopCategory: 'furniture', value: 2, price: 800, icon: '📚', description: 'Store your knowledge.', requiredEnemy: 'procrastination_specter' },
-};
 
-export type EquipmentSlot = 'main_hand' | 'body' | 'head' | 'pet';
+    // ========== BOOKS (Library) — equippable for persistent passive ==========
+    'fantasy_book_1': { id: 'fantasy_book_1', name: 'Fantasy Tome I', type: 'book', category: 'fantasy', level: 1, fusionRequired: 3, effect: '+2 Intelligence', rarity: 'common', shopCategory: 'library', value: 0, price: 0, icon: '📘', statBonuses: { intelligence: 2 } },
+    'fantasy_book_2': { id: 'fantasy_book_2', name: 'Fantasy Tome II', type: 'book', category: 'fantasy', level: 2, fusionRequired: 3, effect: '+5 Intelligence', rarity: 'rare', shopCategory: 'library', value: 0, price: 0, icon: '📘', statBonuses: { intelligence: 5 } },
+    'fantasy_book_3': { id: 'fantasy_book_3', name: 'Fantasy Tome III', type: 'book', category: 'fantasy', level: 3, fusionRequired: 0, effect: '+10 Intelligence', rarity: 'epic', shopCategory: 'library', value: 0, price: 0, icon: '📘', statBonuses: { intelligence: 10 } },
+
+    'business_book_1': { id: 'business_book_1', name: 'Business Tome I', type: 'book', category: 'business', level: 1, fusionRequired: 3, effect: '+2 Intelligence, +5 Strategy XP', rarity: 'common', shopCategory: 'library', value: 0, price: 0, icon: '📓', statBonuses: { intelligence: 2, strategy: 5 } },
+    'business_book_2': { id: 'business_book_2', name: 'Business Tome II', type: 'book', category: 'business', level: 2, fusionRequired: 3, effect: '+5 Intelligence, +10 Strategy XP', rarity: 'rare', shopCategory: 'library', value: 0, price: 0, icon: '📓', statBonuses: { intelligence: 5, strategy: 10 } },
+    'business_book_3': { id: 'business_book_3', name: 'Business Tome III', type: 'book', category: 'business', level: 3, fusionRequired: 0, effect: '+10 Intelligence, +25 Strategy XP', rarity: 'epic', shopCategory: 'library', value: 0, price: 0, icon: '📓', statBonuses: { intelligence: 10, strategy: 25 } },
+
+    'self-improvement_book_1': { id: 'self-improvement_book_1', name: 'Self-Improvement Tome I', type: 'book', category: 'self-improvement', level: 1, fusionRequired: 3, effect: '+2 Intelligence', rarity: 'common', shopCategory: 'library', value: 0, price: 0, icon: '📒', statBonuses: { intelligence: 2, xpMultiplier: 5 } },
+    'self-improvement_book_2': { id: 'self-improvement_book_2', name: 'Self-Improvement Tome II', type: 'book', category: 'self-improvement', level: 2, fusionRequired: 3, effect: '+5 Intelligence', rarity: 'rare', shopCategory: 'library', value: 0, price: 0, icon: '📒', statBonuses: { intelligence: 5, xpMultiplier: 10 } },
+    'self-improvement_book_3': { id: 'self-improvement_book_3', name: 'Self-Improvement Tome III', type: 'book', category: 'self-improvement', level: 3, fusionRequired: 0, effect: '+10 Intelligence', rarity: 'epic', shopCategory: 'library', value: 0, price: 0, icon: '📒', statBonuses: { intelligence: 10, xpMultiplier: 15 } },
+
+    'history_book_1': { id: 'history_book_1', name: 'History Tome I', type: 'book', category: 'history', level: 1, fusionRequired: 3, effect: '+2 Intelligence', rarity: 'common', shopCategory: 'library', value: 0, price: 0, icon: '📖', statBonuses: { intelligence: 2 } },
+    'history_book_2': { id: 'history_book_2', name: 'History Tome II', type: 'book', category: 'history', level: 2, fusionRequired: 3, effect: '+5 Intelligence', rarity: 'rare', shopCategory: 'library', value: 0, price: 0, icon: '📖', statBonuses: { intelligence: 5 } },
+    'history_book_3': { id: 'history_book_3', name: 'History Tome III', type: 'book', category: 'history', level: 3, fusionRequired: 0, effect: '+10 Intelligence', rarity: 'epic', shopCategory: 'library', value: 0, price: 0, icon: '📖', statBonuses: { intelligence: 10 } },
+
+    'philosophy_book_1': { id: 'philosophy_book_1', name: 'Philosophy Tome I', type: 'book', category: 'philosophy', level: 1, fusionRequired: 3, effect: '+2 Intelligence', rarity: 'common', shopCategory: 'library', value: 0, price: 0, icon: '📚', statBonuses: { intelligence: 2, strategy: 3 } },
+    'philosophy_book_2': { id: 'philosophy_book_2', name: 'Philosophy Tome II', type: 'book', category: 'philosophy', level: 2, fusionRequired: 3, effect: '+5 Intelligence', rarity: 'rare', shopCategory: 'library', value: 0, price: 0, icon: '📚', statBonuses: { intelligence: 5, strategy: 8 } },
+    'philosophy_book_3': { id: 'philosophy_book_3', name: 'Philosophy Tome III', type: 'book', category: 'philosophy', level: 3, fusionRequired: 0, effect: '+10 Intelligence', rarity: 'epic', shopCategory: 'library', value: 0, price: 0, icon: '📚', statBonuses: { intelligence: 10, strategy: 15 } },
+});
+
+export type EquipmentSlot = 'weapon' | 'armor' | 'relic' | 'artifact' | 'pet' | 'book' | 'jewelry';
+
+/** Returns a summary string of the stat bonuses for display */
+export function formatStatBonuses(bonuses: ItemStatBonuses | undefined): string {
+    if (!bonuses) return '';
+    const parts: string[] = [];
+    if (bonuses.attack) parts.push(`+${bonuses.attack} ATK`);
+    if (bonuses.defense) parts.push(`+${bonuses.defense} DEF`);
+    if (bonuses.hp) parts.push(`+${bonuses.hp} HP`);
+    if (bonuses.crit) parts.push(`+${bonuses.crit}% Crit`);
+    if (bonuses.xpMultiplier) parts.push(`+${bonuses.xpMultiplier}% XP`);
+    if (bonuses.goldMultiplier) parts.push(`+${bonuses.goldMultiplier}% Gold`);
+    if (bonuses.intelligence) parts.push(`+${bonuses.intelligence} INT`);
+    if (bonuses.strategy) parts.push(`+${bonuses.strategy} STR XP`);
+    return parts.join(' · ');
+}
+
+/** Returns the stat delta between two items (newItem - currentItem) */
+export function getStatDelta(newItem: ItemDef | null, currentItem: ItemDef | null): ItemStatBonuses {
+    const nB = newItem?.statBonuses ?? {};
+    const cB = currentItem?.statBonuses ?? {};
+    return {
+        attack: (nB.attack ?? 0) - (cB.attack ?? 0),
+        defense: (nB.defense ?? 0) - (cB.defense ?? 0),
+        hp: (nB.hp ?? 0) - (cB.hp ?? 0),
+        crit: (nB.crit ?? 0) - (cB.crit ?? 0),
+        xpMultiplier: (nB.xpMultiplier ?? 0) - (cB.xpMultiplier ?? 0),
+        goldMultiplier: (nB.goldMultiplier ?? 0) - (cB.goldMultiplier ?? 0),
+        intelligence: (nB.intelligence ?? 0) - (cB.intelligence ?? 0),
+        strategy: (nB.strategy ?? 0) - (cB.strategy ?? 0),
+    };
+}
 
 interface InventoryState {
     items: { [itemId: string]: number };
@@ -78,12 +191,15 @@ interface InventoryState {
     marketplaceEquippedArmor: string | null;
     marketplaceEquippedWeapon: string | null;
 
+    discoveredItems: string[];
+
     addItem: (itemId: string, amount?: number) => void;
     removeItem: (itemId: string, amount?: number) => void;
     equipItem: (itemId: string, slot: EquipmentSlot) => void;
     unequipItem: (slot: EquipmentSlot) => void;
     getStatBonus: (stat: 'attack' | 'defense') => number;
     getEquippedWeapon: () => ItemDef | null;
+    getEquippedItemForSlot: (slot: EquipmentSlot) => ItemDef | null;
 
     // Marketplace functions
     purchaseMarketplaceItem: (itemId: string) => boolean;
@@ -99,12 +215,22 @@ export const useInventoryStore = create<InventoryState>()(
     persist(
         (set, get) => ({
             items: {},
-            equipped: { main_hand: null, body: null, head: null, pet: null },
+            equipped: {
+                weapon: null,
+                armor: null,
+                relic: null,
+                artifact: null,
+                pet: null,
+                book: null,
+                jewelry: null,
+            },
 
             // Marketplace state
             marketplaceOwned: ['pet_cow', 'wooden_stick'],
             marketplaceEquippedArmor: null,
             marketplaceEquippedWeapon: 'wooden_stick',
+
+            discoveredItems: [],
 
             addItem: (itemId, amount = 1) =>
                 set((state) => ({
@@ -112,6 +238,9 @@ export const useInventoryStore = create<InventoryState>()(
                         ...state.items,
                         [itemId]: (state.items[itemId] || 0) + amount,
                     },
+                    discoveredItems: state.discoveredItems?.includes(itemId)
+                        ? state.discoveredItems
+                        : [...(state.discoveredItems || []), itemId],
                 })),
 
             removeItem: (itemId, amount = 1) =>
@@ -123,10 +252,23 @@ export const useInventoryStore = create<InventoryState>()(
                     return { items: newItems };
                 }),
 
-            equipItem: (itemId, slot) =>
+            equipItem: (itemId, slot) => {
+                if (slot !== 'pet') {
+                    const item = ITEM_DB[itemId];
+                    if (!item) return;
+                    // Type → slot validation
+                    if (slot === 'weapon' && item.type !== 'weapon') return;
+                    if (slot === 'armor' && item.type !== 'armor') return;
+                    if (slot === 'relic' && item.type !== 'relic') return;
+                    if (slot === 'artifact' && item.type !== 'artifact') return;
+                    if (slot === 'book' && item.type !== 'book') return;
+                    if (slot === 'jewelry' && item.type !== 'jewelry') return;
+                }
+
                 set((state) => ({
                     equipped: { ...state.equipped, [slot]: itemId }
-                })),
+                }));
+            },
 
             unequipItem: (slot) =>
                 set((state) => ({
@@ -140,8 +282,12 @@ export const useInventoryStore = create<InventoryState>()(
                 Object.values(equipped).forEach(itemId => {
                     if (itemId && ITEM_DB[itemId]) {
                         const item = ITEM_DB[itemId];
-                        if (stat === 'attack' && item.type === 'weapon') bonus += item.value;
-                        if (stat === 'defense' && item.type === 'armor') bonus += item.value;
+                        if (stat === 'attack') {
+                            bonus += item.statBonuses?.attack ?? (item.type === 'weapon' ? item.value : 0);
+                        }
+                        if (stat === 'defense') {
+                            bonus += item.statBonuses?.defense ?? (item.type === 'armor' ? item.value : 0);
+                        }
                     }
                 });
                 return bonus;
@@ -149,11 +295,18 @@ export const useInventoryStore = create<InventoryState>()(
 
             getEquippedWeapon: () => {
                 const { equipped } = get();
-                const weaponId = equipped.main_hand;
+                const weaponId = equipped.weapon;
                 if (weaponId && ITEM_DB[weaponId]) {
                     return ITEM_DB[weaponId];
                 }
                 return null;
+            },
+
+            getEquippedItemForSlot: (slot) => {
+                const { equipped } = get();
+                const itemId = equipped[slot];
+                if (!itemId || !ITEM_DB[itemId]) return null;
+                return ITEM_DB[itemId];
             },
 
             // ========== MARKETPLACE FUNCTIONS ==========
@@ -162,41 +315,29 @@ export const useInventoryStore = create<InventoryState>()(
                 const item = ITEM_DATABASE[itemId];
                 if (!item) return false;
 
-                // Check if already owned (except consumables)
                 if (item.type !== 'consumable' && get().marketplaceOwned.includes(itemId)) {
                     return false;
                 }
 
-                // Spend currency
                 const currencyStore = useCurrencyStore.getState();
                 if (!currencyStore.spendCurrency(item.cost)) {
                     return false;
                 }
 
-                // Add to owned items
                 set((state) => ({
                     marketplaceOwned: [...state.marketplaceOwned, itemId],
                 }));
 
-                // Auto-equip if better than current
                 if (item.type === 'armor') {
                     const currentArmor = get().marketplaceEquippedArmor;
-                    const currentDef = currentArmor
-                        ? ITEM_DATABASE[currentArmor]?.stats?.defense || 0
-                        : 0;
+                    const currentDef = currentArmor ? ITEM_DATABASE[currentArmor]?.stats?.defense || 0 : 0;
                     const newDef = item.stats?.defense || 0;
-                    if (newDef > currentDef) {
-                        set({ marketplaceEquippedArmor: itemId });
-                    }
+                    if (newDef > currentDef) set({ marketplaceEquippedArmor: itemId });
                 } else if (item.type === 'weapon') {
                     const currentWeapon = get().marketplaceEquippedWeapon;
-                    const currentAtk = currentWeapon
-                        ? ITEM_DATABASE[currentWeapon]?.stats?.attack || 0
-                        : 0;
+                    const currentAtk = currentWeapon ? ITEM_DATABASE[currentWeapon]?.stats?.attack || 0 : 0;
                     const newAtk = item.stats?.attack || 0;
-                    if (newAtk > currentAtk) {
-                        set({ marketplaceEquippedWeapon: itemId });
-                    }
+                    if (newAtk > currentAtk) set({ marketplaceEquippedWeapon: itemId });
                 }
 
                 return true;
@@ -234,7 +375,6 @@ export const useInventoryStore = create<InventoryState>()(
                 const bonuses: Partial<Record<SkillName, number>> = {};
                 const state = get();
 
-                // Aggregate XP bonuses from all owned furniture
                 for (const itemId of state.marketplaceOwned) {
                     const item = ITEM_DATABASE[itemId];
                     if (item?.type === 'furniture' && item?.stats?.bonusXp) {
@@ -244,7 +384,6 @@ export const useInventoryStore = create<InventoryState>()(
                     }
                 }
 
-                // Add bonuses from equipped armor
                 const armor = state.marketplaceEquippedArmor ? ITEM_DATABASE[state.marketplaceEquippedArmor] : null;
                 if (armor?.stats?.bonusXp) {
                     for (const [skill, bonus] of Object.entries(armor.stats.bonusXp)) {
@@ -256,7 +395,31 @@ export const useInventoryStore = create<InventoryState>()(
             },
         }),
         {
-            name: 'gl-inventory-v4', // Reset for economy overhaul
+            name: PERSIST_REGISTRY.inventory.persistKey,
+            storage: createJSONStorage(() => safeStorage),
+            // Forward-compat migration: merge new slots into any existing saves
+            merge: (persisted: unknown, current) => {
+                const p = persisted as Partial<InventoryState>;
+                return {
+                    ...current,
+                    ...p,
+                    equipped: {
+                        weapon: null,
+                        armor: null,
+                        relic: null,
+                        artifact: null,
+                        pet: null,
+                        book: null,
+                        jewelry: null,
+                        ...(p.equipped ?? {}),
+                    },
+                };
+            },
+            onRehydrateStorage: () => () => {
+                console.log('[BOOT] useInventoryStore hydration finished');
+            }
         }
     )
 );
+
+console.log('[BOOT] useInventoryStore module load finished');

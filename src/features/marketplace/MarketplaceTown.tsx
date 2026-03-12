@@ -11,6 +11,7 @@ import { WeaponStore } from './stores/WeaponStore';
 import { FurnitureStore } from './stores/FurnitureStore';
 import { SpellStore } from './stores/SpellStore';
 import { JewelryStore } from './stores/JewelryStore';
+import { DailyShop } from './stores/DailyShop';
 import { SceneShell } from '../../components/scene';
 import marketplaceNightBg from '../../assets/backgrounds/marketplace_night.png';
 import { useHeroImage } from '../../hooks/useHeroImage';
@@ -370,6 +371,9 @@ export const MarketplaceTown = () => {
                 )}
                 {activeStore === 'jewelry-store' && (
                     <JewelryStore onClose={closeStore} />
+                )}
+                {activeStore === 'daily-shop' && (
+                    <DailyShop onClose={closeStore} />
                 )}
             </AnimatePresence>
         </>

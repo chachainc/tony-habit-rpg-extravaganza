@@ -7,6 +7,7 @@ import { useMonopolyStore } from '../../store/useMonopolyStore';
 import { useBattleStore } from '../../store/useBattleStore';
 import { useConquestStore } from '../../store/useConquestStore';
 import { useProfileStore } from '../../store/useProfileStore';
+import { useCurrencyStore } from '../../store/useCurrencyStore';
 import './TopBar.css';
 
 export const TopBar = () => {
@@ -18,6 +19,7 @@ export const TopBar = () => {
     const { player, currentMP } = useBattleStore();
     const { sigils } = useConquestStore();
     const { profileName, playerTitle, activeBannerId } = useProfileStore();
+    const { shmeckles } = useCurrencyStore();
 
     const level = getGlobalLevel();
     const atk = getAttack();
@@ -30,7 +32,7 @@ export const TopBar = () => {
     const maxHP = player?.maxHp ?? 100;
 
     // Context detection for right section
-    const isCombatRoute = ['/combat', '/arena', '/conquest'].some(p => location.pathname.startsWith(p));
+    const isCombatRoute = ['/combat', '/arena', '/conquest', '/tower-defense', '/risk', '/storm'].some(p => location.pathname.startsWith(p));
     const isMonopolyRoute = location.pathname === '/monopoly';
 
     // Banner emoji map
@@ -46,7 +48,7 @@ export const TopBar = () => {
 
     return (
         <motion.div
-            className="top-bar"
+            className={`top-bar ${isMonopolyRoute ? 'top-bar--monopoly' : ''}`}
             initial={{ y: -100 }}
             animate={{ y: 0 }}
             transition={{ duration: 0.3 }}
@@ -150,10 +152,17 @@ export const TopBar = () => {
                             <span>🔱 {sigils}</span>
                         </div>
                         <div
+                            className="top-bar__stat top-bar__stat--shmeckles top-bar__stat--clickable"
+                            onClick={() => navigate('/storm')}
+                            title="Shmeckles"
+                        >
+                            <span>🐌 {shmeckles}</span>
+                        </div>
+                        <div
                             className="top-bar__stat top-bar__stat--mp"
                             title="Mana"
                         >
-                            <span>💎 {currentMP}/{maxMP}</span>
+                            <span>🔮 {currentMP}/{maxMP}</span>
                         </div>
                     </>
                 )}

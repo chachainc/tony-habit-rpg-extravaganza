@@ -1,0 +1,568 @@
+/* ===========================
+   Tower Defense Mode (Expanded)
+   =========================== */
+
+   .td-page {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    background-color: #0b0f19;
+    color: #e2e8f0;
+    overflow: hidden;
+}
+
+/* ─── Compact Header ──────────────────────── */
+.td-header-compact {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.4rem 0.75rem;
+    background: rgba(15, 20, 35, 0.95);
+    border-bottom: 1px solid rgba(139, 92, 246, 0.2);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+    z-index: 10;
+    flex-shrink: 0;
+}
+
+.td-title-compact {
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+    font-size: 0.95rem;
+    font-weight: 800;
+    color: #f59e0b;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    flex-shrink: 0;
+}
+
+.td-header-chips {
+    display: flex;
+    gap: 0.35rem;
+    margin-left: auto;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+}
+
+.td-chip {
+    padding: 0.18rem 0.5rem;
+    background: rgba(0, 0, 0, 0.4);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 999px;
+    font-weight: 700;
+    font-size: 0.75rem;
+    white-space: nowrap;
+}
+
+.td-chip.mana  { color: #c084fc; border-color: rgba(192, 132, 252, 0.3); }
+.td-chip.wave  { color: #fcd34d; }
+.td-chip.hp    { color: #f87171; }
+.td-chip.mod   { color: #e2e8f0; }
+
+/* ─── Legacy Header (kept for reference, not rendered) ────── */
+.td-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.6rem 1rem;
+    background: rgba(15, 20, 35, 0.95);
+    border-bottom: 1px solid rgba(139, 92, 246, 0.2);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+    z-index: 10;
+}
+
+.td-header-left {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.td-header h1 {
+    font-size: 1.4rem;
+    font-weight: 800;
+    color: #f59e0b;
+    margin: 0;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.td-back {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    background: transparent;
+    border: none;
+    color: #94a3b8;
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 1rem;
+    transition: color 0.2s;
+}
+
+.td-back:hover {
+    color: #e2e8f0;
+}
+
+.td-stats {
+    display: flex;
+    gap: 1rem;
+}
+
+.td-stats span {
+    padding: 0.4rem 0.8rem;
+    background: rgba(0, 0, 0, 0.4);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    font-weight: 700;
+    font-size: 0.95rem;
+}
+
+.mana-display {
+    color: #c084fc;
+    border-color: rgba(192, 132, 252, 0.3) !important;
+}
+
+.wave-display {
+    color: #fcd34d;
+}
+
+.health-display {
+    color: #f87171;
+}
+
+/* ─── Content Area ──────────────────────── */
+.td-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    padding: 1rem;
+    gap: 1rem;
+    position: relative;
+    overflow: hidden;
+}
+
+.td-controls {
+    display: flex;
+    justify-content: center;
+    z-index: 10;
+}
+
+.td-start-btn {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1.5rem;
+    background: linear-gradient(135deg, #7c3aed, #4f46e5);
+    border: 2px solid #a78bfa;
+    border-radius: 12px;
+    color: white;
+    font-weight: 800;
+    cursor: pointer;
+    box-shadow: 0 4px 12px rgba(99, 102, 241, 0.4);
+    transition: transform 0.2s, opacity 0.2s;
+}
+
+.td-start-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    background: #334155;
+    border-color: #475569;
+}
+
+.td-game-over {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+    color: #f87171;
+}
+
+.td-reset-btn {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 1rem;
+    background: #b91c1c;
+    border: none;
+    border-radius: 8px;
+    color: white;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+/* ─── Battlefield Grid ──────────────────────── */
+.td-battlefield-wrapper {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    position: relative;
+}
+
+.td-grid-container {
+    width: 100%;
+    /* Keep aspect ratio matching grid (12x8) */
+    aspect-ratio: 12 / 8;
+    max-height: 100%;
+    background: url('../../assets/backgrounds/td-bg.jpg') center/cover no-repeat;
+    border: 2px solid #334155;
+    border-radius: 8px;
+    display: grid;
+    position: relative; /* For absolutely positioned entities */
+    overflow: hidden;
+    box-shadow: inset 0 0 20px rgba(0,0,0,0.5), 0 10px 30px rgba(0,0,0,0.5);
+}
+
+/* Grid Cells */
+.td-cell {
+    border: 1px dashed rgba(255, 255, 255, 0.05);
+    position: relative;
+}
+
+.td-cell.buildable {
+    cursor: pointer;
+    background: rgba(34, 197, 94, 0.05);
+}
+
+.td-cell.buildable:hover {
+    background: rgba(34, 197, 94, 0.1);
+    border: 1px solid rgba(34, 197, 94, 0.5);
+    z-index: 1;
+}
+
+.td-cell.path {
+    background: rgba(51, 65, 85, 0.7);
+    border: none;
+    box-shadow: inset 0 0 10px rgba(0,0,0,0.3);
+}
+
+.td-cell.selected {
+    background: rgba(250, 204, 21, 0.2) !important;
+    border: 2px solid #facc15 !important;
+    z-index: 2;
+}
+
+.base-icon {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    pointer-events: none;
+}
+
+.spawn-icon {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    opacity: 0.5;
+    pointer-events: none;
+}
+
+/* ─── Entities overlay ──────────────────────── */
+.td-entity {
+    position: absolute;
+    pointer-events: none; /* Let clicks pass to grid unless specified */
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    transform: translate(-50%, -50%); /* Center on coordinates */
+    margin-left: calc(100% / 24); /* Half a cell width (12 grid) */
+    margin-top: calc(100% / 16);  /* Half a cell height (8 grid) */
+}
+
+/* Towers */
+.td-entity.tower {
+    pointer-events: auto; /* Clickable */
+    cursor: pointer;
+    z-index: 5;
+    transition: transform 0.1s;
+}
+
+.td-entity.tower:hover {
+    transform: translate(-50%, -50%) scale(1.1);
+}
+
+.tower-icon {
+    width: 80%;
+    height: 80%;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.2rem;
+    border: 2px solid rgba(255, 255, 255, 0.5);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.5);
+    position: relative;
+    background-color: #334155; /* fallback */
+}
+
+.tower-level {
+    position: absolute;
+    bottom: -4px;
+    right: -4px;
+    background: #f59e0b;
+    color: #fff;
+    font-size: 0.6rem;
+    font-weight: 900;
+    border-radius: 50%;
+    width: 16px;
+    height: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid #78350f;
+}
+
+/* Range Indicator */
+.td-range-indicator-grid {
+    position: absolute;
+    border-radius: 50%;
+    border: 1px solid rgba(255, 255, 255, 0.5);
+    background: rgba(255, 255, 255, 0.1);
+    pointer-events: none;
+    z-index: 10;
+}
+.td-range-indicator-grid.valid {
+    border-color: rgba(34, 197, 94, 0.8);
+    background: rgba(34, 197, 94, 0.15);
+}
+.td-range-indicator-grid.invalid {
+    border-color: rgba(239, 68, 68, 0.8);
+    background: rgba(239, 68, 68, 0.15);
+}
+
+.td-entity.ghost {
+    pointer-events: none !important;
+}
+
+/* Enemies */
+.td-entity.enemy {
+    z-index: 4;
+}
+
+.td-entity.enemy.slowed {
+    filter: drop-shadow(0 0 4px #7dd3fc);
+}
+
+.enemy-sprite {
+    font-size: 1.5rem;
+    filter: drop-shadow(0 2px 2px rgba(0,0,0,0.5));
+}
+
+.enemy-hp-bar-bg {
+    width: 80%;
+    height: 4px;
+    background: rgba(0,0,0,0.8);
+    border-radius: 2px;
+    margin-top: 2px;
+    overflow: hidden;
+}
+
+.enemy-hp-bar-fill {
+    height: 100%;
+    background: #ef4444;
+    transition: width 0.1s linear;
+}
+
+/* Projectiles */
+.td-projectile {
+    position: absolute;
+    height: 2px;
+    transform-origin: left center;
+    z-index: 3;
+    pointer-events: none;
+    box-shadow: 0 0 8px currentColor;
+    border-radius: 2px;
+    opacity: 0.8;
+}
+
+/* ─── Bottom Drawer Shop ──────────────────────── */
+.td-drawer-shop {
+    position: fixed;
+    /* Sit above bottom nav bar (~56px) + device safe-area inset */
+    bottom: calc(56px + env(safe-area-inset-bottom, 0px));
+    left: 0;
+    right: 0;
+    background: rgba(15, 20, 35, 0.97);
+    border-top: 1px solid rgba(139, 92, 246, 0.3);
+    box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.5);
+    z-index: 100;
+    padding: 0.5rem 0.75rem;
+    backdrop-filter: blur(8px);
+}
+
+.td-shop-scroll {
+    display: flex;
+    gap: 0.75rem;
+    overflow-x: auto;
+    max-width: 100%;
+    padding-bottom: 0.5rem;
+    scrollbar-width: none; /* Firefox */
+}
+
+.td-shop-scroll::-webkit-scrollbar {
+    display: none; /* Chrome/Safari */
+}
+
+.shop-item {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    background: rgba(30, 41, 59, 0.8);
+    border: 1px solid #334155;
+    border-radius: 12px;
+    padding: 0.5rem 0.75rem;
+    min-width: 140px;
+    cursor: grab;
+    user-select: none;
+    transition: transform 0.1s, background 0.2s;
+}
+
+.shop-item:active {
+    cursor: grabbing;
+}
+
+.shop-item.disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+    filter: grayscale(0.8);
+}
+
+.shop-item-icon {
+    width: 2.5rem;
+    height: 2.5rem;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.25rem;
+    background: #0f172a;
+    border: 2px solid;
+    flex-shrink: 0;
+}
+
+.shop-item-details {
+    display: flex;
+    flex-direction: column;
+}
+
+.shop-item-name {
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: #f1f5f9;
+}
+
+.shop-item-cost {
+    font-size: 0.72rem;
+    font-weight: 600;
+    color: #c084fc;
+}
+
+.shop-item-owned {
+    font-size: 0.72rem;
+    font-weight: 700;
+    color: #4ade80;
+}
+
+.shop-item.owned {
+    border-color: rgba(74, 222, 128, 0.4);
+    background: rgba(74, 222, 128, 0.08);
+}
+
+/* Floating Drag Element */
+.td-floating-ghost {
+    position: fixed;
+    pointer-events: none;
+    z-index: 9999;
+    transform: translate(-50%, -100%); /* Offset slightly above finger */
+    filter: drop-shadow(0 10px 15px rgba(0,0,0,0.5));
+}
+
+/* ─── Upgrade Panel Adjustments ───────────────── */
+.upgrade-panel {
+    bottom: 6rem; /* Shifted up due to bottom drawer */
+}
+
+.tower-stats-preview {
+    display: flex;
+    justify-content: space-around;
+    padding: 0.5rem;
+    background: rgba(0,0,0,0.3);
+    border-radius: 8px;
+    margin-bottom: 1rem;
+    font-size: 0.85rem;
+    color: #94a3b8;
+}
+
+/* ─── Mobile Adjustments ──────────────────────── */
+@media (max-width: 768px) {
+    .td-header {
+        padding: 0.4rem 0.75rem;
+    }
+
+    .td-stats {
+        display: none; /* hidden — compact header is shown instead */
+    }
+
+    .td-grid-container {
+        max-height: 50vh;
+    }
+
+    .tower-icon {
+        font-size: 1rem;
+    }
+
+    .enemy-sprite {
+        font-size: 1.2rem;
+    }
+}
+
+/* ─── Modifier Chips ──────────────────────── */
+.map-mod-display {
+    color: #e2e8f0;
+    border-color: rgba(226, 232, 240, 0.3) !important;
+    background: rgba(226, 232, 240, 0.1) !important;
+    cursor: help;
+}
+
+.wave-preview-chip {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-left: 1rem;
+    padding: 0.5rem 1rem;
+    background: rgba(220, 38, 38, 0.15);
+    border: 1px dashed #ef4444;
+    border-radius: 8px;
+    color: #fca5a5;
+    animation: pulseBorder 2s infinite;
+}
+
+.wave-preview-chip .wave-icon {
+    font-size: 1.5rem;
+}
+
+.wave-preview-chip strong {
+    display: block;
+    font-size: 0.9rem;
+    color: #f87171;
+}
+
+.wave-preview-chip p {
+    margin: 0;
+    font-size: 0.75rem;
+    color: #fecaca;
+    opacity: 0.8;
+}
+
+@keyframes pulseBorder {
+    0% { border-color: rgba(239, 68, 68, 0.4); }
+    50% { border-color: rgba(239, 68, 68, 1); }
+    100% { border-color: rgba(239, 68, 68, 0.4); }
+}

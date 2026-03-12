@@ -5,7 +5,7 @@ import { useDayStore } from '../../store/useDayStore';
 import { Heart, Zap, Gamepad2, Utensils } from 'lucide-react';
 import { Card } from '../../components/ui/Card';
 import { ITEM_DATABASE } from '../../data/items';
-import { PetFusionPanel } from './PetFusionPanel';
+import { SharedFusionPanel } from '../fusion/SharedFusionPanel';
 import './PetPage.css';
 
 // AI-generated pet images
@@ -113,7 +113,7 @@ export const PetPage = () => {
                 </div>
 
                 {/* ── FUSION VIEW ─────────────────────────────────────────── */}
-                {activeTab === 'fusion' && <PetFusionPanel />}
+                {activeTab === 'fusion' && <SharedFusionPanel mode="pet" />}
 
                 {/* ── PETS VIEW (existing content) ────────────────────────── */}
                 {activeTab === 'pets' && (

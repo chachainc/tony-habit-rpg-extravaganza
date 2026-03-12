@@ -5,13 +5,14 @@
  * combat stat breakdowns. Not a Zustand store itself.
  */
 
-import { useGameStore, type SkillName } from './useGameStore';
-import { useEquipmentStore } from './useEquipmentStore';
-import { useSkillTrophyStore } from './useSkillTrophyStore';
+import { AURAS, useAuraStore } from './useAuraStore';
 import { useBookTrophyStore } from './useBookTrophyStore';
-import { useRoomStore } from './useRoomStore';
-import { useAuraStore, AURAS } from './useAuraStore';
 import { useConsistencyStore } from './useConsistencyStore';
+import { useGameStore, type SkillName } from './useGameStore';
+import { getPassiveBonuses } from './usePassiveEffects';
+import { useRoomStore } from './useRoomStore';
+import { useSkillTrophyStore } from './useSkillTrophyStore';
+import { useRiskStore } from './useRiskStore';
 
 // ═══════════════════════════════════════════
 // SKILL IDENTITY ROLES
@@ -148,12 +149,13 @@ export interface CombatBreakdown {
 
 export function getDetailedCombatBreakdown(): CombatBreakdown {
     const gameStore = useGameStore.getState();
-    const equipStore = useEquipmentStore.getState();
+    const passives = getPassiveBonuses();
     const skillTrophyStore = useSkillTrophyStore.getState();
     const bookTrophyStore = useBookTrophyStore.getState();
     const roomBonuses = useRoomStore.getState().getRoomCombatBonuses();
     const auraStore = useAuraStore.getState();
     const consistencyStore = useConsistencyStore.getState();
+    const activeRiskRegions = useRiskStore.getState().getActiveRegionBonuses();
     const { skills, defenseDecayAmount } = gameStore;
 
     const activeAura = AURAS.find(a => a.id === auraStore.activeAuraId);
@@ -164,7 +166,7 @@ export function getDetailedCombatBreakdown(): CombatBreakdown {
     // ── ATK ──────────────────────────────
     const strengthLevel = skills['Strength'].level;
     const baseAtk = Math.floor(strengthLevel * 1.5) + 5;
-    const equipAtk = equipStore.getEquipmentBonuses().atk;
+    const equipAtk = passives.attack_bonus;
     const trophyAtk = skillTrophyStore.getStrengthATKBonus();
     const roomAtkPercent = roomBonuses.atkPercent;
     const auraAtkBonus = activeAura?.bonus?.type === 'atk' ? activeAura.bonus.value : 0;
@@ -176,6 +178,12 @@ export function getDetailedCombatBreakdown(): CombatBreakdown {
     ];
 
     let atkSubtotal = baseAtk + equipAtk + trophyAtk;
+
+    if (activeRiskRegions.includes('verdant_plains')) {
+        const riskAtkVal = Math.round(atkSubtotal * 0.05);
+        atkSources.push({ label: 'Risk Verdant Plains (+5%)', value: riskAtkVal });
+        atkSubtotal += riskAtkVal;
+    }
 
     if (roomAtkPercent > 0) {
         const roomAtkVal = Math.round(atkSubtotal * roomAtkPercent / 100);
@@ -226,12 +234,18 @@ export function getDetailedCombatBreakdown(): CombatBreakdown {
         defSources.push({ label: 'Suppressed (-50%)', value: -suppressPenalty });
     }
 
-    const equipDef = equipStore.getEquipmentBonuses().def;
+    const equipDef = passives.defense_bonus;
     const trophyDef = skillTrophyStore.getSleepDEFBonus();
     defSources.push({ label: 'Equipment', value: equipDef });
     defSources.push({ label: 'Trophies', value: trophyDef });
 
     let defSubtotal = Math.max(1, baseDef + equipDef + trophyDef);
+
+    if (activeRiskRegions.includes('iron_highlands')) {
+        const riskDefVal = Math.round(defSubtotal * 0.10);
+        defSources.push({ label: 'Risk Iron Highlands (+10%)', value: riskDefVal });
+        defSubtotal += riskDefVal;
+    }
 
     if (roomBonuses.defPercent > 0) {
         const roomDefVal = Math.round(defSubtotal * roomBonuses.defPercent / 100);
@@ -259,11 +273,17 @@ export function getDetailedCombatBreakdown(): CombatBreakdown {
     const baseHp = Math.round(cardioLevel * 15 + 80);
     const roomHp = roomBonuses.maxHP;
     const trophyHp = skillTrophyStore.getSleepHPBonus();
+    const equipHp = passives.max_hp_bonus;
     const hpSources: StatSource[] = [
         { label: `Cardio Lv.${cardioLevel}`, value: baseHp },
         { label: 'Room', value: roomHp },
         { label: 'Trophies', value: trophyHp },
+        { label: 'Equipment', value: equipHp },
     ];
+
+    if (activeRiskRegions.includes('sunken_expanse')) {
+        hpSources.push({ label: 'Risk Sunken Expanse', value: 5 });
+    }
 
     // ── SPD ──────────────────────────────
     const baseSpd = Math.round(flexLevel * 2 + 50);
@@ -284,12 +304,14 @@ export function getDetailedCombatBreakdown(): CombatBreakdown {
     const luckCrit = (skills['Luck']?.level || 1) * 0.01;
     const roomCrit = roomBonuses.critPercent / 100;
     const trophyCrit = skillTrophyStore.getLuckCritBonus();
+    const equipCritPct = passives.crit_bonus;
     const auraCritBonus = activeAura?.bonus?.type === 'crit' ? activeAura.bonus.value : 0;
     const critSources: StatSource[] = [
         { label: 'Base', value: Math.round(baseCrit * 100) },
         { label: `Luck Lv.${skills['Luck']?.level || 1}`, value: Math.round(luckCrit * 100) },
         { label: 'Room', value: Math.round(roomCrit * 100) },
         { label: 'Trophies', value: Math.round(trophyCrit * 100) },
+        { label: 'Equipment', value: equipCritPct },
     ];
     if (auraCritBonus > 0) {
         critSources.push({ label: 'Aura', value: Math.round(auraCritBonus * 100) });
@@ -312,10 +334,10 @@ export function getDetailedCombatBreakdown(): CombatBreakdown {
         atk: { total: Math.round(atkSubtotal), sources: filterSources(atkSources) },
         def: { total: Math.round(defSubtotal), sources: filterSources(defSources) },
         matk: { total: Math.round(baseMatk + bookTrophyBonus), sources: filterSources(matkSources) },
-        hp: { total: Math.round(baseHp + roomHp + trophyHp), sources: filterSources(hpSources) },
+        hp: { total: Math.round(baseHp + roomHp + trophyHp + equipHp), sources: filterSources(hpSources) },
         spd: { total: Math.round(spdSubtotal), sources: filterSources(spdSources) },
         critChance: {
-            total: Math.round((baseCrit + luckCrit + roomCrit + trophyCrit + auraCritBonus) * 100),
+            total: Math.round((baseCrit + luckCrit + roomCrit + trophyCrit + (equipCritPct / 100) + auraCritBonus) * 100),
             sources: filterSources(critSources),
         },
         mp: { total: Math.round(baseMp + bookMpBonus), sources: filterSources(mpSources) },

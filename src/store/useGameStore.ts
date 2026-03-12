@@ -1,8 +1,9 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import { useEquipmentStore } from './useEquipmentStore';
+import { getPassiveBonuses } from './usePassiveEffects';
 import { useBookTrophyStore } from './useBookTrophyStore';
 import { useSkillTrophyStore } from './useSkillTrophyStore';
+import { PERSIST_REGISTRY } from '../data/persistRegistry';
 
 export type SkillName =
     | 'Sleep'
@@ -89,12 +90,14 @@ export const INITIAL_SKILLS: Record<SkillName, Skill> = {
 // ULTRA-SLOW progression for years of gameplay
 // Much steeper than previous level² × 10
 // This makes leveling take YEARS
+// Progression formula: Base XP required scales non-linearly
+// Level 1 -> 2: 100 XP
+// Level 9 -> 10: ~3,162 XP
+// Level 19 -> 20: ~8,944 XP
+// Level 29 -> 30: ~16,431 XP
 const getXpForLevel = (level: number): number => {
-    if (level <= 1) return 0;
-    // Exponential curve: level³ × 200 (Much slower, multi-year progression)
-    // Level 10: 200,000 XP (~1 year)
-    // Level 20: 1,600,000 XP (~5-8 years)
-    return Math.floor(Math.pow(level, 3) * 200);
+    if (level <= 0) return 100;
+    return Math.floor(100 * Math.pow(level, 1.5));
 };
 
 // Get current date in Eastern Time
@@ -241,12 +244,16 @@ export const useGameStore = create<GameState>()(
                     }
                 }
 
-                finalAmount = Math.floor(finalAmount); // Ensure integer
-
-                // No more daily cap check
+                const currentDailyXp = state.dailyXpGained[skillName] || 0;
+                const softCap = 1500;
+                if (currentDailyXp > softCap) {
+                    const penaltyRatio = softCap / (currentDailyXp + finalAmount);
+                    finalAmount = Math.max(1, Math.floor(finalAmount * penaltyRatio));
+                }
+                
+                finalAmount = Math.floor(finalAmount);
                 const actualXp = finalAmount;
                 const overflowAmount = 0;
-                const currentDailyXp = state.dailyXpGained[skillName] || 0;
 
                 const skill = state.skills[skillName];
                 const oldLevel = skill.level;
@@ -348,7 +355,7 @@ export const useGameStore = create<GameState>()(
                 // Ultra slow: level × 1.5 + 5
                 const baseAtk = Math.floor(strengthLevel * 1.5) + 5;
                 // Add equipment bonus
-                const equipBonus = useEquipmentStore.getState().getEquipmentBonuses().atk;
+                const equipBonus = getPassiveBonuses().attack_bonus;
                 // Add Strength trophy bonus
                 const trophyBonus = useSkillTrophyStore.getState().getStrengthATKBonus();
                 return baseAtk + equipBonus + trophyBonus;
@@ -377,7 +384,7 @@ export const useGameStore = create<GameState>()(
                 }
 
                 // Add equipment bonus
-                const equipBonus = useEquipmentStore.getState().getEquipmentBonuses().def;
+                const equipBonus = getPassiveBonuses().defense_bonus;
                 // Add Sleep trophy DEF bonus
                 const trophyBonus = useSkillTrophyStore.getState().getSleepDEFBonus();
                 return Math.max(1, baseDef + equipBonus + trophyBonus);
@@ -467,7 +474,7 @@ export const useGameStore = create<GameState>()(
             },
         }),
         {
-            name: 'gl-game-storage-v7', // Added cumulative logs for pet evolution
+            name: PERSIST_REGISTRY.game.persistKey, // Added cumulative logs for pet evolution
         }
     )
 );

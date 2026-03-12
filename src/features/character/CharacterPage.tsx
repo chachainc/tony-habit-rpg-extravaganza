@@ -1,13 +1,14 @@
 import { useGameStore, type SkillName } from '../../store/useGameStore';
-import { useEquipmentStore, EQUIPMENT_DB } from '../../store/useEquipmentStore';
 import { useSkillTrophyStore } from '../../store/useSkillTrophyStore';
 import { useBookTrophyStore } from '../../store/useBookTrophyStore';
 import { useStrategyStore } from '../../store/useStrategyStore';
 import { useDayStore } from '../../store/useDayStore';
 import { useProfileStore } from '../../store/useProfileStore';
+import { getPassiveBonuses } from '../../store/usePassiveEffects';
 import { useNavigate } from 'react-router-dom';
-import { Sword, Shield, Sparkles, Droplet, Heart, Crown, Zap, BookOpen } from 'lucide-react';
+import { Sword, Shield, Sparkles, Droplet, Heart, Crown, BookOpen } from 'lucide-react';
 import { useHeroImage } from '../../hooks/useHeroImage';
+import { EquipmentPanel } from './EquipmentPanel';
 import './CharacterPage.css';
 
 interface StatLine {
@@ -20,7 +21,6 @@ const DEFENSE_SKILLS: SkillName[] = ['Sleep', 'Hygiene', 'Cardio', 'Flexibility'
 
 export const CharacterPage = () => {
     const game = useGameStore();
-    const equipment = useEquipmentStore();
     const skillTrophy = useSkillTrophyStore();
     const bookTrophy = useBookTrophyStore();
     const strategy = useStrategyStore();
@@ -29,15 +29,27 @@ export const CharacterPage = () => {
     const navigate = useNavigate();
     const heroImage = useHeroImage();
 
+    // Dynamic rank icon based on global level
+    const getRankIcon = () => {
+        const level = game.getGlobalLevel();
+        if (level >= 50) return '💎'; // Diamond
+        if (level >= 30) return '🥇'; // Gold
+        if (level >= 20) return '🥈'; // Silver
+        if (level >= 10) return '🥉'; // Bronze
+        if (level >= 5)  return '⭐'; // Rising
+        return '🗡️';                  // Adventurer / no rank
+    };
+
     const { skills, getAttack, getDefense, getMagicAttack, getMaxMP, getGlobalLevel, isDefenseSuppressed, defenseDecayAmount } = game;
-    const equipBonuses = equipment.getEquipmentBonuses();
+    const equipBonuses = getPassiveBonuses();
 
     // ─── ATTACK BREAKDOWN ───────────────────────────
     const strengthLevel = skills['Strength'].level;
     const baseAtk = Math.floor(strengthLevel * 1.5) + 5;
-    const equipAtk = equipBonuses.atk;
+    const equipAtk = equipBonuses.attack_bonus;
     const trophyAtk = skillTrophy.getStrengthATKBonus();
-    const totalAtk = getAttack();
+    // Assuming game.getAttack() also incorporates usePassiveEffects eventually, but we just display it here.
+    const totalAtk = getAttack() + equipAtk; // Manually add here for now until we integrate combat formulas
 
     const atkLines: StatLine[] = [
         { label: `Strength Lv.${strengthLevel} → base ATK`, value: `${baseAtk}`, type: 'base' },
@@ -50,9 +62,9 @@ export const CharacterPage = () => {
     const defLevels = DEFENSE_SKILLS.map(s => skills[s].level);
     const avgDefLevel = defLevels.reduce((a, b) => a + b, 0) / 5;
     let rawBaseDef = Math.floor(avgDefLevel * 1.2) + 3;
-    const equipDef = equipBonuses.def;
+    const equipDef = equipBonuses.defense_bonus;
     const trophyDef = skillTrophy.getSleepDEFBonus();
-    const totalDef = getDefense();
+    const totalDef = getDefense() + equipDef; // Manually add here for now
     const suppressed = isDefenseSuppressed();
 
     const defLines: StatLine[] = DEFENSE_SKILLS.map(s => ({
@@ -93,7 +105,7 @@ export const CharacterPage = () => {
     // ─── HP BREAKDOWN ───────────────────────────────
     const healthLevel = skills['Health'].level;
     const baseHP = 95 + healthLevel * 5;
-    const equipHP = equipBonuses.hp;
+    const equipHP = equipBonuses.max_hp_bonus;
     const trophyHP = skillTrophy.getSleepHPBonus();
 
     const hpLines: StatLine[] = [
@@ -107,14 +119,9 @@ export const CharacterPage = () => {
     const stratLines: StatLine[] = [
         { label: `Strategy Level`, value: `${strategy.strategyLevel}`, type: 'base' },
         { label: `Conquest Power Score`, value: `${strategy.strategyLevel * 10}`, type: 'total' },
+        { label: `Equipment Strategy Bonus`, value: `+${equipBonuses.strategy_bonus}`, type: 'bonus' },
         { label: `Raised by: daily chess`, value: `♟️`, type: 'base' },
     ];
-
-    // ─── EQUIPPED GEAR ──────────────────────────────
-    const equippedItems = [equipment.equippedWeapon, equipment.equippedArmor, equipment.equippedAccessory]
-        .filter(Boolean)
-        .map(id => EQUIPMENT_DB[id!])
-        .filter(Boolean);
 
     // ─── SLEEP SUMMARY ──────────────────────────────
     const sleepCount = day.sleepLogs.length;
@@ -147,7 +154,7 @@ export const CharacterPage = () => {
             <div className="char-content">
                 {/* Header */}
                 <div className="char-header">
-                    <div className="char-avatar">⚔️</div>
+                    <div className="char-avatar" title={`Level ${game.getGlobalLevel()}`}>{getRankIcon()}</div>
                     <div className="char-info">
                         <h1>Your Character</h1>
                         <p className="char-subtitle">Level {getGlobalLevel()} Adventurer</p>
@@ -190,27 +197,8 @@ export const CharacterPage = () => {
                     {renderStatSection('Strategy', <Crown size={18} />, stratLines, '#f59e0b')}
                 </div>
 
-                {/* Equipped Gear */}
-                {equippedItems.length > 0 && (
-                    <div className="char-gear-section">
-                        <h3><Zap size={16} /> Equipped Gear</h3>
-                        <div className="char-gear-list">
-                            {equippedItems.map(item => (
-                                <div key={item.id} className={`char-gear-card rarity-${item.rarity}`}>
-                                    <span className="gear-icon">{item.icon}</span>
-                                    <div className="gear-info">
-                                        <span className="gear-name">{item.name}</span>
-                                        <span className="gear-stats">
-                                            {item.atkBonus > 0 && `+${item.atkBonus} ATK `}
-                                            {item.defBonus > 0 && `+${item.defBonus} DEF `}
-                                            {item.hpBonus > 0 && `+${item.hpBonus} HP`}
-                                        </span>
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
-                    </div>
-                )}
+                {/* Equipped Gear Array */}
+                <EquipmentPanel />
 
                 {/* How it works */}
                 <div className="char-how-section">

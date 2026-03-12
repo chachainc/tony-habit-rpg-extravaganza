@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
+import { PERSIST_REGISTRY } from '../data/persistRegistry';
 
 // Get current date string in Eastern Time
 const getEasternDateString = (): string => {
@@ -186,7 +187,7 @@ export const useCheckInStore = create<CheckInState>()(
             },
         }),
         {
-            name: 'gl-checkin-v1',
+            name: PERSIST_REGISTRY.checkin.persistKey,
         }
     )
 );

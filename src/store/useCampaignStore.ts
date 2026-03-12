@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { ENEMY_DB } from './useEnemyStore';
+import { PERSIST_REGISTRY } from '../data/persistRegistry';
 
 // Golden Slime spawn settings
 const GOLDEN_SLIME_SPAWN_CHANCE = 0.01; // 1% chance
@@ -31,6 +32,7 @@ interface CampaignState {
     currentFloor: number;
     highestFloorCleared: number;
     lastGoldenSlimeFloor: number;
+    currentStreak: number;
 
     // Tower Expansion State
     activeRunBuffs: RunBuff[];
@@ -41,6 +43,8 @@ interface CampaignState {
     setCurrentFloor: (floor: number) => void;
     getNextFloorId: () => string | null;
     getEnemyForFloor: (floor: number) => string | null;
+    incrementStreak: () => void;
+    resetStreak: () => void;
     checkForGoldenSlime: (floor: number) => boolean;
     recordGoldenSlimeEncounter: (floor: number) => void;
 
@@ -64,6 +68,7 @@ export const useCampaignStore = create<CampaignState>()(
             currentFloor: 1,
             highestFloorCleared: 0,
             lastGoldenSlimeFloor: -100,
+            currentStreak: 0,
             activeRunBuffs: [],
             currentFloorModifier: null,
 
@@ -85,6 +90,9 @@ export const useCampaignStore = create<CampaignState>()(
             },
 
             setCurrentFloor: (floor) => set({ currentFloor: floor, currentFloorModifier: null }),
+
+            incrementStreak: () => set(state => ({ currentStreak: state.currentStreak + 1 })),
+            resetStreak: () => set({ currentStreak: 0 }),
 
             getNextFloorId: () => {
                 const state = get();
@@ -121,7 +129,7 @@ export const useCampaignStore = create<CampaignState>()(
             clearRunBuffs: () => set({ activeRunBuffs: [] }),
         }),
         {
-            name: 'gl-campaign-v2', // Incremented version
+            name: PERSIST_REGISTRY.campaign.persistKey, // Incremented version
         }
     )
 );
