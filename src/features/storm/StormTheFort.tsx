@@ -102,6 +102,15 @@ export const StormTheFort = () => {
 
             {/* Main Battlefield */}
             <div className="storm-battlefield">
+                <video 
+                    autoPlay 
+                    loop 
+                    muted 
+                    playsInline 
+                    className="storm-bg-video"
+                >
+                    <source src="/bg/magic-storm.mp4" type="video/mp4" />
+                </video>
                 <div className="storm-spawn-zone">Enemy Path ➡️</div>
                 <div className="storm-fort-zone">
                     <div className="storm-fort-structure">
