@@ -18,7 +18,7 @@ import { FurniturePlacementPanel, DraggableFurniturePiece } from './FurniturePla
 import { LoadoutPanel } from '../character/LoadoutPanel';
 
 // AI-generated assets
-import homeCampBg from '../../assets/backgrounds/home_camp.png';
+import homeCampBg from '../../assets/room-bg.jpg';
 import trophyCaseBg from '../../assets/backgrounds/trophy_case.png';
 import bookshelfBg from '../../assets/backgrounds/bookshelf_display.png';
 import { useHeroImage } from '../../hooks/useHeroImage';
