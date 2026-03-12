@@ -301,8 +301,17 @@ export const useProfileStore = create<ProfileState>()(
         {
             name: 'gl-profile-storage',
             version: 1,
-            onRehydrateStorage: () => (state) => {
-                state?.setHasHydrated(true);
+            onRehydrateStorage: () => (state, error) => {
+                if (state) {
+                    state.setHasHydrated(true);
+                } else {
+                    // Safari / ITP / migration error: state is undefined.
+                    // Force-hydrate so App.tsx never gets stuck returning null.
+                    useProfileStore.getState().setHasHydrated(true);
+                }
+                if (error) {
+                    console.warn('[ProfileStore] Rehydration error:', error);
+                }
             },
             migrate: (persistedState: any, version: number) => {
                 if (version === 0) {
