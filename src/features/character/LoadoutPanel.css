@@ -54,8 +54,8 @@
 
 .loadout-character-avatar {
     position: absolute;
-    width: 120px;
-    height: 120px;
+    width: 200px;
+    height: 200px;
     z-index: 10;
     pointer-events: none;
     filter: drop-shadow(0 10px 15px rgba(0,0,0,0.6));

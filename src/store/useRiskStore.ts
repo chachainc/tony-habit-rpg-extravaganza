@@ -8,7 +8,8 @@ export type NodeType = 'combat' | 'elite' | 'boss' | 'shop' | 'treasure' | 'even
 
 export type RiskCardId =
     | 'blitz' | 'iron_discipline' | 'medic' | 'war_banner'
-    | 'treasurer' | 'recruiter' | 'warlord_sigil' | 'tank_tactics';
+    | 'treasurer' | 'recruiter' | 'warlord_sigil' | 'tank_tactics'
+    | 'iron_will' | 'treasure_sense' | 'arcane_edge';
 
 export interface RiskCardDef {
     id: RiskCardId;
@@ -28,6 +29,9 @@ export const RISK_CARDS: Record<RiskCardId, RiskCardDef> = {
     recruiter:      { id: 'recruiter',      icon: '📜', name: 'Recruiter',        effect: '+1 Sigil per territory captured',                      category: 'Economy',  cost: 100 },
     warlord_sigil:  { id: 'warlord_sigil',  icon: '🏺', name: "Warlord's Sigil",  effect: '+1 Sigil per wave cleared (Tower/Storm)',              category: 'Economy',  cost: 100 },
     tank_tactics:   { id: 'tank_tactics',   icon: '🪖', name: 'Tank Tactics',     effect: 'Your army does 15% more effective damage each battle', category: 'Offense',  cost: 100 },
+    iron_will:      { id: 'iron_will',      icon: '🛡️', name: 'Iron Will',         effect: '+10% defense in Risk battles',                          category: 'Defense',  cost: 100 },
+    treasure_sense: { id: 'treasure_sense', icon: '🗺️', name: 'Treasure Sense',    effect: '+20% gold from treasure nodes',                         category: 'Economy',  cost: 100 },
+    arcane_edge:    { id: 'arcane_edge',    icon: '🔮', name: 'Arcane Edge',        effect: '+15% magic damage in Risk battles',                     category: 'Offense',  cost: 100 },
 };
 
 export interface RegionDef {

@@ -1,6 +1,6 @@
 import { useGameStore, type SkillName } from '../../store/useGameStore';
 import { getMilestoneForSkill } from '../../store/useCombatFormulas';
-import { BarChart2, TrendingUp, Shield, Sword } from 'lucide-react';
+import { BarChart2, Shield, Sword } from 'lucide-react';
 import { Card } from '../../components/ui/Card';
 import { ProgressBar } from '../../components/ui/ProgressBar';
 import './StatsPage.css';
@@ -21,6 +21,22 @@ const SKILL_ICONS: Record<SkillName, string> = {
     'Intelligence': '🧠',
 };
 
+const RANK_TIERS = [
+    { icon: '🗡️', name: 'Adventurer', minLevel: 0,  maxLevel: 4  },
+    { icon: '⭐', name: 'Rising',     minLevel: 5,  maxLevel: 9  },
+    { icon: '🥉', name: 'Bronze',     minLevel: 10, maxLevel: 19 },
+    { icon: '🥈', name: 'Silver',     minLevel: 20, maxLevel: 29 },
+    { icon: '🥇', name: 'Gold',       minLevel: 30, maxLevel: 49 },
+    { icon: '💎', name: 'Diamond',    minLevel: 50, maxLevel: Infinity },
+];
+
+function getRankIndex(level: number): number {
+    return RANK_TIERS.findIndex((t, i) => {
+        const next = RANK_TIERS[i + 1];
+        return level >= t.minLevel && (next ? level < next.minLevel : true);
+    });
+}
+
 export const StatsPage = () => {
     const {
         skills,
@@ -30,19 +46,20 @@ export const StatsPage = () => {
         getAttack,
         getDefense,
         getDailyXpEarned,
-        getXpForLevel
     } = useGameStore();
 
     const globalLevel = getGlobalLevel();
     const attack = getAttack();
     const defense = getDefense();
 
-    // Calculate global level progress
-    const nextLevelXp = getXpForLevel(globalLevel + 1);
-    const currentLevelXp = getXpForLevel(globalLevel);
-    const globalXpForLevel = globalXp - currentLevelXp;
-    const globalXpNeeded = nextLevelXp - currentLevelXp;
-    const globalProgress = Math.floor((globalXpForLevel / globalXpNeeded) * 100);
+    const rankIdx = getRankIndex(globalLevel);
+    const currentRank = RANK_TIERS[rankIdx];
+    const nextRank = RANK_TIERS[rankIdx + 1] ?? null;
+
+    // Progress toward next rank (0-100)
+    const rankProgress = nextRank
+        ? Math.min(100, Math.round(((globalLevel - currentRank.minLevel) / (nextRank.minLevel - currentRank.minLevel)) * 100))
+        : 100;
 
     return (
         <div className="stats-page">
@@ -72,40 +89,57 @@ export const StatsPage = () => {
             {/* Content Wrapper */}
             <div className="stats-content-wrapper">
                 <div className="page-header">
-                    <h1>📊 Your Stats</h1>
-                    <p className="subtitle">Track your progression and mastery</p>
+                    <h1>📊 Skills</h1>
                 </div>
 
                 <div className="stats-content">
-                    {/* Global Level */}
-                    <Card className="global-level-card">
-                        <div className="global-level-header">
-                            <TrendingUp size={32} className="icon-primary" />
-                            <div>
-                                <h2>Global Level</h2>
-                                <p className="level-number">{globalLevel}</p>
-                            </div>
+
+                    {/* ── Rank Progress Banner ── */}
+                    <div className="rank-banner">
+                        <div className="rank-tiers-row">
+                            {RANK_TIERS.map((tier, i) => (
+                                <div
+                                    key={tier.name}
+                                    className={`rank-pip ${i === rankIdx ? 'rank-pip--active' : ''} ${i < rankIdx ? 'rank-pip--past' : ''}`}
+                                >
+                                    {i === rankIdx && <div className="rank-pip-glitter" />}
+                                    <span className="rank-pip-icon">{tier.icon}</span>
+                                    <span className="rank-pip-name">{tier.name}</span>
+                                </div>
+                            ))}
                         </div>
-                        <ProgressBar
-                            current={globalProgress}
-                            max={100}
-                            label={`${globalProgress}% to level ${globalLevel + 1}`}
-                            variant="success"
-                        />
-                        <p className="xp-text">Total XP: {globalXp.toLocaleString()}</p>
-                    </Card>
+
+                        <div className="rank-progress-row">
+                            <span className="rank-progress-label">
+                                Lv.{globalLevel} — {currentRank.name}
+                            </span>
+                            {nextRank && (
+                                <span className="rank-progress-next">
+                                    {nextRank.icon} {nextRank.name} at Lv.{nextRank.minLevel}
+                                </span>
+                            )}
+                        </div>
+
+                        <div className="rank-progress-track">
+                            <div className="rank-progress-fill" style={{ width: `${rankProgress}%` }} />
+                        </div>
+
+                        <div className="rank-xp-note">
+                            Global XP: {globalXp.toLocaleString()}
+                        </div>
+                    </div>
 
                     {/* Combat Stats */}
                     <div className="combat-stats-row">
                         <Card className="combat-stat-card">
-                            <Sword size={24} className="icon-red" />
+                            <Sword size={20} className="icon-red" />
                             <div className="combat-stat-info">
                                 <span className="combat-stat-label">Attack</span>
                                 <span className="combat-stat-value">{attack}</span>
                             </div>
                         </Card>
                         <Card className="combat-stat-card">
-                            <Shield size={24} className="icon-blue" />
+                            <Shield size={20} className="icon-blue" />
                             <div className="combat-stat-info">
                                 <span className="combat-stat-label">Defense</span>
                                 <span className="combat-stat-value">{defense}</span>
@@ -116,60 +150,60 @@ export const StatsPage = () => {
                     {/* Skills Grid */}
                     <div className="skills-section">
                         <h2 className="section-title">
-                            <BarChart2 size={24} />
+                            <BarChart2 size={20} />
                             Skills
                         </h2>
                         <div className="skills-grid">
                             {(Object.entries(skills) as [SkillName, typeof skills[SkillName]][]).map(([skillName, skill]) => {
                                 const progress = getXpProgress(skillName);
                                 const dailyUsed = getDailyXpEarned(skillName);
+                                const milestoneInfo = getMilestoneForSkill(skillName, skill.level);
+                                const progressPct = milestoneInfo.nextTier
+                                    ? Math.floor(milestoneInfo.progressToNext * 100)
+                                    : 100;
 
                                 return (
                                     <Card key={skillName} className="skill-card compact">
+                                        {/* Row 1: icon + name + level + xp ratio */}
                                         <div className="skill-header-compact">
                                             <div className="skill-name-group">
                                                 <span className="skill-icon">{SKILL_ICONS[skillName]}</span>
-                                                <h3 className="skill-name">{skillName} <span className="skill-level">Lv {skill.level}</span></h3>
+                                                <h3 className="skill-name">
+                                                    {skillName}
+                                                    <span className="skill-level"> Lv {skill.level}</span>
+                                                </h3>
                                             </div>
-                                            <span className="skill-xp-ratio">{progress.current.toLocaleString()} / {progress.required.toLocaleString()} XP</span>
+                                            <span className="skill-xp-ratio">{progress.current} / {progress.required} XP</span>
                                         </div>
 
-                                        <div className="skill-stats-compact">
-                                            <span>Today: +{dailyUsed.toLocaleString()}</span>
-                                            <span>Total XP: {skill.totalXp.toLocaleString()}</span>
-                                        </div>
-
+                                        {/* XP bar */}
                                         <div className="skill-progress-compact">
-                                            <ProgressBar
-                                                current={progress.current}
-                                                max={progress.required}
-                                                label=""
-                                            />
+                                            <ProgressBar current={progress.current} max={progress.required} label="" />
                                         </div>
 
-                                        {(() => {
-                                            const milestoneInfo = getMilestoneForSkill(skillName, skill.level);
-                                            if (!milestoneInfo.nextTier) return null;
+                                        {/* Row 3: today + total + milestone */}
+                                        <div className="skill-footer-row">
+                                            <span className="skill-today">+{dailyUsed} today</span>
+                                            {milestoneInfo.nextTier && (
+                                                <span className="skill-milestone-info">
+                                                    → {milestoneInfo.nextTier.name} Lv.{milestoneInfo.nextTier.level}
+                                                    {' '}
+                                                    <span className="skill-milestone-pct">{progressPct}%</span>
+                                                </span>
+                                            )}
+                                        </div>
 
-                                            // progressToNext is a 0..1 ratio
-                                            const progressPct = Math.floor(milestoneInfo.progressToNext * 100);
+                                        {/* Milestone bar (only when next tier exists) */}
+                                        {milestoneInfo.nextTier && (
+                                            <div className="milestone-bar-bg">
+                                                <div className="milestone-bar-fill" style={{ width: `${progressPct}%` }} />
+                                            </div>
+                                        )}
 
-                                            return (
-                                                <div className="milestone-tracker compact">
-                                                    <div className="milestone-label-row">
-                                                        <span className="milestone-name">Next: {milestoneInfo.nextTier.name} (Lv.{milestoneInfo.nextTier.level})</span>
-                                                    </div>
-                                                    <div className="milestone-bar-bg">
-                                                        <div className="milestone-bar-fill" style={{ width: `${progressPct}%` }} />
-                                                    </div>
-                                                    {milestoneInfo.nextTier.reward && (
-                                                        <div className="milestone-reward-preview">
-                                                            ✨ {milestoneInfo.nextTier.reward}
-                                                        </div>
-                                                    )}
-                                                </div>
-                                            );
-                                        })()}
+                                        {/* Reward badge inline */}
+                                        {milestoneInfo.nextTier?.reward && (
+                                            <div className="skill-reward-tag">✨ {milestoneInfo.nextTier.reward}</div>
+                                        )}
                                     </Card>
                                 );
                             })}

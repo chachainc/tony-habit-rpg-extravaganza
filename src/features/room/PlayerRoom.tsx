@@ -296,6 +296,7 @@ export const PlayerRoom = ({ onClose }: { onClose: () => void }) => {
                                 )}
                                 {activePet && <span className="mobile-pet-tag">{petSprite} {petName}</span>}
                             </div>
+                            <div style={{ fontSize: '0.72rem', color: '#f59e0b', fontWeight: 700, marginTop: '0.3rem', textAlign: 'center', letterSpacing: '0.5px' }}>⚔️ Equipment Loadout</div>
                         </div>
 
                         {/* Feature Buttons - 2x grid layout */}
