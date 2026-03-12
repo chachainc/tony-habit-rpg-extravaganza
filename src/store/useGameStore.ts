@@ -90,12 +90,14 @@ export const INITIAL_SKILLS: Record<SkillName, Skill> = {
 // ULTRA-SLOW progression for years of gameplay
 // Much steeper than previous level² × 10
 // This makes leveling take YEARS
+// Progression formula: Base XP required scales non-linearly
+// Level 1 -> 2: 100 XP
+// Level 9 -> 10: ~3,162 XP
+// Level 19 -> 20: ~8,944 XP
+// Level 29 -> 30: ~16,431 XP
 const getXpForLevel = (level: number): number => {
-    if (level <= 1) return 0;
-    // Exponential curve: level³ × 200 (Much slower, multi-year progression)
-    // Level 10: 200,000 XP (~1 year)
-    // Level 20: 1,600,000 XP (~5-8 years)
-    return Math.floor(Math.pow(level, 3) * 200);
+    if (level <= 0) return 100;
+    return Math.floor(100 * Math.pow(level, 1.5));
 };
 
 // Get current date in Eastern Time
@@ -242,9 +244,14 @@ export const useGameStore = create<GameState>()(
                     }
                 }
 
-                finalAmount = Math.floor(finalAmount); // Ensure integer
-
-                // No more daily cap check
+                const currentDailyXp = state.dailyXpGained[skillName] || 0;
+                const softCap = 1500;
+                if (currentDailyXp > softCap) {
+                    const penaltyRatio = softCap / (currentDailyXp + finalAmount);
+                    finalAmount = Math.max(1, Math.floor(finalAmount * penaltyRatio));
+                }
+                
+                finalAmount = Math.floor(finalAmount);
                 const actualXp = finalAmount;
                 const overflowAmount = 0;
                 const currentDailyXp = state.dailyXpGained[skillName] || 0;
