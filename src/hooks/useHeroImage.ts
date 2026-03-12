@@ -1,19 +1,19 @@
 import { useProfileStore } from '../store/useProfileStore';
 
 // Archetype-specific hero images
-import vanguardImg from '../assets/characters/vanguard.png';
-import rangerImg from '../assets/characters/ranger.png';
-import duelistImg from '../assets/characters/duelist.png';
-import mysticImg from '../assets/characters/mystic.png';
+import ironVanguardImg from '../assets/characters/iron_vanguard.jpg';
+import verdantGuardianImg from '../assets/characters/verdant_guardian.jpg';
+import shadowRogueImg from '../assets/characters/shadow_rogue.png';
+import arcaneScholarImg from '../assets/characters/arcane_scholar.jpg';
 
 // Fallback (generic player sprite)
 import playerSprite from '../assets/sprites/player.png';
 
 const ARCHETYPE_IMAGES: Record<string, string> = {
-    vanguard: vanguardImg,
-    ranger: rangerImg,
-    duelist: duelistImg,
-    mystic: mysticImg,
+    iron_vanguard: ironVanguardImg,
+    verdant_guardian: verdantGuardianImg,
+    shadow_rogue: shadowRogueImg,
+    arcane_scholar: arcaneScholarImg,
 };
 
 /**

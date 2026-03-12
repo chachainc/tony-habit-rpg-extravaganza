@@ -7,16 +7,16 @@ import { Particles } from '../../components/vfx/Particles';
 import './CharacterCreation.css';
 
 // We'll use absolute paths for the imported generated assets
-import vanguardImg from '../../assets/characters/vanguard.png';
-import rangerImg from '../../assets/characters/ranger.png';
-import duelistImg from '../../assets/characters/duelist.png';
-import mysticImg from '../../assets/characters/mystic.png';
+import ironVanguardImg from '../../assets/characters/iron_vanguard.jpg';
+import verdantGuardianImg from '../../assets/characters/verdant_guardian.jpg';
+import shadowRogueImg from '../../assets/characters/shadow_rogue.png';
+import arcaneScholarImg from '../../assets/characters/arcane_scholar.jpg';
 
 const ARCHETYPES = [
-    { id: 'vanguard', name: 'Vanguard Knight', img: vanguardImg, desc: 'A stalwart defender. Prefers head-on confrontation and unwavering discipline.' },
-    { id: 'ranger', name: 'Arcane Ranger', img: rangerImg, desc: 'A swift striker. Blends martial agility with subtle arcane threads.' },
-    { id: 'duelist', name: 'Ember Duelist', img: duelistImg, desc: 'An aggressive fighter. Wields fiery passion and curved blades.' },
-    { id: 'mystic', name: 'Moonlight Mystic', img: mysticImg, desc: 'A calm scholar. Channels celestial energy through intense focus.' }
+    { id: 'iron_vanguard', name: 'Iron Vanguard', img: ironVanguardImg, desc: 'A heavily-armored warrior. Wields a colossal blade radiating crimson energy to dominate the battlefield.' },
+    { id: 'verdant_guardian', name: 'Verdant Guardian', img: verdantGuardianImg, desc: 'A guardian of the wilds. Channels nature\'s magic through an enchanted staff to protect the innocent.' },
+    { id: 'shadow_rogue', name: 'Shadow Rogue', img: shadowRogueImg, desc: 'A swift assassin clothed in darkness. Strikes with dual ethereal blades and unparalleled agility.' },
+    { id: 'arcane_scholar', name: 'Arcane Scholar', img: arcaneScholarImg, desc: 'A master of the mystic arts. Summons cosmic power and ancient runes from forbidden tomes.' }
 ] as const;
 
 export const CharacterCreation: React.FC = () => {

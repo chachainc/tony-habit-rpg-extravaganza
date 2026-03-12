@@ -15,7 +15,7 @@ interface ProfileState {
     hasSeenWelcomeTutorial: boolean;
 
     // Character Onboarding
-    characterArchetype: 'vanguard' | 'ranger' | 'duelist' | 'mystic' | null;
+    characterArchetype: 'iron_vanguard' | 'shadow_rogue' | 'arcane_scholar' | 'verdant_guardian' | null;
     appearance: { hairHue: number; skinHue: number };
     healthTrackingMode: 'sleep' | 'readiness' | 'none' | null;
 
@@ -293,6 +293,21 @@ export const useProfileStore = create<ProfileState>()(
         }),
         {
             name: 'gl-profile-storage',
+            version: 1,
+            migrate: (persistedState: any, version: number) => {
+                if (version === 0) {
+                    const translations: Record<string, string> = {
+                        vanguard: 'iron_vanguard',
+                        ranger: 'verdant_guardian',
+                        duelist: 'shadow_rogue',
+                        mystic: 'arcane_scholar'
+                    };
+                    if (persistedState.characterArchetype && translations[persistedState.characterArchetype]) {
+                        persistedState.characterArchetype = translations[persistedState.characterArchetype];
+                    }
+                }
+                return persistedState;
+            }
         }
     )
 );
