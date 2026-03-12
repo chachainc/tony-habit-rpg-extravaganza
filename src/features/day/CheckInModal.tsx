@@ -146,8 +146,6 @@ export const CheckInModal = ({ onClose }: { onClose: () => void }) => {
                     </div>
                 )}
             </AnimatePresence>
-        </motion.div>
-    </div>
+        </div>
     );
 };
-
