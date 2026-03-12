@@ -25,7 +25,7 @@ const SCREENS: TutorialScreen[] = [
         title: 'Combat Scaling',
         text: <>Your habits directly calculate your combat stats. Here is the exact breakdown:<br/><br/>
         • <strong>Strength:</strong> Increases Attack power (+1.5 Attack per level)<br/>
-        • <strong>Cardio:</strong> Increases Max HP (+15 HP per level)<br/>
+        • <strong>Cardio:</strong> Increases Max HP (+2 HP per level)<br/>
         • <strong>Intelligence:</strong> Increases Magic Attack (+2.0) and Max Mana (+10.0 per level)<br/>
         </>,
         icon: <Crosshair size={48} />,
@@ -49,7 +49,7 @@ const SCREENS: TutorialScreen[] = [
     {
         id: 'knowledge',
         title: 'Arcane Knowledge',
-        text: <>Logging <strong>Intelligence</strong> tasks earns you Fantasy Books.<br/><br/>You can <strong>fuse</strong> two books of the same tier to create a stronger one to permanently boost your magical prowess.</>,
+        text: <><strong>Intelligence XP</strong> strengthens your mind and contributes to Mana and magic progression.<br/><br/><strong>Books</strong> are completed through your Library. Different book categories reward different XP types when completed:<br/>• Fantasy = Intelligence XP<br/>• Self-Improvement = Discipline XP<br/>• Business = Work XP</>,
         icon: <BookOpen size={48} />,
         color: '#8b5cf6',
     },

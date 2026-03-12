@@ -189,7 +189,7 @@ export const useBattleStore = create<BattleState>()((set, get) => ({
         const levelScaleHp = 1 + (globalLevel * 0.10);
         const levelScaleStats = 1 + (globalLevel * 0.05);
 
-        let playerHp = Math.round((gameStore.skills.Cardio.level * 15) + 80);
+        let playerHp = Math.round((gameStore.skills.Cardio.level * 2) + 80);
         let playerAtk = Math.round(gameStore.getAttack());
         let playerDef = Math.round(gameStore.getDefense());
         let playerSpd = Math.round((gameStore.skills.Flexibility.level * 2) + 50);
