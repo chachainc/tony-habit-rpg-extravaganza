@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { BrowserRouter as Router, Routes, Route, useNavigate } from 'react-router-dom';
 import { AnimatePresence } from 'framer-motion';
 import { Layout } from './components/layout/Layout';
@@ -63,20 +63,35 @@ const PlayerRoomPage = () => {
   return <PlayerRoom onClose={() => navigate('/town')} />;
 };
 
+// HydrationGate: waits for Zustand persist to finish reading localStorage
+// before rendering the app. Has a 1.5s timeout fallback for Safari/ITP,
+// where onRehydrateStorage sometimes never fires.
+function HydrationGate({ children }: { children: React.ReactNode }) {
+  const { _hasHydrated, setHasHydrated } = useProfileStore();
+
+  useEffect(() => {
+    // Safety net: if onRehydrateStorage hasn't fired after 1.5s,
+    // force-hydrate so the app is never permanently blank.
+    if (_hasHydrated) return;
+    const timer = setTimeout(() => {
+      console.warn('[BOOT] HydrationGate timeout — forcing hydration.');
+      setHasHydrated(true);
+    }, 1500);
+    return () => clearTimeout(timer);
+  }, [_hasHydrated, setHasHydrated]);
+
+  if (!_hasHydrated) return null;
+  return <>{children}</>;
+}
+
 function App() {
   const { isNewDay } = useDayStore();
   const { pendingLevelUp, clearLevelUp } = useGameStore();
-  const { isLoggedIn, characterArchetype, _hasHydrated } = useProfileStore();
+  const { isLoggedIn, characterArchetype } = useProfileStore();
   const [showWakeUp, setShowWakeUp] = useState(false);
-
-  // Wait for Zustand persist to finish reading localStorage before rendering.
-  // Without this guard the app reads isLoggedIn=false (initial state) before
-  // hydration completes and incorrectly shows the LoginScreen on PWA relaunch.
-  if (!_hasHydrated) return null;
 
   useEffect(() => {
     console.log('[BOOT] App mounted');
-    // Check if it's a new day on mount
     if (isNewDay()) {
       setShowWakeUp(true);
     }
@@ -201,4 +216,14 @@ function App() {
   );
 }
 
-export default App;
+// Wrap App in HydrationGate so the export includes the Safari-safe
+// hydration guard with a 1.5s timeout fallback.
+function AppWithHydrationGate() {
+  return (
+    <HydrationGate>
+      <App />
+    </HydrationGate>
+  );
+}
+
+export default AppWithHydrationGate;
