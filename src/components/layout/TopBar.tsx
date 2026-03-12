@@ -48,7 +48,7 @@ export const TopBar = () => {
 
     return (
         <motion.div
-            className="top-bar"
+            className={`top-bar ${isMonopolyRoute ? 'top-bar--monopoly' : ''}`}
             initial={{ y: -100 }}
             animate={{ y: 0 }}
             transition={{ duration: 0.3 }}

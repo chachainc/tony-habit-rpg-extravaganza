@@ -8,7 +8,6 @@ import { PET_DB } from '../store/useGachaStore';
 import { ITEM_DB } from '../store/useInventoryStore';
 import { EQUIPMENT_DB } from '../store/useEquipmentStore';
 import { ROOM_FURNITURE_CATALOG } from '../store/useRoomStore';
-import { TRAITS } from '../store/useTraitStore';
 
 // ── Types ────────────────────────────────────────────────────────────────────
 

@@ -293,7 +293,7 @@
     }
 }
 
-/* Ultra-compact mobile: only show Level, Gold, Gems */
+/* Mobile: keep sections balanced and readable on narrow viewports */
 @media (max-width: 480px) {
     .top-bar {
         padding: 0.15rem 0.35rem;
@@ -312,19 +312,21 @@
         font-size: 0.7rem;
     }
     .top-bar__icon {
-        font-size: 0.8rem;
-    }
-    .top-bar__item--gems {
-        background: rgba(139, 92, 246, 0.1);
-        border: 1px solid rgba(139, 92, 246, 0.25);
+        font-size: 0.78rem;
     }
     .top-bar__stat {
         font-size: 0.65rem;
         padding: 0.15rem 0.3rem;
+        border-radius: 5px;
+        gap: 0.16rem;
     }
     .top-bar__stat svg {
         width: 12px;
         height: 12px;
+    }
+    .top-bar__item--gems {
+        background: rgba(139, 92, 246, 0.1);
+        border: 1px solid rgba(139, 92, 246, 0.25);
     }
 }
 

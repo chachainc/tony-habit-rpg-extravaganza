@@ -1,25 +1,10 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Sparkles, Play, Check, X, Brain, Shield, Crosshair, Heart, Zap } from 'lucide-react';
+import { Sparkles, Play, Check, X, Brain } from 'lucide-react';
 import { useFusionStore } from '../../store/useFusionStore';
 import { useGachaStore } from '../../store/useGachaStore';
 import { useInventoryStore } from '../../store/useInventoryStore';
 import './SharedFusionPanel.css';
-
-// Reusing Pet UI definitions for consistency
-const RARITY_COLORS: Record<string, string> = {
-    Common: '#94a3b8',
-    Rare: '#3b82f6',
-    Epic: '#a855f7',
-    Legendary: '#f59e0b',
-};
-
-const STAT_ICONS: Record<string, React.ReactNode> = {
-    defense: <Shield size={14} />,
-    attack: <Crosshair size={14} />,
-    hp: <Heart size={14} />,
-    speed: <Zap size={14} />,
-};
 
 interface SharedFusionPanelProps {
     mode: 'pet' | 'book';
@@ -27,15 +12,14 @@ interface SharedFusionPanelProps {
 
 export const SharedFusionPanel = ({ mode }: SharedFusionPanelProps) => {
     // Stores
-    const { getFusionInfo, ownedCopies, fusePet } = useFusionStore();
+    const { getFusionInfo, fusePet } = useFusionStore();
     const { ownedPets } = useGachaStore();
-    const inventory = useInventoryStore(s => s.inventory);
+    const inventory = useInventoryStore(s => s.items);
     const removeItem = useInventoryStore(s => s.removeItem);
     const addItem = useInventoryStore(s => s.addItem);
 
     // State
     const [selectedItemId, setSelectedItemId] = useState<string | null>(null);
-    const [fusionTargetId, setFusionTargetId] = useState<string | null>(null);
     const [showSuccess, setShowSuccess] = useState(false);
     // @ts-ignore - unused but kept for future
 
@@ -48,7 +32,7 @@ export const SharedFusionPanel = ({ mode }: SharedFusionPanelProps) => {
             if (!petId || typeof petId !== 'string') return null;
             const info = getFusionInfo(petId);
             const level = info.level;
-            const copies = Number(ownedCopies[petId]) || 0;
+            const copies = Number(info.copies) || 0;
             const threshold = Number(info.copiesNeeded) || 3;
             return {
                 id: petId,
@@ -88,8 +72,6 @@ export const SharedFusionPanel = ({ mode }: SharedFusionPanelProps) => {
         if (mode === 'pet') {
             const result = fusePet(selectedItem.id);
             if (result) {
-                setFusionTargetId(selectedItem.id);
-                setResultAnimationId(selectedItem.id);
                 setShowSuccess(true);
                 setTimeout(() => setShowSuccess(false), 2500);
             }
@@ -101,8 +83,6 @@ export const SharedFusionPanel = ({ mode }: SharedFusionPanelProps) => {
                 const nextId = `fantasy_book_${nextLevel}`;
                 addItem(nextId, 1);
                 
-                setFusionTargetId(selectedItem.id);
-                setResultAnimationId(nextId);
                 setShowSuccess(true);
                 setTimeout(() => setShowSuccess(false), 2500);
             }
