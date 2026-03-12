@@ -2324,79 +2324,91 @@
     /* --- PREP PHASE MOBILE --- */
     .arena-modal--prep {
         max-width: 100%;
+        height: auto;
+        min-height: 100vh;
+        overflow-y: visible;
     }
 
     .battle-prep-container {
-        padding: 0.75rem;
+        padding: 1rem 0.75rem 4rem; /* More padding at bottom */
+        height: auto;
+        min-height: 100vh;
     }
 
     .prep-header {
-        margin-bottom: 0.75rem;
+        margin-bottom: 1rem;
     }
 
     .prep-header h2 {
-        font-size: 1.1rem;
+        font-size: 1.25rem;
+        letter-spacing: 1px;
     }
 
     .prep-header p {
-        font-size: 0.8rem;
+        font-size: 0.85rem;
     }
 
     .win-chance-text {
-        font-size: 1rem;
+        font-size: 1.1rem;
         margin-bottom: 0.5rem;
+    }
+
+    .prep-scrollable {
+        overflow-y: visible; /* Fix nested scrolling */
+        height: auto;
     }
 
     .prep-layout {
         grid-template-columns: 1fr;
-        gap: 0.75rem;
+        gap: 1.25rem; /* Increased spacing between target intel and loadout */
     }
 
     .prep-panel-header {
-        font-size: 0.85rem;
-        margin-bottom: 0.5rem;
+        font-size: 0.95rem;
+        margin-bottom: 0.75rem;
+        letter-spacing: 1.5px;
     }
 
     .prep-portrait {
-        width: 64px;
-        height: 64px;
+        width: 80px;
+        height: 80px;
     }
 
     .personality-tag {
-        font-size: 0.6rem;
-    }
-
-    .intel-row {
-        padding: 0.3rem 0.6rem;
-    }
-
-    .intel-label {
-        font-size: 0.7rem;
-    }
-
-    .intel-status {
-        font-size: 0.8rem;
-    }
-
-    .pet-prep-icon {
-        font-size: 1.5rem;
-    }
-
-    .pet-prep-name {
-        font-size: 0.9rem;
-    }
-
-    .pet-prep-ability {
         font-size: 0.65rem;
     }
 
-    .prep-spell-item {
+    .intel-row {
+        padding: 0.4rem 0.6rem;
+    }
+
+    .intel-label {
+        font-size: 0.75rem;
+    }
+
+    .intel-status {
+        font-size: 0.85rem;
+    }
+
+    .pet-prep-icon {
+        font-size: 1.6rem;
+    }
+
+    .pet-prep-name {
+        font-size: 0.95rem;
+    }
+
+    .pet-prep-ability {
         font-size: 0.7rem;
-        padding: 0.25rem 0.5rem;
+    }
+
+    .prep-spell-item {
+        font-size: 0.75rem;
+        padding: 0.35rem 0.5rem;
     }
 
     .prep-buttons {
-        margin-top: 0.75rem;
+        margin-top: 1.5rem;
         gap: 0.75rem;
     }
 
@@ -2508,9 +2520,9 @@
 
     /* Combat Log Mobile Placement */
     .combat-log-container {
-        flex: 0 0 15%;
-        min-height: 80px;
-        max-height: 120px;
+        flex: 0 0 16%;
+        min-height: 85px;
+        max-height: 110px;
         width: 100%;
         position: relative;
         /* Override any absolute positioning */
@@ -2520,36 +2532,49 @@
         /* Full bleed across width */
         border-right: none;
         border-left: none;
+        background: rgba(10, 15, 25, 0.85);
+        backdrop-filter: blur(8px);
+        -webkit-backdrop-filter: blur(8px);
+        border-top: 1px solid rgba(139, 92, 246, 0.2);
     }
 
     .combat-log-panel {
-        padding: 0.25rem 0.5rem;
+        padding: 0.25rem 0.6rem;
         font-size: 0.75rem;
     }
 
     /* Action bar container mobile padding */
     .action-bar-container {
         flex: 0 0 auto;
-        padding: 0.75rem 0.5rem calc(1rem + env(safe-area-inset-bottom, 0px));
+        padding: 0.85rem 0.5rem calc(1rem + env(safe-area-inset-bottom, 0px));
         justify-content: flex-start;
         /* Stack from top down */
+        background: linear-gradient(180deg, rgba(8, 12, 20, 0.95), rgba(0, 0, 0, 1));
     }
 
     .action-buttons {
-        gap: 0.5rem;
-        flex-wrap: wrap;
+        gap: 0.6rem;
+        flex-wrap: nowrap;
         /* Wrap buttons instead of scrolling */
-        justify-content: center;
+        justify-content: flex-start;
         width: 100%;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: none;
+        padding: 0 0.5rem 0.25rem; /* padding for scroll bleed */
+    }
+
+    .action-buttons::-webkit-scrollbar {
+        display: none;
     }
 
     /* Shrink all command buttons for mobile */
     .command-btn {
-        width: 70px;
-        height: 70px;
-        border-radius: 8px;
+        width: 72px;
+        height: 72px;
+        border-radius: 12px;
         /* Maintain sharp edges */
-        min-width: 70px;
+        min-width: 72px;
         flex-shrink: 0;
     }
 

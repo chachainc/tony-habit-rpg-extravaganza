@@ -412,36 +412,35 @@
 /* --- Responsive Helpers --- */
 @media (max-width: 768px) {
     .battlefield-stage {
-        padding: 0 0.5rem 20%;
-        /* Reduced padding to fit both on screen */
+        padding: 0; /* Remove padding to maximize space */
         align-items: flex-end;
     }
 
     .squad-zone {
-        width: 45%;
+        width: 48%; /* Slightly wider */
         padding: 0;
     }
 
     .squad-zone.allies {
-        bottom: 10%;
-        left: 5%;
-        width: 45%;
+        bottom: 8%; /* Push down */
+        left: 2%; /* Push left */
+        z-index: 20;
     }
 
     .squad-zone.enemies {
-        bottom: 20%;
-        right: 5%;
-        width: 45%;
+        bottom: 22%; /* Push up slightly for depth */
+        right: 2%; /* Push right */
+        z-index: 10;
     }
 
     .unit-sprite img {
-        max-width: 80%;
-        height: min(90px, 15vh);
+        max-width: 100%; /* Better scaling */
+        height: min(130px, 22vh); /* Significantly larger */
         object-fit: contain;
     }
 
     .unit-sprite.player img {
-        height: min(80px, 13vh);
+        height: min(120px, 20vh); /* Larger player sprite */
     }
 
     .vs-text {

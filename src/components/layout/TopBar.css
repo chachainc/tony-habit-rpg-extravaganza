@@ -258,53 +258,73 @@
 
 @media (max-width: 768px) {
     .top-bar {
-        flex-wrap: wrap;
-        justify-content: center;
+        flex-wrap: nowrap;
+        justify-content: space-between;
         padding: 0.2rem 0.4rem;
+        gap: 0.3rem;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: none;
+        min-height: 36px;
     }
-
+    .top-bar::-webkit-scrollbar {
+        display: none;
+    }
+    .top-bar__section {
+        flex-shrink: 0;
+        gap: 0.3rem;
+    }
     .top-bar__section--stats {
-        order: -1;
-        width: 100%;
+        order: 0;
+        width: auto;
         justify-content: center;
-        padding-bottom: 0.25rem;
-        border-bottom: 1px solid rgba(139, 0, 0, 0.15);
-        margin-bottom: 0.25rem;
+        padding-bottom: 0;
+        border-bottom: none;
+        margin-bottom: 0;
+        background: rgba(0, 0, 0, 0.3);
+        padding: 0.15rem 0.4rem;
+        border-radius: 6px;
+    }
+    .top-bar__identity-block {
+        display: none;
+    }
+    .top-bar__item--identity {
+        padding: 0.15rem 0.25rem;
     }
 }
 
 /* Ultra-compact mobile: only show Level, Gold, Gems */
 @media (max-width: 480px) {
     .top-bar {
-        flex-wrap: nowrap;
-        justify-content: center;
-        padding: 0.2rem 0.5rem;
-        gap: 0.4rem;
+        padding: 0.15rem 0.35rem;
+        gap: 0.2rem;
     }
-
     .top-bar__hide-mobile {
         display: none !important;
     }
-
     .top-bar__section {
-        gap: 0.3rem;
+        gap: 0.25rem;
     }
-
     .top-bar__item {
-        padding: 0.15rem 0.4rem;
+        padding: 0.15rem 0.3rem;
     }
-
     .top-bar__value {
-        font-size: 0.72rem;
+        font-size: 0.7rem;
     }
-
     .top-bar__icon {
         font-size: 0.8rem;
     }
-
     .top-bar__item--gems {
         background: rgba(139, 92, 246, 0.1);
         border: 1px solid rgba(139, 92, 246, 0.25);
+    }
+    .top-bar__stat {
+        font-size: 0.65rem;
+        padding: 0.15rem 0.3rem;
+    }
+    .top-bar__stat svg {
+        width: 12px;
+        height: 12px;
     }
 }
 
