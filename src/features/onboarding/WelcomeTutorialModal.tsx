@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Sparkles, Brain, Shield, Crosshair, BookOpen, ChevronRight, Check } from 'lucide-react';
+import { Sparkles, Shield, Crosshair, BookOpen, ChevronRight, Check, Users } from 'lucide-react';
 import { useProfileStore } from '../../store/useProfileStore';
 import './WelcomeTutorialModal.css';
 
@@ -21,39 +21,44 @@ const SCREENS: TutorialScreen[] = [
         color: '#f59e0b',
     },
     {
-        id: 'gym',
-        title: 'Build Your Strength',
-        text: <>Complete <strong>Gym tasks</strong> to gain <strong>Attack power</strong> for combat modes.<br/><br/>Higher attack makes conquering territories and defeating enemies easier.</>,
+        id: 'combat_stats',
+        title: 'Combat Scaling',
+        text: <>Your habits directly calculate your combat stats. Here is the exact breakdown:<br/><br/>
+        • <strong>Strength:</strong> Increases Attack power (+1.5 Attack per level)<br/>
+        • <strong>Cardio:</strong> Increases Max HP (+15 HP per level)<br/>
+        • <strong>Intelligence:</strong> Increases Magic Attack (+2.0) and Max Mana (+10.0 per level)<br/>
+        </>,
         icon: <Crosshair size={48} />,
         color: '#ef4444',
     },
     {
-        id: 'habits',
-        title: 'Fortify Your Defense',
-        text: <>Complete <strong>habit tasks and daily routines</strong> to gain <strong>Defense</strong>.<br/><br/>Defense helps protect your territories and survive stronger enemies.</>,
+        id: 'defense_stats',
+        title: 'Defense & Maintenance',
+        text: <><strong>Defense</strong> scales from the average level of 5 core habits: <strong>Sleep, Hygiene, Cardio, Flexibility, and Habit Building</strong> (Average × 1.2).<br/><br/>
+        <em>Warning:</em> If your Sleep or Hygiene fall below level 5, your defense is halved! Neglecting them also causes your defense to slowly decay day by day.</>,
         icon: <Shield size={48} />,
         color: '#3b82f6',
     },
     {
+        id: 'social',
+        title: 'Social Influence',
+        text: <>Leveling up your <strong>Social</strong> skill directly impacts your influence in the kingdom.<br/><br/>Higher Social levels are required to unlock and adopt rare <strong>Pets</strong> in the marketplace, which provide powerful unique bonuses.</>,
+        icon: <Users size={48} />,
+        color: '#10b981',
+    },
+    {
         id: 'knowledge',
-        title: 'Gain Knowledge',
-        text: <>Complete <strong>Reading tasks</strong> to earn <strong>Fantasy Books</strong>.<br/><br/>Each completed book gives you a <strong>Level 1 Fantasy Book item</strong>. These books can be <strong>fused together</strong> to create stronger books.</>,
+        title: 'Arcane Knowledge',
+        text: <>Logging <strong>Intelligence</strong> tasks earns you Fantasy Books.<br/><br/>You can <strong>fuse</strong> two books of the same tier to create a stronger one to permanently boost your magical prowess.</>,
         icon: <BookOpen size={48} />,
         color: '#8b5cf6',
     },
     {
-        id: 'fuse',
-        title: 'Fuse Your Power',
-        text: <>If you have <strong>two books of the same level</strong>, you can <strong>fuse them</strong> to create a higher level book.<br/><br/>Stronger books provide better bonuses.</>,
-        icon: <Brain size={48} />,
-        color: '#ec4899',
-    },
-    {
         id: 'luck',
         title: 'Good Luck, Warrior!',
-        text: 'Grow stronger, conquer territories, collect rewards, and build your legend.',
-        icon: <Sparkles size={48} />,
-        color: '#10b981',
+        text: 'Grow stronger by building real-world habits, conquer territories, and build your legend.',
+        icon: <Shield size={48} />,
+        color: '#ec4899',
     }
 ];
 
