@@ -1,214 +1,192 @@
-/* Level Up Modal - Celebration Animation */
+/* ─── Level-Up Cinematic Overlay ─────────────────────────── */
 
-.level-up-overlay {
+.lup-root {
     position: fixed;
     inset: 0;
-    z-index: 9999;
+    z-index: 9000;
+    /* safe-area to avoid notch / bottom bar */
+    padding:
+        env(safe-area-inset-top, 0px)
+        env(safe-area-inset-right, 0px)
+        env(safe-area-inset-bottom, 0px)
+        env(safe-area-inset-left, 0px);
+    /* Don't block the bottom nav — let the overlay sit over everything */
+    pointer-events: all;
     display: flex;
-    align-items: center;
-    justify-content: center;
-    background: rgba(0, 0, 0, 0.85);
-    backdrop-filter: blur(8px);
+    align-items: stretch;
 }
 
-/* Particle Burst */
-.particle-burst {
+/* Full-screen black fade */
+.lup-black {
     position: absolute;
     inset: 0;
+    background: #000;
     pointer-events: none;
-    overflow: hidden;
+    z-index: 1;
 }
 
-.level-particle {
+/* Video fills the screen */
+.lup-video {
     position: absolute;
-    width: 10px;
-    height: 10px;
-    background: linear-gradient(135deg, #fbbf24, #f59e0b);
-    border-radius: 50%;
-    box-shadow: 0 0 10px rgba(251, 191, 36, 0.8);
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    z-index: 2;
 }
 
-.level-particle:nth-child(even) {
-    background: linear-gradient(135deg, #a855f7, #8b5cf6);
-    box-shadow: 0 0 10px rgba(139, 92, 246, 0.8);
-}
-
-.level-particle:nth-child(3n) {
-    background: linear-gradient(135deg, #22c55e, #16a34a);
-    box-shadow: 0 0 10px rgba(34, 197, 94, 0.8);
-}
-
-/* Main Card */
-.level-up-card {
-    position: relative;
-    background: linear-gradient(135deg, #1e293b, #0f172a);
-    border: 3px solid #fbbf24;
-    border-radius: 24px;
-    padding: 2.5rem 3rem;
-    text-align: center;
-    box-shadow:
-        0 0 60px rgba(251, 191, 36, 0.3),
-        0 20px 60px rgba(0, 0, 0, 0.5);
-    max-width: 400px;
-    width: 90%;
-    overflow: hidden;
-}
-
-.level-up-card.milestone {
-    border-color: #a855f7;
-    box-shadow:
-        0 0 80px rgba(139, 92, 246, 0.4),
-        0 0 40px rgba(251, 191, 36, 0.2),
-        0 20px 60px rgba(0, 0, 0, 0.5);
-}
-
-/* Glow Effect */
-.card-glow {
+/* Fallback ambient glow if video fails */
+.lup-fallback-glow {
     position: absolute;
-    top: -50%;
-    left: -50%;
-    width: 200%;
-    height: 200%;
-    background: radial-gradient(circle, rgba(251, 191, 36, 0.15) 0%, transparent 50%);
-    animation: rotateGlow 4s linear infinite;
-    pointer-events: none;
+    inset: 0;
+    background: radial-gradient(ellipse at center, rgba(139, 92, 246, 0.35) 0%, rgba(0, 0, 0, 0.95) 70%);
+    z-index: 2;
+    animation: lupGlowPulse 1.5s ease-in-out infinite alternate;
 }
 
-.level-up-card.milestone .card-glow {
-    background: radial-gradient(circle, rgba(139, 92, 246, 0.2) 0%, transparent 50%);
+@keyframes lupGlowPulse {
+    from { opacity: 0.6; }
+    to   { opacity: 1; }
 }
 
-@keyframes rotateGlow {
-    from {
-        transform: rotate(0deg);
-    }
+/* ─── Stat Panel (top-right) ─────────────────────────────── */
+.lup-stat-panel {
+    position: absolute;
+    top: max(env(safe-area-inset-top, 12px), 14px);
+    right: max(env(safe-area-inset-right, 12px), 14px);
+    z-index: 10;
 
-    to {
-        transform: rotate(360deg);
-    }
+    background: rgba(8, 8, 20, 0.82);
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(168, 85, 247, 0.5);
+    border-radius: 14px;
+    padding: 0.85rem 1rem;
+    min-width: 160px;
+    max-width: 210px;
+
+    box-shadow:
+        0 0 30px rgba(168, 85, 247, 0.25),
+        0 0 60px rgba(168, 85, 247, 0.1);
 }
 
-/* Header */
-.level-up-header {
+/* Title row */
+.lup-stat-title {
     display: flex;
     align-items: center;
-    justify-content: center;
-    gap: 0.75rem;
-    margin-bottom: 1.5rem;
-}
-
-.level-up-header span {
-    font-size: 1.5rem;
+    gap: 0.4rem;
+    font-size: 0.85rem;
     font-weight: 900;
-    letter-spacing: 4px;
-    background: linear-gradient(to right, #fbbf24, #f59e0b);
-    -webkit-background-clip: text;
-    background-clip: text;
-    -webkit-text-fill-color: transparent;
-    text-shadow: 0 0 20px rgba(251, 191, 36, 0.5);
-}
-
-.star-icon {
-    color: #fbbf24;
-    filter: drop-shadow(0 0 8px rgba(251, 191, 36, 0.8));
-    animation: starPulse 1s ease-in-out infinite;
-}
-
-@keyframes starPulse {
-
-    0%,
-    100% {
-        transform: scale(1);
-    }
-
-    50% {
-        transform: scale(1.2);
-    }
-}
-
-/* Skill Display */
-.skill-display {
-    margin-bottom: 1rem;
-}
-
-.skill-icon {
-    font-size: 4rem;
-    display: block;
+    letter-spacing: 1.5px;
+    color: #c4b5fd;
+    text-transform: uppercase;
     margin-bottom: 0.5rem;
-    filter: drop-shadow(0 0 15px rgba(255, 255, 255, 0.3));
+    text-shadow: 0 0 10px rgba(196, 181, 253, 0.6);
 }
 
-.skill-name {
-    font-size: 1.8rem;
-    font-weight: 700;
-    color: #f8fafc;
-    margin: 0;
-}
-
-/* Level Display */
-.level-display {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.5rem;
-    padding: 0.5rem 1.5rem;
-    background: linear-gradient(135deg, rgba(34, 197, 94, 0.2), rgba(16, 185, 129, 0.1));
-    border: 1px solid rgba(34, 197, 94, 0.4);
-    border-radius: 20px;
-    margin-bottom: 1rem;
-}
-
-.level-display svg {
-    color: #22c55e;
-}
-
-.level-number {
-    font-size: 1.2rem;
-    font-weight: 700;
-    color: #22c55e;
-}
-
-/* Stat Gain */
-.stat-gain {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.5rem;
-    color: #fbbf24;
-    font-weight: 600;
-    font-size: 1rem;
-    margin-bottom: 1.5rem;
-}
-
-.stat-gain svg {
-    color: #fbbf24;
-}
-
-/* Milestone Bonus */
-.milestone-bonus {
-    background: linear-gradient(135deg, rgba(139, 92, 246, 0.2), rgba(168, 85, 247, 0.1));
-    border: 1px solid rgba(139, 92, 246, 0.4);
-    border-radius: 12px;
-    padding: 1rem;
-    margin-bottom: 1rem;
-}
-
-.milestone-label {
-    font-size: 1.1rem;
-    font-weight: 700;
-    color: #a78bfa;
-    margin-bottom: 0.5rem;
-}
-
-.milestone-rewards {
+/* Skill row */
+.lup-skill-row {
     display: flex;
-    justify-content: center;
-    gap: 1.5rem;
-    font-weight: 600;
-    color: #e0e7ff;
+    align-items: center;
+    gap: 0.4rem;
+    margin-bottom: 0.5rem;
 }
 
-/* Dismiss Hint */
-.dismiss-hint {
-    font-size: 0.75rem;
-    color: #64748b;
-    margin: 0;
+.lup-skill-icon  { font-size: 1.2rem; line-height: 1; }
+
+.lup-skill-name {
+    font-size: 0.82rem;
+    font-weight: 700;
+    color: #e2e8f0;
+    flex: 1;
 }
+
+.lup-skill-level {
+    font-size: 0.75rem;
+    font-weight: 800;
+    color: #fbbf24;
+    background: rgba(251, 191, 36, 0.12);
+    border-radius: 6px;
+    padding: 1px 6px;
+}
+
+/* Stat gains */
+.lup-gains {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    margin-bottom: 0.6rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+}
+
+.lup-gain-row {
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+    font-size: 0.75rem;
+    color: #a3e635;
+    animation: popIn 0.25s ease-out both;
+}
+
+@keyframes popIn {
+    from { transform: translateX(8px); opacity: 0; }
+    to   { transform: translateX(0);    opacity: 1; }
+}
+
+.lup-plus {
+    color: #4ade80;
+    font-weight: 800;
+    font-size: 0.9rem;
+}
+
+/* Live totals */
+.lup-totals {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    margin-bottom: 0.5rem;
+}
+
+.lup-total-row {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.7rem;
+    color: rgba(255, 255, 255, 0.6);
+}
+
+.lup-total-row span:last-child {
+    color: #e2e8f0;
+    font-weight: 700;
+}
+
+/* Milestone bonus badge */
+.lup-milestone {
+    background: rgba(251, 191, 36, 0.1);
+    border: 1px solid rgba(251, 191, 36, 0.35);
+    border-radius: 8px;
+    padding: 0.3rem 0.5rem;
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: #fbbf24;
+    text-align: center;
+    margin-bottom: 0.5rem;
+}
+
+.lup-milestone-rewards {
+    font-size: 0.65rem;
+    font-weight: 500;
+    color: rgba(251, 191, 36, 0.75);
+    margin-top: 2px;
+}
+
+/* Tap to skip */
+.lup-tap-hint {
+    font-size: 0.62rem;
+    color: rgba(255, 255, 255, 0.3);
+    text-align: center;
+    cursor: pointer;
+    margin-top: 0.25rem;
+    letter-spacing: 0.5px;
+    transition: color 0.2s;
+}
+.lup-tap-hint:hover { color: rgba(255, 255, 255, 0.6); }
