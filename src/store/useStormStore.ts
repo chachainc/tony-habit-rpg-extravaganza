@@ -61,7 +61,7 @@ export interface StormState {
         shmeckleWaveBonusLevel: number;
         shmeckleKillBonusLevel: number;
     };
-    lastWaveRewards: { shmeckles: number } | null;
+    lastWaveRewards: { shmeckles: number; gold: number } | null;
 
     // Actions
     startGame: () => void;
@@ -234,11 +234,14 @@ export const useStormStore = create<StormState>()((set, get) => ({
             
             if (victory) {
                 const waveShmeckles = state.wave * 5 + (state.upgrades.shmeckleWaveBonusLevel * 5);
-                
-                newState.lastWaveRewards = { shmeckles: waveShmeckles };
-                
+                // Gold reward: wave * 5, capped at 50
+                const waveGold = Math.min(state.wave * 5, 50);
+
+                newState.lastWaveRewards = { shmeckles: waveShmeckles, gold: waveGold };
+
                 import('./useCurrencyStore').then(({ useCurrencyStore: cs }) => {
                     cs.getState().addShmeckles(waveShmeckles);
+                    cs.getState().addGold(waveGold);
                 });
                 
                 const repairAmount = state.upgrades.fortRepairLevel * 10;

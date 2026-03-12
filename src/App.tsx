@@ -66,8 +66,13 @@ const PlayerRoomPage = () => {
 function App() {
   const { isNewDay } = useDayStore();
   const { pendingLevelUp, clearLevelUp } = useGameStore();
-  const { isLoggedIn, characterArchetype } = useProfileStore();
+  const { isLoggedIn, characterArchetype, _hasHydrated } = useProfileStore();
   const [showWakeUp, setShowWakeUp] = useState(false);
+
+  // Wait for Zustand persist to finish reading localStorage before rendering.
+  // Without this guard the app reads isLoggedIn=false (initial state) before
+  // hydration completes and incorrectly shows the LoginScreen on PWA relaunch.
+  if (!_hasHydrated) return null;
 
   useEffect(() => {
     console.log('[BOOT] App mounted');

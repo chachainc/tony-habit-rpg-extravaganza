@@ -401,13 +401,36 @@ export const Conquest = () => {
 
             {/* Minigames / Shops */}
             <AnimatePresence>
-                {showChess && <ChessGame onComplete={() => setShowChess(false)} onClose={() => setShowChess(false)} canPlay={strategy.canPlayChessToday()} />}
+                {showChess && <ChessGame
+                onComplete={(result, diff) => {
+                    if (result === 'win') {
+                        // Chess gold: Easy=5, Medium=15, Hard=30
+                        const chessGold = diff === 3 ? 30 : diff === 2 ? 15 : 5;
+                        currency.addGold(chessGold);
+                    }
+                    setShowChess(false);
+                }}
+                onClose={() => setShowChess(false)}
+                canPlay={strategy.canPlayChessToday()}
+            />}
             </AnimatePresence>
             <AnimatePresence>
                 {showStore && <ConquestStoreUI onClose={() => setShowStore(false)} />}
             </AnimatePresence>
             <AnimatePresence>
-                {showTiles && <ConquestTiles onComplete={() => setShowTiles(false)} onClose={() => setShowTiles(false)} canPlay={strategy.canPlayTilesToday()} canPlayImpossible={strategy.canPlayImpossible()} />}
+                {showTiles && <ConquestTiles
+                onComplete={(result, diff) => {
+                    if (result === 'win') {
+                        // Tiles gold: D1=5, D2=15, D3=30, D4(Impossible)=50
+                        const tilesGold: Record<number, number> = { 1: 5, 2: 15, 3: 30, 4: 50 };
+                        currency.addGold(tilesGold[diff] ?? 5);
+                    }
+                    setShowTiles(false);
+                }}
+                onClose={() => setShowTiles(false)}
+                canPlay={strategy.canPlayTilesToday()}
+                canPlayImpossible={strategy.canPlayImpossible()}
+            />}
             </AnimatePresence>
 
         </div>

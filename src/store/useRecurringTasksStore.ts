@@ -520,8 +520,8 @@ export const useRecurringTasksStore = create<RecurringTasksState>()(
                 const status = state.getBundleStatus(bundle);
 
                 if (status.isComplete && !status.isClaimed) {
-                    import('./useGameStore').then(({ useGameStore }) => {
-                        useGameStore.getState().addCurrency(25);
+                    import('./useCurrencyStore').then(({ useCurrencyStore }) => {
+                        useCurrencyStore.getState().addGold(25);
                     });
 
                     if (bundle === 'morning') set({ morningBundleClaimed: true });
@@ -537,8 +537,8 @@ export const useRecurringTasksStore = create<RecurringTasksState>()(
                 const n = state.getBundleStatus('night');
 
                 if (m.isComplete && a.isComplete && n.isComplete && !state.perfectDayClaimed) {
-                    import('./useGameStore').then(({ useGameStore }) => {
-                        useGameStore.getState().addCurrency(75);
+                    import('./useCurrencyStore').then(({ useCurrencyStore }) => {
+                        useCurrencyStore.getState().addGold(75);
                     });
                     set({ perfectDayClaimed: true });
                 }
@@ -553,8 +553,8 @@ export const useRecurringTasksStore = create<RecurringTasksState>()(
                 const state = get();
                 const isComplete = state.weeklyTasks.every(t => t.completed);
                 if (isComplete && !state.weeklyBonusClaimed) {
-                    import('./useGameStore').then(({ useGameStore }) => {
-                        useGameStore.getState().addCurrency(100);
+                    import('./useCurrencyStore').then(({ useCurrencyStore }) => {
+                        useCurrencyStore.getState().addGold(100);
                     });
                     set({ weeklyBonusClaimed: true });
                 }

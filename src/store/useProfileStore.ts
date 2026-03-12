@@ -11,6 +11,10 @@ interface ProfileState {
     lastSyncError: string | null;
     serverVersion: number;
 
+    // Internal hydration guard — true once Zustand has read from localStorage
+    _hasHydrated: boolean;
+    setHasHydrated: (val: boolean) => void;
+
     // Has seen the 6-screen welcome tutorial
     hasSeenWelcomeTutorial: boolean;
 
@@ -128,6 +132,9 @@ let syncDebounceTimer: ReturnType<typeof setTimeout> | null = null;
 export const useProfileStore = create<ProfileState>()(
     persist(
         (set, get) => ({
+            _hasHydrated: false,
+            setHasHydrated: (val) => set({ _hasHydrated: val }),
+
             shareCode: null,
             profileName: 'Hero',
             isLoggedIn: false,
@@ -294,6 +301,9 @@ export const useProfileStore = create<ProfileState>()(
         {
             name: 'gl-profile-storage',
             version: 1,
+            onRehydrateStorage: () => (state) => {
+                state?.setHasHydrated(true);
+            },
             migrate: (persistedState: any, version: number) => {
                 if (version === 0) {
                     const translations: Record<string, string> = {

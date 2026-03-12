@@ -169,6 +169,7 @@ export const StormTheFort = () => {
                         {lastWaveRewards && (
                             <div className="storm-rewards">
                                 <span>+{lastWaveRewards.shmeckles} 🐌</span>
+                                <span>+{lastWaveRewards.gold} 🪙</span>
                             </div>
                         )}
                         <button className="storm-btn primary" onClick={() => startNextWave()}>Next Wave</button>
