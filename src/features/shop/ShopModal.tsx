@@ -93,7 +93,8 @@ export const ShopModal = ({ category, onClose }: Props) => {
                                             {item.type === 'weapon' ? `ATK +${item.value} | Crit ${Math.round((item.critChance || 0) * 100)}%` :
                                                 item.type === 'armor' ? `DEF +${item.value}` :
                                                     item.type === 'potion' ? `Heal +${item.value}` :
-                                                        `Effect: +${item.value}`}
+                                                        item.type === 'furniture' ? `+${item.value} Max HP` :
+                                                            `Effect: +${item.value}`}
                                         </p>
                                         {item.description && <p className="item-desc">{item.description}</p>}
                                     </div>

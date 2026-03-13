@@ -7,7 +7,7 @@ import { ITEM_DATABASE } from '../data/items';
 import { useCurrencyStore } from './useCurrencyStore';
 import type { SkillName } from './useGameStore';
 
-export type ItemType = 'food' | 'toy' | 'potion' | 'weapon' | 'armor' | 'pet_gear' | 'ticket' | 'furniture' | 'book' | 'relic' | 'artifact' | 'jewelry';
+export type ItemType = 'food' | 'toy' | 'potion' | 'weapon' | 'armor' | 'pet_gear' | 'ticket' | 'furniture' | 'book' | 'relic' | 'artifact' | 'jewelry' | 'pet_accessory';
 export type Rarity = 'common' | 'rare' | 'epic' | 'legendary';
 export type ShopCategory = 'blacksmith' | 'armory' | 'first_aid' | 'general' | 'furniture' | 'library' | 'jeweler';
 
@@ -118,7 +118,7 @@ export const ITEM_DB: Record<string, ItemDef> = mergeExternalItems({
     'gacha_ticket': { id: 'gacha_ticket', name: 'Summon Ticket', type: 'ticket', rarity: 'rare', shopCategory: 'general', value: 0, price: 1000, icon: '🎫' },
 
     // ========== FURNITURE (Furniture Store) ==========
-    'basic_bed': { id: 'basic_bed', name: 'Basic Bed', type: 'furniture', rarity: 'common', shopCategory: 'furniture', value: 1, price: 500, icon: '🛏️', description: 'A place to rest.', requiredEnemy: 'fatigue_wraith' },
+    'basic_bed': { id: 'basic_bed', name: 'Basic Bed', type: 'furniture', rarity: 'common', shopCategory: 'furniture', value: 2, price: 500, icon: '🛏️', description: 'A place to rest.', requiredEnemy: 'fatigue_wraith' },
     'fancy_bed': { id: 'fancy_bed', name: 'Fancy Bed', type: 'furniture', rarity: 'rare', shopCategory: 'furniture', value: 3, price: 1500, icon: '🛏️', description: 'Sleep in style.', requiredEnemy: 'insomnia_echo' },
     'desk': { id: 'desk', name: 'Work Desk', type: 'furniture', rarity: 'common', shopCategory: 'furniture', value: 1, price: 400, icon: '🪑', description: 'For productivity.', requiredEnemy: 'chaos_of_clutter' },
     'lamp': { id: 'lamp', name: 'Cozy Lamp', type: 'furniture', rarity: 'common', shopCategory: 'furniture', value: 1, price: 200, icon: '🪔', description: 'Warm lighting.', requiredEnemy: 'fatigue_wraith' },
@@ -149,7 +149,7 @@ export const ITEM_DB: Record<string, ItemDef> = mergeExternalItems({
     'philosophy_book_3': { id: 'philosophy_book_3', name: 'Philosophy Tome III', type: 'book', category: 'philosophy', level: 3, fusionRequired: 0, effect: '+10 Intelligence', rarity: 'epic', shopCategory: 'library', value: 0, price: 0, icon: '📚', statBonuses: { intelligence: 10, strategy: 15 } },
 });
 
-export type EquipmentSlot = 'weapon' | 'armor' | 'relic' | 'artifact' | 'pet' | 'book' | 'jewelry';
+export type EquipmentSlot = 'weapon' | 'armor' | 'relic' | 'artifact' | 'pet' | 'pet_accessory' | 'book' | 'jewelry';
 
 /** Returns a summary string of the stat bonuses for display */
 export function formatStatBonuses(bonuses: ItemStatBonuses | undefined): string {
@@ -221,6 +221,7 @@ export const useInventoryStore = create<InventoryState>()(
                 relic: null,
                 artifact: null,
                 pet: null,
+                pet_accessory: null,
                 book: null,
                 jewelry: null,
             },
@@ -263,6 +264,7 @@ export const useInventoryStore = create<InventoryState>()(
                     if (slot === 'artifact' && item.type !== 'artifact') return;
                     if (slot === 'book' && item.type !== 'book') return;
                     if (slot === 'jewelry' && item.type !== 'jewelry') return;
+                    if (slot === 'pet_accessory' && item.type !== 'pet_accessory') return;
                 }
 
                 set((state) => ({
@@ -409,6 +411,7 @@ export const useInventoryStore = create<InventoryState>()(
                         relic: null,
                         artifact: null,
                         pet: null,
+                        pet_accessory: null,
                         book: null,
                         jewelry: null,
                         ...(p.equipped ?? {}),

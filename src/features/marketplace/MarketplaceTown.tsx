@@ -8,8 +8,8 @@ import { HospitalStore } from './stores/HospitalStore';
 import { ArmorStore } from './stores/ArmorStore';
 import { PetShop } from './stores/PetShop';
 import { WeaponStore } from './stores/WeaponStore';
-import { FurnitureStore } from './stores/FurnitureStore';
 import { SpellStore } from './stores/SpellStore';
+import { ShopModal } from '../shop/ShopModal';
 import { JewelryStore } from './stores/JewelryStore';
 
 import { SceneShell } from '../../components/scene';
@@ -364,7 +364,7 @@ export const MarketplaceTown = () => {
                     <WeaponStore onClose={closeStore} />
                 )}
                 {activeStore === 'furniture-store' && (
-                    <FurnitureStore onClose={closeStore} />
+                    <ShopModal category="furniture" onClose={closeStore} />
                 )}
                 {activeStore === 'spell-store' && (
                     <SpellStore onClose={closeStore} />

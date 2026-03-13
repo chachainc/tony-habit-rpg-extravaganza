@@ -14,7 +14,7 @@ import './LoadoutPanel.css';
 
 type RadialSlotId = 
     | 'helm' | 'amulet' | 'cape' | 'weapon' | 'body' | 'shield' 
-    | 'legs' | 'gloves' | 'boots' | 'ring' | 'pet' | 'book' 
+    | 'legs' | 'gloves' | 'boots' | 'ring' | 'pet' | 'pet_accessory' | 'book' 
     | 'artifact' | 'relic';
 
 interface SelectionItem {
@@ -87,6 +87,9 @@ export const LoadoutPanel = ({ onClose }: { onClose: () => void }) => {
             case 'relic':
                 const relic = invStore.equipped.relic ? ITEM_DB[invStore.equipped.relic] : null;
                 return { icon: relic?.icon || '', name: relic?.name || '', emptyIcon: '🏺' };
+            case 'pet_accessory':
+                const pAcc = invStore.equipped.pet_accessory ? ITEM_DATABASE[invStore.equipped.pet_accessory] : null;
+                return { icon: pAcc?.icon || '', name: pAcc?.name || '', emptyIcon: '🎀' };
         }
     };
     const activeAuraId = auraStore.activeAuraId;
@@ -165,6 +168,7 @@ export const LoadoutPanel = ({ onClose }: { onClose: () => void }) => {
             shield: invStore.equipped.armor ?? null,
             ring: equipStore.equippedAccessory ?? null,
             pet: petStore.activePet ?? null,
+            pet_accessory: invStore.equipped.pet_accessory ?? null,
             book: invStore.equipped.book ?? null,
             artifact: invStore.equipped.artifact ?? null,
             relic: invStore.equipped.relic ?? null
@@ -191,6 +195,7 @@ export const LoadoutPanel = ({ onClose }: { onClose: () => void }) => {
         if (snapshot.book) invStore.equipItem(snapshot.book, 'book'); else invStore.unequipItem('book');
         if (snapshot.artifact) invStore.equipItem(snapshot.artifact, 'artifact'); else invStore.unequipItem('artifact');
         if (snapshot.relic) invStore.equipItem(snapshot.relic, 'relic'); else invStore.unequipItem('relic');
+        if (snapshot.pet_accessory) invStore.equipItem(snapshot.pet_accessory, 'pet_accessory'); else invStore.unequipItem('pet_accessory');
         
         if (snapshot.pet) petStore.switchPet(snapshot.pet);
     };
@@ -235,6 +240,9 @@ export const LoadoutPanel = ({ onClose }: { onClose: () => void }) => {
                 // from marketplaceOwned or gacha owned if using different system, assuming pet_ gear or direct ITEM_DATABASE
                 return Object.keys(ITEM_DATABASE).filter(id => ITEM_DATABASE[id] && ITEM_DATABASE[id].type === 'pet')
                     .map(id => ({ id, name: ITEM_DATABASE[id].name, icon: ITEM_DATABASE[id].icon, desc: 'Companion' }));
+            case 'pet_accessory':
+                return invStore.marketplaceOwned.map(id => ITEM_DATABASE[id]).filter(i => i && i.type === 'pet_accessory')
+                    .map(i => ({ id: i.id, name: i.name, icon: i.icon, desc: 'Cosmetic' }));
             case 'book':
                 return Object.keys(invStore.items).map(id => ITEM_DB[id]).filter(i => i && i.type === 'book')
                     .map(i => ({ id: i.id, name: i.name, icon: i.icon, desc: i.effect || '' }));
@@ -266,6 +274,7 @@ export const LoadoutPanel = ({ onClose }: { onClose: () => void }) => {
                 case 'shield': invStore.unequipItem('armor'); break;
                 case 'ring': equipStore.unequipSlot('accessory'); break;
                 case 'pet': break; // Pet cannot be fully unequiped natively, just switched. Or maybe switch to empty string if store allowed.
+                case 'pet_accessory': invStore.unequipItem('pet_accessory'); break;
                 case 'book': invStore.unequipItem('book'); break;
                 case 'artifact': invStore.unequipItem('artifact'); break;
                 case 'relic': invStore.unequipItem('relic'); break;
@@ -284,6 +293,7 @@ export const LoadoutPanel = ({ onClose }: { onClose: () => void }) => {
                 case 'shield': invStore.equipItem(itemId, 'armor'); break;
                 case 'ring': equipStore.equipItem(itemId); break;
                 case 'pet': petStore.switchPet(itemId); break;
+                case 'pet_accessory': invStore.equipItem(itemId, 'pet_accessory'); break;
                 case 'book': invStore.equipItem(itemId, 'book'); break;
                 case 'artifact': invStore.equipItem(itemId, 'artifact'); break;
                 case 'relic': invStore.equipItem(itemId, 'relic'); break;
@@ -347,6 +357,7 @@ export const LoadoutPanel = ({ onClose }: { onClose: () => void }) => {
                         {/* Outside floaters */}
                         {renderSlot('artifact', 'ls-artifact')}
                         {renderSlot('pet', 'ls-pet')}
+                        {renderSlot('pet_accessory', 'ls-pet-accessory')}
                         {renderSlot('book', 'ls-book')}
                         {renderSlot('relic', 'ls-relic')}
                     </div>

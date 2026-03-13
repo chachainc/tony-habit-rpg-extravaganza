@@ -218,7 +218,10 @@ export const DAILY_TASKS_TEMPLATE: Omit<RecurringTask, 'completed'>[] = [
         title: 'Tongue Exercises',
         bundle: 'night',
         type: 'daily',
-        rewards: [{ skillId: 'Health', xp: 1 }],
+        rewards: [
+            { skillId: 'Health', xp: 3 },
+            { skillId: 'Habit Building', xp: 2 }
+        ],
     },
     {
         id: 'charge_wear_oura',
@@ -250,7 +253,7 @@ export const DAILY_TASKS_TEMPLATE: Omit<RecurringTask, 'completed'>[] = [
         bundle: 'night',
         type: 'daily',
         rewards: [
-            { skillId: 'Sleep', xp: 1 },
+            { skillId: 'Sleep', xp: 3 },
             { skillId: 'Hygiene', xp: 1 },
         ],
     },
@@ -262,19 +265,19 @@ const WEEKLY_TASKS_TEMPLATE: Omit<RecurringTask, 'completed'>[] = [
         id: 'weekly-bathroom',
         title: 'Deep Clean Bathroom',
         type: 'weekly',
-        rewards: [{ skillId: 'Housemaid', xp: 10 }],
+        rewards: [{ skillId: 'Housemaid', xp: 7 }],
     },
     {
         id: 'weekly-car',
         title: 'Clean Out Car',
         type: 'weekly',
-        rewards: [{ skillId: 'Housemaid', xp: 10 }],
+        rewards: [{ skillId: 'Housemaid', xp: 7 }],
     },
     {
         id: 'weekly-cpap',
         title: 'Deep Clean CPAP Machine',
         type: 'weekly',
-        rewards: [{ skillId: 'Health', xp: 10 }],
+        rewards: [{ skillId: 'Health', xp: 7 }],
     },
 ];
 
@@ -529,7 +532,13 @@ export const useRecurringTasksStore = create<RecurringTasksState>()(
                 const isComplete = state.weeklyTasks.every(t => t.completed);
                 if (isComplete && !state.weeklyBonusClaimed) {
                     import('./useCurrencyStore').then(({ useCurrencyStore }) => {
-                        useCurrencyStore.getState().addGold(100);
+                        const currency = useCurrencyStore.getState();
+                        currency.addGold(200);
+                        currency.addShmeckles(3);
+                        currency.addDiamonds(1);
+                    });
+                    import('./useConquestStore').then(({ useConquestStore }) => {
+                        useConquestStore.getState().addSigils(3);
                     });
                     set({ weeklyBonusClaimed: true });
                 }

@@ -19,6 +19,17 @@ export interface Title {
 
 // ── Title Database ─────────────────────────────────────────────
 export const TITLES: Title[] = [
+    // Starting Title
+    {
+        id: 'noob',
+        name: 'Noob',
+        icon: '🔰',
+        description: 'Just starting out.',
+        requirement: 'Welcome to Gamified Life!',
+        checkType: 'level',
+        checkValue: 0,
+        bonus: { type: 'xp', value: 0.01 }, // +1% XP
+    },
     // Streak-based
     {
         id: 'disciplined',
@@ -201,7 +212,7 @@ interface TitleState {
 export const useTitleStore = create<TitleState>()(
     persist(
         (set, get) => ({
-            unlockedTitles: [],
+            unlockedTitles: ['noob'],
             activeTitle: null,
             battlesWon: 0,
 

@@ -20,6 +20,7 @@ export interface Book {
     title: string;
     author: string;
     bookType: BookType;        // ← NEW: required category
+    format: 'physical' | 'audiobook'; 
     startedAt: string;
     completedAt: string | null;
     isComplete: boolean;
@@ -32,9 +33,9 @@ interface BookState {
     completedBooks: Book[];
 
     // Actions
-    addBook: (title: string, author: string, bookType: BookType, pagesRead?: number, notes?: string) => void;
+    addBook: (title: string, author: string, bookType: BookType, format: 'physical' | 'audiobook', pagesRead?: number, notes?: string) => void;
     completeBook: (bookId: string) => void;
-    logCompletedBook: (title: string, author: string, bookType: BookType, pagesRead?: number, notes?: string) => void;
+    logCompletedBook: (title: string, author: string, bookType: BookType, format: 'physical' | 'audiobook', pagesRead?: number, notes?: string) => void;
     removeBook: (bookId: string) => void;
     getCompletedCount: () => number;
     getInProgressCount: () => number;
@@ -49,13 +50,14 @@ export const useBookStore = create<BookState>()(
             currentBooks: [],
             completedBooks: [],
 
-            addBook: (title, author, bookType, pagesRead, notes) => {
+            addBook: (title, author, bookType, format, pagesRead, notes) => {
                 const now = new Date().toISOString();
                 const newBook: Book = {
                     id: `book-${Date.now()}`,
                     title: title.trim(),
                     author: author.trim(),
                     bookType,
+                    format,
                     startedAt: now,
                     completedAt: null,
                     isComplete: false,
@@ -77,11 +79,7 @@ export const useBookStore = create<BookState>()(
                 };
 
                 // Award XP
-                let intXp = BOOK_INTELLIGENCE_XP_REWARD;
-                if (book.pagesRead) {
-                    if (book.pagesRead < 100) intXp = 50;
-                    else if (book.pagesRead > 300) intXp = 200;
-                }
+                let intXp = book.format === 'audiobook' ? 25 : 50;
 
                 const gameStore = useGameStore.getState();
                 gameStore.addGlobalXp(BOOK_GLOBAL_XP_REWARD);
@@ -132,13 +130,14 @@ export const useBookStore = create<BookState>()(
                 });
             },
 
-            logCompletedBook: (title, author, bookType, pagesRead, notes) => {
+            logCompletedBook: (title, author, bookType, format, pagesRead, notes) => {
                 const now = new Date().toISOString();
                 const newBook: Book = {
                     id: `book-${Date.now()}`,
                     title: title.trim(),
                     author: author.trim(),
                     bookType,
+                    format,
                     startedAt: now,
                     completedAt: now,
                     isComplete: true,
@@ -146,11 +145,7 @@ export const useBookStore = create<BookState>()(
                     notes,
                 };
 
-                let intXp = BOOK_INTELLIGENCE_XP_REWARD;
-                if (pagesRead) {
-                    if (pagesRead < 100) intXp = 50;
-                    else if (pagesRead > 300) intXp = 200;
-                }
+                let intXp = format === 'audiobook' ? 25 : 50;
 
                 const gameStore = useGameStore.getState();
                 gameStore.addGlobalXp(BOOK_GLOBAL_XP_REWARD);

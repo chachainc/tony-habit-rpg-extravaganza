@@ -4,6 +4,7 @@ import { ArrowLeft, Heart, Scale, Utensils, TrendingUp, TrendingDown, Minus, Che
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useHealthStore, getDateLabel } from '../../store/useHealthStore';
 import { useDayStore } from '../../store/useDayStore';
+import { useGameStore } from '../../store/useGameStore';
 import './HealthTracker.css';
 
 type Tab = 'weight' | 'food' | 'photos' | 'analysis';
@@ -147,10 +148,11 @@ export const HealthTracker = () => {
         getWeightTrend, getLastWeight,
         hasLoggedWeightToday, hasLoggedFoodToday,
         getWeightHistory, getFoodHistory,
-        addProgressPhoto, getAllPhotos, deletePhoto,
+        addProgressPhoto, getAllPhotos, deletePhoto,    
     } = useHealthStore();
 
     const { sleepLogs, readinessLogs } = useDayStore();
+    const { addSkillXp } = useGameStore();
 
     const trend = useMemo(() => getWeightTrend(), [getWeightTrend]);
     const lastWeight = getLastWeight();
@@ -210,6 +212,12 @@ export const HealthTracker = () => {
             carbs: carbs ? parseFloat(carbs) : undefined,
             fat: fat ? parseFloat(fat) : undefined,
         });
+
+        if (foodTracked && calories) {
+            addSkillXp('Habit Building', 3);
+            addSkillXp('Health', 3);
+        }
+
         setFoodSaved(true);
         setCalories(''); setFiber(''); setProtein(''); setCarbs(''); setFat('');
         setFoodTracked(null);
@@ -239,6 +247,19 @@ export const HealthTracker = () => {
                 ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
                 const dataUrl = canvas.toDataURL('image/jpeg', 0.7);
                 addProgressPhoto(uploadType, dataUrl);
+
+                // Reward logic
+                const store = useHealthStore.getState();
+                const latestPhotoDate = store.progressPhotos[0].date;
+                if (store.photoRewardLastClaimDate !== latestPhotoDate) {
+                    const todaysPhotos = store.getPhotosForDate(latestPhotoDate);
+                    const types = new Set(todaysPhotos.map(p => p.type));
+                    if (types.has('front') && types.has('side') && types.has('back')) {
+                        useGameStore.getState().addSkillXp('Habit Building', 3);
+                        useGameStore.getState().addSkillXp('Health', 2);
+                        store.setPhotoRewardClaimDate(latestPhotoDate);
+                    }
+                }
             };
             img.src = reader.result as string;
         };

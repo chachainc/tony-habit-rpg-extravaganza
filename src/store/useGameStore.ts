@@ -97,7 +97,9 @@ export const INITIAL_SKILLS: Record<SkillName, Skill> = {
 // Level 29 -> 30: ~16,431 XP
 const getXpForLevel = (level: number): number => {
     if (level <= 0) return 100;
-    return Math.floor(100 * Math.pow(level, 1.5));
+    // RuneScape style delta XP (adjusted base)
+    const base = level + 300 * Math.pow(2, level / 7.0);
+    return Math.floor(base / 4) + 25;
 };
 
 // Get current date in Eastern Time

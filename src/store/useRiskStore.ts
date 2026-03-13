@@ -75,7 +75,7 @@ export interface RiskState {
 
     initializeMap: () => void;
     resetAndAscendMap: () => void;
-    resolveRiskBattle: (nodeId: string) => RiskBattleResult | null;
+    resolveRiskBattle: (nodeId: string, committedSoldiers: number) => RiskBattleResult | null;
     buySoldier: () => boolean;
     buyCard: (id: RiskCardId) => boolean;
     gainCard: (id: RiskCardId) => void;
@@ -242,13 +242,13 @@ export const useRiskStore = create<RiskState>()(
                 set(state => ({ equippedCards: state.equippedCards.filter(c => c !== id) }));
             },
 
-            resolveRiskBattle: (nodeId: string) => {
+            resolveRiskBattle: (nodeId: string, committedSoldiers: number) => {
                 const state = get();
                 const node = state.mapNodes[nodeId];
                 if (!node || node.owner === 'player' || node.nodeType === 'shop') return null;
 
                 const equipped = state.equippedCards;
-                let playerDice = state.playerSoldiers;
+                let playerDice = Math.min(state.playerSoldiers, committedSoldiers);
                 const enemyDice = Math.max(1, node.soldierCount);
                 const triggeredEffects: string[] = [];
 
@@ -312,8 +312,9 @@ export const useRiskStore = create<RiskState>()(
                         import('./useConquestStore').then(({ useConquestStore: cs }) => cs.getState().addSigils(extraSigils));
                     }
                 } else {
-                    // Attrition: chip away enemy soldiers
+                    // Defeat: lose committed soldiers
                     set(s => ({
+                        playerSoldiers: Math.max(0, s.playerSoldiers - committedSoldiers),
                         mapNodes: {
                             ...s.mapNodes,
                             [nodeId]: { ...s.mapNodes[nodeId], soldierCount: Math.max(1, s.mapNodes[nodeId].soldierCount - 1) }

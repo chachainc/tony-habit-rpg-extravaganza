@@ -54,7 +54,12 @@ export const Conquest = () => {
     const [hoveredNode, setHoveredNode] = useState<ConquestNodeData | null>(null);
 
     useEffect(() => {
-        conquest.initMap();
+        // Start a new run if one isn't active and the daily limit isn't reached
+        if (!conquest.currentNodeId && !conquest.isDailyRunLocked()) {
+            conquest.startRun();
+        } else {
+            conquest.initMap();
+        }
     }, []);
 
     // Initial scroll to bottom where player starts
@@ -256,8 +261,15 @@ export const Conquest = () => {
             <div className="spire-footer">
                 <div className="dice-status" style={{ textAlign: 'center', width: '100%' }}>
                     <span className="active-roll">
-                        {hoveredNode ? hoveredNode.description : 'Select your next destination.'}
+                        {hoveredNode && hoveredNode.type === 'boss'
+                            ? '💀 FINAL BOSS — Hardest Battle. Use everything you have.'
+                            : hoveredNode
+                            ? hoveredNode.description
+                            : 'Select your next destination.'}
                     </span>
+                    <div style={{ fontSize: '0.7rem', color: '#475569', marginTop: '0.25rem' }}>
+                        ⚠️ HP persists across all battles • Only Campfires restore HP • 1 run per day
+                    </div>
                 </div>
             </div>
 

@@ -387,9 +387,12 @@ export const useConquestStore = create<ConquestState>()(
 
             completeRun: (victory: boolean) => {
                 const state = get();
+                const today = new Date().toISOString().split('T')[0];
                 set({ 
                     runComplete: victory ? 'victory' : 'defeat',
-                    runsCompleted: victory ? state.runsCompleted + 1 : state.runsCompleted
+                    runsCompleted: victory ? state.runsCompleted + 1 : state.runsCompleted,
+                    // Lock out the day on defeat too
+                    lastRunDate: victory ? state.lastRunDate : today,
                 });
             },
 

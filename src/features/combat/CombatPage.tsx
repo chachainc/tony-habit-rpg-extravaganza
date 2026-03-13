@@ -1,14 +1,23 @@
 import { useNavigate } from 'react-router-dom';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { Swords, Crown, Shield, Zap, Map as MapIcon, Castle } from 'lucide-react';
 import { useBattleStore } from '../../store/useBattleStore';
 import { useConquestStore } from '../../store/useConquestStore';
 import { useGameStore } from '../../store/useGameStore';
+import { useStrategyStore } from '../../store/useStrategyStore';
+import { useCurrencyStore } from '../../store/useCurrencyStore';
+import { ChessGame } from '../conquest/ChessGame';
+import { ConquestTiles } from '../conquest/ConquestTiles';
+import { useState } from 'react';
 import './CombatPage.css';
 
 export const CombatPage = () => {
     const navigate = useNavigate();
     const { sigils } = useConquestStore();
+    const strategy = useStrategyStore();
+    const currency = useCurrencyStore();
+    const [showChess, setShowChess] = useState(false);
+    const [showTiles, setShowTiles] = useState(false);
     const { getAttack, getDefense, getMagicAttack, getMaxMP } = useGameStore();
     const { currentMP, player } = useBattleStore();
 
@@ -177,8 +186,74 @@ export const CombatPage = () => {
                         </div>
                         <div className="combat-option__arrow">→</div>
                     </motion.button>
+                    
+                    <motion.button
+                        className="combat-option combat-option--tiles"
+                        onClick={() => setShowTiles(true)}
+                        initial={{ opacity: 0, x: -30 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ delay: 0.7 }}
+                        whileHover={{ scale: 1.02 }}
+                        whileTap={{ scale: 0.98 }}
+                    >
+                        <div className="combat-option__icon" style={{ fontSize: '48px', lineHeight: '48px' }}>
+                            🎲
+                        </div>
+                        <div className="combat-option__info">
+                            <h2>Tiles Game</h2>
+                            <p>Match tiles and test your memory.</p>
+                        </div>
+                        <div className="combat-option__arrow">→</div>
+                    </motion.button>
+
+                    <motion.button
+                        className="combat-option combat-option--chess"
+                        onClick={() => setShowChess(true)}
+                        initial={{ opacity: 0, x: 30 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ delay: 0.8 }}
+                        whileHover={{ scale: 1.02 }}
+                        whileTap={{ scale: 0.98 }}
+                    >
+                        <div className="combat-option__icon" style={{ fontSize: '48px', lineHeight: '48px' }}>
+                            ♟️
+                        </div>
+                        <div className="combat-option__info">
+                            <h2>Daily Chess</h2>
+                            <p>Challenge your mind with a daily chess puzzle.</p>
+                        </div>
+                        <div className="combat-option__arrow">→</div>
+                    </motion.button>
                 </div>
             </div>
+
+            <AnimatePresence>
+                {showChess && <ChessGame
+                onComplete={(result, diff) => {
+                    if (result === 'win') {
+                        const chessGold = diff === 3 ? 30 : diff === 2 ? 15 : 5;
+                        currency.addGold(chessGold);
+                    }
+                    setShowChess(false);
+                }}
+                onClose={() => setShowChess(false)}
+                canPlay={strategy.canPlayChessToday()}
+                />}
+            </AnimatePresence>
+            <AnimatePresence>
+                {showTiles && <ConquestTiles
+                onComplete={(result, diff) => {
+                    if (result === 'win') {
+                        const tilesGold: Record<number, number> = { 1: 5, 2: 15, 3: 30, 4: 50 };
+                        currency.addGold(tilesGold[diff] ?? 5);
+                    }
+                    setShowTiles(false);
+                }}
+                onClose={() => setShowTiles(false)}
+                canPlay={strategy.canPlayTilesToday()}
+                canPlayImpossible={strategy.canPlayImpossible()}
+                />}
+            </AnimatePresence>
         </div>
     );
 };

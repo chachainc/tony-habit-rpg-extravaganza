@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, BedDouble, BookOpen, Shirt, Store, Trophy, Scale, Dumbbell, Pencil, Check } from 'lucide-react';
+import { X, BedDouble, BookOpen, Shirt, Scale, Dumbbell, Pencil, Check } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useRoomStore } from '../../store/useRoomStore';
 import { usePetStore } from '../../store/usePetStore';
@@ -12,21 +12,18 @@ import { SceneShell } from '../../components/scene';
 import { WardrobePanel } from './WardrobePanel';
 import { BookshelfPanel } from './BookshelfPanel';
 import { SleepPanel } from './SleepPanel';
-import { TrophyPanel } from './TrophyPanel';
-import { ShopModal } from '../shop/ShopModal';
 import { FurniturePlacementPanel, DraggableFurniturePiece } from './FurniturePlacementPanel';
 import { LoadoutPanel } from '../character/LoadoutPanel';
 
 // AI-generated assets
 import homeCampBg from '../../assets/room-bg.jpg';
-import trophyCaseBg from '../../assets/backgrounds/trophy_case.png';
 import bookshelfBg from '../../assets/backgrounds/bookshelf_display.png';
 import { useHeroImage } from '../../hooks/useHeroImage';
 import './WalkableRoom.css';
 import './PlayerRoom.css';
 import './FurniturePlacementPanel.css';
 
-type ActivePanel = 'wardrobe' | 'bookshelf' | 'sleep' | 'trophy' | 'store' | 'body' | 'furniture_edit' | 'loadout' | null;
+type ActivePanel = 'wardrobe' | 'bookshelf' | 'sleep' | 'body' | 'furniture_edit' | 'loadout' | null;
 
 /* ── Inline Body Panel (calorie + weight) ── */
 const BodyPanel = ({ onClose }: { onClose: () => void }) => {
@@ -213,11 +210,9 @@ export const PlayerRoom = ({ onClose }: { onClose: () => void }) => {
 
     // Setup coordinates for interactables
     const interactables = {
-        trophy: { x: 10, y: 1, label: 'Trophy Hall', icon: <Trophy size={18} />, panel: 'trophy' as ActivePanel },
         bookshelf: { x: 0, y: 1, label: 'Library', icon: <BookOpen size={18} />, panel: 'bookshelf' as ActivePanel },
         wardrobe: { x: 5, y: 0, label: 'Closet', icon: <Shirt size={18} />, panel: 'wardrobe' as ActivePanel },
-        bed: { x: 2, y: 0, label: 'Bed (Sleep Log)', icon: <BedDouble size={18} />, panel: 'sleep' as ActivePanel },
-        store: { x: 8, y: 8, label: 'Furniture Store', icon: <Store size={18} />, panel: 'store' as ActivePanel }
+        bed: { x: 2, y: 0, label: 'Bed (Sleep Log)', icon: <BedDouble size={18} />, panel: 'sleep' as ActivePanel }
     };
 
     // Calculate distances to find closest interactable
@@ -316,11 +311,6 @@ export const PlayerRoom = ({ onClose }: { onClose: () => void }) => {
                                 <span>Library</span>
                                 <small>Book Collection</small>
                             </button>
-                            <button className="room-feature-btn room-feature-btn--trophy" onClick={() => setActivePanel('trophy')}>
-                                <Trophy size={28} />
-                                <span>Trophy Hall</span>
-                                <small>Achievements</small>
-                            </button>
                             <button className="room-feature-btn room-feature-btn--body" onClick={() => setActivePanel('body')}>
                                 <Scale size={28} />
                                 <span>Body</span>
@@ -330,11 +320,6 @@ export const PlayerRoom = ({ onClose }: { onClose: () => void }) => {
                                 <Dumbbell size={28} />
                                 <span>Gym</span>
                                 <small>Workout Tracker</small>
-                            </button>
-                            <button className="room-feature-btn room-feature-btn--store" onClick={() => setActivePanel('store')}>
-                                <Store size={28} />
-                                <span>Buy Furniture</span>
-                                <small>Furniture Store</small>
                             </button>
                             <button className="room-feature-btn room-feature-btn--walkable" onClick={() => setActivePanel('furniture_edit')} style={{ borderColor: 'rgba(34,197,94,0.3)' }}>
                                 <Pencil size={22} />
@@ -446,38 +431,6 @@ export const PlayerRoom = ({ onClose }: { onClose: () => void }) => {
                                 <div className="hotspot-label overlay-label"><BookOpen size={16} /> Library</div>
                             </motion.div>
 
-                            {/* Trophy Case */}
-                            <motion.div
-                                className={`room-hotspot trophy-hotspot ${nearbyObj?.panel === 'trophy' ? 'nearby' : ''}`}
-                                style={{
-                                    left: interactables.trophy.x * ROOM_LAYOUT.tileSize - ROOM_LAYOUT.tileSize,
-                                    top: interactables.trophy.y * ROOM_LAYOUT.tileSize,
-                                    width: ROOM_LAYOUT.tileSize * 1.8,
-                                    height: ROOM_LAYOUT.gridSize.height * ROOM_LAYOUT.tileSize * 0.35,
-                                }}
-                                onPointerUp={(e) => { e.stopPropagation(); setActivePanel('trophy'); }}
-                            >
-                                <img src={trophyCaseBg} alt="Trophy Case" className="trophy-case-image" />
-                                <div className="hotspot-label overlay-label"><Trophy size={16} /> Trophy Hall</div>
-                            </motion.div>
-
-                            {/* Store Kiosk */}
-                            <motion.div
-                                className={`room-hotspot store-hotspot ${nearbyObj?.panel === 'store' ? 'nearby' : ''}`}
-                                style={{
-                                    left: interactables.store.x * ROOM_LAYOUT.tileSize,
-                                    top: interactables.store.y * ROOM_LAYOUT.tileSize,
-                                    width: ROOM_LAYOUT.tileSize,
-                                    height: ROOM_LAYOUT.tileSize,
-                                }}
-                                onPointerUp={(e) => { e.stopPropagation(); setActivePanel('store'); }}
-                                animate={{ y: [0, -3, 0] }}
-                                transition={{ duration: 2, repeat: Infinity }}
-                            >
-                                <Store size={32} className="hotspot-icon" />
-                                <div className="hotspot-label">Store</div>
-                            </motion.div>
-
                             {/* Placed Furniture from placement store */}
                             {placedRoomFurniture.map((placed) => (
                                 <DraggableFurniturePiece
@@ -576,8 +529,6 @@ export const PlayerRoom = ({ onClose }: { onClose: () => void }) => {
                             {activePanel === 'wardrobe' && <WardrobePanel onClose={() => setActivePanel(null)} />}
                             {activePanel === 'bookshelf' && <BookshelfPanel onClose={() => setActivePanel(null)} />}
                             {activePanel === 'sleep' && <SleepPanel onClose={() => setActivePanel(null)} />}
-                            {activePanel === 'trophy' && <TrophyPanel onClose={() => setActivePanel(null)} />}
-                            {activePanel === 'store' && <ShopModal category="furniture" onClose={() => setActivePanel(null)} />}
                             {activePanel === 'body' && <BodyPanel onClose={() => setActivePanel(null)} />}
                             {activePanel === 'loadout' && <LoadoutPanel onClose={() => setActivePanel(null)} />}
                             {activePanel === 'furniture_edit' && (

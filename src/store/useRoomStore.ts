@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { PERSIST_REGISTRY } from '../data/persistRegistry';
+import { useInventoryStore, ITEM_DB } from './useInventoryStore';
 
 export interface FurnitureItem {
     id: string;
@@ -298,6 +299,15 @@ export const useRoomStore = create<RoomState>()(
                     totals.mpCostReduction += bonus.mpCostReduction ?? 0;
                     totals.xpBonusPercent += bonus.xpBonusPercent ?? 0;
                 }
+
+                // Add Max HP bonuses from ITEM_DB furniture (which are placed dynamically based on ownership)
+                const inventoryItems = useInventoryStore.getState().items;
+                Object.entries(inventoryItems).forEach(([itemId, count]) => {
+                    const itemDef = ITEM_DB[itemId];
+                    if (itemDef?.type === 'furniture' && itemDef.value) {
+                        totals.maxHP += (itemDef.value * count);
+                    }
+                });
 
                 return totals;
             },
