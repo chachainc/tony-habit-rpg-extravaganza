@@ -162,13 +162,27 @@ export const useGameStore = create<GameState>()(
                 return 1.0;
             },
 
-            addCurrency: (amount) => set((state) => ({
-                currency: Math.max(0, state.currency + amount)
-            })),
+            addCurrency: (amount) => {
+                import('./useCurrencyStore').then(({ useCurrencyStore }) => {
+                    // Forward positive gains/losses to the modern currency store
+                    if (amount > 0) useCurrencyStore.getState().addGold(amount);
+                    if (amount < 0) useCurrencyStore.getState().spendGold(Math.abs(amount));
+                });
+                set((state) => ({
+                    currency: Math.max(0, state.currency + amount)
+                }));
+            },
 
-            addGems: (amount) => set((state) => ({
-                gems: Math.max(0, state.gems + amount)
-            })),
+            addGems: (amount) => {
+                import('./useCurrencyStore').then(({ useCurrencyStore }) => {
+                    // Forward positive gains/losses to the modern currency store
+                    if (amount > 0) useCurrencyStore.getState().addDiamonds(amount);
+                    if (amount < 0) useCurrencyStore.getState().spendDiamonds(Math.abs(amount));
+                });
+                set((state) => ({
+                    gems: Math.max(0, state.gems + amount)
+                }));
+            },
 
             addGlobalXp: (amount) => set((state) => ({
                 globalXp: state.globalXp + amount

@@ -213,18 +213,10 @@ export const RiskPage = () => {
                                     onClick={() => handleNodeTap(node)}
                                     disabled={locked}
                                 >
-                                    <span className="pin-type-icon">
-                                        {owned ? '🏰' : style.icon}
+                                    <span className="pin-type-icon" style={{ fontSize: '1rem', fontWeight: 900 }}>
+                                        {owned ? risk.playerSoldiers : node.soldierCount}
                                     </span>
-                                    <span className="pin-name">{node.name}</span>
-                                    {!owned && node.nodeType !== 'shop' && (
-                                        <span className="pin-soldiers">
-                                            {node.soldierCount}× {risk.getSoldierLabel(node.soldierCount)}
-                                        </span>
-                                    )}
-                                    {node.nodeType === 'shop' && !owned && (
-                                        <span className="pin-soldiers">Enter Shop</span>
-                                    )}
+                                    <span className="pin-name" style={{ marginTop: '2px' }}>{node.name}</span>
                                 </button>
                             );
                         })}
@@ -327,7 +319,9 @@ export const RiskPage = () => {
                         <button className="close-btn" onClick={() => { setSelectedNode(null); setBattleResult(null); }}><X size={20} /></button>
 
                         <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.75rem' }}>
-                            <span style={{ fontSize: '2rem' }}>{NODE_TYPE_STYLE[selectedNode.nodeType]?.icon ?? '⚔️'}</span>
+                            <span style={{ fontSize: '2rem', fontWeight: 900, color: selectedNode.owner === 'player' ? '#10b981' : NODE_TYPE_STYLE[selectedNode.nodeType]?.border }}>
+                                {selectedNode.owner === 'player' ? risk.playerSoldiers : selectedNode.soldierCount}
+                            </span>
                             <div>
                                 <h2 style={{ margin: 0, fontSize: '1.3rem', color: selectedNode.owner === 'player' ? '#10b981' : '#fff' }}>
                                     {selectedNode.name}
@@ -373,7 +367,7 @@ export const RiskPage = () => {
                         {selectedNode.owner === 'enemy' && selectedNode.nodeType !== 'shop' && (
                             isAttackable(selectedNode) ? (
                                 <button className="risk-attack-btn" onClick={() => handleAttack(selectedNode.id)}>
-                                    <Swords size={20} /> Attack ({risk.playerSoldiers} vs {selectedNode.soldierCount})
+                                    <Swords size={20} /> 🎲 Roll Dice ({risk.playerSoldiers} vs {selectedNode.soldierCount})
                                 </button>
                             ) : (
                                 <p style={{ color: '#888', fontStyle: 'italic', textAlign: 'center', marginTop: '1rem' }}>

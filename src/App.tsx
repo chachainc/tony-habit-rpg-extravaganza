@@ -21,6 +21,7 @@ import { Library } from './features/library/Library';
 import { GymTracker } from './features/gym/GymTracker';
 import { HealthTracker } from './features/health/HealthTracker';
 import { Conquest } from './features/conquest/Conquest';
+import { ConquestBattle } from './features/conquest/ConquestBattle';
 import { CombatPage } from './features/combat/CombatPage';
 import { RiskPage } from './features/risk/RiskPage';
 import { TowerDefensePage } from './features/tower-defense/TowerDefensePage';
@@ -188,6 +189,7 @@ function App() {
           <Route path="gym" element={<GymTracker />} />
           <Route path="health" element={<HealthTracker />} />
           <Route path="conquest" element={<Conquest />} />
+          <Route path="conquest/battle" element={<ConquestBattle />} />
           <Route path="combat" element={<CombatPage />} />
           <Route path="risk" element={<RiskPage />} />
           <Route path="tower-defense" element={<TowerDefensePage />} />

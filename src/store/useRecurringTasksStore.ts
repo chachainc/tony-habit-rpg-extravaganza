@@ -103,7 +103,7 @@ const getWeekStart = (): string => {
 
 // ─── TEMPLATES ───────────────────────────────────────────────────────────────
 
-const DAILY_TASKS_TEMPLATE: Omit<RecurringTask, 'completed'>[] = [
+export const DAILY_TASKS_TEMPLATE: Omit<RecurringTask, 'completed'>[] = [
     // ══ MORNING FOUNDATION ═════════════════════════════════════════════════
     {
         id: 'weigh_self',
@@ -115,17 +115,10 @@ const DAILY_TASKS_TEMPLATE: Omit<RecurringTask, 'completed'>[] = [
     },
     {
         id: 'brush_and_floss',
-        title: 'Brush Teeth and Floss',
+        title: 'brush/floss/face wash routine',
         bundle: 'morning',
         type: 'daily',
-        rewards: [{ skillId: 'Hygiene', xp: 1 }],
-    },
-    {
-        id: 'wash_and_moisturize',
-        title: 'Wash and Moisturize Face',
-        bundle: 'morning',
-        type: 'daily',
-        rewards: [{ skillId: 'Hygiene', xp: 1 }],
+        rewards: [{ skillId: 'Hygiene', xp: 3 }],
     },
     {
         id: 'take_supplements',
@@ -159,18 +152,22 @@ const DAILY_TASKS_TEMPLATE: Omit<RecurringTask, 'completed'>[] = [
         rewards: [{ skillId: 'Health', xp: 1 }],
     },
     {
-        id: 'laundry_organize',
-        title: 'Laundry / Put Away + Organize',
+        id: 'no_coffee',
+        title: 'No Coffee After 12pm',
         bundle: 'afternoon',
         type: 'daily',
-        rewards: [{ skillId: 'Housemaid', xp: 1 }],
+        rewards: [
+            { skillId: 'Habit Building', xp: 3 },
+            { skillId: 'Sleep', xp: 1 },
+            { skillId: 'Health', xp: 1 }
+        ],
     },
     {
-        id: 'log_meals_afternoon',
-        title: 'Log Meals in MacroFactor',
+        id: 'night_routine_hygiene',
+        title: 'brush/floss/face wash routine',
         bundle: 'afternoon',
         type: 'daily',
-        rewards: [{ skillId: 'Intelligence', xp: 1 }],
+        rewards: [{ skillId: 'Hygiene', xp: 3 }],
     },
     {
         id: 'charge_devices',
@@ -196,11 +193,11 @@ const DAILY_TASKS_TEMPLATE: Omit<RecurringTask, 'completed'>[] = [
         rewards: [{ skillId: 'Health', xp: 1 }],
     },
     {
-        id: 'no_coffee',
-        title: 'No Coffee After 12pm',
+        id: 'laundry_organize',
+        title: 'Laundry / Put Away + Organize',
         bundle: 'night',
         type: 'daily',
-        rewards: [{ skillId: 'Habit Building', xp: 1 }],
+        rewards: [{ skillId: 'Housemaid', xp: 1 }],
     },
     {
         id: 'water_night',
@@ -215,28 +212,6 @@ const DAILY_TASKS_TEMPLATE: Omit<RecurringTask, 'completed'>[] = [
         bundle: 'night',
         type: 'daily',
         rewards: [{ skillId: 'Housemaid', xp: 1 }],
-    },
-    {
-        id: 'night_routine_hygiene',
-        title: 'Brush + Floss + Wash Face (Night)',
-        bundle: 'night',
-        type: 'daily',
-        rewards: [{ skillId: 'Hygiene', xp: 1 }],
-    },
-    {
-        id: 'retinol',
-        title: 'Retinol',
-        bundle: 'night',
-        type: 'daily',
-        conditional: { days: [0, 2, 4] }, // Sun, Tue, Thu
-        rewards: [{ skillId: 'Hygiene', xp: 1 }],
-    },
-    {
-        id: 'track_all_meals',
-        title: 'Track All Meals in MacroFactor',
-        bundle: 'night',
-        type: 'daily',
-        rewards: [{ skillId: 'Intelligence', xp: 1 }],
     },
     {
         id: 'tongue_exercises',

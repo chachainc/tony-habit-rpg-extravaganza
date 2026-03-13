@@ -92,14 +92,13 @@ export const Conquest = () => {
                 let randomEnemy = enemies[Math.floor(Math.random() * enemies.length)];
                 
                 if (node.type === 'boss') randomEnemy = 'shadow_titan';
-                if (node.type === 'elite') randomEnemy = 'fatigue_wraith'; // Just an example elite for now
-
                 useBattleStore.getState().initBattle(randomEnemy, {
                     context: node.type === 'elite' ? 'conquest_elite' : 'conquest',
                     conquestTier: node.tier
                 });
 
-                navigate('/arena', { state: { startBattle: true } });
+                // Set up local navigation to Conquest Battle (which we will build)
+                navigate('/conquest/battle');
                 break;
             }
             case 'treasure': {
@@ -231,7 +230,7 @@ export const Conquest = () => {
                         <h2>Act {conquest.act} <span className="floor-badge">Floor {conquest.runFloor}</span></h2>
                         <div className="hud-hp-bar">
                             <div className="hp-fill" style={{ width: `${(conquest.runHP / Math.max(1, conquest.runMaxHP)) * 100}%`, background: conquest.runHP < 30 ? '#ef4444' : '#22c55e' }} />
-                            <div className="hp-text"><Heart size={10}/> {conquest.runHP} / {conquest.runMaxHP}</div>
+                            <div className="hp-text"><Heart size={10}/> {Math.floor(conquest.runHP)} / {conquest.runMaxHP}</div>
                         </div>
                     </div>
                 </div>
@@ -274,8 +273,26 @@ export const Conquest = () => {
                                 <div>Best Floor: {conquest.bestFloor}</div>
                                 <div>Runs Completed: {conquest.runsCompleted}</div>
                             </div>
-                            <button className="continue-btn" onClick={() => conquest.resetRun()}>
-                                Start New Run
+                            <button className="continue-btn" onClick={() => {
+                                conquest.resetRun();
+                                navigate('/dashboard');
+                            }}>
+                                Return to Dashboard
+                            </button>
+                        </div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
+
+            {/* Daily Lock Overlay */}
+            <AnimatePresence>
+                {conquest.isDailyRunLocked() && conquest.runComplete === 'none' && (
+                    <motion.div className="modal-overlay" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} style={{ zIndex: 100 }}>
+                        <div className="run-complete-modal map-modal" style={{ borderColor: '#ef4444' }}>
+                            <h2 style={{ color: '#ef4444' }}>Conquest Locked</h2>
+                            <p>You have already completed your Conquest run for today. Return tomorrow for another attempt!</p>
+                            <button className="continue-btn" onClick={() => navigate('/dashboard')}>
+                                Return to Dashboard
                             </button>
                         </div>
                     </motion.div>
@@ -319,8 +336,8 @@ export const Conquest = () => {
                             <h2>Campfire</h2>
                             <p>A warm fire flickers, offering a brief respite.</p>
                             <div className="event-options">
-                                <button onClick={() => { conquest.healHP(20); setShowCampfire(false); }}>
-                                    <Heart size={16} /> Rest (+20 HP)
+                                <button onClick={() => { conquest.healHP(conquest.runMaxHP / 2); setShowCampfire(false); }}>
+                                    <Heart size={16} /> Rest (Restore up to 50% HP)
                                 </button>
                                 <button onClick={() => { 
                                     conquest.addRunBuff({ id: `buff_${Date.now()}`, type: 'strength', label: 'Sharpened: +10% ATK', amount: 10 });
@@ -343,7 +360,9 @@ export const Conquest = () => {
                             <p>You touch the cold stone and feel a blessing wash over you.</p>
                             <div className="event-options">
                                 <button onClick={() => { 
-                                    conquest.addRunBuff({ id: `buff_${Date.now()}`, type: 'defense', label: 'Blessed: +10% DEF', amount: 10 });
+                                    // Modified to grant 15% player power
+                                    conquest.addRunBuff({ id: `buff_${Date.now()}`, type: 'strength', label: 'Shrine Blessing: +15% Power', amount: 15 });
+                                    conquest.addRunBuff({ id: `buff_${Date.now()}_def`, type: 'defense', label: 'Shrine Blessing: +15% Block', amount: 15 });
                                     setShowShrine(false); 
                                 }}>
                                     Accept Blessing

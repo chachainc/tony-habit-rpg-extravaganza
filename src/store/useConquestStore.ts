@@ -74,6 +74,7 @@ export interface ConquestState {
     runFloor: number;
     runBuffs: RunBuff[];
     runComplete: 'none' | 'victory' | 'defeat';
+    lastRunDate: string | null;
     
     // Meta Progression
     runsCompleted: number;
@@ -81,6 +82,7 @@ export interface ConquestState {
 
     // Run Actions
     startRun: () => void;
+    isDailyRunLocked: () => boolean;
     takeDamage: (amount: number) => void;
     healHP: (amount: number) => void;
     addRunBuff: (buff: RunBuff) => void;
@@ -243,6 +245,7 @@ export const useConquestStore = create<ConquestState>()(
             runFloor: 0,
             runBuffs: [],
             runComplete: 'none',
+            lastRunDate: null,
 
             // Meta
             runsCompleted: 0,
@@ -276,6 +279,17 @@ export const useConquestStore = create<ConquestState>()(
                 const state = get();
                 return findExactDistanceNodes(state.currentNodeId, 1, CONQUEST_MAP_NODES);
             },
+            
+            isDailyRunLocked: () => {
+                const state = get();
+                if (!state.lastRunDate) return false;
+                
+                const today = new Date();
+                const lastRun = new Date(state.lastRunDate);
+                
+                return today.toDateString() === lastRun.toDateString();
+            },
+
             movePlayer: (nodeId: string) => {
                 const state = get();
                 if (!state.completedNodes.includes(nodeId)) {
@@ -295,18 +309,24 @@ export const useConquestStore = create<ConquestState>()(
             },
 
             grantSpireReward: (gold: number, sigils: number, gems: number = 0) => {
-                if (gold > 0) {
+                // Apply strict reward caps
+                const cappedGold = Math.min(gold, 25);
+                const cappedSigils = Math.min(sigils, 3);
+                // Also capping gems just in case they are generated somewhere and misused
+                const cappedGems = Math.min(gems, 3);
+
+                if (cappedGold > 0) {
                     import('./useCurrencyStore').then(({ useCurrencyStore }) => {
-                        useCurrencyStore.getState().addGold(gold);
+                        useCurrencyStore.getState().addGold(cappedGold);
                     }).catch(() => { });
                 }
-                if (gems > 0) {
+                if (cappedGems > 0) {
                     import('./useGameStore').then(({ useGameStore }) => {
-                        useGameStore.getState().addGems(gems);
+                        useGameStore.getState().addGems(cappedGems);
                     }).catch(() => { });
                 }
-                if (sigils > 0) {
-                    get().addSigils(sigils);
+                if (cappedSigils > 0) {
+                    get().addSigils(cappedSigils);
                 }
 
                 // 25% chance to drop a Risk card as connective progression
@@ -321,7 +341,16 @@ export const useConquestStore = create<ConquestState>()(
 
             // ─── RUN ACTIONS ───
             startRun: () => {
+                const today = new Date().toISOString().split('T')[0];
+                const state = get();
+                
+                if (state.lastRunDate === today) {
+                    console.warn("[Conquest] Run already completed today.");
+                    return;
+                }
+
                 set({
+                    lastRunDate: today,
                     runHP: get().runMaxHP,
                     runFloor: 0,
                     runBuffs: [],
@@ -345,7 +374,10 @@ export const useConquestStore = create<ConquestState>()(
             healHP: (amount: number) => {
                 if (amount <= 0) return;
                 const state = get();
-                set({ runHP: Math.min(state.runMaxHP, state.runHP + amount) });
+                // Ensure healing doesn't exceed 50% max HP of the player's runMaxHP from nodes
+                // Note: param "amount" may be used elsewhere. For Conquest campfires we cap to Math.min(amount, max/2)
+                const actualAmount = Math.min(amount, Math.floor(state.runMaxHP * 0.5));
+                set({ runHP: Math.min(state.runMaxHP, state.runHP + actualAmount) });
             },
 
             addRunBuff: (buff: RunBuff) => {

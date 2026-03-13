@@ -6,6 +6,7 @@ import { useDayStore } from '../../store/useDayStore';
 import { useGameStore } from '../../store/useGameStore';
 import { useCheckInStore, type CheckInReward } from '../../store/useCheckInStore';
 import { useHealthStore } from '../../store/useHealthStore';
+import { useRecurringTasksStore } from '../../store/useRecurringTasksStore';
 import './WakeUpModal.css';
 
 type Stage = 'sleep' | 'checkin' | 'weight' | 'xp_summary' | 'task_prompt';
@@ -17,6 +18,7 @@ export const WakeUpModal = ({ onComplete }: { onComplete: () => void }) => {
     const { streakDay, streakCount, checkIn, getRewardForDay, getStreakStatus } = useCheckInStore();
     const { canCheckIn, missedYesterday } = getStreakStatus();
     const { logWeight, hasLoggedWeightToday, getLastWeight } = useHealthStore();
+    const { completeTask } = useRecurringTasksStore();
 
     const [sleepScore, setSleepScore] = useState(75);
     const [readinessScore, setReadinessScore] = useState(75);
@@ -27,6 +29,10 @@ export const WakeUpModal = ({ onComplete }: { onComplete: () => void }) => {
     const [weightInput, setWeightInput] = useState('');
 
     const handleWakeUp = () => {
+        // Fix: Force the daily task reset FIRST so that if the user logs their weight
+        // below, it doesn't get wiped out right after when TasksPage mounts.
+        useRecurringTasksStore.getState().checkAndReset();
+
         const xp = wakeUp(sleepScore, readinessScore);
         setSleepXpEarned(xp);
 
@@ -76,6 +82,7 @@ export const WakeUpModal = ({ onComplete }: { onComplete: () => void }) => {
         const w = parseFloat(weightInput);
         if (!isNaN(w) && w > 0) {
             logWeight(w);
+            completeTask('weigh_self', { weight: w });
         }
         setStage('xp_summary');
     };

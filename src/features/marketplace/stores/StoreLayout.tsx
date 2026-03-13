@@ -114,6 +114,15 @@ export const StoreLayout = ({
                         {bottomSheet}
                     </div>
                 )}
+
+                {/* Mobile Explicit Close Button */}
+                <button 
+                    className="mobile-only store-mobile-close-btn"
+                    onClick={(e) => { e.stopPropagation(); onClose(); }}
+                    onPointerDown={(e) => { e.stopPropagation(); onClose(); }}
+                >
+                    Leave Store
+                </button>
             </motion.div>
         </div>
     );

@@ -30,9 +30,9 @@ const getSourcesForId = (id: string): string[] => {
 };
 
 export const getConquestRewardPool = (): ItemDef[] => {
-    // Return low-rarity items from the global pool
+    // Return low-rarity items from the global pool, but NO books in Conquest
     return Object.values(ITEM_DB).filter(item =>
-        item.rarity === 'common' || item.rarity === 'rare'
+        (item.rarity === 'common' || item.rarity === 'rare') && item.type !== 'book'
     );
 };
 

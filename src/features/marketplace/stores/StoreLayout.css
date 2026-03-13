@@ -273,4 +273,21 @@
     .store-bottom-sheet {
         padding-bottom: calc(var(--space-3) + env(safe-area-inset-bottom, 0px));
     }
+
+    .store-mobile-close-btn {
+        position: absolute;
+        bottom: calc(var(--space-md) + env(safe-area-inset-bottom, 0px));
+        left: var(--space-md);
+        right: var(--space-md);
+        background: #ef4444; /* bright red / recognizable exit color */
+        color: white;
+        border: none;
+        padding: 0.8rem 1rem;
+        border-radius: var(--radius-md);
+        font-weight: 700;
+        font-size: 1rem;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+        z-index: 50;
+        display: block; /* explicitly shown only on mobile query via .mobile-only cascade */
+    }
 }

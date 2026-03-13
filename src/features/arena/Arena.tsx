@@ -276,6 +276,18 @@ export const Arena = ({ onClose }: { onClose: () => void }) => {
                             });
                         }).catch(() => { });
                     }
+                    if (player) {
+                        import('../../store/useConquestStore').then(({ useConquestStore: cs }) => {
+                            // Apply damage sustained during this battle back to conquest run health
+                            // Since player might have started at less than runMaxHP, 
+                            // we calculate damage taken = (battleMaxHP - currentBattleHP)
+                            // Then deduct that from conquest HP
+                            const maxStateHp = player.maxHp;
+                            const currentHp = player.hp;
+                            const damageTaken = maxStateHp - currentHp;
+                            cs.getState().takeDamage(damageTaken);
+                        }).catch(() => {});
+                    }
                 } else {
                     // Arena Rewards with Streak Multiplier
                     incrementStreak();
@@ -339,7 +351,7 @@ export const Arena = ({ onClose }: { onClose: () => void }) => {
         }
 
         if (isConquest) {
-            navigate('/combat');
+            navigate('/conquest');
             resetBattle();
         } else {
             setView('map');
@@ -349,9 +361,13 @@ export const Arena = ({ onClose }: { onClose: () => void }) => {
 
     // Handle Defeat
     const handleDefeat = () => {
-        const isConquest = useBattleStore.getState().context === 'conquest';
+        const isConquest = useBattleStore.getState().context === 'conquest' || useBattleStore.getState().context === 'conquest_elite';
         if (isConquest) {
-            navigate('/combat');
+            import('../../store/useConquestStore').then(({ useConquestStore: cs }) => {
+                const storeState = cs.getState();
+                storeState.takeDamage(storeState.runMaxHP); // Kill the run
+            }).catch(() => {});
+            navigate('/conquest');
         } else {
             resetStreak(); // Break streak on defeat
             setView('map');

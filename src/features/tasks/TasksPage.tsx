@@ -6,7 +6,7 @@ import { Card } from '../../components/ui';
 import { useGameStore, type SkillName } from '../../store/useGameStore';
 import { safeUUID } from '../../utils/safeUUID';
 
-import { useRecurringTasksStore, type BundleType } from '../../store/useRecurringTasksStore';
+import { useRecurringTasksStore, type BundleType, DAILY_TASKS_TEMPLATE } from '../../store/useRecurringTasksStore';
 import { useCalendarStore } from '../../store/useCalendarStore';
 import { WeightInput } from '../../components/WeightInput/WeightInput';
 import { TrainingInput } from './TrainingInput';
@@ -177,7 +177,12 @@ export const TasksPage = () => {
     };
 
     const renderBundle = (bundleType: BundleType) => {
-        const bundleTasks = dailyTasks.filter(t => t.bundle === bundleType);
+        const templateIds = new Set(DAILY_TASKS_TEMPLATE.map(t => t.id));
+        const bundleTasksRaw = dailyTasks.filter(t => t.bundle === bundleType);
+        
+        // Hide anything removed from template unless it's a custom task
+        const bundleTasks = bundleTasksRaw.filter(t => templateIds.has(t.id) || t.id.startsWith('custom-'));
+
         if (bundleTasks.length === 0) return null;
 
         const status = getBundleStatus(bundleType);
