@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useInventoryStore, ITEM_DB, type EquipmentSlot, type ItemDef, formatStatBonuses, getStatDelta } from '../../store/useInventoryStore';
 import { useGachaStore, PET_DB } from '../../store/useGachaStore';
 import { useHeroImage } from '../../hooks/useHeroImage';
-import { Sword, Shield, Gem, Sparkles, Dog, X, BookOpen, Gem as JewelIcon } from 'lucide-react';
+import { Sword, Shield, Gem, Sparkles, Dog, X, BookOpen, Gem as JewelIcon, Badge } from 'lucide-react';
 import './EquipmentPanel.css';
 
 const SLOT_CONFIG: Record<EquipmentSlot, { label: string; icon: React.ReactNode; emptyText: string }> = {
@@ -11,12 +11,13 @@ const SLOT_CONFIG: Record<EquipmentSlot, { label: string; icon: React.ReactNode;
     relic:    { label: 'Relic',     icon: <Gem size={16} />,      emptyText: 'No Relic' },
     artifact: { label: 'Artifact',  icon: <Sparkles size={16} />, emptyText: 'No Artifact' },
     pet:      { label: 'Companion', icon: <Dog size={16} />,      emptyText: 'No Pet' },
+    pet_accessory: { label: 'Pet Accessory', icon: <Badge size={16} />, emptyText: 'No Pet Accessory' },
     book:     { label: 'Book',      icon: <BookOpen size={16} />, emptyText: 'No Book' },
     jewelry:  { label: 'Jewelry',   icon: <JewelIcon size={16} />,emptyText: 'No Jewelry' },
 };
 
 // Ordered slot display — logical pairing
-const SLOT_ORDER: EquipmentSlot[] = ['weapon', 'armor', 'jewelry', 'relic', 'artifact', 'book', 'pet'];
+const SLOT_ORDER: EquipmentSlot[] = ['weapon', 'armor', 'jewelry', 'relic', 'artifact', 'book', 'pet', 'pet_accessory'];
 
 interface DisplayItem {
     id: string;
@@ -63,6 +64,7 @@ export const EquipmentPanel = () => {
             armor: 'armor',
             relic: 'relic',
             artifact: 'artifact',
+            pet_accessory: 'pet_accessory',
             book: 'book',
             jewelry: 'jewelry',
         };
