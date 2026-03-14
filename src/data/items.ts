@@ -679,7 +679,7 @@ const FURNITURE_ITEMS: Item[] = [
         category: 'sleep',
         unlockRequirement: { skills: [{ skill: 'Sleep', level: 15 }] },
         cost: { gold: 20000, diamonds: 25, tokens: { Sleep: 25 } },
-        stats: { bonusXp: { Sleep: 3, Sleep: 2 } },
+        stats: { bonusXp: { Sleep: 5 } },
         rarity: 'rare',
     },
     // Level 16-20: Premium items
@@ -717,7 +717,7 @@ const FURNITURE_ITEMS: Item[] = [
         category: 'sleep',
         unlockRequirement: { skills: [{ skill: 'Sleep', level: 23 }] },
         cost: { gold: 60000, diamonds: 75, tokens: { Sleep: 40 } },
-        stats: { bonusXp: { Sleep: 5, Sleep: 3 } },
+        stats: { bonusXp: { Sleep: 8 } },
         rarity: 'epic',
     },
     {
@@ -742,7 +742,7 @@ const FURNITURE_ITEMS: Item[] = [
         category: 'general',
         unlockRequirement: { skills: [{ skill: 'Sleep', level: 30 }] },
         cost: { gold: 150000, diamonds: 250, tokens: { Sleep: 75 } },
-        stats: { bonusXp: { Sleep: 10, Sleep: 5, Hygiene: 5 } },
+        stats: { bonusXp: { Sleep: 15, Hygiene: 5 } },
         rarity: 'legendary',
     },
     // ========== PRESTIGE COMBAT FURNITURE ==========
@@ -779,7 +779,7 @@ const FURNITURE_ITEMS: Item[] = [
         category: 'hygiene',
         unlockRequirement: { skills: [{ skill: 'Sleep', level: 80 }] },
         cost: { gold: 250000, diamonds: 375, tokens: { Sleep: 90 } },
-        stats: { bonusXp: { Sleep: 10, Hygiene: 5, Sleep: 3 } },
+        stats: { bonusXp: { Sleep: 13, Hygiene: 5 } },
         rarity: 'legendary',
     },
     {
