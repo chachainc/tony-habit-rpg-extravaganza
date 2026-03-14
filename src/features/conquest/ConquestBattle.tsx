@@ -1,22 +1,22 @@
 import { useNavigate } from 'react-router-dom';
 import { useState, useEffect, useRef } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { Heart, Swords, Shield, Zap, ChevronLeft } from 'lucide-react';
+import { Heart, Swords, ChevronLeft, Sparkles } from 'lucide-react';
 import { useBattleStore } from '../../store/useBattleStore';
 import { useConquestStore } from '../../store/useConquestStore';
-import { useGameStore } from '../../store/useGameStore';
 import { usePetStore } from '../../store/usePetStore';
+import { useMagicStore } from '../../store/useMagicStore';
+import { useGameStore } from '../../store/useGameStore';
 import { useHeroImage } from '../../hooks/useHeroImage';
 import bgMap from '../../assets/backgrounds/infernal_citadel.png';
 import './Conquest.css';
 
 export const ConquestBattle = () => {
     const navigate = useNavigate();
-    const battle = useBattleStore();
     const conquest = useConquestStore();
-    const game = useGameStore();
-    const petStore = usePetStore();
+    const battle = useBattleStore();
     const heroImage = useHeroImage();
+    const getMagicAttack = useGameStore(s => s.getMagicAttack);
+    const getOwnedSpells = useMagicStore(s => s.getOwnedSpells);
 
     const [blessingApplied, setBlessingApplied] = useState(false);
     const [showVictoryModal, setShowVictoryModal] = useState(false);
@@ -60,27 +60,23 @@ export const ConquestBattle = () => {
         });
         initialPlayerHpRef.current = conquestHP;
 
-        // Scale Enemy based on player level + conquest tier
-        const playerLevel = game.getGlobalLevel() || 1;
-        const conquestTier = conquest.runFloor || 1;
-
-        // Steeper tier curve: early = 0.8x, mid = 1.0x, elite = 1.3x, boss = 2.0x
-        const tierMultipliers: Record<number, number> = { 1: 0.8, 2: 1.0, 3: 1.0, 4: 1.3, 5: 2.0 };
-        const tierMult = tierMultipliers[conquestTier] ?? 1.0;
-        const scaleFactor = (1 + (playerLevel * 0.08)) * tierMult;
-
-        useBattleStore.setState(state => {
-            if (!state.enemy) return state;
-            return {
-                enemy: {
-                    ...state.enemy,
-                    maxHp: Math.floor(state.enemy.maxHp * scaleFactor),
-                    hp: Math.floor(state.enemy.maxHp * scaleFactor),
-                    atk: Math.floor(state.enemy.atk * scaleFactor),
-                    def: Math.floor(state.enemy.def * scaleFactor),
-                }
-            };
-        });
+        // Apply vault-scaled boss multiplier to enemy stats
+        if (battle.conquestContext === 'conquest_boss') {
+            const mult = conquest.getVaultScaledBossMultiplier();
+            if (mult > 1) {
+                useBattleStore.setState(state => {
+                    if (!state.enemy) return state;
+                    return {
+                        enemy: {
+                            ...state.enemy,
+                            atk: Math.floor(state.enemy.atk * mult),
+                            maxHp: Math.floor(state.enemy.maxHp * mult),
+                            hp: Math.floor(state.enemy.hp * mult),
+                        }
+                    };
+                });
+            }
+        }
     }, []); // Run only on mount
 
     // Watch for battle phase changes
@@ -99,10 +95,8 @@ export const ConquestBattle = () => {
             setShowDefeatModal(true);
         }
     }, [battle.phase]);
-
-    const isBossNode = battle.conquestTier === 5;
-    const petDef = petStore.getActivePetDef();
-    const petCooldown = battle.petAbilityCooldown;
+    const isBossNode = battle.conquestContext === 'conquest_boss';
+    const isVaultNode = battle.conquestContext === 'conquest_vault';
 
     const player = battle.player;
     const enemy = battle.enemy;
@@ -147,8 +141,14 @@ export const ConquestBattle = () => {
                 <div className="cq-combatant enemy-side">
                     <div className="cq-combatant-name">{enemy.name}</div>
                     <div className="cq-enemy-icon">{enemy.icon}</div>
+                    {/* Boss / Vault indicators */}
                     {isBossNode && (
-                        <div className="cq-boss-warning">⚠️ Hardest Fight — Use Everything</div>
+                        <div className="cq-boss-warning">
+                            ⚠️ The Pathkeeper — scales with vaults completed ({conquest.treasureVaultsCompleted}×)
+                        </div>
+                    )}
+                    {isVaultNode && (
+                        <div className="cq-boss-warning" style={{ color: '#eab308' }}>🏛️ Vault Guardian — High Difficulty!</div>
                     )}
                     <div className="cq-hp-bar-wrap">
                         <div className="cq-hp-bar" style={{ width: `${enemyHpPct}%`, background: '#ef4444' }} />
@@ -197,13 +197,14 @@ export const ConquestBattle = () => {
             </div>
 
             {/* Action Buttons */}
-            <div className="cq-action-panel">
+            <div className="cq-action-panel" style={{ paddingBottom: '100px' }}>
                 {battle.phase === 'prep' ? (
                     <button className="cq-action-btn primary" onClick={() => battle.startBattle()}>
                         ⚔️ Start Battle
                     </button>
                 ) : (
                     <>
+                        {/* 1. Attack */}
                         <button
                             className="cq-action-btn attack"
                             disabled={!isPlayerTurn || isExecuting}
@@ -212,37 +213,54 @@ export const ConquestBattle = () => {
                                 battle.executePlayerAction();
                             }}
                         >
-                            <Swords size={18} /> Strike
+                            <Swords size={18} /> Attack ({Math.round(player.atk * battle.playerDamageModifier)} dmg)
                         </button>
 
-                        <button
-                            className="cq-action-btn defend"
-                            disabled={!isPlayerTurn || isExecuting}
-                            onClick={() => battle.playerDefend()}
-                        >
-                            <Shield size={18} /> Defend
-                        </button>
+                        {/* 2. Cast Spell */}
+                        {(() => {
+                            const equippedSpellId = battle.equippedSpells[0];
+                            const spell = equippedSpellId ? getOwnedSpells().find(s => s.id === equippedSpellId) : null;
+                            const expectedDamage = spell && spell.effect.type === 'damage' 
+                                ? Math.round(spell.effect.value * getMagicAttack() * battle.playerDamageModifier)
+                                : null;
+                            
+                            const canCast = spell && battle.currentMP >= spell.mpCost;
 
-                        <button
-                            className={`cq-action-btn ultimate ${player.energy < 100 ? 'dimmed' : ''}`}
-                            disabled={!isPlayerTurn || isExecuting || player.energy < 100}
-                            onClick={() => {
-                                battle.selectAbility({ id: 'ultimate_slam', name: 'Heavy Slam', type: 'ultimate', description: '', icon: '💥', element: 'neutral', damageMultiplier: 2.5, cooldown: 0, energyCost: 100 });
-                                battle.executePlayerAction();
-                            }}
-                        >
-                            <Zap size={18} /> Ultimate {player.energy < 100 ? `(${Math.floor(player.energy)}%)` : ''}
-                        </button>
-
-                        {petDef && (
-                            <button
-                                className={`cq-action-btn pet ${petCooldown > 0 ? 'dimmed' : ''}`}
-                                disabled={!isPlayerTurn || isExecuting || petCooldown > 0}
-                                onClick={() => battle.usePetAbility()}
-                            >
-                                {petCooldown > 0 ? `🐾 Pet (${petCooldown}t)` : `🐾 ${petDef.name}`}
-                            </button>
-                        )}
+                            return (
+                                <button
+                                    className={`cq-action-btn spells ${!spell ? 'disabled-spell' : ''}`}
+                                    disabled={!isPlayerTurn || isExecuting || !spell || !canCast}
+                                    style={{
+                                        position: 'relative',
+                                        display: 'flex',
+                                        flexDirection: 'column',
+                                        alignItems: 'center',
+                                        gap: '4px',
+                                        background: !spell ? '#334155' : 'linear-gradient(135deg, rgba(88, 28, 135, 0.4) 0%, rgba(126, 34, 206, 0.4) 100%)',
+                                        borderColor: !spell ? '#475569' : '#a855f7',
+                                        color: !spell ? '#94a3b8' : '#e9d5ff',
+                                        opacity: (!isPlayerTurn || isExecuting || !spell || !canCast) ? 0.6 : 1,
+                                    }}
+                                    onClick={() => {
+                                        if (canCast && isPlayerTurn && spell) {
+                                            battle.castSpell(spell.id);
+                                        }
+                                    }}
+                                >
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                        <Sparkles size={18} /> 
+                                        {!spell 
+                                            ? 'No Spell Equipped' 
+                                            : `Cast ${spell.name} ${expectedDamage ? `(${expectedDamage} dmg)` : ''}`}
+                                    </div>
+                                    {spell && (
+                                        <div style={{ fontSize: '0.8rem', color: canCast ? '#d8b4fe' : '#ef4444' }}>
+                                            {spell.mpCost} MP
+                                        </div>
+                                    )}
+                                </button>
+                            );
+                        })()}
                     </>
                 )}
             </div>
@@ -270,7 +288,9 @@ export const ConquestBattle = () => {
                             </div>
                             <button className="continue-btn" onClick={() => {
                                 setShowVictoryModal(false);
-                                battle.resetBattle();
+                                setTimeout(() => {
+                                    battle.resetBattle();
+                                }, 100);
                                 navigate('/conquest');
                             }}>
                                 Continue Run
@@ -293,7 +313,9 @@ export const ConquestBattle = () => {
                                 ☠️ Daily run consumed. A new run opens tomorrow.
                             </div>
                             <button className="continue-btn" style={{ background: '#7f1d1d' }} onClick={() => {
-                                battle.resetBattle();
+                                setTimeout(() => {
+                                    battle.resetBattle();
+                                }, 100);
                                 navigate('/conquest');
                             }}>
                                 Return to Map

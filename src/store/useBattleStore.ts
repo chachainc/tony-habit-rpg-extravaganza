@@ -88,7 +88,7 @@ interface BattleState {
     activeRunBuffs: any[]; // Use RunBuff[] if imported, or any
 
     // Actions
-    initBattle: (enemyId: string, options?: { context?: 'arena' | 'conquest' | 'conquest_elite'; conquestTier?: number }) => void;
+    initBattle: (enemyId: string, options?: { context?: 'arena' | 'conquest' | 'conquest_elite' | 'conquest_boss' | 'conquest_vault'; conquestTier?: number }) => void;
     selectAbility: (ability: Ability) => void;
     executePlayerAction: () => void;
     executeEnemyAction: () => void;
@@ -100,9 +100,10 @@ interface BattleState {
     castSpell: (spellId: string) => void; // Cast a spell from magic store
     restoreMP: (amount: number) => void; // Restore MP (used by room resting)
     startBattle: () => void;
-    introGracePeriod: boolean; // Tower Expansion: Transition from prep to combat
-    context: 'arena' | 'conquest' | 'conquest_elite' | 'risk' | 'tower-defense';
+    introGracePeriod: boolean;
+    context: 'arena' | 'conquest' | 'conquest_elite' | 'conquest_boss' | 'conquest_vault' | 'risk' | 'tower-defense';
     conquestTier: number | null;
+    conquestContext: 'arena' | 'conquest' | 'conquest_elite' | 'conquest_boss' | 'conquest_vault' | 'risk' | 'tower-defense' | null;
     conquestEnemyPower?: number;
 }
 
@@ -171,8 +172,9 @@ export const useBattleStore = create<BattleState>()((set, get) => ({
     introGracePeriod: false,
     context: 'arena',
     conquestTier: null,
+    conquestContext: null,
 
-    initBattle: (enemyId: string, options?: { context?: 'arena' | 'conquest' | 'conquest_elite'; conquestTier?: number }) => {
+    initBattle: (enemyId: string, options?: { context?: 'arena' | 'conquest' | 'conquest_elite' | 'conquest_boss' | 'conquest_vault'; conquestTier?: number }) => {
         const enemyDef = ENEMY_DB[enemyId];
         if (!enemyDef) return;
 
@@ -184,17 +186,23 @@ export const useBattleStore = create<BattleState>()((set, get) => ({
         // Calculate scaling
         const globalLevel = gameStore.getGlobalLevel();
         const totalXp = Object.values(gameStore.skills).reduce((sum, s) => sum + s.totalXp, 0);
-        const xpScaling = Math.floor(totalXp * 0.001);
-
-        const levelScaleHp = 1 + (globalLevel * 0.10);
+        
+        // Arena Scaling:
+        // Base stats from enemyDef.
+        // HP scales up steadily so fights don't become one-shots (e.g. +15% per level).
+        // ATK/DEF scale slower (e.g. +5% per level) to prevent enemies from one-shotting the player.
+        // xpScaling adds a tiny flat boost from raw playtime.
+        const xpScaling = Math.floor(totalXp * 0.0005);
+        const levelScaleHp = 1 + (globalLevel * 0.15);
         const levelScaleStats = 1 + (globalLevel * 0.05);
 
-        let playerHp = Math.round((gameStore.skills.Cardio.level * 2) + 80);
+        let playerHp = Math.round((gameStore.skills['Health']?.level ?? 1) * 5 + 80) + roomBonuses.maxHP;
         let playerAtk = Math.round(gameStore.getAttack());
         let playerDef = Math.round(gameStore.getDefense());
-        let playerSpd = Math.round((gameStore.skills.Flexibility.level * 2) + 50);
+        // Speed determined by Cardio speed tier (not Flexibility)
+        const cardioTier = gameStore.getAttackSpeedTier();
+        let playerSpd = Math.round(cardioTier * 20 + 10); // Tier 1=30, 2=50, 3=70, 4=90, 5=110
 
-        playerHp += roomBonuses.maxHP;
         playerAtk = Math.round(playerAtk * (1 + roomBonuses.atkPercent / 100));
         playerDef = Math.round(playerDef * (1 + roomBonuses.defPercent / 100));
         playerSpd = Math.round(playerSpd * (1 + roomBonuses.spdPercent / 100));
@@ -203,11 +211,15 @@ export const useBattleStore = create<BattleState>()((set, get) => ({
         const synergy = getSkillSynergyBonus();
         playerAtk = Math.round(playerAtk * synergy.bonusMultiplier);
 
-        const playerMaxMana = Math.round(50 + (gameStore.skills.Housemaid.level * 5));
-        const playerManaRegen = Math.round(5 + (gameStore.skills.Cardio.level * 0.5));
+        // Sleep = mana pool; use gameStore.getMaxMP() which is Sleep-based
+        const playerMaxMana = gameStore.getMaxMP();
+        const playerManaRegen = Math.round(5 + (gameStore.skills['Cardio']?.level ?? 1) * 0.5);
 
         const weeklyProgress = consistencyStore.getWeeklyProgress();
         const hasBerserk = weeklyProgress.daysCompleted >= 3;
+
+        // Crit rate from Habit skill (not Luck)
+        const playerCritRate = gameStore.getCritRate() + roomBonuses.critPercent / 100;
 
         const player: Combatant = {
             id: 'player',
@@ -222,7 +234,7 @@ export const useBattleStore = create<BattleState>()((set, get) => ({
             atk: hasBerserk ? Math.round(playerAtk * 1.25) : playerAtk,
             def: playerDef,
             spd: playerSpd,
-            critRate: 0.10 + (gameStore.skills.Luck?.level || 1) * 0.01 + (roomBonuses.critPercent / 100),
+            critRate: playerCritRate,
             critDmg: 1.5,
             energy: 0,
             abilities: PLAYER_ABILITIES,
@@ -243,20 +255,21 @@ export const useBattleStore = create<BattleState>()((set, get) => ({
         const context = options?.context || 'arena';
         const conquestTier = options?.conquestTier || null;
 
-        let enemyMaxHp = Math.round(enemyDef.baseHp * levelScaleHp + xpScaling * 2);
+        // Base Arena Calculations
+        let enemyMaxHp = Math.round(enemyDef.baseHp * levelScaleHp + xpScaling * 5);
         let enemyAtk = Math.round(enemyDef.baseAtk * levelScaleStats + xpScaling * 0.5);
         let enemyDef_stat = Math.round(enemyDef.baseDef * levelScaleStats + xpScaling * 0.5);
         let conquestEnemyPower = undefined;
 
-        if (context === 'conquest' && conquestTier !== null) {
-            // Target curve: Node 1 (~10), Node 2 (~13), Node 3 (~17), Node 4 (~22), Boss (~30).
-            const tierCurve = { 1: 10, 2: 13, 3: 17, 4: 22, 5: 30 };
-            conquestEnemyPower = tierCurve[conquestTier as keyof typeof tierCurve] || 30;
-
-            // Map power roughly to stats
-            enemyMaxHp = Math.round(conquestEnemyPower * 10);
-            enemyAtk = Math.round(conquestEnemyPower * 0.6);
-            enemyDef_stat = Math.round(conquestEnemyPower * 0.4);
+        if (context === 'conquest' || context === 'conquest_elite') {
+            // Apply Conquest Tier multipliers on top of the base dynamic scaling.
+            // Tier 1 is slightly weaker than standard arena at this level, Boss is significantly harder.
+            const tierMultipliers: Record<number, number> = { 1: 0.8, 2: 1.0, 3: 1.1, 4: 1.3, 5: 2.0 };
+            const tierMult = conquestTier !== null ? (tierMultipliers[conquestTier] ?? 1.0) : 1.0;
+            
+            enemyMaxHp = Math.round(enemyMaxHp * tierMult);
+            enemyAtk = Math.round(enemyAtk * tierMult);
+            enemyDef_stat = Math.round(enemyDef_stat * tierMult);
         }
 
         const enemy: Combatant = {
@@ -350,7 +363,7 @@ export const useBattleStore = create<BattleState>()((set, get) => ({
             currentMP: gameStore.getMaxMP(),
             maxMP: gameStore.getMaxMP(),
             equippedSpells: get().equippedSpells.length === 0
-                ? useMagicStore.getState().ownedSpells.slice(0, 2)
+                ? (useMagicStore.getState().equippedSpell ? [useMagicStore.getState().equippedSpell!] : [])
                 : get().equippedSpells,
             bossPhase: 1,
             playerDamageModifier,
@@ -360,6 +373,7 @@ export const useBattleStore = create<BattleState>()((set, get) => ({
             activeFloorModifier,
             activeRunBuffs: campaignStore.activeRunBuffs,
             context,
+            conquestContext: context,
             conquestTier,
             conquestEnemyPower,
         });
@@ -866,18 +880,22 @@ export const useBattleStore = create<BattleState>()((set, get) => ({
         // Ensure final damage is rounded
         finalDamage = Math.round(finalDamage);
 
-        // Apply HP deduction
-        defender.hp = Math.max(0, defender.hp - finalDamage);
+        // DO NOT mutate defender.hp here! Calculate newHp for internal checks
+        const newHp = Math.max(0, defender.hp - finalDamage);
 
         // Tower Expansion: Boss Phase 2 Check
         const enemyDef = ENEMY_DB[defender.id];
-        if (!defender.isPlayer && enemyDef?.isBoss && get().bossPhase === 1 && defender.hp < (defender.maxHp / 2)) {
+        if (!defender.isPlayer && enemyDef?.isBoss && get().bossPhase === 1 && newHp < (defender.maxHp / 2)) {
             set({ bossPhase: 2 });
             const bossLogs: CombatLog[] = [
                 { message: `💢 ${defender.name} IS GETTING SERIOUS!`, type: 'info' },
                 { message: `Phase 2: ATK and SPD increased!`, type: 'buff' },
             ];
-            // Buff the boss
+            // Boss scaling applied to the state, need to dispatch this through the caller or carefully via set
+            // Since we are inside a Zustand action, we can use `set` but we shouldn't mutate `defender` directly.
+            // But since `executePlayerAction` clones `enemy` AFTER `applyDamage`, we CAN mutate `defender` here
+            // ONLY for ATK/SPD because `executePlayerAction` handles `hp`, but wait, `executePlayerAction` does `{ ...enemy, hp: newHp }`
+            // and it uses the mutated `enemy` object. So mutating `atk`/`spd` here is safe and standard for this codebase.
             defender.atk = Math.round(defender.atk * 1.25);
             defender.spd = Math.round(defender.spd * 1.2);
             set(state => ({ combatLog: [...state.combatLog, ...bossLogs] }));

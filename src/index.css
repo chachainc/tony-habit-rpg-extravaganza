@@ -100,6 +100,12 @@ html {
   overflow: hidden;
 }
 
+.mobile-safe-width {
+  max-width: 100%;
+  overflow-x: hidden;
+  box-sizing: border-box;
+}
+
 h1 {
   font-size: 2.5em;
   line-height: 1.1;

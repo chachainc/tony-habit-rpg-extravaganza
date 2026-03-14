@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { Swords, Shield, Zap, X, Sparkles, BookOpen, ChevronUp, ChevronDown } from 'lucide-react';
+import { Swords, Sparkles, BookOpen, ChevronUp, ChevronDown, X } from 'lucide-react';
 import { useGameStore } from '../../store/useGameStore';
 import { useBattleStore } from '../../store/useBattleStore';
 import { useEnemyStore, ENEMY_DB, ELEMENT_ICONS } from '../../store/useEnemyStore';
@@ -9,6 +9,7 @@ import { useCurrencyStore } from '../../store/useCurrencyStore';
 import { useCampaignStore } from '../../store/useCampaignStore';
 import { usePetStore, PET_DATABASE } from '../../store/usePetStore';
 import { useMagicStore } from '../../store/useMagicStore';
+import { useInventoryStore } from '../../store/useInventoryStore';
 import { ArenaBattlefieldLayout } from './ArenaBattlefieldLayout';
 import { getDetailedCombatBreakdown, type StatBreakdown } from '../../store/useCombatFormulas';
 import { getPassiveBonuses } from '../../store/usePassiveEffects';
@@ -123,7 +124,7 @@ export const Arena = ({ onClose }: { onClose: () => void }) => {
     const navigate = useNavigate();
     const location = useLocation();
     const heroImage = useHeroImage();
-    const { addGlobalXp } = useGameStore();
+    const { getMagicAttack } = useGameStore();
     const { addGold } = useCurrencyStore();
     const { markDefeated } = useEnemyStore();
     const {
@@ -135,7 +136,8 @@ export const Arena = ({ onClose }: { onClose: () => void }) => {
         checkForGoldenSlime,
         recordGoldenSlimeEncounter,
         incrementStreak, // New
-        resetStreak // New
+        resetStreak, // New
+        activeCharacter,
     } = useCampaignStore();
 
     // Pet companion
@@ -150,24 +152,14 @@ export const Arena = ({ onClose }: { onClose: () => void }) => {
         initBattle,
         executePlayerAction,
         selectAbility,
-        playerDefend,
-        resetBattle,
-        petAbilityCooldown,
-        usePetAbility,
         castSpell,
         currentMP,
-        maxMP: battleMaxMP,
         equippedSpells,
+        resetBattle,
         startBattle,
     } = useBattleStore();
 
-    // Get pet ability info
-    const petDef = PET_DATABASE[activePet];
-    const petAbility = petDef ? { ...petDef.abilities[0], effect: { type: petDef.abilities[0].type, value: petDef.abilities[0].buffValue || petDef.abilities[0].baseDamage || 0, duration: petDef.abilities[0].buffDuration } } : null;
-
-    // Magic/Spells
-    const { ownedSpells, getOwnedSpells } = useMagicStore();
-    const [showSpellMenu, setShowSpellMenu] = useState(false);
+    const getOwnedSpells = useMagicStore(s => s.getOwnedSpells);
 
     const [view, setView] = useState<'map' | 'battle'>(location.state?.startBattle ? 'battle' : 'map');
     const [autoAttack, setAutoAttack] = useState(false);
@@ -298,7 +290,7 @@ export const Arena = ({ onClose }: { onClose: () => void }) => {
                     const totalXp = Math.floor(Math.round(enemyDef.xpReward * scaling) * streakMultiplier);
 
                     addGold(totalGold);
-                    addGlobalXp(totalXp);
+                    useGameStore.getState().addGlobalXp(totalXp);
 
                     // Unlock next floor if this was the current floor
                     if (currentFloor <= highestFloorCleared + 1) { // Logic check
@@ -351,11 +343,15 @@ export const Arena = ({ onClose }: { onClose: () => void }) => {
         }
 
         if (isConquest) {
+            setTimeout(() => {
+                resetBattle();
+            }, 100);
             navigate('/conquest');
-            resetBattle();
         } else {
+            setTimeout(() => {
+                resetBattle();
+            }, 100);
             setView('map');
-            resetBattle();
         }
     };
 
@@ -754,121 +750,45 @@ export const Arena = ({ onClose }: { onClose: () => void }) => {
                                         }}
                                     >
                                         <div className="btn-icon"><Swords /></div>
-                                        <div className="btn-label">Strike</div>
+                                        <div className="btn-label">
+                                            Attack ({Math.round(player.atk * useBattleStore.getState().playerDamageModifier)} dmg)
+                                        </div>
                                     </button>
 
-                                    {/* 2. Defensive Stance */}
-                                    <button
-                                        className="command-btn defend"
-                                        disabled={phase !== 'select_action' || autoAttack}
-                                        onClick={() => {
-                                            if (phase === 'select_action') playerDefend();
-                                        }}
-                                    >
-                                        <div className="btn-icon"><Shield /></div>
-                                        <div className="btn-label">Defend</div>
-                                    </button>
+                                    {/* 2. Cast Spell */}
+                                    {(() => {
+                                        const equippedSpellId = useBattleStore.getState().equippedSpells[0];
+                                        const spell = equippedSpellId ? getOwnedSpells().find(s => s.id === equippedSpellId) : null;
+                                        const expectedDamage = spell && spell.effect.type === 'damage' 
+                                            ? Math.round(spell.effect.value * getMagicAttack() * useBattleStore.getState().playerDamageModifier)
+                                            : null;
+                                        
+                                        const canCast = spell && currentMP >= spell.mpCost;
 
-                                    {/* 3. Spells */}
-                                    {ownedSpells.length > 0 && (
-                                        <div className="spell-button-container">
+                                        return (
                                             <button
-                                                className={`command-btn spells ${showSpellMenu ? 'active' : ''}`}
-                                                disabled={phase !== 'select_action' || autoAttack}
-                                                onClick={() => setShowSpellMenu(!showSpellMenu)}
+                                                className={`command-btn spells ${!spell ? 'disabled-spell' : ''}`}
+                                                disabled={phase !== 'select_action' || autoAttack || !spell || !canCast}
+                                                onClick={() => {
+                                                    if (canCast && phase === 'select_action' && spell) {
+                                                        castSpell(spell.id);
+                                                    }
+                                                }}
                                             >
                                                 <div className="btn-icon"><Sparkles /></div>
-                                                <div className="btn-label">Spells</div>
-                                                <div className="mp-display">{Math.round(currentMP)}/{Math.round(battleMaxMP)} MP</div>
-                                            </button>
-
-                                            {/* Spell Menu */}
-                                            <AnimatePresence>
-                                                {showSpellMenu && (
-                                                    <motion.div
-                                                        className="spell-menu"
-                                                        initial={{ opacity: 0, y: 10, scale: 0.95 }}
-                                                        animate={{ opacity: 1, y: 0, scale: 1 }}
-                                                        exit={{ opacity: 0, y: 10, scale: 0.95 }}
-                                                        transition={{ duration: 0.15 }}
-                                                    >
-                                                        <div className="spell-menu-header">
-                                                            <span>✨ Spells</span>
-                                                            <button className="spell-menu-close" onClick={() => setShowSpellMenu(false)}>
-                                                                <X size={16} />
-                                                            </button>
-                                                        </div>
-                                                        <div className="spell-menu-list">
-                                                            {getOwnedSpells()
-                                                                .filter(spell => equippedSpells.includes(spell.id)) // Only show equipped spells
-                                                                .map((spell) => {
-                                                                    const canCast = currentMP >= spell.mpCost;
-                                                                    return (
-                                                                        <button
-                                                                            key={spell.id}
-                                                                            className={`spell-menu-item ${!canCast ? 'insufficient-mp' : ''}`}
-                                                                            disabled={!canCast || phase !== 'select_action'}
-                                                                            onClick={() => {
-                                                                                if (canCast && phase === 'select_action') {
-                                                                                    castSpell(spell.id);
-                                                                                    setShowSpellMenu(false);
-                                                                                }
-                                                                            }}
-                                                                        >
-                                                                            <span className="spell-icon">{spell.icon}</span>
-                                                                            <span className="spell-name">{spell.name}</span>
-                                                                            <span className="spell-mp-cost">{spell.mpCost} MP</span>
-                                                                        </button>
-                                                                    );
-                                                                })}
-                                                        </div>
-                                                    </motion.div>
+                                                <div className="btn-label">
+                                                    {!spell 
+                                                        ? 'No Spell Equipped' 
+                                                        : `Cast ${spell.name} ${expectedDamage ? `(${expectedDamage} dmg)` : ''}`}
+                                                </div>
+                                                {spell && (
+                                                    <div className="mp-display" style={{ color: canCast ? 'inherit' : '#ef4444' }}>
+                                                        {spell.mpCost} MP
+                                                    </div>
                                                 )}
-                                            </AnimatePresence>
-                                        </div>
-                                    )}
-
-                                    {/* 4. Ultimate */}
-                                    <button
-                                        className="command-btn ultimate"
-                                        disabled={phase !== 'select_action' || player.energy < 100 || autoAttack}
-                                        onClick={() => {
-                                            if (phase === 'select_action' && player.energy >= 100) {
-                                                const ult = player.abilities.find(a => a.type === 'ultimate');
-                                                if (ult) {
-                                                    selectAbility(ult);
-                                                    setTimeout(executePlayerAction, 100);
-                                                }
-                                            }
-                                        }}
-                                    >
-                                        <div className="btn-icon"><Zap /></div>
-                                        <div className="btn-label">ULTIMATE</div>
-                                        <div className="rage-cost">{Math.round(player.energy)}/100 RAGE</div>
-                                    </button>
-
-                                    {/* 4. Pet Ability */}
-                                    {petAbility && (
-                                        <button
-                                            className={`command-btn pet-ability ${petAbilityCooldown === 0 ? 'ready' : ''}`}
-                                            disabled={phase !== 'select_action' || petAbilityCooldown > 0 || autoAttack}
-                                            onClick={() => {
-                                                if (phase === 'select_action' && petAbilityCooldown === 0) {
-                                                    usePetAbility();
-                                                }
-                                            }}
-                                            title={petAbility.description}
-                                        >
-                                            <div className="btn-icon">{petAbility.icon}</div>
-                                            <div className="btn-label">{petAbility.name}</div>
-                                            {petAbilityCooldown > 0 && (
-                                                <div className="cooldown-indicator">{petAbilityCooldown} turns</div>
-                                            )}
-                                            {petAbilityCooldown === 0 && (
-                                                <div className="ready-indicator">READY!</div>
-                                            )}
-                                        </button>
-                                    )}
+                                            </button>
+                                        );
+                                    })()}
                                 </div>
                             )}
                         </div>

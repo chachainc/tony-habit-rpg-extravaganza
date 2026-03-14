@@ -1,13 +1,22 @@
 import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Crown, Coins, Tent, Swords, Gem, MessageSquare, Gamepad2, Skull, Flame, Sparkles, AlertTriangle, Heart } from 'lucide-react';
+import {
+    Crown, Coins, Tent, Swords, Gem, MessageSquare, Gamepad2,
+    Skull, Flame, Sparkles, AlertTriangle, Heart, Package, Scroll, Star
+} from 'lucide-react';
 import { useConquestStore } from '../../store/useConquestStore';
 import { useCurrencyStore } from '../../store/useCurrencyStore';
-import { CONQUEST_MAP_NODES, CONQUEST_EVENT_TABLE, CONQUEST_NODE_PREVIEW, type ConquestNodeData } from '../../data/conquest';
+import {
+    CONQUEST_MAP_NODES, CONQUEST_EVENT_TABLE, CONQUEST_NODE_PREVIEW,
+    CONQUEST_ARTIFACTS, RESOURCE_TILE_REWARDS,
+    getEnemiesForTier,
+    type ConquestNodeData, type ResourceTileData,
+} from '../../data/conquest';
 import { useHeroImage } from '../../hooks/useHeroImage';
 import { ConquestStoreUI } from './ConquestStore';
 import { ChessGame } from './ChessGame';
 import { ConquestTiles } from './ConquestTiles';
+import { MysteryTile } from './MysteryTile';
 import { useStrategyStore } from '../../store/useStrategyStore';
 import { useNavigate } from 'react-router-dom';
 import { useBattleStore } from '../../store/useBattleStore';
@@ -21,17 +30,21 @@ import './Conquest.css';
 import bgMap from '../../assets/backgrounds/infernal_citadel.png';
 
 const NODE_ICONS: Record<string, React.ReactNode> = {
-    start: <Tent size={24} />,
-    battle: <Swords size={24} />,
-    elite: <Swords className="elite-icon" size={28} color="#ef4444" />,
-    treasure: <Gem size={24} />,
-    event: <MessageSquare size={24} />,
-    minigame: <Gamepad2 size={24} />,
-    shop: <Coins size={24} />,
-    campfire: <Flame size={24} color="#f97316" />,
-    shrine: <Sparkles size={24} color="#fbbf24" />,
-    cursed: <AlertTriangle size={24} color="#a855f7" />,
-    boss: <Skull size={32} />
+    start:          <Tent size={24} />,
+    battle:         <Swords size={24} />,
+    elite:          <Swords className="elite-icon" size={28} color="#ef4444" />,
+    treasure:       <Gem size={24} />,
+    event:          <MessageSquare size={24} />,
+    minigame:       <Gamepad2 size={24} />,
+    shop:           <Coins size={24} />,
+    campfire:       <Flame size={24} color="#f97316" />,
+    shrine:         <Sparkles size={24} color="#fbbf24" />,
+    cursed:         <AlertTriangle size={24} color="#a855f7" />,
+    boss:           <Skull size={32} />,
+    mystery:        <Star size={24} color="#a855f7" />,
+    treasure_vault: <Package size={24} color="#eab308" />,
+    artifact:       <Scroll size={24} color="#22c55e" />,
+    resource:       <Crown size={24} color="#60a5fa" />,
 };
 
 export const Conquest = () => {
@@ -45,16 +58,21 @@ export const Conquest = () => {
     const [showStore, setShowStore] = useState(false);
     const [showChess, setShowChess] = useState(false);
     const [showTiles, setShowTiles] = useState(false);
+    const [showMystery, setShowMystery] = useState(false);
     const [activeEvent, setActiveEvent] = useState<string | null>(null);
     const [showCampfire, setShowCampfire] = useState(false);
     const [showShrine, setShowShrine] = useState(false);
     const [showCursed, setShowCursed] = useState(false);
-    const [rewardModal, setRewardModal] = useState<{ gold: number, sigils: number, item?: ItemDef } | null>(null);
-    const [hasBounced, setHasBounced] = useState(false); // To handle initial scroll to bottom
+    const [showArtifact, setShowArtifact] = useState(false);
+    const [activeArtifactIdx, setActiveArtifactIdx] = useState<number>(0);
+    const [showResource, setShowResource] = useState(false);
+    const [activeResourceTile, setActiveResourceTile] = useState<ResourceTileData | null>(null);
+    const [resourceChosen, setResourceChosen] = useState(false);
+    const [rewardModal, setRewardModal] = useState<{ gold: number; sigils: number; item?: ItemDef } | null>(null);
+    const [hasBounced, setHasBounced] = useState(false);
     const [hoveredNode, setHoveredNode] = useState<ConquestNodeData | null>(null);
 
     useEffect(() => {
-        // Start a new run if one isn't active and the daily limit isn't reached
         if (!conquest.currentNodeId && !conquest.isDailyRunLocked()) {
             conquest.startRun();
         } else {
@@ -62,7 +80,6 @@ export const Conquest = () => {
         }
     }, []);
 
-    // Initial scroll to bottom where player starts
     useEffect(() => {
         if (!hasBounced && mapContainerRef.current) {
             setTimeout(() => {
@@ -75,34 +92,34 @@ export const Conquest = () => {
     const reachableNodes = conquest.getReachableNodes();
 
     const handleNodeClick = (node: ConquestNodeData) => {
-        console.log("Clicked node:", node.id, node.label);
-        console.log("Reachable nodes:", reachableNodes);
-
-        if (!reachableNodes.includes(node.id)) {
-            console.error("Early return! Node is not in reachableNodes.");
-            return;
-        }
-
-        console.log("Passed reachable check. Moving player to:", node.id);
-        // Move player
+        if (!reachableNodes.includes(node.id)) return;
         conquest.movePlayer(node.id);
 
-        console.log("Executing node effect:", node.type);
-        // Execute node effect
         switch (node.type) {
             case 'battle':
             case 'elite':
             case 'boss': {
-                const enemies = ['fatigue_wraith', 'chaos_of_clutter', 'sedentary_colossus', 'insomnia_echo', 'stress_phantom'];
-                let randomEnemy = enemies[Math.floor(Math.random() * enemies.length)];
-                
-                if (node.type === 'boss') randomEnemy = 'shadow_titan';
-                useBattleStore.getState().initBattle(randomEnemy, {
-                    context: node.type === 'elite' ? 'conquest_elite' : 'conquest',
+                // Pick enemy based on tier
+                const pool = getEnemiesForTier(node.tier);
+                const randomEnemy = pool.length > 0
+                    ? pool[Math.floor(Math.random() * pool.length)].id
+                    : 'ash_crawler';
+                const enemyId = node.type === 'boss' ? 'the_pathkeeper' : randomEnemy;
+
+                useBattleStore.getState().initBattle(enemyId, {
+                    context: node.type === 'elite' ? 'conquest_elite' : node.type === 'boss' ? 'conquest_boss' : 'conquest',
                     conquestTier: node.tier
                 });
-
-                // Set up local navigation to Conquest Battle (which we will build)
+                navigate('/conquest/battle');
+                break;
+            }
+            case 'treasure_vault': {
+                // High-difficulty combat, then big reward
+                useBattleStore.getState().initBattle('crystal_warden', {
+                    context: 'conquest_vault',
+                    conquestTier: node.tier
+                });
+                conquest.completeTreasureVault();
                 navigate('/conquest/battle');
                 break;
             }
@@ -112,23 +129,36 @@ export const Conquest = () => {
                 const sigils = Math.floor(Math.random() * 2) + 1 + passives.sigil_bonus;
                 conquest.grantSpireReward(gold, sigils);
 
-                // 15% chance for a low-rarity dynamic drop
                 let droppedItem: ItemDef | undefined;
                 if (Math.random() < 0.15) {
                     const pool = getConquestRewardPool();
                     if (pool.length > 0) {
                         droppedItem = pool[Math.floor(Math.random() * pool.length)];
                         useInventoryStore.getState().addItem(droppedItem.id, 1);
-
                         useToastStore.getState().addToast({
                             type: 'success',
-                            message: `New Item Obtained: ${droppedItem.icon} ${droppedItem.name} `,
+                            message: `New Item: ${droppedItem.icon} ${droppedItem.name}`,
                             duration: 4000
                         });
                     }
                 }
-
                 setRewardModal({ gold, sigils, item: droppedItem });
+                break;
+            }
+            case 'mystery':
+                setShowMystery(true);
+                break;
+            case 'resource': {
+                const tile = RESOURCE_TILE_REWARDS[Math.floor(Math.random() * RESOURCE_TILE_REWARDS.length)];
+                setActiveResourceTile(tile);
+                setResourceChosen(false);
+                setShowResource(true);
+                break;
+            }
+            case 'artifact': {
+                const idx = Math.floor(Math.random() * CONQUEST_ARTIFACTS.length);
+                setActiveArtifactIdx(idx);
+                setShowArtifact(true);
                 break;
             }
             case 'event':
@@ -147,29 +177,38 @@ export const Conquest = () => {
                 setShowCursed(true);
                 break;
             case 'minigame':
-                // Randomly open chess or tiles based on game string or logic
-                if (node.label === 'Fae Mischief') {
-                    setShowTiles(true);
-                } else {
-                    setShowChess(true);
-                }
+                if (node.label === 'Fae Mischief') setShowTiles(true);
+                else setShowChess(true);
                 break;
         }
     };
 
-    // Group nodes by tier to render them as rows (bottom to top visually means high tier at top)
+    // Apply resource tile (immediate or chosen)
+    const applyResourceReward = (rewards: { type: string; amount: number }[], goldBonus?: number, healBonus?: number) => {
+        const amp = conquest.rewardAmplifierActive ? 1 : 0;
+        rewards.forEach(r => {
+            const total = r.amount + amp;
+            if (r.type === 'sigil') conquest.addSigils(total);
+            else if (r.type === 'balloon') conquest.addBalloons(total);
+            else if (r.type === 'shmeckle') conquest.addShmeckles(total);
+        });
+        if (goldBonus) currency.addGold(goldBonus);
+        if (healBonus) conquest.healHP(Math.floor(conquest.runMaxHP * (healBonus / 100)));
+        setResourceChosen(true);
+        setTimeout(() => { setShowResource(false); setActiveResourceTile(null); }, 1500);
+    };
+
+    // Group nodes by tier
     const renderMapNodes = () => {
         const tiers: Record<number, ConquestNodeData[]> = {};
         CONQUEST_MAP_NODES.forEach(n => {
             if (!tiers[n.tier]) tiers[n.tier] = [];
             tiers[n.tier].push(n);
         });
-
-        // Sort descending so highest tier (boss) is at top of flex column
         const sortedTiers = Object.keys(tiers).map(Number).sort((a, b) => b - a);
 
         return sortedTiers.map(tier => (
-            <div key={`tier - ${tier} `} className="map-tier-row">
+            <div key={`tier-${tier}`} className="map-tier-row">
                 {tiers[tier].map(node => {
                     const isCurrent = conquest.currentNodeId === node.id;
                     const isCompleted = conquest.completedNodes.includes(node.id) && !isCurrent;
@@ -184,8 +223,8 @@ export const Conquest = () => {
                                 onClick={() => handleNodeClick(node)}
                                 onMouseEnter={() => setHoveredNode(node)}
                                 onMouseLeave={() => setHoveredNode(null)}
-                                disabled={(!isReachable && !isCurrent && !isCompleted) || false}
-                                style={{ pointerEvents: ((!isReachable && !isCurrent && !isCompleted) ? 'none' : 'auto') }}
+                                disabled={!isReachable && !isCurrent && !isCompleted}
+                                style={{ pointerEvents: (!isReachable && !isCurrent && !isCompleted) ? 'none' : 'auto' }}
                             >
                                 <div className="node-icon">{NODE_ICONS[node.type]}</div>
                                 {isCurrent && (
@@ -200,17 +239,16 @@ export const Conquest = () => {
                                 )}
                             </motion.button>
                             <span className="node-label">{node.label}</span>
-                            
-                            {/* Hover Tooltip */}
+
                             <AnimatePresence>
                                 {hoveredNode?.id === node.id && (
-                                    <motion.div 
+                                    <motion.div
                                         className="node-preview-tooltip"
                                         initial={{ opacity: 0, y: 10 }}
                                         animate={{ opacity: 1, y: 0 }}
                                         exit={{ opacity: 0, y: 10 }}
                                     >
-                                        <div className="preview-type">{node.type.toUpperCase()}</div>
+                                        <div className="preview-type">{node.type.replace('_', ' ').toUpperCase()}</div>
                                         <div className="preview-risk">Risk: {CONQUEST_NODE_PREVIEW[node.type].risk}</div>
                                         <div className="preview-reward">{CONQUEST_NODE_PREVIEW[node.type].reward}</div>
                                     </motion.div>
@@ -245,8 +283,18 @@ export const Conquest = () => {
                             {b.type === 'strength' ? '⚔️' : b.type === 'defense' ? '🛡️' : b.type === 'curse' ? '☠️' : '✨'}
                         </div>
                     ))}
+                    {conquest.rewardAmplifierActive && (
+                        <div className="run-buff-chip" title="Reward Amplifier: +1 to all rewards">💫</div>
+                    )}
+                    {conquest.treasureVaultsCompleted > 0 && (
+                        <div className="run-buff-chip" title={`Vaults: ${conquest.treasureVaultsCompleted} — Boss gets stronger!`} style={{ color: '#ef4444' }}>
+                            🏛️×{conquest.treasureVaultsCompleted}
+                        </div>
+                    )}
                     <div className="hud-stat gold"><Coins size={14} /> {currency.gold}</div>
                     <div className="hud-stat sigils"><Crown size={14} /> {conquest.sigils}</div>
+                    {conquest.balloons > 0 && <div className="hud-stat" style={{ color: '#60a5fa' }}>🎈 {conquest.balloons}</div>}
+                    {conquest.shmeckles > 0 && <div className="hud-stat" style={{ color: '#a78bfa' }}>🪙 {conquest.shmeckles}</div>}
                 </div>
             </div>
 
@@ -257,23 +305,25 @@ export const Conquest = () => {
                 </div>
             </div>
 
-            {/* Action Footer */}
+            {/* Footer */}
             <div className="spire-footer">
                 <div className="dice-status" style={{ textAlign: 'center', width: '100%' }}>
                     <span className="active-roll">
                         {hoveredNode && hoveredNode.type === 'boss'
-                            ? '💀 FINAL BOSS — Hardest Battle. Use everything you have.'
+                            ? '💀 FINAL BOSS — The Pathkeeper grows stronger with each vault you claimed.'
                             : hoveredNode
                             ? hoveredNode.description
                             : 'Select your next destination.'}
                     </span>
                     <div style={{ fontSize: '0.7rem', color: '#475569', marginTop: '0.25rem' }}>
-                        ⚠️ HP persists across all battles • Only Campfires restore HP • 1 run per day
+                        ⚠️ HP persists across all battles • Campfires restore HP • 1 run per day
                     </div>
                 </div>
             </div>
 
-            {/* Run Complete Overlay */}
+            {/* ── MODALS ── */}
+
+            {/* Run Complete */}
             <AnimatePresence>
                 {conquest.runComplete !== 'none' && (
                     <motion.div className="modal-overlay" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
@@ -285,10 +335,7 @@ export const Conquest = () => {
                                 <div>Best Floor: {conquest.bestFloor}</div>
                                 <div>Runs Completed: {conquest.runsCompleted}</div>
                             </div>
-                            <button className="continue-btn" onClick={() => {
-                                conquest.resetRun();
-                                navigate('/dashboard');
-                            }}>
+                            <button className="continue-btn" onClick={() => { conquest.resetRun(); navigate('/dashboard'); }}>
                                 Return to Dashboard
                             </button>
                         </div>
@@ -296,15 +343,109 @@ export const Conquest = () => {
                 )}
             </AnimatePresence>
 
-            {/* Daily Lock Overlay */}
+            {/* Daily Lock */}
             <AnimatePresence>
                 {conquest.isDailyRunLocked() && conquest.runComplete === 'none' && (
                     <motion.div className="modal-overlay" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} style={{ zIndex: 100 }}>
                         <div className="run-complete-modal map-modal" style={{ borderColor: '#ef4444' }}>
                             <h2 style={{ color: '#ef4444' }}>Conquest Locked</h2>
                             <p>You have already completed your Conquest run for today. Return tomorrow for another attempt!</p>
-                            <button className="continue-btn" onClick={() => navigate('/dashboard')}>
-                                Return to Dashboard
+                            <button className="continue-btn" onClick={() => navigate('/dashboard')}>Return to Dashboard</button>
+                        </div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
+
+            {/* Mystery Tile */}
+            <AnimatePresence>
+                {showMystery && <MysteryTile onClose={() => setShowMystery(false)} />}
+            </AnimatePresence>
+
+            {/* Resource Tile */}
+            <AnimatePresence>
+                {showResource && activeResourceTile && (
+                    <motion.div className="modal-overlay" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+                        <div className="map-modal" style={{ borderColor: '#60a5fa', maxWidth: 380 }}>
+                            <h2>📦 Resource Reward</h2>
+                            {!resourceChosen ? (
+                                <>
+                                    <p style={{ color: '#94a3b8', marginBottom: '1rem' }}>{activeResourceTile.label}</p>
+
+                                    {/* Heal/Gold choice node */}
+                                    {activeResourceTile.healChoice && (
+                                        <div className="event-options">
+                                            <button onClick={() => applyResourceReward([], 0, activeResourceTile.healChoice)}>
+                                                ❤️ Heal {activeResourceTile.healChoice}% Max HP
+                                            </button>
+                                            <button onClick={() => applyResourceReward([], activeResourceTile.goldChoice)}>
+                                                🪙 +{activeResourceTile.goldChoice} Gold
+                                            </button>
+                                        </div>
+                                    )}
+
+                                    {/* Choice: pick one resource */}
+                                    {activeResourceTile.isChoice && !activeResourceTile.healChoice && (
+                                        <div className="event-options">
+                                            {activeResourceTile.rewards.map((r, i) => (
+                                                <button key={i} onClick={() => applyResourceReward([r])}>
+                                                    {r.type === 'sigil' ? '🔱' : r.type === 'balloon' ? '🎈' : '🪙'} +{r.amount} {r.type.charAt(0).toUpperCase() + r.type.slice(1)}s
+                                                </button>
+                                            ))}
+                                            {activeResourceTile.goldChoice && (
+                                                <button onClick={() => applyResourceReward([], activeResourceTile.goldChoice)}>
+                                                    🪙 +{activeResourceTile.goldChoice} Gold
+                                                </button>
+                                            )}
+                                        </div>
+                                    )}
+
+                                    {/* Instant reward: show all then confirm */}
+                                    {!activeResourceTile.isChoice && (
+                                        <>
+                                            <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', marginBottom: '1rem' }}>
+                                                {activeResourceTile.rewards.map((r, i) => (
+                                                    <span key={i} style={{ background: '#1e3a5f', border: '1px solid #3b82f6', borderRadius: 8, padding: '0.3rem 0.7rem', fontSize: '0.85rem', color: '#93c5fd' }}>
+                                                        {r.type === 'sigil' ? '🔱' : r.type === 'balloon' ? '🎈' : '🪙'} +{r.amount}
+                                                    </span>
+                                                ))}
+                                                {conquest.rewardAmplifierActive && (
+                                                    <span style={{ color: '#a78bfa', fontSize: '0.75rem', alignSelf: 'center' }}>💫 +1 each (Amplifier)</span>
+                                                )}
+                                            </div>
+                                            <button className="continue-btn" onClick={() => applyResourceReward(activeResourceTile.rewards)}>
+                                                Collect
+                                            </button>
+                                        </>
+                                    )}
+                                </>
+                            ) : (
+                                <p style={{ color: '#22c55e', textAlign: 'center', fontSize: '1.1rem', fontWeight: 700 }}>✓ Collected!</p>
+                            )}
+                        </div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
+
+            {/* Artifact Tile */}
+            <AnimatePresence>
+                {showArtifact && (
+                    <motion.div className="modal-overlay" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+                        <div className="map-modal" style={{ borderColor: '#22c55e', textAlign: 'center' }}>
+                            <h2>📜 Ancient Artifact</h2>
+                            <div style={{ fontSize: '3rem', margin: '0.75rem 0' }}>{CONQUEST_ARTIFACTS[activeArtifactIdx].icon}</div>
+                            <h3 style={{ color: '#22c55e', margin: '0 0 0.5rem' }}>{CONQUEST_ARTIFACTS[activeArtifactIdx].name}</h3>
+                            <p style={{ color: '#94a3b8', marginBottom: '1.5rem' }}>{CONQUEST_ARTIFACTS[activeArtifactIdx].description}</p>
+                            <button className="continue-btn" onClick={() => {
+                                conquest.addRunArtifact(CONQUEST_ARTIFACTS[activeArtifactIdx].id);
+                                conquest.addRunBuff({
+                                    id: `artifact_${Date.now()}`,
+                                    type: 'wealth',
+                                    label: `${CONQUEST_ARTIFACTS[activeArtifactIdx].name}: ${CONQUEST_ARTIFACTS[activeArtifactIdx].description}`,
+                                    amount: 0,
+                                });
+                                setShowArtifact(false);
+                            }}>
+                                <Scroll size={14} style={{ display: 'inline', marginRight: 4 }} /> Claim Artifact
                             </button>
                         </div>
                     </motion.div>
@@ -340,22 +481,25 @@ export const Conquest = () => {
                 )}
             </AnimatePresence>
 
-            {/* Campfire Modal */}
+            {/* Campfire Modal (updated: 30% heal or +5% ATK) */}
             <AnimatePresence>
                 {showCampfire && (
                     <motion.div className="modal-overlay" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
                         <div className="campfire-modal map-modal">
-                            <h2>Campfire</h2>
+                            <h2>🔥 Campfire</h2>
                             <p>A warm fire flickers, offering a brief respite.</p>
                             <div className="event-options">
-                                <button onClick={() => { conquest.healHP(conquest.runMaxHP / 2); setShowCampfire(false); }}>
-                                    <Heart size={16} /> Rest (Restore up to 50% HP)
-                                </button>
-                                <button onClick={() => { 
-                                    conquest.addRunBuff({ id: `buff_${Date.now()}`, type: 'strength', label: 'Sharpened: +10% ATK', amount: 10 });
-                                    setShowCampfire(false); 
+                                <button onClick={() => {
+                                    conquest.healHP(Math.floor(conquest.runMaxHP * 0.30));
+                                    setShowCampfire(false);
                                 }}>
-                                    <Swords size={16} /> Sharpen (+10% ATK Buff)
+                                    <Heart size={16} /> Rest (Restore 30% HP)
+                                </button>
+                                <button onClick={() => {
+                                    conquest.addRunBuff({ id: `buff_${Date.now()}`, type: 'strength', label: 'Focused: +5% ATK', amount: 5 });
+                                    setShowCampfire(false);
+                                }}>
+                                    <Swords size={16} /> Focus (+5% ATK Buff)
                                 </button>
                             </div>
                         </div>
@@ -363,19 +507,23 @@ export const Conquest = () => {
                 )}
             </AnimatePresence>
 
-            {/* Shrine Modal */}
+            {/* Shrine Modal (updated: random single blessing) */}
             <AnimatePresence>
                 {showShrine && (
                     <motion.div className="modal-overlay" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
                         <div className="shrine-modal map-modal">
-                            <h2>Sacred Shrine</h2>
+                            <h2>✨ Blessing Shrine</h2>
                             <p>You touch the cold stone and feel a blessing wash over you.</p>
                             <div className="event-options">
-                                <button onClick={() => { 
-                                    // Modified to grant 15% player power
-                                    conquest.addRunBuff({ id: `buff_${Date.now()}`, type: 'strength', label: 'Shrine Blessing: +15% Power', amount: 15 });
-                                    conquest.addRunBuff({ id: `buff_${Date.now()}_def`, type: 'defense', label: 'Shrine Blessing: +15% Block', amount: 15 });
-                                    setShowShrine(false); 
+                                <button onClick={() => {
+                                    const blessings: Array<{ type: 'strength' | 'defense'; label: string; amount: number }> = [
+                                        { type: 'strength', label: 'Shrine Blessing: +10% ATK',    amount: 10 },
+                                        { type: 'defense',  label: 'Shrine Blessing: +10% DEF',    amount: 10 },
+                                        { type: 'defense',  label: 'Shrine Blessing: +10% Max HP', amount: 10 },
+                                    ];
+                                    const pick = blessings[Math.floor(Math.random() * blessings.length)];
+                                    conquest.addRunBuff({ id: `shrine_${Date.now()}`, ...pick });
+                                    setShowShrine(false);
                                 }}>
                                     Accept Blessing
                                 </button>
@@ -393,16 +541,14 @@ export const Conquest = () => {
                             <h2 style={{ color: '#a855f7' }}>Dark Altar</h2>
                             <p>Great power awaits... if you are willing to pay the price.</p>
                             <div className="event-options">
-                                <button onClick={() => { 
+                                <button onClick={() => {
                                     conquest.takeDamage(20);
                                     conquest.grantSpireReward(100, 20);
-                                    setShowCursed(false); 
+                                    setShowCursed(false);
                                 }}>
                                     Sacrifice Blood (-20 HP, +100 Gold, +20 Sigils)
                                 </button>
-                                <button onClick={() => setShowCursed(false)}>
-                                    Leave it be
-                                </button>
+                                <button onClick={() => setShowCursed(false)}>Leave it be</button>
                             </div>
                         </div>
                     </motion.div>
@@ -433,37 +579,34 @@ export const Conquest = () => {
             {/* Minigames / Shops */}
             <AnimatePresence>
                 {showChess && <ChessGame
-                onComplete={(result, diff) => {
-                    if (result === 'win') {
-                        // Chess gold: Easy=5, Medium=15, Hard=30
-                        const chessGold = diff === 3 ? 30 : diff === 2 ? 15 : 5;
-                        currency.addGold(chessGold);
-                    }
-                    setShowChess(false);
-                }}
-                onClose={() => setShowChess(false)}
-                canPlay={strategy.canPlayChessToday()}
-            />}
+                    onComplete={(result, diff) => {
+                        if (result === 'win') {
+                            const chessGold = diff === 3 ? 30 : diff === 2 ? 15 : 5;
+                            currency.addGold(chessGold);
+                        }
+                        setShowChess(false);
+                    }}
+                    onClose={() => setShowChess(false)}
+                    canPlay={strategy.canPlayChessToday()}
+                />}
             </AnimatePresence>
             <AnimatePresence>
                 {showStore && <ConquestStoreUI onClose={() => setShowStore(false)} />}
             </AnimatePresence>
             <AnimatePresence>
                 {showTiles && <ConquestTiles
-                onComplete={(result, diff) => {
-                    if (result === 'win') {
-                        // Tiles gold: D1=5, D2=15, D3=30, D4(Impossible)=50
-                        const tilesGold: Record<number, number> = { 1: 5, 2: 15, 3: 30, 4: 50 };
-                        currency.addGold(tilesGold[diff] ?? 5);
-                    }
-                    setShowTiles(false);
-                }}
-                onClose={() => setShowTiles(false)}
-                canPlay={strategy.canPlayTilesToday()}
-                canPlayImpossible={strategy.canPlayImpossible()}
-            />}
+                    onComplete={(result, diff) => {
+                        if (result === 'win') {
+                            const tilesGold: Record<number, number> = { 1: 5, 2: 15, 3: 30, 4: 50 };
+                            currency.addGold(tilesGold[diff] ?? 5);
+                        }
+                        setShowTiles(false);
+                    }}
+                    onClose={() => setShowTiles(false)}
+                    canPlay={strategy.canPlayTilesToday()}
+                    canPlayImpossible={strategy.canPlayImpossible()}
+                />}
             </AnimatePresence>
-
         </div>
     );
 };

@@ -113,6 +113,7 @@
 .ls-book    { position: absolute; right: 1rem; top: 1rem; }
 .ls-relic   { position: absolute; right: 1rem; bottom: 1rem; }
 .ls-artifact{ position: absolute; left: 1rem; top: 1rem; }
+.ls-spell   { position: absolute; right: 1rem; top: calc(1rem + 60px); }
 
 /* The Slot Box */
 .loadout-slot {

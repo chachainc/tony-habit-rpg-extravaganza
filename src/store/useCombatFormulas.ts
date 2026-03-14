@@ -32,10 +32,9 @@ export const SKILL_COMBAT_ROLES: Record<SkillName, SkillCombatRole> = {
     'Intelligence': { skill: 'Intelligence', primaryStat: 'MATK', description: 'Magic ATK, XP multiplier', icon: '🧠' },
     'Flexibility': { skill: 'Flexibility', primaryStat: 'SPD', description: 'Dodge chance, speed, DEF contributor', icon: '🤸' },
     'Hygiene': { skill: 'Hygiene', primaryStat: 'DEF', description: 'Resistance, DEF contributor', icon: '🧼' },
-    'Habit Building': { skill: 'Habit Building', primaryStat: 'DEF', description: 'DEF contributor, streak bonus', icon: '🔥' },
+    'Habit': { skill: 'Habit', primaryStat: 'DEF', description: 'DEF contributor, streak bonus', icon: '🔥' },
     'Luck': { skill: 'Luck', primaryStat: 'CRIT', description: 'Crit chance scaling', icon: '🍀' },
-    'Clothing': { skill: 'Clothing', primaryStat: 'MISC', description: 'Social stat', icon: '👔' },
-    'Housemaid': { skill: 'Housemaid', primaryStat: 'MP', description: 'Mana pool scaling', icon: '🧹' },
+    'Sleep': { skill: 'Sleep', primaryStat: 'MP', description: 'Mana pool scaling, Defense contributor, HP regen', icon: '😴' },
     'Work': { skill: 'Work', primaryStat: 'GOLD', description: 'Currency generation', icon: '💼' },
     'Health': { skill: 'Health', primaryStat: 'HP', description: 'Survivability', icon: '❤️' },
     'Social': { skill: 'Social', primaryStat: 'MISC', description: 'Social stat', icon: '🤝' },
@@ -164,7 +163,7 @@ export function getDetailedCombatBreakdown(): CombatBreakdown {
     const synergy = getSkillSynergyBonus();
 
     // ── ATK ──────────────────────────────
-    const strengthLevel = skills['Strength'].level;
+    const strengthLevel = skills['Strength']?.level ?? 1;
     const baseAtk = Math.floor(strengthLevel * 1.5) + 5;
     const equipAtk = passives.attack_bonus;
     const trophyAtk = skillTrophyStore.getStrengthATKBonus();
@@ -210,11 +209,11 @@ export function getDetailedCombatBreakdown(): CombatBreakdown {
     }
 
     // ── DEF ──────────────────────────────
-    const sleepLevel = skills['Sleep'].level;
-    const hygieneLevel = skills['Hygiene'].level;
-    const cardioLevel = skills['Cardio'].level;
-    const flexLevel = skills['Flexibility'].level;
-    const habitLevel = skills['Habit Building'].level;
+    const sleepLevel = skills['Sleep']?.level ?? 1;
+    const hygieneLevel = skills['Hygiene']?.level ?? 1;
+    const cardioLevel = skills['Cardio']?.level ?? 1;
+    const flexLevel = skills['Flexibility']?.level ?? 1;
+    const habitLevel = skills['Habit']?.level ?? 1;
     const avgDefenseSkills = (sleepLevel + hygieneLevel + cardioLevel + flexLevel + habitLevel) / 5;
     let baseDef = Math.floor(avgDefenseSkills * 1.2) + 3;
 
@@ -261,7 +260,7 @@ export function getDetailedCombatBreakdown(): CombatBreakdown {
     }
 
     // ── MATK ─────────────────────────────
-    const intLevel = skills['Intelligence'].level;
+    const intLevel = skills['Intelligence']?.level ?? 1;
     const baseMatk = Math.floor(5 + intLevel * 2);
     const bookTrophyBonus = bookTrophyStore.getIntelligenceBonus();
     const matkSources: StatSource[] = [
@@ -318,11 +317,11 @@ export function getDetailedCombatBreakdown(): CombatBreakdown {
     }
 
     // ── MP ───────────────────────────────
-    const housemaidLevel = skills['Housemaid'].level;
-    const baseMp = Math.round(50 + housemaidLevel * 5);
+    const sleepManaLevel = skills['Sleep']?.level ?? 1;
+    const baseMp = Math.round(50 + sleepManaLevel * 10);
     const bookMpBonus = bookTrophyStore.getMaxMPBonus();
     const mpSources: StatSource[] = [
-        { label: `Housemaid Lv.${housemaidLevel}`, value: baseMp },
+        { label: `Sleep Lv.${sleepManaLevel}`, value: baseMp },
         { label: 'Book Trophies', value: bookMpBonus },
     ];
 

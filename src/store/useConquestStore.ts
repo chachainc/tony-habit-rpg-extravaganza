@@ -75,7 +75,17 @@ export interface ConquestState {
     runBuffs: RunBuff[];
     runComplete: 'none' | 'victory' | 'defeat';
     lastRunDate: string | null;
-    
+
+    // NEW — run resources
+    balloons: number;
+    shmeckles: number;
+
+    // NEW — run progression tracking
+    treasureVaultsCompleted: number;
+    runArtifacts: string[];   // artifact IDs active this run
+    runRelics: string[];      // relic IDs purchased this run
+    rewardAmplifierActive: boolean;
+
     // Meta Progression
     runsCompleted: number;
     bestFloor: number;
@@ -88,6 +98,15 @@ export interface ConquestState {
     addRunBuff: (buff: RunBuff) => void;
     completeRun: (victory: boolean) => void;
     resetRun: () => void;
+
+    // NEW run resource actions
+    addBalloons: (n: number) => void;
+    addShmeckles: (n: number) => void;
+    completeTreasureVault: () => void;
+    addRunArtifact: (id: string) => void;
+    addRunRelic: (id: string) => void;
+    activateRewardAmplifier: () => void;
+    getVaultScaledBossMultiplier: () => number;
 
     // Memory Log
     memoryLog: MemoryLog;
@@ -247,6 +266,16 @@ export const useConquestStore = create<ConquestState>()(
             runComplete: 'none',
             lastRunDate: null,
 
+            // NEW — run resources
+            balloons: 0,
+            shmeckles: 0,
+
+            // NEW — run progression
+            treasureVaultsCompleted: 0,
+            runArtifacts: [],
+            runRelics: [],
+            rewardAmplifierActive: false,
+
             // Meta
             runsCompleted: 0,
             bestFloor: 0,
@@ -357,7 +386,14 @@ export const useConquestStore = create<ConquestState>()(
                     runComplete: 'none',
                     currentNodeId: 'start',
                     completedNodes: ['start'],
-                    activeDiceRoll: null
+                    activeDiceRoll: null,
+                    // Reset new run fields
+                    balloons: 0,
+                    shmeckles: 0,
+                    treasureVaultsCompleted: 0,
+                    runArtifacts: [],
+                    runRelics: [],
+                    rewardAmplifierActive: false,
                 });
             },
 
@@ -383,6 +419,23 @@ export const useConquestStore = create<ConquestState>()(
             addRunBuff: (buff: RunBuff) => {
                 const state = get();
                 set({ runBuffs: [...state.runBuffs, buff] });
+            },
+
+            // ─── NEW RUN ACTIONS ───
+            addBalloons: (n: number) => set(s => ({ balloons: s.balloons + n })),
+            addShmeckles: (n: number) => set(s => ({ shmeckles: s.shmeckles + n })),
+
+            completeTreasureVault: () => set(s => ({ treasureVaultsCompleted: s.treasureVaultsCompleted + 1 })),
+
+            addRunArtifact: (id: string) => set(s => ({ runArtifacts: [...s.runArtifacts, id] })),
+
+            addRunRelic: (id: string) => set(s => ({ runRelics: [...s.runRelics, id] })),
+
+            activateRewardAmplifier: () => set({ rewardAmplifierActive: true }),
+
+            getVaultScaledBossMultiplier: () => {
+                const vaults = get().treasureVaultsCompleted;
+                return 1 + vaults * 0.10; // +10% ATK & HP per vault
             },
 
             completeRun: (victory: boolean) => {

@@ -45,9 +45,10 @@ export const EquipmentPanel = () => {
         setActiveModalSlot(null);
     };
 
-    const getAvailableItemsForSlot = (slot: EquipmentSlot): DisplayItem[] => {
+    const getAvailableItemsForSlot = (slot: EquipmentSlot): (DisplayItem & { isLocked?: boolean })[] => {
         if (slot === 'pet') {
-            return gacha.ownedPets.map(id => ({
+            const allPets = Object.keys(PET_DB);
+            return allPets.map(id => ({
                 id,
                 name: PET_DB[id]?.name || 'Unknown Pet',
                 icon: PET_DB[id]?.icon || '🐾',
@@ -55,7 +56,8 @@ export const EquipmentPanel = () => {
                 effectText: `Passive: ${PET_DB[id]?.passiveBonus?.type || 'none'}`,
                 description: PET_DB[id]?.description,
                 itemDef: null,
-            }));
+                isLocked: !gacha.ownedPets.includes(id),
+            })).sort((a, b) => Number(a.isLocked) - Number(b.isLocked)); // Unlocked first
         }
 
         // Match items in inventory to the slot's accepted ItemType
@@ -70,23 +72,26 @@ export const EquipmentPanel = () => {
         };
         const requiredType = slotTypeMap[slot];
 
-        return Object.entries(inventory.items)
-            .filter(([id, quantity]) => quantity > 0 && ITEM_DB[id] && ITEM_DB[id].type === requiredType)
-            .map(([id]) => {
-                const item = ITEM_DB[id];
-                const effectText = item.statBonuses
-                    ? formatStatBonuses(item.statBonuses)
-                    : (item.effect || (item.value ? `+${item.value} Base Stat` : 'No combat effect'));
-                return {
-                    id,
-                    name: item.name,
-                    icon: item.icon,
-                    rarity: item.rarity,
-                    effectText,
-                    description: item.description,
-                    itemDef: item,
-                };
-            });
+        // Ensure we show ALL items of this type from the DB, and track locking
+        const allItemsOfType = Object.keys(ITEM_DB).filter(id => ITEM_DB[id].type === requiredType);
+
+        return allItemsOfType.map(id => {
+            const item = ITEM_DB[id];
+            const quantity = inventory.items[id] || 0;
+            const effectText = item.statBonuses
+                ? formatStatBonuses(item.statBonuses)
+                : (item.effect || (item.value ? `+${item.value} Base Stat` : 'No combat effect'));
+            return {
+                id,
+                name: item.name,
+                icon: item.icon,
+                rarity: item.rarity,
+                effectText,
+                description: item.description,
+                itemDef: item,
+                isLocked: quantity <= 0,
+            };
+        }).sort((a, b) => Number(a.isLocked) - Number(b.isLocked)); // Unlocked first
     };
 
     const getEquippedDisplayItem = (slot: EquipmentSlot): DisplayItem | null => {
@@ -215,20 +220,24 @@ export const EquipmentPanel = () => {
 
                             {getAvailableItemsForSlot(activeModalSlot).map(item => {
                                 const isEquipped = inventory.equipped[activeModalSlot] === item.id;
+                                const isLocked = item.isLocked;
                                 return (
                                     <button
                                         key={item.id}
-                                        className={`item-row rarity-${item.rarity} ${isEquipped ? 'equipped' : ''}`}
-                                        onClick={() => handleEquip(item.id, activeModalSlot)}
+                                        className={`item-row rarity-${item.rarity} ${isEquipped ? 'equipped' : ''} ${isLocked ? 'locked' : ''}`}
+                                        onClick={() => !isLocked && handleEquip(item.id, activeModalSlot)}
+                                        disabled={isLocked}
+                                        style={{ opacity: isLocked ? 0.5 : 1, filter: isLocked ? 'grayscale(100%)' : 'none', cursor: isLocked ? 'not-allowed' : 'pointer' }}
                                     >
                                         <div className="item-icon-wrapper">{item.icon}</div>
                                         <div className="item-info">
                                             <div className="item-header-row">
                                                 <span className="item-name">{item.name}</span>
                                                 {isEquipped && <span className="equipped-badge">Equipped</span>}
+                                                {isLocked && <span className="locked-badge" style={{ fontSize: '0.7rem', padding: '0.1rem 0.3rem', background: '#334155', color: '#94a3b8', borderRadius: '4px', marginLeft: 'auto' }}>🔒 Locked</span>}
                                             </div>
                                             <span className="item-effect">{item.effectText}</span>
-                                            {!isEquipped && renderStatDelta(item.itemDef ?? null, activeModalSlot)}
+                                            {!isEquipped && !isLocked && renderStatDelta(item.itemDef ?? null, activeModalSlot)}
                                             {item.description && <span className="item-desc">{item.description}</span>}
                                         </div>
                                     </button>

@@ -1,5 +1,6 @@
 import { useState, useCallback, useEffect } from 'react';
 import { motion } from 'framer-motion';
+import './ChessGame.css';
 
 // ─── TYPES ────────────────────────────────────
 

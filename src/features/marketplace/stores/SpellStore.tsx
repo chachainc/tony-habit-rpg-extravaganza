@@ -1,4 +1,5 @@
-import { motion } from 'framer-motion';
+import { useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { Sparkles, Check, Coins } from 'lucide-react';
 import { StoreLayout } from './StoreLayout';
 import { useMagicStore, SPELL_DB, type Spell } from '../../../store/useMagicStore';
@@ -79,17 +80,21 @@ const SpellCard = ({ spell, isOwned, canAfford, onBuy }: {
 };
 
 export const SpellStore = ({ onClose }: Props) => {
-    const { buySpell, hasSpell, canAffordSpell } = useMagicStore();
+    const { buySpell, hasSpell, canAffordSpell, equipSpell } = useMagicStore();
     const { gold } = useCurrencyStore();
     const { skills, getMagicAttack, getMaxMP } = useGameStore();
+    
+    const [showEquipPrompt, setShowEquipPrompt] = useState<string | null>(null);
 
     const allSpells = Object.values(SPELL_DB);
     const ownedCount = allSpells.filter(s => hasSpell(s.id)).length;
 
     const handleBuySpell = (spellId: string) => {
-        const success = buySpell(spellId);
-        if (success) {
-            // Could add a celebration effect here
+        // buySpell doesn't return success status in useMagicStore, so check gold manually
+        const spell = SPELL_DB[spellId];
+        if (spell && gold >= spell.goldCost && !hasSpell(spellId)) {
+            buySpell(spellId);
+            setShowEquipPrompt(spellId);
         }
     };
 
@@ -154,11 +159,52 @@ export const SpellStore = ({ onClose }: Props) => {
                 <h4>📖 How Spells Work</h4>
                 <ul>
                     <li><strong>Purchase:</strong> Buy spells with gold (one-time cost)</li>
-                    <li><strong>Cast in Battle:</strong> Use the "Spells" button in Arena</li>
+                    <li><strong>Equip:</strong> Equip your spell in the Character Loadout panel</li>
+                    <li><strong>Cast in Battle:</strong> Use the Cast Spell button in Arena / Conquest</li>
                     <li><strong>MP Cost:</strong> Each spell costs MP to cast</li>
                     <li><strong>Intelligence:</strong> Level up by reading books to increase Magic ATK and Max MP</li>
                 </ul>
             </div>
+
+            {/* Equip Prompt Modal */}
+            <AnimatePresence>
+                {showEquipPrompt && (
+                    <motion.div 
+                        className="equip-prompt-overlay"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                    >
+                        <motion.div 
+                            className="equip-prompt-card"
+                            initial={{ scale: 0.9, y: 20 }}
+                            animate={{ scale: 1, y: 0 }}
+                            exit={{ scale: 0.9, y: 20 }}
+                        >
+                            <div className="equip-prompt-icon">🪄</div>
+                            <h3>Spell Acquired!</h3>
+                            <p>Do you want to equip <strong>{SPELL_DB[showEquipPrompt]?.name}</strong> now?</p>
+                            <div className="equip-prompt-actions">
+                                <button 
+                                    className="btn-no" 
+                                    onClick={() => setShowEquipPrompt(null)}
+                                >
+                                    No Thanks
+                                </button>
+                                <button 
+                                    className="btn-yes" 
+                                    onClick={() => {
+                                        equipSpell(showEquipPrompt);
+                                        setShowEquipPrompt(null);
+                                    }}
+                                >
+                                    Equip Spell
+                                </button>
+                            </div>
+                        </motion.div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
         </StoreLayout>
     );
 };

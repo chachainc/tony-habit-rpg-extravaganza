@@ -3,14 +3,12 @@ import { persist } from 'zustand/middleware';
 import { useGameStore } from './useGameStore';
 import { PERSIST_REGISTRY } from '../data/persistRegistry';
 
-export type BookType = 'fantasy' | 'business' | 'self-improvement' | 'history' | 'philosophy';
+export type BookType = 'fantasy' | 'self-improvement' | 'business';
 
 export const BOOK_TYPES = [
-    { id: 'fantasy', label: 'Fantasy', icon: '📘', color: '#60a5fa', bonusStat: 'Intelligence' },
-    { id: 'business', label: 'Business', icon: '📓', color: '#9ca3af', bonusStat: 'Intelligence & Strategy' },
-    { id: 'self-improvement', label: 'Self-Improvement', icon: '📒', color: '#fcd34d', bonusStat: 'Intelligence' },
-    { id: 'history', label: 'History', icon: '📖', color: '#b45309', bonusStat: 'Intelligence' },
-    { id: 'philosophy', label: 'Philosophy', icon: '📚', color: '#a78bfa', bonusStat: 'Intelligence' }
+    { id: 'fantasy',          label: 'Fantasy',          icon: '📘', color: '#a855f7', tomeId: 'fantasy_tome_1',    tomeName: 'Fantasy Tome I' },
+    { id: 'self-improvement', label: 'Self Improvement',  icon: '📒', color: '#eab308', tomeId: 'discipline_tome_1', tomeName: 'Discipline Tome I' },
+    { id: 'business',        label: 'Business',          icon: '📓', color: '#22c55e', tomeId: 'commerce_tome_1',   tomeName: 'Commerce Tome I' },
 ] as const;
 
 export const BOOK_TYPE_MAP = Object.fromEntries(BOOK_TYPES.map(t => [t.id, t])) as Record<string, typeof BOOK_TYPES[number]>;
@@ -19,8 +17,8 @@ export interface Book {
     id: string;
     title: string;
     author: string;
-    bookType: BookType;        // ← NEW: required category
-    format: 'physical' | 'audiobook'; 
+    bookType: BookType;
+    format: 'physical' | 'audiobook';
     startedAt: string;
     completedAt: string | null;
     isComplete: boolean;
@@ -28,15 +26,26 @@ export interface Book {
     notes?: string;
 }
 
+export interface BookReward {
+    title: string;
+    category: BookType;
+    format: 'physical' | 'audiobook';
+    xpRewards: { skill: string; amount: number }[];
+    tomeId: string;
+    tomeName: string;
+}
+
 interface BookState {
     currentBooks: Book[];
     completedBooks: Book[];
+    pendingBookReward: BookReward | null;
 
     // Actions
     addBook: (title: string, author: string, bookType: BookType, format: 'physical' | 'audiobook', pagesRead?: number, notes?: string) => void;
     completeBook: (bookId: string) => void;
     logCompletedBook: (title: string, author: string, bookType: BookType, format: 'physical' | 'audiobook', pagesRead?: number, notes?: string) => void;
     removeBook: (bookId: string) => void;
+    clearPendingBookReward: () => void;
     getCompletedCount: () => number;
     getInProgressCount: () => number;
 }
@@ -44,11 +53,49 @@ interface BookState {
 const BOOK_GLOBAL_XP_REWARD = 10;
 const BOOK_INTELLIGENCE_XP_REWARD = 100;
 
+/** Returns XP rewards and tomeId for a given category + format */
+function getBookRewards(bookType: BookType, format: 'physical' | 'audiobook') {
+    const xpRewards: { skill: string; amount: number }[] = [];
+    let tomeId = 'fantasy_tome_1';
+    let tomeName = 'Fantasy Tome I';
+
+    if (bookType === 'fantasy') {
+        tomeId = 'fantasy_tome_1'; tomeName = 'Fantasy Tome I';
+        if (format === 'audiobook') {
+            xpRewards.push({ skill: 'Intelligence', amount: 15 });
+        } else {
+            xpRewards.push({ skill: 'Intelligence', amount: 25 });
+            xpRewards.push({ skill: 'Habit', amount: 5 });
+        }
+    } else if (bookType === 'self-improvement') {
+        tomeId = 'discipline_tome_1'; tomeName = 'Discipline Tome I';
+        if (format === 'audiobook') {
+            xpRewards.push({ skill: 'Habit', amount: 15 });
+        } else {
+            xpRewards.push({ skill: 'Habit', amount: 25 });
+            // NOTE: no extra +5 Habit since reward IS Habit
+        }
+    } else if (bookType === 'business') {
+        tomeId = 'commerce_tome_1'; tomeName = 'Commerce Tome I';
+        if (format === 'audiobook') {
+            xpRewards.push({ skill: 'Work', amount: 15 });
+        } else {
+            xpRewards.push({ skill: 'Work', amount: 25 });
+            xpRewards.push({ skill: 'Habit', amount: 5 });
+        }
+    }
+
+    return { xpRewards, tomeId, tomeName };
+}
+
 export const useBookStore = create<BookState>()(
     persist(
         (set, get) => ({
             currentBooks: [],
             completedBooks: [],
+            pendingBookReward: null,
+
+            clearPendingBookReward: () => set({ pendingBookReward: null }),
 
             addBook: (title, author, bookType, format, pagesRead, notes) => {
                 const now = new Date().toISOString();
@@ -78,55 +125,36 @@ export const useBookStore = create<BookState>()(
                     isComplete: true,
                 };
 
-                // Award XP
-                let intXp = book.format === 'audiobook' ? 25 : 50;
+                const { xpRewards, tomeId, tomeName } = getBookRewards(book.bookType, book.format);
 
+                // Award XP — all book XP is cap-exempt
                 const gameStore = useGameStore.getState();
                 gameStore.addGlobalXp(BOOK_GLOBAL_XP_REWARD);
-                gameStore.addSkillXp('Intelligence', intXp);
-
-                if (book.bookType === 'business') {
-                    import('./useStrategyStore').then(({ useStrategyStore }) => {
-                        useStrategyStore.getState().addStrategyXp(5);
-                    }).catch(() => { });
+                for (const { skill, amount } of xpRewards) {
+                    gameStore.addSkillXp(skill as any, amount, { capExempt: true });
                 }
 
-                // Award book item
-                import('./useInventoryStore').then(({ useInventoryStore, ITEM_DB }) => {
-                    const itemId = `${book.bookType}_book_1`;
-                    const inventoryStore = useInventoryStore.getState();
-                    inventoryStore.addItem(itemId, 1);
+                // Award tome item
+                import('./useInventoryStore').then(({ useInventoryStore }) => {
+                    useInventoryStore.getState().addItem(tomeId, 1);
+                }).catch(() => {});
 
-                    import('../components/ui/Toast').then(({ useToastStore }) => {
-                        const itemDef = ITEM_DB[itemId];
-                        const name = itemDef ? itemDef.name : 'Unknown Tome';
-
-                        useToastStore.getState().addToast({
-                            type: 'success',
-                            message: `New Item Earned: ${name}`,
-                            duration: 4000
-                        });
-
-                        setTimeout(() => {
-                            const updatedInventory = useInventoryStore.getState();
-                            const currentCount = updatedInventory.items[itemId] || 0;
-                            if (currentCount >= 3) {
-                                const nextDef = ITEM_DB[`${book.bookType}_book_2`];
-                                if (nextDef) {
-                                    useToastStore.getState().addToast({
-                                        type: 'info',
-                                        message: `You now have enough copies to fuse into ${nextDef.name}.`,
-                                        duration: 5000
-                                    });
-                                }
-                            }
-                        }, 500);
-                    }).catch(() => { });
-                }).catch(() => { });
+                // Increment book trophy count
+                import('./useBookTrophyStore').then(({ useBookTrophyStore }) => {
+                    useBookTrophyStore.getState().incrementBooksRead();
+                }).catch(() => {});
 
                 set({
                     currentBooks: currentBooks.filter(b => b.id !== bookId),
                     completedBooks: [...completedBooks, completedBook],
+                    pendingBookReward: {
+                        title: book.title,
+                        category: book.bookType,
+                        format: book.format,
+                        xpRewards,
+                        tomeId,
+                        tomeName,
+                    },
                 });
             },
 
@@ -145,52 +173,36 @@ export const useBookStore = create<BookState>()(
                     notes,
                 };
 
-                let intXp = format === 'audiobook' ? 25 : 50;
+                const { xpRewards, tomeId, tomeName } = getBookRewards(bookType, format);
 
+                // Award XP — all book XP is cap-exempt
                 const gameStore = useGameStore.getState();
                 gameStore.addGlobalXp(BOOK_GLOBAL_XP_REWARD);
-                gameStore.addSkillXp('Intelligence', intXp);
-
-                if (bookType === 'business') {
-                    import('./useStrategyStore').then(({ useStrategyStore }) => {
-                        useStrategyStore.getState().addStrategyXp(5);
-                    }).catch(() => { });
+                for (const { skill, amount } of xpRewards) {
+                    gameStore.addSkillXp(skill as any, amount, { capExempt: true });
                 }
 
-                // Award book item
-                import('./useInventoryStore').then(({ useInventoryStore, ITEM_DB }) => {
-                    const itemId = `${bookType}_book_1`;
-                    const inventoryStore = useInventoryStore.getState();
-                    inventoryStore.addItem(itemId, 1);
+                // Award tome item
+                import('./useInventoryStore').then(({ useInventoryStore }) => {
+                    useInventoryStore.getState().addItem(tomeId, 1);
+                }).catch(() => {});
 
-                    import('../components/ui/Toast').then(({ useToastStore }) => {
-                        const itemDef = ITEM_DB[itemId];
-                        const name = itemDef ? itemDef.name : 'Unknown Tome';
+                // Increment book trophy count
+                import('./useBookTrophyStore').then(({ useBookTrophyStore }) => {
+                    useBookTrophyStore.getState().incrementBooksRead();
+                }).catch(() => {});
 
-                        useToastStore.getState().addToast({
-                            type: 'success',
-                            message: `New Item Earned: ${name}`,
-                            duration: 4000
-                        });
-
-                        setTimeout(() => {
-                            const updatedInventory = useInventoryStore.getState();
-                            const currentCount = updatedInventory.items[itemId] || 0;
-                            if (currentCount >= 3) {
-                                const nextDef = ITEM_DB[`${bookType}_book_2`];
-                                if (nextDef) {
-                                    useToastStore.getState().addToast({
-                                        type: 'info',
-                                        message: `You now have enough copies to fuse into ${nextDef.name}.`,
-                                        duration: 5000
-                                    });
-                                }
-                            }
-                        }, 500);
-                    }).catch(() => { });
-                }).catch(() => { });
-
-                set(state => ({ completedBooks: [...state.completedBooks, newBook] }));
+                set(state => ({
+                    completedBooks: [...state.completedBooks, newBook],
+                    pendingBookReward: {
+                        title: title.trim(),
+                        category: bookType,
+                        format,
+                        xpRewards,
+                        tomeId,
+                        tomeName,
+                    },
+                }));
             },
 
             removeBook: (bookId) => {

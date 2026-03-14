@@ -13,6 +13,7 @@ export interface Spell {
     description: string;
     goldCost: number;
     mpCost: number;
+    flexibilityTier: number; // 1-5: requires Flexibility skill at that tier (getMaxSpellTier)
     intelligenceRequired?: number; // Min Intelligence level to purchase
     booksRequired?: number; // Special unlock from book trophies
     effect: {
@@ -30,6 +31,7 @@ export const SPELL_DB: Record<string, Spell> = {
         description: 'Restore 15% of max HP',
         goldCost: 1500,
         mpCost: 20,
+        flexibilityTier: 1,
         intelligenceRequired: 1,
         effect: { type: 'heal', value: 15 }
     },
@@ -40,6 +42,7 @@ export const SPELL_DB: Record<string, Spell> = {
         description: 'Deal 2.0x Magic Attack damage',
         goldCost: 3500,
         mpCost: 30,
+        flexibilityTier: 2,
         intelligenceRequired: 5,
         effect: { type: 'damage', value: 2.0, element: 'fire' }
     },
@@ -50,6 +53,7 @@ export const SPELL_DB: Record<string, Spell> = {
         description: 'Absorb damage with MP for 2 turns (2 MP = 1 HP)',
         goldCost: 5000,
         mpCost: 50,
+        flexibilityTier: 2,
         intelligenceRequired: 8,
         effect: { type: 'shield', value: 2 }
     },
@@ -60,6 +64,7 @@ export const SPELL_DB: Record<string, Spell> = {
         description: 'Deal 1.5x Magic Attack damage + slow enemy',
         goldCost: 2500,
         mpCost: 25,
+        flexibilityTier: 1,
         intelligenceRequired: 3,
         effect: { type: 'damage', value: 1.5, element: 'ice' }
     },
@@ -70,6 +75,7 @@ export const SPELL_DB: Record<string, Spell> = {
         description: 'Deal 2.5x Magic Attack damage',
         goldCost: 7500,
         mpCost: 40,
+        flexibilityTier: 4,
         intelligenceRequired: 10,
         effect: { type: 'damage', value: 2.5, element: 'lightning' }
     },
@@ -80,6 +86,7 @@ export const SPELL_DB: Record<string, Spell> = {
         description: 'Restore 35% of max HP',
         goldCost: 6500,
         mpCost: 45,
+        flexibilityTier: 3,
         intelligenceRequired: 7,
         effect: { type: 'heal', value: 35 }
     },
@@ -90,6 +97,7 @@ export const SPELL_DB: Record<string, Spell> = {
         description: 'Unleash cosmic flames for 3.5x Magic Attack damage',
         goldCost: 25000,
         mpCost: 60,
+        flexibilityTier: 5,
         booksRequired: 50,
         effect: { type: 'damage', value: 3.5, element: 'cosmic' }
     },
@@ -100,6 +108,7 @@ export const SPELL_DB: Record<string, Spell> = {
         description: 'Erect a wall of ice that absorbs damage for 3 turns',
         goldCost: 4000,
         mpCost: 35,
+        flexibilityTier: 3,
         intelligenceRequired: 6,
         effect: { type: 'shield', value: 3, element: 'ice' }
     },
@@ -110,6 +119,7 @@ export const SPELL_DB: Record<string, Spell> = {
         description: 'Lightning arcs for 2.0x Magic Attack damage',
         goldCost: 8000,
         mpCost: 45,
+        flexibilityTier: 4,
         intelligenceRequired: 12,
         effect: { type: 'damage', value: 2.0, element: 'lightning' }
     },
@@ -120,6 +130,7 @@ export const SPELL_DB: Record<string, Spell> = {
         description: 'A powerful surge of life that restores 50% of max HP',
         goldCost: 12000,
         mpCost: 55,
+        flexibilityTier: 5,
         intelligenceRequired: 14,
         effect: { type: 'heal', value: 50 }
     },
@@ -130,6 +141,7 @@ export const SPELL_DB: Record<string, Spell> = {
         description: 'Engulf the battlefield in flames for 3.0x Magic Attack damage',
         goldCost: 15000,
         mpCost: 50,
+        flexibilityTier: 4,
         intelligenceRequired: 16,
         effect: { type: 'damage', value: 3.0, element: 'fire' }
     },
@@ -140,6 +152,7 @@ export const SPELL_DB: Record<string, Spell> = {
         description: 'Pure arcane energy strikes for 1.8x Magic Attack damage',
         goldCost: 2200,
         mpCost: 22,
+        flexibilityTier: 1,
         intelligenceRequired: 4,
         effect: { type: 'damage', value: 1.8, element: 'neutral' }
     },
@@ -150,6 +163,7 @@ export const SPELL_DB: Record<string, Spell> = {
         description: 'Channel the power of the cosmos for 5.0x Magic Attack damage',
         goldCost: 50000,
         mpCost: 80,
+        flexibilityTier: 5,
         booksRequired: 100,
         effect: { type: 'damage', value: 5.0, element: 'cosmic' }
     },
@@ -160,6 +174,7 @@ export const SPELL_DB: Record<string, Spell> = {
         description: 'Tear a hole in reality for 2.2x Magic Attack damage',
         goldCost: 5500,
         mpCost: 35,
+        flexibilityTier: 3,
         intelligenceRequired: 6,
         effect: { type: 'damage', value: 2.2, element: 'neutral' }
     },
@@ -170,6 +185,7 @@ export const SPELL_DB: Record<string, Spell> = {
         description: 'Nature restores 25% of max HP over time',
         goldCost: 4500,
         mpCost: 30,
+        flexibilityTier: 3,
         intelligenceRequired: 5,
         effect: { type: 'heal', value: 25 }
     },
@@ -180,6 +196,7 @@ export const SPELL_DB: Record<string, Spell> = {
         description: 'A raging blizzard for 2.8x Magic Attack damage',
         goldCost: 11000,
         mpCost: 50,
+        flexibilityTier: 4,
         intelligenceRequired: 11,
         effect: { type: 'damage', value: 2.8, element: 'ice' }
     },
@@ -190,6 +207,7 @@ export const SPELL_DB: Record<string, Spell> = {
         description: 'Radiant light restores 70% of max HP',
         goldCost: 35000,
         mpCost: 70,
+        flexibilityTier: 5,
         intelligenceRequired: 18,
         effect: { type: 'heal', value: 70 }
     },
@@ -200,6 +218,7 @@ export const SPELL_DB: Record<string, Spell> = {
         description: 'Bend time itself for 4.0x Magic Attack damage',
         goldCost: 40000,
         mpCost: 65,
+        flexibilityTier: 5,
         booksRequired: 75,
         effect: { type: 'damage', value: 4.0, element: 'cosmic' }
     },
@@ -215,6 +234,9 @@ interface MagicState {
     canAffordSpell: (spellId: string) => boolean;
     isSpellUnlocked: (spellId: string) => boolean; // Check if spell requirements are met
     getSpellLockReason: (spellId: string) => string | null; // Get reason why spell is locked
+    
+    equippedSpell: string | null;
+    equipSpell: (spellId: string | null) => void;
 }
 
 export const useMagicStore = create<MagicState>()(
@@ -273,6 +295,14 @@ export const useMagicStore = create<MagicState>()(
                     }
                 }
 
+                // Check Flexibility tier requirement
+                if (spell.flexibilityTier) {
+                    const maxTier = gameStore.getMaxSpellTier();
+                    if (spell.flexibilityTier > maxTier) {
+                        return false;
+                    }
+                }
+
                 return true;
             },
 
@@ -282,22 +312,27 @@ export const useMagicStore = create<MagicState>()(
 
                 const gameStore = useGameStore.getState();
                 const intelligenceLevel = gameStore.skills['Intelligence']?.level || 1;
+                const bookTrophyCount = useBookTrophyStore.getState().totalBooksRead;
 
-                // Check Intelligence requirement
                 if (spell.intelligenceRequired && intelligenceLevel < spell.intelligenceRequired) {
-                    return `Requires Intelligence Level ${spell.intelligenceRequired}`;
+                    return `Requires Intelligence Lv. ${spell.intelligenceRequired}`;
                 }
 
-                // Check books requirement
-                if (spell.booksRequired) {
-                    const booksRead = useBookTrophyStore.getState().totalBooksRead;
-                    if (booksRead < spell.booksRequired) {
-                        return `Complete ${spell.booksRequired} books to unlock`;
-                    }
+                if (spell.flexibilityTier && gameStore.skills['Flexibility'].level < spell.flexibilityTier * 5) {
+                    return `Requires Flexibility Lv. ${spell.flexibilityTier * 5}`;
+                }
+
+                if (spell.booksRequired && bookTrophyCount < spell.booksRequired) {
+                    return `Requires ${spell.booksRequired} Books Read`;
                 }
 
                 return null;
             },
+
+            equippedSpell: null,
+            equipSpell: (spellId: string | null) => {
+                set({ equippedSpell: spellId });
+            }
         }),
         {
             name: PERSIST_REGISTRY.magic.persistKey,

@@ -16,6 +16,9 @@ export interface CurrencyState {
     // Combat minigames
     shmeckles: number;
 
+    // Balloon - mirrors shmeckles every time shmeckles are earned
+    balloons: number;
+
     // Skill-bound tokens - earned by leveling skills
     tokens: Record<SkillName, number>;
 
@@ -24,12 +27,14 @@ export interface CurrencyState {
     addTickets: (amount: number) => void;
     addDiamonds: (amount: number) => void;
     addShmeckles: (amount: number) => void;
+    addBalloons: (amount: number) => void;
     addToken: (skill: SkillName, amount: number) => void;
 
     spendGold: (amount: number) => boolean;
     spendTickets: (amount: number) => boolean;
     spendDiamonds: (amount: number) => boolean;
     spendShmeckles: (amount: number) => boolean;
+    spendBalloons: (amount: number) => boolean;
     spendToken: (skill: SkillName, amount: number) => boolean;
 
     canAfford: (cost: CurrencyCost) => boolean;
@@ -41,6 +46,7 @@ export interface CurrencyCost {
     tickets?: number;
     diamonds?: number;
     shmeckles?: number;
+    balloons?: number;
     tokens?: Partial<Record<SkillName, number>>;
 }
 
@@ -51,26 +57,27 @@ export const useCurrencyStore = create<CurrencyState>()(
             tickets: 0,
             diamonds: 0,
             shmeckles: 0,
+            balloons: 0,
             tokens: {
                 'Sleep': 0,
                 'Hygiene': 0,
                 'Flexibility': 0,
                 'Strength': 0,
                 'Cardio': 0,
-                'Clothing': 0,
-                'Housemaid': 0,
                 'Work': 0,
                 'Health': 0,
                 'Social': 0,
                 'Luck': 0,
-                'Habit Building': 0,
+                'Habit': 0,
                 'Intelligence': 0,
             },
 
             addGold: (amount) => set((state) => ({ gold: state.gold + amount })),
             addTickets: (amount) => set((state) => ({ tickets: state.tickets + amount })),
             addDiamonds: (amount) => set((state) => ({ diamonds: state.diamonds + amount })),
-            addShmeckles: (amount) => set((state) => ({ shmeckles: state.shmeckles + amount })),
+            // addShmeckles: also grants same amount of Balloons (mirrored)
+            addShmeckles: (amount) => set((state) => ({ shmeckles: state.shmeckles + amount, balloons: state.balloons + amount })),
+            addBalloons: (amount) => set((state) => ({ balloons: state.balloons + amount })),
             addToken: (skill, amount) => set((state) => ({
                 tokens: {
                     ...state.tokens,
@@ -114,6 +121,15 @@ export const useCurrencyStore = create<CurrencyState>()(
                 return false;
             },
 
+            spendBalloons: (amount) => {
+                const state = get();
+                if ((state.balloons ?? 0) >= amount) {
+                    set({ balloons: (state.balloons ?? 0) - amount });
+                    return true;
+                }
+                return false;
+            },
+
             spendToken: (skill, amount) => {
                 const state = get();
                 if (state.tokens[skill] >= amount) {
@@ -135,6 +151,7 @@ export const useCurrencyStore = create<CurrencyState>()(
                 if (cost.tickets && state.tickets < cost.tickets) return false;
                 if (cost.diamonds && state.diamonds < cost.diamonds) return false;
                 if (cost.shmeckles && state.shmeckles < cost.shmeckles) return false;
+                if (cost.balloons && (state.balloons ?? 0) < cost.balloons) return false;
 
                 if (cost.tokens) {
                     for (const [skill, amount] of Object.entries(cost.tokens)) {
@@ -152,6 +169,7 @@ export const useCurrencyStore = create<CurrencyState>()(
                 if (cost.tickets) get().spendTickets(cost.tickets);
                 if (cost.diamonds) get().spendDiamonds(cost.diamonds);
                 if (cost.shmeckles) get().spendShmeckles(cost.shmeckles);
+                if (cost.balloons) get().spendBalloons(cost.balloons);
 
                 if (cost.tokens) {
                     for (const [skill, amount] of Object.entries(cost.tokens)) {

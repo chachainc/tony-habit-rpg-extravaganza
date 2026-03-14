@@ -22,13 +22,11 @@ const SKILL_ICONS: Record<SkillName, string> = {
     'Flexibility': '🧘',
     'Strength': '💪',
     'Cardio': '🏃',
-    'Clothing': '👔',
-    'Housemaid': '🧹',
     'Work': '💼',
     'Health': '❤️',
     'Social': '🤝',
     'Luck': '🍀',
-    'Habit Building': '🔥',
+    'Habit': '🔥',
     'Intelligence': '🧠',
 };
 
@@ -39,13 +37,11 @@ const SKILL_COLORS: Record<SkillName, string> = {
     'Flexibility': '#ec4899',
     'Strength': '#ef4444',
     'Cardio': '#f59e0b',
-    'Clothing': '#3b82f6',
-    'Housemaid': '#22c55e',
     'Work': '#64748b',
     'Health': '#f43f5e',
     'Social': '#f97316',
     'Luck': '#fcd34d',
-    'Habit Building': '#ff6b35',
+    'Habit': '#ff6b35',
     'Intelligence': '#a78bfa',
 };
 
@@ -157,7 +153,8 @@ export const TasksPage = () => {
 
 
 
-    const skillNames = Object.keys(skills) as SkillName[];
+    // Filter Luck out — it cannot be assigned to tasks
+    const skillNames = (Object.keys(skills) as SkillName[]).filter(s => s !== 'Luck');
 
     const getTimeUntilWeeklyReset = () => {
         const now = new Date();

@@ -10,7 +10,7 @@ import { useHealthStore } from '../../store/useHealthStore';
 import { ITEM_DATABASE } from '../../data/items';
 import { SceneShell } from '../../components/scene';
 import { WardrobePanel } from './WardrobePanel';
-import { BookshelfPanel } from './BookshelfPanel';
+import { LibraryCodex } from '../library/LibraryCodex';
 import { SleepPanel } from './SleepPanel';
 import { FurniturePlacementPanel, DraggableFurniturePiece } from './FurniturePlacementPanel';
 import { LoadoutPanel } from '../character/LoadoutPanel';
@@ -527,7 +527,7 @@ export const PlayerRoom = ({ onClose }: { onClose: () => void }) => {
                             onClick={(e) => e.stopPropagation()}
                         >
                             {activePanel === 'wardrobe' && <WardrobePanel onClose={() => setActivePanel(null)} />}
-                            {activePanel === 'bookshelf' && <BookshelfPanel onClose={() => setActivePanel(null)} />}
+                            {activePanel === 'bookshelf' && <LibraryCodex onClose={() => setActivePanel(null)} />}
                             {activePanel === 'sleep' && <SleepPanel onClose={() => setActivePanel(null)} />}
                             {activePanel === 'body' && <BodyPanel onClose={() => setActivePanel(null)} />}
                             {activePanel === 'loadout' && <LoadoutPanel onClose={() => setActivePanel(null)} />}

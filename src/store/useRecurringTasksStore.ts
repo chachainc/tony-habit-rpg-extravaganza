@@ -50,6 +50,10 @@ interface RecurringTasksState {
     customRecurringTasks: RecurringTask[];
     removedTaskIds: string[];
 
+    // Workout tracking (1 lift/day, 1 cardio/day)
+    lastLiftDate: string | null;
+    lastCardioDate: string | null;
+
     // Actions
     completeTask: (id: string, inputData?: { weight?: number, trainingSelections?: string[] }) => void;
 
@@ -157,7 +161,7 @@ export const DAILY_TASKS_TEMPLATE: Omit<RecurringTask, 'completed'>[] = [
         bundle: 'afternoon',
         type: 'daily',
         rewards: [
-            { skillId: 'Habit Building', xp: 3 },
+            { skillId: 'Habit', xp: 3 },
             { skillId: 'Sleep', xp: 1 },
             { skillId: 'Health', xp: 1 }
         ],
@@ -174,7 +178,7 @@ export const DAILY_TASKS_TEMPLATE: Omit<RecurringTask, 'completed'>[] = [
         title: 'Charge Phone / Oura / Headphones',
         bundle: 'afternoon',
         type: 'daily',
-        rewards: [{ skillId: 'Habit Building', xp: 1 }],
+        rewards: [{ skillId: 'Habit', xp: 1 }],
     },
     {
         id: 'inbox_zero',
@@ -182,6 +186,20 @@ export const DAILY_TASKS_TEMPLATE: Omit<RecurringTask, 'completed'>[] = [
         bundle: 'afternoon',
         type: 'daily',
         rewards: [{ skillId: 'Work', xp: 1 }],
+    },
+    {
+        id: 'complete_work',
+        title: 'Complete Work (Deep Work Session)',
+        bundle: 'afternoon',
+        type: 'daily',
+        rewards: [{ skillId: 'Work', xp: 5 }],
+    },
+    {
+        id: 'reach_out_social',
+        title: 'Reach out to friends and family and spread positivity',
+        bundle: 'afternoon',
+        type: 'daily',
+        rewards: [{ skillId: 'Social', xp: 3 }],
     },
 
     // ══ NIGHT SHUTDOWN ═════════════════════════════════════════════════════
@@ -197,7 +215,7 @@ export const DAILY_TASKS_TEMPLATE: Omit<RecurringTask, 'completed'>[] = [
         title: 'Laundry / Put Away + Organize',
         bundle: 'night',
         type: 'daily',
-        rewards: [{ skillId: 'Housemaid', xp: 1 }],
+        rewards: [{ skillId: 'Work', xp: 1 }],
     },
     {
         id: 'water_night',
@@ -211,7 +229,7 @@ export const DAILY_TASKS_TEMPLATE: Omit<RecurringTask, 'completed'>[] = [
         title: 'Clean Water Bottles',
         bundle: 'night',
         type: 'daily',
-        rewards: [{ skillId: 'Housemaid', xp: 1 }],
+        rewards: [{ skillId: 'Health', xp: 1 }],
     },
     {
         id: 'tongue_exercises',
@@ -220,7 +238,7 @@ export const DAILY_TASKS_TEMPLATE: Omit<RecurringTask, 'completed'>[] = [
         type: 'daily',
         rewards: [
             { skillId: 'Health', xp: 3 },
-            { skillId: 'Habit Building', xp: 2 }
+            { skillId: 'Habit', xp: 2 }
         ],
     },
     {
@@ -229,7 +247,7 @@ export const DAILY_TASKS_TEMPLATE: Omit<RecurringTask, 'completed'>[] = [
         bundle: 'night',
         type: 'daily',
         rewards: [
-            { skillId: 'Habit Building', xp: 1 },
+            { skillId: 'Habit', xp: 1 },
             { skillId: 'Sleep', xp: 1 },
         ],
     },
@@ -265,13 +283,13 @@ const WEEKLY_TASKS_TEMPLATE: Omit<RecurringTask, 'completed'>[] = [
         id: 'weekly-bathroom',
         title: 'Deep Clean Bathroom',
         type: 'weekly',
-        rewards: [{ skillId: 'Housemaid', xp: 7 }],
+        rewards: [{ skillId: 'Work', xp: 7 }],
     },
     {
         id: 'weekly-car',
         title: 'Clean Out Car',
         type: 'weekly',
-        rewards: [{ skillId: 'Housemaid', xp: 7 }],
+        rewards: [{ skillId: 'Work', xp: 7 }],
     },
     {
         id: 'weekly-cpap',
@@ -297,6 +315,8 @@ export const useRecurringTasksStore = create<RecurringTasksState>()(
             weeklyBonusClaimed: false,
             customRecurringTasks: [],
             removedTaskIds: [],
+            lastLiftDate: null,
+            lastCardioDate: null,
 
             getTodayWeight: () => {
                 const today = getEasternDateString();
@@ -325,22 +345,52 @@ export const useRecurringTasksStore = create<RecurringTasksState>()(
                             }
                         }
 
-                        // Handle XP Awards
+                        // Handle XP Awards with daily cap enforcement
                         const rewardsToGrant: TaskReward[] = [...task.rewards];
 
-                        // Handle Training Logic
+                        // Handle Training Logic (with workout block)
                         if (task.id === 'training_session' && inputData?.trainingSelections) {
+                            const today = getEasternDateString();
+                            const { lastLiftDate, lastCardioDate } = get();
+                            const blockedMessages: string[] = [];
+
                             inputData.trainingSelections.forEach(sel => {
-                                if (sel === 'gym') rewardsToGrant.push({ skillId: 'Strength', xp: 3 });
-                                if (sel === 'insanity') rewardsToGrant.push({ skillId: 'Cardio', xp: 3 });
-                                if (sel === 'cardio') rewardsToGrant.push({ skillId: 'Cardio', xp: 3 });
+                                if (sel === 'gym') {
+                                    if (lastLiftDate === today) {
+                                        blockedMessages.push('Lift already logged today (1/day limit)');
+                                    } else {
+                                        rewardsToGrant.push({ skillId: 'Strength', xp: 3 });
+                                        set({ lastLiftDate: today });
+                                    }
+                                }
+                                if (sel === 'insanity' || sel === 'cardio') {
+                                    if (lastCardioDate === today) {
+                                        blockedMessages.push('Cardio already logged today (1/day limit)');
+                                    } else {
+                                        rewardsToGrant.push({ skillId: 'Cardio', xp: 3 });
+                                        set({ lastCardioDate: today });
+                                    }
+                                }
                             });
+
+                            if (blockedMessages.length > 0) {
+                                import('../components/ui/Toast').then(({ useToastStore }) => {
+                                    blockedMessages.forEach(msg => useToastStore.getState().addToast({ type: 'warning', message: msg }));
+                                }).catch(() => {});
+                            }
                         }
 
                         import('./useGameStore').then(({ useGameStore }) => {
+                            const gameStore = useGameStore.getState();
                             rewardsToGrant.forEach(r => {
-                                useGameStore.getState().addSkillXp(r.skillId, r.xp);
-                                // New Onboarding rules: Award a lvl 1 book whenever gaining Intelligence XP
+                                const result = gameStore.addSkillXp(r.skillId as import('./useGameStore').SkillName, r.xp);
+                                if (result?.capHit) {
+                                    // Show cap feedback
+                                    import('../components/ui/Toast').then(({ useToastStore }) => {
+                                        useToastStore.getState().addToast({ type: 'warning', message: `Daily XP cap reached for ${r.skillId}` });
+                                    }).catch(() => {});
+                                }
+                                // Award book on Intelligence XP
                                 if (r.skillId === 'Intelligence') {
                                     import('./useInventoryStore').then(({ useInventoryStore }) => {
                                         useInventoryStore.getState().addItem('fantasy_book_1', 1);
