@@ -214,7 +214,7 @@ export const HealthTracker = () => {
         });
 
         if (foodTracked && calories) {
-            addSkillXp('Habit Building', 3);
+            addSkillXp('Habit', 3);
             addSkillXp('Health', 3);
         }
 
@@ -255,7 +255,7 @@ export const HealthTracker = () => {
                     const todaysPhotos = store.getPhotosForDate(latestPhotoDate);
                     const types = new Set(todaysPhotos.map(p => p.type));
                     if (types.has('front') && types.has('side') && types.has('back')) {
-                        useGameStore.getState().addSkillXp('Habit Building', 3);
+                        useGameStore.getState().addSkillXp('Habit', 3);
                         useGameStore.getState().addSkillXp('Health', 2);
                         store.setPhotoRewardClaimDate(latestPhotoDate);
                     }

@@ -141,7 +141,7 @@ export const useCalendarStore = create<CalendarState>()(
                     });
 
                     import('./useGameStore').then(({ useGameStore }) => {
-                        useGameStore.getState().addSkillXp('Habit Building', 25);
+                        useGameStore.getState().addSkillXp('Habit', 25);
                     });
 
                     // Mark as claimed

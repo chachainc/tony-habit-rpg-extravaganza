@@ -83,7 +83,7 @@ export const XP_WEAPONS: XpWeaponDef[] = [
     },
     {
         id: 'tailored_rapier', name: 'Tailored Rapier', icon: '🤺', tier: 'beginner',
-        costs: [{ skill: 'Clothing', xp: 250 }],
+        costs: [{ skill: 'Hygiene', xp: 250 }],
         effect: '+3% arena reward bonus',
         modifiers: { arenaRewardPct: 3 },
     },
@@ -101,7 +101,7 @@ export const XP_WEAPONS: XpWeaponDef[] = [
     },
     {
         id: 'habit_forge_blade', name: 'Habit Forge Blade', icon: '🔗', tier: 'beginner',
-        costs: [{ skill: 'Habit Building', xp: 350 }],
+        costs: [{ skill: 'Habit', xp: 350 }],
         effect: '+5% XP from battles',
         modifiers: { battleXpPct: 5 },
     },
@@ -119,7 +119,7 @@ export const XP_WEAPONS: XpWeaponDef[] = [
     },
     {
         id: 'caretaker_broomblade', name: 'Caretaker Broomblade', icon: '🧹', tier: 'beginner',
-        costs: [{ skill: 'Housemaid', xp: 300 }],
+        costs: [{ skill: 'Sleep', xp: 300 }],
         effect: '+6% resource drops from battles',
         modifiers: { dropRatePct: 6 },
     },
@@ -146,19 +146,19 @@ export const XP_WEAPONS: XpWeaponDef[] = [
     },
     {
         id: 'clean_discipline_halberd', name: 'Clean Discipline Halberd', icon: '🪓', tier: 'medium',
-        costs: [{ skill: 'Hygiene', xp: 700 }, { skill: 'Habit Building', xp: 600 }],
+        costs: [{ skill: 'Hygiene', xp: 700 }, { skill: 'Habit', xp: 600 }],
         effect: '+10% resistance to status effects',
         modifiers: { poisonResistPct: 10 },
     },
     {
         id: 'scholars_duelist_blade', name: "Scholar's Duelist Blade", icon: '🤺', tier: 'medium',
-        costs: [{ skill: 'Clothing', xp: 600 }, { skill: 'Social', xp: 400 }],
+        costs: [{ skill: 'Hygiene', xp: 600 }, { skill: 'Social', xp: 400 }],
         effect: '+8% arena reward bonus',
         modifiers: { arenaRewardPct: 8 },
     },
     {
         id: 'orderkeeper_axe', name: 'Orderkeeper Axe', icon: '🪓', tier: 'medium',
-        costs: [{ skill: 'Work', xp: 700 }, { skill: 'Housemaid', xp: 500 }],
+        costs: [{ skill: 'Work', xp: 700 }, { skill: 'Sleep', xp: 500 }],
         effect: '+10% boss damage',
         modifiers: { bossDmgPct: 10 },
     },
@@ -184,7 +184,7 @@ export const XP_WEAPONS: XpWeaponDef[] = [
     // ══ HARD TIER ══════════════════════════════════════════════════════════
     {
         id: 'champions_discipline_sword', name: "Champion's Discipline Sword", icon: '🗡️', tier: 'hard',
-        costs: [{ skill: 'Strength', xp: 800 }, { skill: 'Habit Building', xp: 700 }, { skill: 'Work', xp: 600 }],
+        costs: [{ skill: 'Strength', xp: 800 }, { skill: 'Habit', xp: 700 }, { skill: 'Work', xp: 600 }],
         effect: '+15% overall damage',
         modifiers: { atkPct: 15 },
     },
@@ -196,13 +196,13 @@ export const XP_WEAPONS: XpWeaponDef[] = [
     },
     {
         id: 'clean_mind_glaive', name: 'Clean Mind Glaive', icon: '🌙', tier: 'hard',
-        costs: [{ skill: 'Hygiene', xp: 800 }, { skill: 'Sleep', xp: 800 }, { skill: 'Habit Building', xp: 700 }],
+        costs: [{ skill: 'Hygiene', xp: 800 }, { skill: 'Sleep', xp: 800 }, { skill: 'Habit', xp: 700 }],
         effect: 'Immunity to the first status effect each battle',
         modifiers: { statusImmunityFirst: true },
     },
     {
         id: 'silver_envoy_rapier', name: 'Silver Envoy Rapier', icon: '🤺', tier: 'hard',
-        costs: [{ skill: 'Social', xp: 700 }, { skill: 'Clothing', xp: 700 }, { skill: 'Luck', xp: 700 }],
+        costs: [{ skill: 'Social', xp: 700 }, { skill: 'Hygiene', xp: 700 }, { skill: 'Luck', xp: 700 }],
         effect: '+15% chance for bonus rewards',
         modifiers: { arenaRewardPct: 15, doubleDropChance: 5 },
     },
@@ -210,7 +210,7 @@ export const XP_WEAPONS: XpWeaponDef[] = [
     // ══ ELITE TIER ═════════════════════════════════════════════════════════
     {
         id: 'titanbreaker_greatsword', name: 'Titanbreaker Greatsword', icon: '⚔️', tier: 'elite',
-        costs: [{ skill: 'Strength', xp: 1200 }, { skill: 'Cardio', xp: 900 }, { skill: 'Habit Building', xp: 900 }],
+        costs: [{ skill: 'Strength', xp: 1200 }, { skill: 'Cardio', xp: 900 }, { skill: 'Habit', xp: 900 }],
         effect: '+20% boss damage',
         modifiers: { bossDmgPct: 20, atkPct: 10 },
     },
@@ -236,13 +236,13 @@ export const XP_WEAPONS: XpWeaponDef[] = [
             { skill: 'Flexibility', xp: 800 },
             { skill: 'Strength', xp: 900 },
             { skill: 'Cardio', xp: 900 },
-            { skill: 'Clothing', xp: 600 },
-            { skill: 'Housemaid', xp: 700 },
+            { skill: 'Hygiene', xp: 600 },
+            { skill: 'Sleep', xp: 700 },
             { skill: 'Work', xp: 900 },
             { skill: 'Health', xp: 900 },
             { skill: 'Social', xp: 700 },
             { skill: 'Luck', xp: 800 },
-            { skill: 'Habit Building', xp: 1000 },
+            { skill: 'Habit', xp: 1000 },
         ],
         effect: '+25% combat efficiency · +10% XP from battles · Golden arena aura',
         modifiers: { globalCombatEffPct: 25, allBattleXpPct: 10, goldenAura: true },

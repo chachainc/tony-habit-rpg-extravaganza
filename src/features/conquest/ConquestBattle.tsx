@@ -1,9 +1,9 @@
 import { useNavigate } from 'react-router-dom';
 import { useState, useEffect, useRef } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { Heart, Swords, ChevronLeft, Sparkles } from 'lucide-react';
 import { useBattleStore } from '../../store/useBattleStore';
 import { useConquestStore } from '../../store/useConquestStore';
-import { usePetStore } from '../../store/usePetStore';
 import { useMagicStore } from '../../store/useMagicStore';
 import { useGameStore } from '../../store/useGameStore';
 import { useHeroImage } from '../../hooks/useHeroImage';

@@ -14,13 +14,11 @@ const SKILL_ICONS: Record<SkillName, string> = {
     'Flexibility': '🤸',
     'Strength': '💪',
     'Cardio': '🏃',
-    'Clothing': '👔',
-    'Housemaid': '🧹',
     'Work': '💼',
     'Health': '❤️',
     'Social': '🤝',
     'Luck': '🍀',
-    'Habit Building': '🔥',
+    'Habit': '🔥',
     'Intelligence': '🧠',
 };
 

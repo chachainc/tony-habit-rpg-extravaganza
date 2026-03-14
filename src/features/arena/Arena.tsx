@@ -9,7 +9,6 @@ import { useCurrencyStore } from '../../store/useCurrencyStore';
 import { useCampaignStore } from '../../store/useCampaignStore';
 import { usePetStore, PET_DATABASE } from '../../store/usePetStore';
 import { useMagicStore } from '../../store/useMagicStore';
-import { useInventoryStore } from '../../store/useInventoryStore';
 import { ArenaBattlefieldLayout } from './ArenaBattlefieldLayout';
 import { getDetailedCombatBreakdown, type StatBreakdown } from '../../store/useCombatFormulas';
 import { getPassiveBonuses } from '../../store/usePassiveEffects';
@@ -137,11 +136,9 @@ export const Arena = ({ onClose }: { onClose: () => void }) => {
         recordGoldenSlimeEncounter,
         incrementStreak, // New
         resetStreak, // New
-        activeCharacter,
     } = useCampaignStore();
 
-    // Pet companion
-    const { activePet } = usePetStore();
+    // Pet companion (for ArenaBattlefieldLayout only)
 
     const {
         phase,
@@ -154,7 +151,6 @@ export const Arena = ({ onClose }: { onClose: () => void }) => {
         selectAbility,
         castSpell,
         currentMP,
-        equippedSpells,
         resetBattle,
         startBattle,
     } = useBattleStore();
