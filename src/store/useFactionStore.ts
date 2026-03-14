@@ -35,7 +35,7 @@ export const FACTION_DATABASE: Record<FactionId, Faction> = {
         name: "Scholar's Archive",
         icon: '📚',
         description: 'Seekers of knowledge who sharpen the mind above all.',
-        associatedSkills: ['Intelligence', 'Work', 'Habit Building'],
+        associatedSkills: ['Intelligence', 'Work', 'Habit'],
         affiliatedStores: ['spell', 'tome'],
         tierNames: ['Initiate', 'Adept', 'Master', 'Archmage'],
     },
@@ -44,7 +44,7 @@ export const FACTION_DATABASE: Record<FactionId, Faction> = {
         name: 'Vitality Order',
         icon: '🌿',
         description: 'Healers and caretakers who nurture body and home.',
-        associatedSkills: ['Sleep', 'Hygiene', 'Health', 'Housemaid', 'Clothing'],
+        associatedSkills: ['Sleep', 'Hygiene', 'Health'],
         affiliatedStores: ['hospital', 'furniture', 'pet'],
         tierNames: ['Novice', 'Healer', 'Guardian', 'Sage'],
     },
@@ -70,12 +70,10 @@ export const SKILL_TO_FACTION: Partial<Record<SkillName, FactionId>> = {
     Flexibility: 'iron_guild',
     Intelligence: 'scholars_archive',
     Work: 'scholars_archive',
-    'Habit Building': 'scholars_archive',
+    Habit: 'scholars_archive',
     Sleep: 'vitality_order',
     Hygiene: 'vitality_order',
     Health: 'vitality_order',
-    Housemaid: 'vitality_order',
-    Clothing: 'vitality_order',
 };
 
 interface FactionState {

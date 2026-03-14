@@ -28,7 +28,6 @@ export interface SkillCombatRole {
 export const SKILL_COMBAT_ROLES: Record<SkillName, SkillCombatRole> = {
     'Strength': { skill: 'Strength', primaryStat: 'ATK', description: 'Pure attack power scaling', icon: '💪' },
     'Cardio': { skill: 'Cardio', primaryStat: 'SPD', description: 'Crit chance, speed, HP pool', icon: '🏃' },
-    'Sleep': { skill: 'Sleep', primaryStat: 'DEF', description: 'Defense contributor, HP regen', icon: '😴' },
     'Intelligence': { skill: 'Intelligence', primaryStat: 'MATK', description: 'Magic ATK, XP multiplier', icon: '🧠' },
     'Flexibility': { skill: 'Flexibility', primaryStat: 'SPD', description: 'Dodge chance, speed, DEF contributor', icon: '🤸' },
     'Hygiene': { skill: 'Hygiene', primaryStat: 'DEF', description: 'Resistance, DEF contributor', icon: '🧼' },
