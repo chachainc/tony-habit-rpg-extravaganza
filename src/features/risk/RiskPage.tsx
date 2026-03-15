@@ -247,6 +247,15 @@ export const RiskPage = () => {
     const isLocked = (node: TerritoryNode) =>
         node.owner === 'enemy' && !isAttackable(node) && node.id !== 'vp1';
 
+    const allNodes = Object.values(risk.mapNodes);
+    const maxRevealed = risk.getMaxRevealedTiles();
+    const sortedNodes = [...allNodes].sort((a, b) => a.defenseValue - b.defenseValue);
+    
+    const visibleNodeIds = new Set([
+        ...allNodes.filter(n => n.owner === 'player').map(n => n.id),
+        ...sortedNodes.slice(0, maxRevealed).map(n => n.id)
+    ]);
+
     return (
         <div className="risk-page">
             {/* ── Compact Header ── */}
@@ -306,7 +315,7 @@ export const RiskPage = () => {
                         <svg className="map-paths-svg" width={CANVAS_W} height={CANVAS_H} style={{ position: 'absolute', inset: 0, pointerEvents: 'none' }}>
                             {Object.values(risk.mapNodes).flatMap(node =>
                                 node.neighbors
-                                    .filter(nId => nId > node.id) // avoid drawing twice
+                                    .filter(nId => nId > node.id && visibleNodeIds.has(node.id) && visibleNodeIds.has(nId)) // avoid drawing twice and only if both visible
                                     .map(nId => {
                                         const nb = risk.mapNodes[nId];
                                         if (!nb) return null;
@@ -329,7 +338,7 @@ export const RiskPage = () => {
                         </svg>
 
                         {/* Node pins */}
-                        {Object.values(risk.mapNodes).map(node => {
+                        {Object.values(risk.mapNodes).filter(node => visibleNodeIds.has(node.id)).map(node => {
                             const cx = (node.mapX ?? 50) / 100 * CANVAS_W;
                             const cy = (node.mapY ?? 50) / 100 * CANVAS_H;
                             const owned = node.owner === 'player';

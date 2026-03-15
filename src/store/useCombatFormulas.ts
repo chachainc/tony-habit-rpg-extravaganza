@@ -26,17 +26,17 @@ export interface SkillCombatRole {
 }
 
 export const SKILL_COMBAT_ROLES: Record<SkillName, SkillCombatRole> = {
-    'Strength': { skill: 'Strength', primaryStat: 'ATK', description: 'Pure attack power scaling', icon: '💪' },
-    'Cardio': { skill: 'Cardio', primaryStat: 'SPD', description: 'Crit chance, speed, HP pool', icon: '🏃' },
-    'Intelligence': { skill: 'Intelligence', primaryStat: 'MATK', description: 'Magic ATK, XP multiplier', icon: '🧠' },
-    'Flexibility': { skill: 'Flexibility', primaryStat: 'SPD', description: 'Dodge chance, speed, DEF contributor', icon: '🤸' },
-    'Hygiene': { skill: 'Hygiene', primaryStat: 'DEF', description: 'Resistance, DEF contributor', icon: '🧼' },
-    'Habit': { skill: 'Habit', primaryStat: 'DEF', description: 'DEF contributor, streak bonus', icon: '🔥' },
-    'Luck': { skill: 'Luck', primaryStat: 'CRIT', description: 'Crit chance scaling', icon: '🍀' },
-    'Sleep': { skill: 'Sleep', primaryStat: 'MP', description: 'Mana pool scaling, Defense contributor, HP regen', icon: '😴' },
-    'Work': { skill: 'Work', primaryStat: 'GOLD', description: 'Currency generation', icon: '💼' },
-    'Health': { skill: 'Health', primaryStat: 'HP', description: 'Survivability', icon: '❤️' },
-    'Social': { skill: 'Social', primaryStat: 'MISC', description: 'Social stat', icon: '🤝' },
+    'Strength': { skill: 'Strength', primaryStat: 'ATK', description: 'Increases Attack', icon: '💪' },
+    'Cardio': { skill: 'Cardio', primaryStat: 'SPD', description: 'Increases Max HP & Speed', icon: '🏃' },
+    'Intelligence': { skill: 'Intelligence', primaryStat: 'MATK', description: 'Increases Magic Attack', icon: '🧠' },
+    'Flexibility': { skill: 'Flexibility', primaryStat: 'SPD', description: 'Increases Speed & Defense', icon: '🤸' },
+    'Hygiene': { skill: 'Hygiene', primaryStat: 'DEF', description: 'Increases Defense', icon: '🧼' },
+    'Habit': { skill: 'Habit', primaryStat: 'DEF', description: 'Increases Defense', icon: '🔥' },
+    'Luck': { skill: 'Luck', primaryStat: 'CRIT', description: 'Increases Critical Hit', icon: '🍀' },
+    'Sleep': { skill: 'Sleep', primaryStat: 'MP', description: 'Increases Max MP & Defense', icon: '😴' },
+    'Work': { skill: 'Work', primaryStat: 'GOLD', description: 'Increases Daily Gold', icon: '💼' },
+    'Health': { skill: 'Health', primaryStat: 'HP', description: 'Increases Max HP', icon: '❤️' },
+    'Social': { skill: 'Social', primaryStat: 'MISC', description: 'No direct combat effect', icon: '🤝' },
 };
 
 // ═══════════════════════════════════════════

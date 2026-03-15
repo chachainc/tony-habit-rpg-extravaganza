@@ -83,6 +83,7 @@ export interface RiskState {
     unequipCard: (id: RiskCardId) => void;
     getSoldierLabel: (count: number) => string;
     getActiveRegionBonuses: () => RegionId[];
+    getMaxRevealedTiles: () => number;
 }
 
 export const REGIONS: Record<RegionId, RegionDef> = {
@@ -352,6 +353,13 @@ export const useRiskStore = create<RiskState>()(
                     const owners = groups[rId];
                     return owners.length > 0 && owners.every(o => o === 'player');
                 });
+            },
+
+            getMaxRevealedTiles: () => {
+                const { mapNodes } = get();
+                const allNodes = Object.values(mapNodes);
+                const ownedCount = allNodes.filter(n => n.owner === 'player').length;
+                return Math.min(allNodes.length, 3 + ownedCount * 2);
             },
         }),
         {

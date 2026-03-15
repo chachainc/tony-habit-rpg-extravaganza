@@ -40,7 +40,7 @@ export const CharacterPage = () => {
         return '🗡️';                  // Adventurer / no rank
     };
 
-    const { skills, getAttack, getDefense, getMagicAttack, getMaxMP, getGlobalLevel, isDefenseSuppressed, defenseDecayAmount } = game;
+    const { skills, getAttack, getDefense, getMagicAttack, getGlobalLevel, isDefenseSuppressed, defenseDecayAmount } = game;
     const equipBonuses = getPassiveBonuses();
 
     // ─── ATTACK BREAKDOWN ───────────────────────────
@@ -88,28 +88,29 @@ export const CharacterPage = () => {
     const magicLines: StatLine[] = [
         { label: `Intelligence Lv.${intLevel} → base Magic ATK`, value: `${baseMagicAtk}`, type: 'base' },
     ];
-    if (trophyInt > 0) magicLines.push({ label: `Book Trophies → +INT`, value: `+${trophyInt}`, type: 'bonus' });
+    if (trophyInt > 0) magicLines.push({ label: `Book Trophies → +Magic ATK`, value: `+${trophyInt}`, type: 'bonus' });
     magicLines.push({ label: 'Total Magic ATK', value: `${totalMagicAtk}`, type: 'total' });
 
     // ─── MP BREAKDOWN ───────────────────────────────
-    const baseMP = Math.floor(50 + intLevel * 10);
+    const sleepManaLevel = skills['Sleep']?.level ?? 1;
+    const baseMP = Math.floor(50 + sleepManaLevel * 10);
     const trophyMP = bookTrophy.getMaxMPBonus();
-    const totalMP = getMaxMP();
+    const totalMP = baseMP + trophyMP;
 
     const mpLines: StatLine[] = [
-        { label: `Intelligence Lv.${intLevel} → base MP`, value: `${baseMP}`, type: 'base' },
+        { label: `Sleep Lv.${sleepManaLevel} → base MP`, value: `${baseMP}`, type: 'base' },
     ];
     if (trophyMP > 0) mpLines.push({ label: `Book Trophies → +MP`, value: `+${trophyMP}`, type: 'bonus' });
     mpLines.push({ label: 'Total Max MP', value: `${totalMP}`, type: 'total' });
 
     // ─── HP BREAKDOWN ───────────────────────────────
-    const healthLevel = skills['Health']?.level ?? 1;
-    const baseHP = 95 + healthLevel * 5;
+    const cardioLevel = skills['Cardio']?.level ?? 1;
+    const baseHP = Math.round(cardioLevel * 15 + 80);
     const equipHP = equipBonuses.max_hp_bonus;
     const trophyHP = skillTrophy.getSleepHPBonus();
 
     const hpLines: StatLine[] = [
-        { label: `Health Lv.${healthLevel} → base HP`, value: `${baseHP}`, type: 'base' },
+        { label: `Cardio Lv.${cardioLevel} → base HP`, value: `${baseHP}`, type: 'base' },
     ];
     if (equipHP > 0) hpLines.push({ label: `Equipment → +HP`, value: `+${equipHP}`, type: 'bonus' });
     if (trophyHP > 0) hpLines.push({ label: `Sleep Trophies → +HP`, value: `+${trophyHP}`, type: 'bonus' });
@@ -204,13 +205,13 @@ export const CharacterPage = () => {
                 <div className="char-how-section">
                     <h3>How Your Habits Help</h3>
                     <div className="char-how-list">
-                        <div className="char-how-item">💪 <strong>Strength</strong> training → increases your Attack</div>
-                        <div className="char-how-item">😴 <strong>Sleep</strong> quality → increases your Defense & HP</div>
-                        <div className="char-how-item">🏃 <strong>Cardio</strong> → increases Defense & movement speed</div>
-                        <div className="char-how-item">🤸 <strong>Flexibility</strong> → increases Defense</div>
-                        <div className="char-how-item">🧼 <strong>Hygiene</strong> → increases Defense (low = suppressed!)</div>
-                        <div className="char-how-item">🔥 <strong>Habit Building</strong> → directly boosts Defense</div>
-                        <div className="char-how-item">🧠 <strong>Intelligence</strong> (reading) → Magic ATK & Max MP</div>
+                        <div className="char-how-item">💪 <strong>Strength</strong> training → increases Attack (+1.5 per level)</div>
+                        <div className="char-how-item">😴 <strong>Sleep</strong> quality → increases Max MP (+10 per level) & Defense</div>
+                        <div className="char-how-item">🏃 <strong>Cardio</strong> → increases Max HP (+15 per level) & Defense</div>
+                        <div className="char-how-item">🤸 <strong>Flexibility</strong> → increases Speed (+2 per level) & Defense</div>
+                        <div className="char-how-item">🧼 <strong>Hygiene</strong> → increases Defense (low = halved!)</div>
+                        <div className="char-how-item">🔥 <strong>Habit</strong> streaks → increases Defense</div>
+                        <div className="char-how-item">🧠 <strong>Intelligence</strong> (reading) → Magic ATK (+2.0 per level)</div>
                         <div className="char-how-item">♟️ <strong>Daily Chess</strong> → Strategy Level → Conquest power</div>
                         <div className="char-how-item">🛡️ <strong>Equipment</strong> → flat bonuses to ATK, DEF, HP</div>
                         <div className="char-how-item">🏆 <strong>Trophies</strong> → permanent stat bonuses</div>

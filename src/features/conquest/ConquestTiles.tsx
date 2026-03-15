@@ -347,7 +347,7 @@ export const ConquestTiles = ({ onComplete, onClose, canPlay, canPlayImpossible 
 
     // ─── COMPUTE LAYOUT BOUNDS ────────────────────
     const activeTiles = board.filter(t => !t.removed);
-    const tileSize = window.innerWidth < 600 ? 48 : 60;
+    const tileSize = window.innerWidth < 600 ? 40 : 60;
     const gap = tileSize * 0.85;
 
     let boardWidth = 0;

@@ -21,6 +21,8 @@ export const ConquestBattle = () => {
     const [blessingApplied, setBlessingApplied] = useState(false);
     const [showVictoryModal, setShowVictoryModal] = useState(false);
     const [showDefeatModal, setShowDefeatModal] = useState(false);
+    const [isRolling, setIsRolling] = useState(false);
+    const [rollValue, setRollValue] = useState<number | null>(null);
     const initialPlayerHpRef = useRef<number | null>(null);
 
     // Persistent HP: override the battle player hp to be the conquest runHP
@@ -204,16 +206,83 @@ export const ConquestBattle = () => {
                     </button>
                 ) : (
                     <>
-                        {/* 1. Attack */}
+                        {/* 1. Heavy Attack */}
                         <button
                             className="cq-action-btn attack"
-                            disabled={!isPlayerTurn || isExecuting}
+                            disabled={!isPlayerTurn || isExecuting || isRolling}
                             onClick={() => {
-                                battle.selectAbility({ id: 'basic_strike', name: 'Strike', type: 'attack', description: '', icon: '⚔️', element: 'neutral', damageMultiplier: 1.0, cooldown: 0, energyCost: 0 });
+                                const maxHit = Math.floor(player.atk * 1.5 * battle.playerDamageModifier);
+                                const isSuccess = Math.random() > 0.5;
+                                const finalDamage = isSuccess ? maxHit : 0;
+                                battle.selectAbility({ 
+                                    id: 'heavy_strike', 
+                                    name: 'Heavy Strike', 
+                                    type: 'attack', 
+                                    description: '', 
+                                    icon: '⚔️', 
+                                    element: 'neutral', 
+                                    damageMultiplier: 1.0, 
+                                    cooldown: 0, 
+                                    energyCost: 0,
+                                    customDamageConfig: { type: 'heavy', rollValue: finalDamage }
+                                });
                                 battle.executePlayerAction();
                             }}
                         >
-                            <Swords size={18} /> Attack ({Math.round(player.atk * battle.playerDamageModifier)} dmg)
+                            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                                <div><Swords size={18} style={{ display: 'inline', verticalAlign: 'middle', marginRight: '4px' }} /> Heavy</div>
+                                <div style={{ fontSize: '0.7rem', opacity: 0.8 }}>(50%) chance at max hit: {Math.floor(player.atk * 1.5 * battle.playerDamageModifier)}</div>
+                            </div>
+                        </button>
+
+                        {/* 2. Light Attack */}
+                        <button
+                            className="cq-action-btn attack"
+                            disabled={!isPlayerTurn || isExecuting || isRolling}
+                            onClick={() => {
+                                setIsRolling(true);
+                                const maxHit = Math.floor(player.atk * battle.playerDamageModifier);
+                                
+                                let rolls = 0;
+                                const maxRolls = 10;
+                                const interval = setInterval(() => {
+                                    setRollValue(Math.floor(Math.random() * (maxHit + 1)));
+                                    rolls++;
+                                    if (rolls >= maxRolls) {
+                                        clearInterval(interval);
+                                        const finalRoll = Math.floor(Math.random() * (maxHit + 1));
+                                        setRollValue(finalRoll);
+                                        setTimeout(() => {
+                                            battle.selectAbility({ 
+                                                id: 'light_strike', 
+                                                name: 'Light Strike', 
+                                                type: 'attack', 
+                                                description: '', 
+                                                icon: '🗡️', 
+                                                element: 'neutral', 
+                                                damageMultiplier: 1.0, 
+                                                cooldown: 0, 
+                                                energyCost: 0,
+                                                customDamageConfig: { type: 'light', rollValue: finalRoll }
+                                            });
+                                            battle.executePlayerAction();
+                                            setIsRolling(false);
+                                            setRollValue(null);
+                                        }, 400);
+                                    }
+                                }, 50);
+                            }}
+                        >
+                            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                                <div><Swords size={18} style={{ display: 'inline', verticalAlign: 'middle', marginRight: '4px' }} /> Light</div>
+                                <div style={{ fontSize: '0.7rem', opacity: 0.8 }}>
+                                    {isRolling && rollValue !== null ? (
+                                        <span style={{ color: '#fbbf24', fontWeight: 'bold', fontSize: '1rem' }}>🎲 {rollValue}</span>
+                                    ) : (
+                                        '(Roll die, hit any # up to max)'
+                                    )}
+                                </div>
+                            </div>
                         </button>
 
                         {/* 2. Cast Spell */}

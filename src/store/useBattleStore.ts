@@ -261,15 +261,29 @@ export const useBattleStore = create<BattleState>()((set, get) => ({
         let enemyDef_stat = Math.round(enemyDef.baseDef * levelScaleStats + xpScaling * 0.5);
         let conquestEnemyPower = undefined;
 
+        // Custom Scaling for Arena First Enemy (Fatigue Wraith / Floor 1)
+        if (context === 'arena' && (enemyId === 'fatigue_wraith' || campaignStore.currentFloor === 1)) {
+            // Scale dynamically based on the player so it's always beatable but fair
+            enemyMaxHp = Math.max(20, Math.floor(playerHp * 0.6));
+            enemyAtk = Math.max(3, Math.floor(playerAtk * 0.6));
+            enemyDef_stat = Math.max(1, Math.floor(playerDef * 0.3));
+        }
+
         if (context === 'conquest' || context === 'conquest_elite') {
+            // Conquest Enemy Power scales relative to the player's core stats to ensure a fair difficulty curve.
+            conquestEnemyPower = Math.floor(playerHp * 0.8);
+            enemyMaxHp = Math.max(20, Math.floor(playerHp * 0.8));
+            enemyAtk = Math.max(3, Math.floor(playerAtk * 0.8));
+            enemyDef_stat = Math.max(1, Math.floor(playerDef * 0.8));
+            
             // Apply Conquest Tier multipliers on top of the base dynamic scaling.
-            // Tier 1 is slightly weaker than standard arena at this level, Boss is significantly harder.
+            // Tier 1 is slightly weaker, Boss is significantly harder.
             const tierMultipliers: Record<number, number> = { 1: 0.8, 2: 1.0, 3: 1.1, 4: 1.3, 5: 2.0 };
             const tierMult = conquestTier !== null ? (tierMultipliers[conquestTier] ?? 1.0) : 1.0;
             
-            enemyMaxHp = Math.round(enemyMaxHp * tierMult);
-            enemyAtk = Math.round(enemyAtk * tierMult);
-            enemyDef_stat = Math.round(enemyDef_stat * tierMult);
+            enemyMaxHp = Math.max(10, Math.floor(enemyMaxHp * tierMult));
+            enemyAtk = Math.max(1, Math.floor(enemyAtk * tierMult));
+            enemyDef_stat = Math.floor(enemyDef_stat * tierMult);
         }
 
         const enemy: Combatant = {
@@ -861,6 +875,14 @@ export const useBattleStore = create<BattleState>()((set, get) => ({
         incomingModifiers *= (0.95 + Math.random() * 0.1);
 
         let finalDamage = Math.max(1, Math.round(mitigatedDamage * incomingModifiers));
+        
+        // Override damage if ability has a custom damage config (e.g. Heavy/Light attacks)
+        if (ability.customDamageConfig) {
+            // Calculate specific damage, ignoring defense/stats, but keeping defensive stance/pet buffs if desired.
+            // But per rules: "That final number is the damage dealt"
+            // We'll apply it directly as absolute true damage for simplicity and exactness.
+            finalDamage = Math.max(0, Math.floor(ability.customDamageConfig.rollValue ?? 0));
+        }
 
         // Mana Shield absorption (2 MP = 1 HP damage absorbed)
         let mpAbsorbed = 0;

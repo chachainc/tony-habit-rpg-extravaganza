@@ -160,6 +160,8 @@ export const Arena = ({ onClose }: { onClose: () => void }) => {
     const [view, setView] = useState<'map' | 'battle'>(location.state?.startBattle ? 'battle' : 'map');
     const [autoAttack, setAutoAttack] = useState(false);
     const [showPowerDetails, setShowPowerDetails] = useState(false);
+    const [isRolling, setIsRolling] = useState(false);
+    const [rollValue, setRollValue] = useState<number | null>(null);
 
     // Auto-attack timer ref - MUST use ref so cleanup works properly
     const autoTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -577,7 +579,7 @@ export const Arena = ({ onClose }: { onClose: () => void }) => {
                                                     className={`power-details-btn ${showPowerDetails ? 'active' : ''}`}
                                                     onClick={() => setShowPowerDetails(!showPowerDetails)}
                                                 >
-                                                    📊 {showPowerDetails ? 'HIDE DETAILS' : 'POWER BREAKDOWN'}
+                                                    📊 {showPowerDetails ? 'HIDE BREAKDOWN' : 'VIEW POWER BREAKDOWN'}
                                                     {showPowerDetails ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
                                                 </button>
                                             </div>
@@ -731,23 +733,88 @@ export const Arena = ({ onClose }: { onClose: () => void }) => {
                                         <div className="auto-status">{autoAttack ? 'ON' : 'OFF'}</div>
                                     </GachaButton>
 
-                                    {/* 1. Basic Strike */}
+                                    {/* 1. Heavy Attack */}
                                     <button
                                         className="command-btn attack"
-                                        disabled={phase !== 'select_action' || autoAttack}
+                                        disabled={phase !== 'select_action' || autoAttack || isRolling}
                                         onClick={() => {
                                             if (phase === 'select_action') {
-                                                const strike = player.abilities.find(a => a.id === 'basic_strike');
-                                                if (strike) {
-                                                    selectAbility(strike);
-                                                    setTimeout(executePlayerAction, 100);
-                                                }
+                                                const maxHit = Math.floor(player.atk * 1.5 * useBattleStore.getState().playerDamageModifier);
+                                                const isSuccess = Math.random() > 0.5;
+                                                const finalDamage = isSuccess ? maxHit : 0;
+                                                selectAbility({ 
+                                                    id: 'heavy_strike', 
+                                                    name: 'Heavy Strike', 
+                                                    type: 'attack', 
+                                                    description: '', 
+                                                    icon: '⚔️', 
+                                                    element: 'neutral', 
+                                                    damageMultiplier: 1.0, 
+                                                    cooldown: 0, 
+                                                    energyCost: 0,
+                                                    customDamageConfig: { type: 'heavy', rollValue: finalDamage }
+                                                });
+                                                setTimeout(executePlayerAction, 100);
                                             }
                                         }}
                                     >
                                         <div className="btn-icon"><Swords /></div>
-                                        <div className="btn-label">
-                                            Attack ({Math.round(player.atk * useBattleStore.getState().playerDamageModifier)} dmg)
+                                        <div className="btn-label" style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
+                                            <span>Heavy</span>
+                                            <span style={{ fontSize: '0.7rem', opacity: 0.8 }}>(50%) chance at max hit: {Math.floor(player.atk * 1.5 * useBattleStore.getState().playerDamageModifier)}</span>
+                                        </div>
+                                    </button>
+
+                                    {/* 2. Light Attack */}
+                                    <button
+                                        className="command-btn attack"
+                                        disabled={phase !== 'select_action' || autoAttack || isRolling}
+                                        onClick={() => {
+                                            if (phase === 'select_action') {
+                                                setIsRolling(true);
+                                                const maxHit = Math.floor(player.atk * useBattleStore.getState().playerDamageModifier);
+                                                
+                                                let rolls = 0;
+                                                const maxRolls = 10;
+                                                const interval = setInterval(() => {
+                                                    setRollValue(Math.floor(Math.random() * (maxHit + 1)));
+                                                    rolls++;
+                                                    if (rolls >= maxRolls) {
+                                                        clearInterval(interval);
+                                                        const finalRoll = Math.floor(Math.random() * (maxHit + 1));
+                                                        setRollValue(finalRoll);
+                                                        setTimeout(() => {
+                                                            selectAbility({ 
+                                                                id: 'light_strike', 
+                                                                name: 'Light Strike', 
+                                                                type: 'attack', 
+                                                                description: '', 
+                                                                icon: '🗡️', 
+                                                                element: 'neutral', 
+                                                                damageMultiplier: 1.0, 
+                                                                cooldown: 0, 
+                                                                energyCost: 0,
+                                                                customDamageConfig: { type: 'light', rollValue: finalRoll }
+                                                            });
+                                                            executePlayerAction();
+                                                            setIsRolling(false);
+                                                            setRollValue(null);
+                                                        }, 400);
+                                                    }
+                                                }, 50);
+                                            }
+                                        }}
+                                    >
+                                        <div className="btn-icon"><Swords /></div>
+                                        <div className="btn-label" style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
+                                            <span>Light</span>
+                                            <span style={{ fontSize: '0.7rem', opacity: 0.8 }}>
+                                                {isRolling && rollValue !== null ? (
+                                                    <span style={{ color: '#fbbf24', fontWeight: 'bold', fontSize: '1rem' }}>🎲 {rollValue}</span>
+                                                ) : (
+                                                    '(Roll die, hit any # up to max)'
+                                                )}
+                                            </span>
                                         </div>
                                     </button>
 

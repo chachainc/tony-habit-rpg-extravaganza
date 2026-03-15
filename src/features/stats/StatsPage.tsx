@@ -1,5 +1,5 @@
 import { useGameStore, type SkillName } from '../../store/useGameStore';
-import { getMilestoneForSkill } from '../../store/useCombatFormulas';
+import { getMilestoneForSkill, SKILL_COMBAT_ROLES } from '../../store/useCombatFormulas';
 import { BarChart2, Shield, Sword, Trophy } from 'lucide-react';
 import { Card } from '../../components/ui/Card';
 import { ProgressBar } from '../../components/ui/ProgressBar';
@@ -214,6 +214,10 @@ export const StatsPage = () => {
                                         {/* XP bar */}
                                         <div className="skill-progress-compact">
                                             <ProgressBar current={progress.current} max={progress.required} label="" />
+                                        </div>
+                                        
+                                        <div className="skill-combat-role-text" style={{ fontSize: '0.75rem', color: '#64748b', marginTop: '0.25rem', marginBottom: '0.5rem', fontStyle: 'italic' }}>
+                                            {SKILL_COMBAT_ROLES[skillName]?.description}
                                         </div>
 
                                         {/* Row 3: today + total + milestone */}

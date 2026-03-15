@@ -18,6 +18,7 @@ export interface StrategyState {
     // Tiles
     lastTilesDate: string | null;
     tilesPlayed: boolean;
+    tilesRunsToday?: number; // Added for 3-run limit
     tilesHardWins: number;
 
     // Actions
@@ -52,6 +53,7 @@ export const useStrategyStore = create<StrategyState>()(
 
             lastTilesDate: null,
             tilesPlayed: false,
+            tilesRunsToday: 0,
             tilesHardWins: 0,
 
             getStrategyXpForLevel: (level: number) => level * level * 30,
@@ -128,7 +130,8 @@ export const useStrategyStore = create<StrategyState>()(
             recordTilesResult: (result, difficulty) => {
                 const today = getEasternDateString();
                 const state = get();
-                if (state.lastTilesDate === today && state.tilesPlayed) return;
+                const runsToday = state.lastTilesDate === today ? (state.tilesRunsToday || 0) : 0;
+                if (runsToday >= 3) return; // 3 runs per day limit
 
                 // Same sigil rates as chess
                 const XP_MULT: Record<number, number> = { 1: 1, 2: 1.5, 3: 2.5, 4: 3 };
@@ -162,6 +165,7 @@ export const useStrategyStore = create<StrategyState>()(
                     strategyTotalXp: state.strategyTotalXp + xpGain,
                     lastTilesDate: today,
                     tilesPlayed: true,
+                    tilesRunsToday: runsToday + 1,
                     tilesHardWins: newHardWins,
                 });
 
@@ -176,7 +180,8 @@ export const useStrategyStore = create<StrategyState>()(
             canPlayTilesToday: () => {
                 const state = get();
                 const today = getEasternDateString();
-                return state.lastTilesDate !== today || !state.tilesPlayed;
+                const runsToday = state.lastTilesDate === today ? (state.tilesRunsToday || 0) : 0;
+                return runsToday < 3;
             },
 
             canPlayImpossible: () => {

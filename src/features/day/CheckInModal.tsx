@@ -51,7 +51,13 @@ export const CheckInModal = ({ onClose }: { onClose: () => void }) => {
 
                 <div className="week-calendar">
                     {weekDays.map((day) => {
-                        const reward = getRewardForDay(day);
+                        const reward = { ...getRewardForDay(day) };
+                        // Project if this day-card will hit >5 streak
+                        const projectedStreak = missedYesterday ? day : (streakCount - streakDay + day);
+                        const willHaveHabitXp = projectedStreak > 5 || (streakCount >= 5 && !missedYesterday);
+                        if (willHaveHabitXp) {
+                            reward.habitXp = 1;
+                        }
                         const isCurrentDay = day === streakDay;
                         const isPastDay = day < streakDay;
 
@@ -73,7 +79,7 @@ export const CheckInModal = ({ onClose }: { onClose: () => void }) => {
                                 </div>
                                 <div className="day-rewards">
                                     <span>💰 {reward.gold}</span>
-                                    <span>✨ {reward.xp} XP</span>
+                                    {reward.habitXp && <span>✨ +{reward.habitXp} Habit XP</span>}
                                     {reward.buffType && <span className="buff-badge">+Buff</span>}
                                     {reward.gachaTicket && <span className="ticket-badge">🎫 Ticket</span>}
                                 </div>
@@ -112,10 +118,12 @@ export const CheckInModal = ({ onClose }: { onClose: () => void }) => {
                                     <span>💰 Gold:</span>
                                     <span className="reward-value">+{lastReward.gold}</span>
                                 </div>
-                                <div className="reward-item">
-                                    <span>✨ XP:</span>
-                                    <span className="reward-value">+{lastReward.xp}</span>
-                                </div>
+                                {lastReward.habitXp && (
+                                    <div className="reward-item">
+                                        <span>✨ Habit XP:</span>
+                                        <span className="reward-value">+{lastReward.habitXp}</span>
+                                    </div>
+                                )}
                                 {lastReward.buffType && (
                                     <div className="reward-item">
                                         <span>🔥 Buff:</span>

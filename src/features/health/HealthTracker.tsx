@@ -197,7 +197,15 @@ export const HealthTracker = () => {
     const handleLogWeight = () => {
         const w = parseFloat(weightInput);
         if (isNaN(w) || w <= 0) return;
+
+        const isFirstLogToday = !hasLoggedWeightToday();
+
         logWeight(w);
+
+        if (isFirstLogToday) {
+            addSkillXp('Health', 1);
+        }
+
         setWeightSaved(true);
         setWeightInput('');
         setTimeout(() => setWeightSaved(false), 2000);
