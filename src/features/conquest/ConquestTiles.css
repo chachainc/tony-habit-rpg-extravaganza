@@ -11,6 +11,7 @@
     flex-direction: column;
     background: #050a14;
     overflow: hidden;
+    padding-bottom: env(safe-area-inset-bottom, 0px);
 }
 
 .tiles-bg-blur {
@@ -423,6 +424,7 @@
         margin-top: auto;
         padding: 0.5rem;
         border-radius: 12px;
+        margin-bottom: max(env(safe-area-inset-bottom, 0px), 8px);
     }
     .tiles-tray-vertical {
         flex-direction: row;

@@ -201,6 +201,7 @@ interface InventoryState {
     removeItem: (itemId: string, amount?: number) => void;
     equipItem: (itemId: string, slot: EquipmentSlot) => void;
     unequipItem: (slot: EquipmentSlot) => void;
+    fuseTomes: (itemId: string) => boolean;
     getStatBonus: (stat: 'attack' | 'defense') => number;
     getEquippedWeapon: () => ItemDef | null;
     getEquippedItemForSlot: (slot: EquipmentSlot) => ItemDef | null;
@@ -280,6 +281,38 @@ export const useInventoryStore = create<InventoryState>()(
                 set((state) => ({
                     equipped: { ...state.equipped, [slot]: null }
                 })),
+
+            fuseTomes: (itemId) => {
+                const state = get();
+                const itemDef = ITEM_DB[itemId];
+                
+                // Verify this is a fuseable book
+                if (!itemDef || itemDef.type !== 'book' || !itemDef.category || !itemDef.level || !itemDef.fusionRequired) {
+                    return false;
+                }
+
+                // Verify player has enough copies
+                const count = state.items[itemId] || 0;
+                if (count < itemDef.fusionRequired) {
+                    return false;
+                }
+
+                // Find the next level tome in the same category
+                const nextLevel = itemDef.level + 1;
+                const nextTome = Object.values(ITEM_DB).find(
+                    i => i.type === 'book' && i.category === itemDef.category && i.level === nextLevel
+                );
+
+                if (!nextTome) {
+                    return false; // Already max level
+                }
+
+                // Execute fusion
+                state.removeItem(itemId, itemDef.fusionRequired);
+                state.addItem(nextTome.id, 1);
+                
+                return true;
+            },
 
             getStatBonus: (stat) => {
                 const { equipped } = get();

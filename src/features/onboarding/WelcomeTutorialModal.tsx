@@ -24,10 +24,10 @@ const SCREENS: TutorialScreen[] = [
         id: 'combat_stats',
         title: 'Combat Scaling',
         text: <>Your habits directly calculate your combat stats. Here is the exact breakdown:<br/><br/>
-        • <strong>Strength:</strong> Increases Attack power (+1.5 Attack per level)<br/>
-        • <strong>Cardio:</strong> Increases Max HP (+15 HP per level)<br/>
-        • <strong>Intelligence:</strong> Increases Magic Attack (+2.0 per level)<br/>
-        • <strong>Sleep:</strong> Increases Max Mana (+10.0 per level)<br/>
+        • <strong>Strength:</strong> Increases Physical Attack (+1.5 Attack per Lv)<br/>
+        • <strong>Cardio:</strong> Increases Max HP (+15 HP per Lv) & Speed<br/>
+        • <strong>Intelligence:</strong> Increases Magic Attack (+2.0 per Lv)<br/>
+        • <strong>Sleep:</strong> Increases Max Mana (+4 MP per Lv)<br/>
         </>,
         icon: <Crosshair size={48} />,
         color: '#ef4444',
@@ -35,8 +35,8 @@ const SCREENS: TutorialScreen[] = [
     {
         id: 'defense_stats',
         title: 'Defense & Maintenance',
-        text: <><strong>Defense</strong> scales from the average level of 5 core skills: <strong>Sleep, Hygiene, Cardio, Flexibility, and Habit</strong> (Average × 1.2).<br/><br/>
-        <em>Warning:</em> If your Sleep or Hygiene fall below level 5, your defense is halved! Neglecting them also causes your defense to slowly decay day by day.</>,
+        text: <><strong>Defense</strong> scales from the average level of 5 core skills: <strong>Sleep, Hygiene, Cardio, Flexibility, and Habit</strong> (Average × 1.5).<br/><br/>
+        <em>Warning:</em> If your Sleep or Hygiene fall below level 5, your physical defense is halved! Neglecting them also causes your defense to slowly decay day by day.</>,
         icon: <Shield size={48} />,
         color: '#3b82f6',
     },

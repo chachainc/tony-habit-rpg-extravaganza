@@ -3,6 +3,7 @@ import { X, Coins } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useGameStore } from '../../store/useGameStore';
 import { useInventoryStore, ITEM_DB, type ShopCategory, type ItemDef } from '../../store/useInventoryStore';
+import { getPassiveBonuses } from '../../store/usePassiveEffects';
 import { GachaMachine } from './GachaMachine';
 import './ShopModal.css';
 
@@ -26,14 +27,20 @@ export const ShopModal = ({ category, onClose }: Props) => {
     const { addItem, equipItem } = useInventoryStore();
     const [view, setView] = useState<'shop' | 'gacha'>('shop');
 
+    const rawDiscount = useGameStore.getState().getWorkDiscount(); // Base skill discount
+    const equipDiscount = getPassiveBonuses().gold_multiplier ?? 0; // Item discount (reused for gold discount)
+    const discountPercent = Math.min(50, rawDiscount + equipDiscount); // Hard cap at 50%
+    const discountMult = 1 - (discountPercent / 100);
+
     // Filter items by category
     const shopItems = Object.values(ITEM_DB).filter(
         (i) => i.shopCategory === category && i.price > 0
     );
 
     const handleBuy = (item: ItemDef) => {
-        if (currency >= item.price) {
-            addCurrency(-item.price);
+        const cost = Math.max(1, Math.floor(item.price * discountMult));
+        if (currency >= cost) {
+            addCurrency(-cost);
             addItem(item.id);
         } else {
             alert("Not enough coins!");
@@ -41,8 +48,9 @@ export const ShopModal = ({ category, onClose }: Props) => {
     };
 
     const handleBuyAndEquip = (item: ItemDef) => {
-        if (currency >= item.price) {
-            addCurrency(-item.price);
+        const cost = Math.max(1, Math.floor(item.price * discountMult));
+        if (currency >= cost) {
+            addCurrency(-cost);
             addItem(item.id);
             // Auto-equip based on type
             if (item.type === 'weapon') equipItem(item.id, 'weapon');
@@ -102,15 +110,32 @@ export const ShopModal = ({ category, onClose }: Props) => {
                                         <button
                                             className="buy-btn"
                                             onClick={() => handleBuy(item)}
-                                            disabled={currency < item.price}
+                                            disabled={currency < Math.max(1, Math.floor(item.price * discountMult))}
                                         >
-                                            {item.price} <Coins size={12} />
+                                            {discountPercent > 0 ? (
+                                                <div className="discounted-price-container">
+                                                    <span className="original-price" style={{ textDecoration: 'line-through', opacity: 0.6, fontSize: '0.85em', marginRight: '4px' }}>
+                                                        {item.price}
+                                                    </span>
+                                                    <span className="discounted-price" style={{ color: '#ef4444' }}>
+                                                        {Math.max(1, Math.floor(item.price * discountMult))}
+                                                    </span>
+                                                    <Coins size={12} style={{ marginLeft: '4px' }} />
+                                                    <span className="discount-tag" style={{ color: '#ef4444', fontSize: '0.8em', marginLeft: '4px' }}>
+                                                        (-{discountPercent}%)
+                                                    </span>
+                                                </div>
+                                            ) : (
+                                                <>
+                                                    {item.price} <Coins size={12} />
+                                                </>
+                                            )}
                                         </button>
                                         {(item.type === 'weapon' || item.type === 'armor') && (
                                             <button
                                                 className="equip-btn"
                                                 onClick={() => handleBuyAndEquip(item)}
-                                                disabled={currency < item.price}
+                                                disabled={currency < Math.max(1, Math.floor(item.price * discountMult))}
                                             >
                                                 Buy & Equip
                                             </button>

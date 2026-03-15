@@ -70,7 +70,10 @@ const getEasternDateString = (): string => {
 export const useTaskStore = create<TaskState>()(
     persist(
         (set, get) => ({
-            tasks: [],
+            tasks: [
+                { id: 'default-work-1', title: 'Complete Work', difficulty: 'hard', skillId: 'Work', xpReward: 5, completed: false, createdAt: Date.now(), createdDate: getEasternDateString() },
+                { id: 'default-work-2', title: 'Attend Appointment', difficulty: 'medium', skillId: 'Work', xpReward: 3, completed: false, createdAt: Date.now(), createdDate: getEasternDateString() }
+            ],
             hasClaimedDailyChest: false,
             lastChestClaimDate: null,
             rareTaskTokens: 0,

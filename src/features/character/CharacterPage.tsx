@@ -5,6 +5,7 @@ import { useStrategyStore } from '../../store/useStrategyStore';
 import { useDayStore } from '../../store/useDayStore';
 import { useProfileStore } from '../../store/useProfileStore';
 import { getPassiveBonuses } from '../../store/usePassiveEffects';
+import { SKILL_COMBAT_ROLES } from '../../store/useCombatFormulas';
 import { useNavigate } from 'react-router-dom';
 import { Sword, Shield, Sparkles, Droplet, Heart, Crown, BookOpen } from 'lucide-react';
 import { useHeroImage } from '../../hooks/useHeroImage';
@@ -205,16 +206,11 @@ export const CharacterPage = () => {
                 <div className="char-how-section">
                     <h3>How Your Habits Help</h3>
                     <div className="char-how-list">
-                        <div className="char-how-item">💪 <strong>Strength</strong> training → increases Attack (+1.5 per level)</div>
-                        <div className="char-how-item">😴 <strong>Sleep</strong> quality → increases Max MP (+10 per level) & Defense</div>
-                        <div className="char-how-item">🏃 <strong>Cardio</strong> → increases Max HP (+15 per level) & Defense</div>
-                        <div className="char-how-item">🤸 <strong>Flexibility</strong> → increases Speed (+2 per level) & Defense</div>
-                        <div className="char-how-item">🧼 <strong>Hygiene</strong> → increases Defense (low = halved!)</div>
-                        <div className="char-how-item">🔥 <strong>Habit</strong> streaks → increases Defense</div>
-                        <div className="char-how-item">🧠 <strong>Intelligence</strong> (reading) → Magic ATK (+2.0 per level)</div>
-                        <div className="char-how-item">♟️ <strong>Daily Chess</strong> → Strategy Level → Conquest power</div>
-                        <div className="char-how-item">🛡️ <strong>Equipment</strong> → flat bonuses to ATK, DEF, HP</div>
-                        <div className="char-how-item">🏆 <strong>Trophies</strong> → permanent stat bonuses</div>
+                        {Object.entries(SKILL_COMBAT_ROLES).map(([skillName, role]) => (
+                            <div key={skillName} className="char-how-item">
+                                {role.icon} <strong>{skillName}</strong> → {role.description}
+                            </div>
+                        ))}
                     </div>
                 </div>
             </div>

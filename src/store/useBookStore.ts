@@ -6,9 +6,9 @@ import { PERSIST_REGISTRY } from '../data/persistRegistry';
 export type BookType = 'fantasy' | 'self-improvement' | 'business';
 
 export const BOOK_TYPES = [
-    { id: 'fantasy',          label: 'Fantasy',          icon: '📘', color: '#a855f7', tomeId: 'fantasy_tome_1',    tomeName: 'Fantasy Tome I' },
-    { id: 'self-improvement', label: 'Self Improvement',  icon: '📒', color: '#eab308', tomeId: 'discipline_tome_1', tomeName: 'Discipline Tome I' },
-    { id: 'business',        label: 'Business',          icon: '📓', color: '#22c55e', tomeId: 'commerce_tome_1',   tomeName: 'Commerce Tome I' },
+    { id: 'fantasy',          label: 'Fantasy',          icon: '📘', color: '#a855f7', tomeId: 'book_fantasy_lv1',    tomeName: 'Fantasy Tome I' },
+    { id: 'self-improvement', label: 'Self Improvement',  icon: '📒', color: '#eab308', tomeId: 'book_self-improvement_lv1', tomeName: 'Self-Improvement Tome I' },
+    { id: 'business',        label: 'Business',          icon: '📓', color: '#22c55e', tomeId: 'book_business_lv1',   tomeName: 'Business Tome I' },
 ] as const;
 
 export const BOOK_TYPE_MAP = Object.fromEntries(BOOK_TYPES.map(t => [t.id, t])) as Record<string, typeof BOOK_TYPES[number]>;
@@ -50,17 +50,17 @@ interface BookState {
     getInProgressCount: () => number;
 }
 
-const BOOK_GLOBAL_XP_REWARD = 10;
-const BOOK_INTELLIGENCE_XP_REWARD = 100;
+const BOOK_GLOBAL_XP_REWARD = 0; // Removed global XP entirely
+const BOOK_INTELLIGENCE_XP_REWARD = 100; // Unused, keeping for any legacy references if needed
 
 /** Returns XP rewards and tomeId for a given category + format */
 function getBookRewards(bookType: BookType, format: 'physical' | 'audiobook') {
     const xpRewards: { skill: string; amount: number }[] = [];
-    let tomeId = 'fantasy_tome_1';
+    let tomeId = 'book_fantasy_lv1';
     let tomeName = 'Fantasy Tome I';
 
     if (bookType === 'fantasy') {
-        tomeId = 'fantasy_tome_1'; tomeName = 'Fantasy Tome I';
+        tomeId = 'book_fantasy_lv1'; tomeName = 'Fantasy Tome I';
         if (format === 'audiobook') {
             xpRewards.push({ skill: 'Intelligence', amount: 15 });
         } else {
@@ -68,15 +68,14 @@ function getBookRewards(bookType: BookType, format: 'physical' | 'audiobook') {
             xpRewards.push({ skill: 'Habit', amount: 5 });
         }
     } else if (bookType === 'self-improvement') {
-        tomeId = 'discipline_tome_1'; tomeName = 'Discipline Tome I';
+        tomeId = 'book_self-improvement_lv1'; tomeName = 'Self-Improvement Tome I';
         if (format === 'audiobook') {
             xpRewards.push({ skill: 'Habit', amount: 15 });
         } else {
             xpRewards.push({ skill: 'Habit', amount: 25 });
-            // NOTE: no extra +5 Habit since reward IS Habit
         }
     } else if (bookType === 'business') {
-        tomeId = 'commerce_tome_1'; tomeName = 'Commerce Tome I';
+        tomeId = 'book_business_lv1'; tomeName = 'Business Tome I';
         if (format === 'audiobook') {
             xpRewards.push({ skill: 'Work', amount: 15 });
         } else {
@@ -129,7 +128,6 @@ export const useBookStore = create<BookState>()(
 
                 // Award XP — all book XP is cap-exempt
                 const gameStore = useGameStore.getState();
-                gameStore.addGlobalXp(BOOK_GLOBAL_XP_REWARD);
                 for (const { skill, amount } of xpRewards) {
                     gameStore.addSkillXp(skill as any, amount, { capExempt: true });
                 }
@@ -177,7 +175,6 @@ export const useBookStore = create<BookState>()(
 
                 // Award XP — all book XP is cap-exempt
                 const gameStore = useGameStore.getState();
-                gameStore.addGlobalXp(BOOK_GLOBAL_XP_REWARD);
                 for (const { skill, amount } of xpRewards) {
                     gameStore.addSkillXp(skill as any, amount, { capExempt: true });
                 }

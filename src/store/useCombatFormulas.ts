@@ -26,17 +26,17 @@ export interface SkillCombatRole {
 }
 
 export const SKILL_COMBAT_ROLES: Record<SkillName, SkillCombatRole> = {
-    'Strength': { skill: 'Strength', primaryStat: 'ATK', description: 'Increases Attack', icon: '💪' },
-    'Cardio': { skill: 'Cardio', primaryStat: 'SPD', description: 'Increases Max HP & Speed', icon: '🏃' },
+    'Strength': { skill: 'Strength', primaryStat: 'ATK', description: 'Increases Physical Attack', icon: '💪' },
+    'Cardio': { skill: 'Cardio', primaryStat: 'HP', description: 'Increases Max HP (+15 per Lv) & Speed', icon: '🏃' },
     'Intelligence': { skill: 'Intelligence', primaryStat: 'MATK', description: 'Increases Magic Attack', icon: '🧠' },
-    'Flexibility': { skill: 'Flexibility', primaryStat: 'SPD', description: 'Increases Speed & Defense', icon: '🤸' },
-    'Hygiene': { skill: 'Hygiene', primaryStat: 'DEF', description: 'Increases Defense', icon: '🧼' },
-    'Habit': { skill: 'Habit', primaryStat: 'DEF', description: 'Increases Defense', icon: '🔥' },
-    'Luck': { skill: 'Luck', primaryStat: 'CRIT', description: 'Increases Critical Hit', icon: '🍀' },
-    'Sleep': { skill: 'Sleep', primaryStat: 'MP', description: 'Increases Max MP & Defense', icon: '😴' },
-    'Work': { skill: 'Work', primaryStat: 'GOLD', description: 'Increases Daily Gold', icon: '💼' },
+    'Flexibility': { skill: 'Flexibility', primaryStat: 'TIER', description: 'Increases Max Spell Tier', icon: '🤸' },
+    'Hygiene': { skill: 'Hygiene', primaryStat: 'DEF', description: 'Increases Physical Defense', icon: '🧼' },
+    'Habit': { skill: 'Habit', primaryStat: 'CRIT', description: 'Increases Critical Hit Chance', icon: '🔥' },
+    'Luck': { skill: 'Luck', primaryStat: 'DROP', description: 'Increases Rare Reward Probability', icon: '🍀' },
+    'Sleep': { skill: 'Sleep', primaryStat: 'MP', description: 'Increases Max Mana Pool', icon: '😴' },
+    'Work': { skill: 'Work', primaryStat: 'ECON', description: 'Increases Shop Discounts & Gold Rewards', icon: '💼' },
     'Health': { skill: 'Health', primaryStat: 'HP', description: 'Increases Max HP', icon: '❤️' },
-    'Social': { skill: 'Social', primaryStat: 'MISC', description: 'No direct combat effect', icon: '🤝' },
+    'Social': { skill: 'Social', primaryStat: 'MDEF', description: 'Increases Magic Defense', icon: '🤝' },
 };
 
 // ═══════════════════════════════════════════

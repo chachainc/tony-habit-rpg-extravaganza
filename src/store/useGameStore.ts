@@ -33,14 +33,7 @@ export const DAILY_XP_CAPS: Partial<Record<SkillName, number>> = {
     'Luck': 0, // Luck cannot be earned from tasks
 };
 
-// Cardio speed tier thresholds
-const CARDIO_SPEED_TIERS = [
-    { minLevel: 9, tier: 5, dodgeBonus: 0.04 },
-    { minLevel: 7, tier: 4, dodgeBonus: 0.03 },
-    { minLevel: 5, tier: 3, dodgeBonus: 0.02 },
-    { minLevel: 3, tier: 2, dodgeBonus: 0.01 },
-    { minLevel: 1, tier: 1, dodgeBonus: 0.00 },
-];
+
 
 interface Skill {
     level: number;
@@ -432,11 +425,13 @@ export const useGameStore = create<GameState>()(
                 return baseAtk + equipBonus + trophyBonus;
             },
 
-            // Physical Defense from Hygiene + decay + trophy bonus
+            // Physical Defense from average of 5 core skills + decay + trophy bonus
             getDefense: () => {
                 const { skills, defenseDecayAmount } = get();
-                const hygieneLevel = skills['Hygiene']?.level ?? 1;
-                let baseDef = Math.floor(hygieneLevel * 1.4) + 3;
+                
+                const defLevels = ['Sleep', 'Hygiene', 'Cardio', 'Flexibility', 'Habit'].map(s => skills[s as SkillName]?.level ?? 1);
+                const avgDefLevel = defLevels.reduce((a, b) => a + b, 0) / 5;
+                let baseDef = Math.floor(avgDefLevel * 1.5);
 
                 // Apply decay
                 baseDef = Math.floor(baseDef * (1 - defenseDecayAmount));
@@ -469,47 +464,41 @@ export const useGameStore = create<GameState>()(
                 return Math.floor(3 + socialLevel * 1.2);
             },
 
-            // Max MP from Sleep skill + trophy bonus (Sleep = mana pool)
+            // Max MP from Sleep skill + trophy bonus
             getMaxMP: () => {
                 const { skills } = get();
                 const sleepLevel = skills['Sleep']?.level ?? 1;
                 const trophyMPBonus = useBookTrophyStore.getState().getMaxMPBonus();
-                return Math.floor(50 + (sleepLevel * 10) + trophyMPBonus);
+                return Math.floor(50 + (sleepLevel * 4) + trophyMPBonus);
             },
 
-            // Crit rate from Habit skill
+            // Crit rate from Habit skill (0.3% per level)
             getCritRate: () => {
                 const { skills } = get();
                 const habitLevel = skills['Habit']?.level ?? 1;
                 const equipBonus = getPassiveBonuses().crit_bonus ?? 0;
-                return Math.min(0.75, 0.05 + habitLevel * 0.005 + equipBonus / 100);
+                return Math.min(0.75, 0.05 + habitLevel * 0.003 + equipBonus / 100);
             },
 
-            // Max spell tier from Flexibility (tier 1–5)
+            // Max spell tier from Flexibility (tier 1–5, unlocked every 5 levels)
             getMaxSpellTier: () => {
                 const { skills } = get();
                 const flexLevel = skills['Flexibility']?.level ?? 1;
-                return Math.min(5, Math.ceil(flexLevel / 2));
+                return Math.min(5, Math.floor(flexLevel / 5) + 1);
             },
 
-            // Attack speed tier from Cardio
+            // Attack speed tier from Cardio (used as multiplier)
             getAttackSpeedTier: () => {
                 const { skills } = get();
                 const cardioLevel = skills['Cardio']?.level ?? 1;
-                for (const tier of CARDIO_SPEED_TIERS) {
-                    if (cardioLevel >= tier.minLevel) return tier.tier;
-                }
-                return 1;
+                return 1 + (cardioLevel * 0.01);
             },
 
-            // Dodge chance from Cardio tier
+            // Dodge chance from Cardio
             getDodgeChance: () => {
                 const { skills } = get();
                 const cardioLevel = skills['Cardio']?.level ?? 1;
-                for (const tier of CARDIO_SPEED_TIERS) {
-                    if (cardioLevel >= tier.minLevel) return tier.dodgeBonus;
-                }
-                return 0;
+                return Math.min(0.75, cardioLevel * 0.0025);
             },
 
             isDefenseSuppressed: () => {
