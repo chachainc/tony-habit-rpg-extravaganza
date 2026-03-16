@@ -119,21 +119,21 @@ export const DAILY_TASKS_TEMPLATE: Omit<RecurringTask, 'completed'>[] = [
     },
     {
         id: 'brush_and_floss',
-        title: 'brush/floss/face wash routine',
+        title: 'Brush / Floss / Face Wash',
         bundle: 'morning',
         type: 'daily',
         rewards: [{ skillId: 'Hygiene', xp: 3 }],
     },
     {
         id: 'take_supplements',
-        title: 'Take Supplements (Berberine, Bergamot, Fiber, Creatine, Vitamin D, Antihistamine)',
+        title: 'Take Supplements',
         bundle: 'morning',
         type: 'daily',
         rewards: [{ skillId: 'Health', xp: 1 }],
     },
     {
         id: 'water_morning',
-        title: 'Drink 30oz Water Before 10am',
+        title: 'Drink 30oz Water',
         bundle: 'morning',
         type: 'daily',
         rewards: [{ skillId: 'Health', xp: 1 }],
@@ -150,7 +150,7 @@ export const DAILY_TASKS_TEMPLATE: Omit<RecurringTask, 'completed'>[] = [
     },
     {
         id: 'creatine_fiber',
-        title: 'Creatine + 30oz Water + Fiber Supplement',
+        title: 'Creatine + 30oz Water + Fiber',
         bundle: 'afternoon',
         type: 'daily',
         rewards: [{ skillId: 'Health', xp: 1 }],
@@ -162,16 +162,15 @@ export const DAILY_TASKS_TEMPLATE: Omit<RecurringTask, 'completed'>[] = [
         type: 'daily',
         rewards: [
             { skillId: 'Habit', xp: 3 },
-            { skillId: 'Sleep', xp: 1 },
-            { skillId: 'Health', xp: 1 }
+            { skillId: 'Sleep', xp: 1 }
         ],
     },
     {
         id: 'night_routine_hygiene',
-        title: 'brush/floss/face wash routine',
+        title: 'Brush / Floss / Face Wash',
         bundle: 'afternoon',
         type: 'daily',
-        rewards: [{ skillId: 'Hygiene', xp: 3 }],
+        rewards: [{ skillId: 'Hygiene', xp: 2 }],
     },
     {
         id: 'charge_devices',
@@ -185,21 +184,21 @@ export const DAILY_TASKS_TEMPLATE: Omit<RecurringTask, 'completed'>[] = [
         title: 'Inbox Zero (Emails + Texts)',
         bundle: 'afternoon',
         type: 'daily',
-        rewards: [{ skillId: 'Work', xp: 1 }],
+        rewards: [{ skillId: 'Work', xp: 2 }],
     },
     {
-        id: 'complete_work',
-        title: 'Complete Work (Deep Work Session)',
+        id: 'after_work_calls',
+        title: 'After-Work Calls or Appointments (if any)',
         bundle: 'afternoon',
         type: 'daily',
-        rewards: [{ skillId: 'Work', xp: 5 }],
+        rewards: [{ skillId: 'Work', xp: 2 }],
     },
     {
         id: 'reach_out_social',
         title: 'Reach out to friends and family and spread positivity',
         bundle: 'afternoon',
         type: 'daily',
-        rewards: [{ skillId: 'Social', xp: 3 }],
+        rewards: [{ skillId: 'Social', xp: 5 }],
     },
 
     // ══ NIGHT SHUTDOWN ═════════════════════════════════════════════════════
@@ -212,7 +211,7 @@ export const DAILY_TASKS_TEMPLATE: Omit<RecurringTask, 'completed'>[] = [
     },
     {
         id: 'laundry_organize',
-        title: 'Laundry / Put Away + Organize',
+        title: 'Laundry / Put Away / Organize',
         bundle: 'night',
         type: 'daily',
         rewards: [{ skillId: 'Work', xp: 1 }],
@@ -229,7 +228,7 @@ export const DAILY_TASKS_TEMPLATE: Omit<RecurringTask, 'completed'>[] = [
         title: 'Clean Water Bottles',
         bundle: 'night',
         type: 'daily',
-        rewards: [{ skillId: 'Health', xp: 1 }],
+        rewards: [{ skillId: 'Work', xp: 1 }],
     },
     {
         id: 'tongue_exercises',
@@ -237,7 +236,7 @@ export const DAILY_TASKS_TEMPLATE: Omit<RecurringTask, 'completed'>[] = [
         bundle: 'night',
         type: 'daily',
         rewards: [
-            { skillId: 'Health', xp: 3 },
+            { skillId: 'Health', xp: 2 },
             { skillId: 'Habit', xp: 2 }
         ],
     },
@@ -248,7 +247,7 @@ export const DAILY_TASKS_TEMPLATE: Omit<RecurringTask, 'completed'>[] = [
         type: 'daily',
         rewards: [
             { skillId: 'Habit', xp: 1 },
-            { skillId: 'Sleep', xp: 1 },
+            { skillId: 'Sleep', xp: 1 }
         ],
     },
     {
@@ -256,14 +255,21 @@ export const DAILY_TASKS_TEMPLATE: Omit<RecurringTask, 'completed'>[] = [
         title: 'Read 10 Minutes',
         bundle: 'night',
         type: 'daily',
-        rewards: [{ skillId: 'Intelligence', xp: 1 }],
+        rewards: [{ skillId: 'Intelligence', xp: 4 }],
     },
     {
         id: 'stretch_10_min',
-        title: 'Stretch for 10 Minutes',
+        title: 'Stretch 10 Minutes',
         bundle: 'night',
         type: 'daily',
-        rewards: [{ skillId: 'Flexibility', xp: 1 }],
+        rewards: [{ skillId: 'Flexibility', xp: 2 }],
+    },
+    {
+        id: 'hip_stretches',
+        title: 'Hip Stretches',
+        bundle: 'night',
+        type: 'daily',
+        rewards: [{ skillId: 'Flexibility', xp: 2 }],
     },
     {
         id: 'clean_pillow_cpap',
@@ -271,8 +277,7 @@ export const DAILY_TASKS_TEMPLATE: Omit<RecurringTask, 'completed'>[] = [
         bundle: 'night',
         type: 'daily',
         rewards: [
-            { skillId: 'Sleep', xp: 3 },
-            { skillId: 'Hygiene', xp: 1 },
+            { skillId: 'Sleep', xp: 3 }
         ],
     },
 ];
@@ -416,7 +421,7 @@ export const useRecurringTasksStore = create<RecurringTasksState>()(
 
                         import('./useGameStore').then(({ useGameStore }) => {
                             newTasks[weeklyIndex].rewards.forEach(r => {
-                                useGameStore.getState().addSkillXp(r.skillId, r.xp);
+                                useGameStore.getState().addSkillXp(r.skillId, r.xp, { capExempt: true });
                                 // New Onboarding rules: Award a lvl 1 book whenever gaining Intelligence XP
                                 if (r.skillId === 'Intelligence') {
                                     import('./useInventoryStore').then(({ useInventoryStore }) => {

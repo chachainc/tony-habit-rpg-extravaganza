@@ -177,16 +177,24 @@ export const SleepPanel = ({ onClose }: { onClose: () => void }) => {
                                         {dayjs(entry.date).format('MMM Do, YYYY')}
                                     </div>
                                     <div className="history-metrics">
-                                        <div className="metric sleep-metric">
-                                            <Moon size={16} />
-                                            <span>Sleep: </span>
-                                            <strong>{entry.sleep?.score ?? '—'}</strong>
-                                        </div>
-                                        <div className="metric readiness-metric">
-                                            <Zap size={16} />
-                                            <span>Read: </span>
-                                            <strong>{entry.readiness?.score ?? '—'}</strong>
-                                        </div>
+                                        {entry.sleep?.skipped ? (
+                                            <div className="metric skipped-metric" style={{ fontStyle: 'italic', color: '#94a3b8' }}>
+                                                Skipped tracking
+                                            </div>
+                                        ) : (
+                                            <>
+                                                <div className="metric sleep-metric">
+                                                    <Moon size={16} />
+                                                    <span>Sleep: </span>
+                                                    <strong>{entry.sleep?.score ?? '—'}</strong>
+                                                </div>
+                                                <div className="metric readiness-metric">
+                                                    <Zap size={16} />
+                                                    <span>Read: </span>
+                                                    <strong>{entry.readiness?.score ?? '—'}</strong>
+                                                </div>
+                                            </>
+                                        )}
                                     </div>
                                 </div>
                             ))

@@ -13,7 +13,7 @@ type Stage = 'sleep' | 'checkin' | 'weight' | 'xp_summary' | 'task_prompt';
 
 export const WakeUpModal = ({ onComplete }: { onComplete: () => void }) => {
     const navigate = useNavigate();
-    const { wakeUp, getEasternTime } = useDayStore();
+    const { wakeUp, getEasternTime, skipTracking } = useDayStore();
     const { addSkillXp } = useGameStore();
     const { streakDay, streakCount, checkIn, getRewardForDay, getStreakStatus } = useCheckInStore();
     const { canCheckIn, missedYesterday } = getStreakStatus();
@@ -45,6 +45,12 @@ export const WakeUpModal = ({ onComplete }: { onComplete: () => void }) => {
         setTimeout(() => {
             setStage('checkin');
         }, 1200);
+    };
+
+    const handleSkipTracking = () => {
+        useRecurringTasksStore.getState().checkAndReset();
+        skipTracking();
+        setStage('checkin');
     };
 
     const handleCheckIn = () => {
@@ -156,9 +162,27 @@ export const WakeUpModal = ({ onComplete }: { onComplete: () => void }) => {
                             </div>
                         </div>
 
-                        <button className="start-day-btn" onClick={handleWakeUp}>
-                            <Zap size={20} /> Start My Day
-                        </button>
+                        <div className="wake-buttons-column" style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', marginTop: '1.5rem' }}>
+                            <button className="start-day-btn" onClick={handleWakeUp}>
+                                <Zap size={20} /> Start My Day
+                            </button>
+                            <button 
+                                className="skip-tracking-btn" 
+                                onClick={handleSkipTracking}
+                                style={{
+                                    background: 'rgba(2ef, 68, 68, 0.1)',
+                                    border: '1px solid rgba(239, 68, 68, 0.3)',
+                                    color: '#f87171',
+                                    padding: '0.75rem',
+                                    borderRadius: '12px',
+                                    fontWeight: 'bold',
+                                    cursor: 'pointer',
+                                    transition: 'all 0.2s'
+                                }}
+                            >
+                                Didn't Track Last Night
+                            </button>
+                        </div>
                     </>
                 )}
 

@@ -28,6 +28,7 @@ export const CombatPage = () => {
     const currentHP = player?.hp ?? 0;
     const maxHP = player?.maxHp ?? 0;
     const balloons = currency.balloons ?? 0;
+    const shmeckles = currency.shmeckles ?? 0;
 
     return (
         <div className="combat-page">
@@ -88,6 +89,9 @@ export const CombatPage = () => {
                     </div>
                     <div className="combat-stat">
                         <span>🔱 {sigils} Sigils</span>
+                    </div>
+                    <div className="combat-stat">
+                        <span>🐌 {shmeckles} Shmeckles</span>
                     </div>
                     <div className="combat-stat">
                         <span>🎈 {balloons} Balloons</span>
