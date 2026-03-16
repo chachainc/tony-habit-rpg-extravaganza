@@ -209,11 +209,13 @@ export const ConquestBattle = () => {
                         {/* 1. Heavy Attack */}
                         <button
                             className="cq-action-btn attack"
-                            disabled={!isPlayerTurn || isExecuting || isRolling}
+                            disabled={!isPlayerTurn || isExecuting || isRolling || battle.heavyAttackCooldown > 0}
                             onClick={() => {
+                                if (battle.heavyAttackCooldown > 0) return;
                                 const maxHit = Math.floor(player.atk * 1.5 * battle.playerDamageModifier);
                                 const isSuccess = Math.random() > 0.5;
                                 const finalDamage = isSuccess ? maxHit : 0;
+                                useBattleStore.setState({ heavyAttackCooldown: 1 });
                                 battle.selectAbility({ 
                                     id: 'heavy_strike', 
                                     name: 'Heavy Strike', 
@@ -231,7 +233,10 @@ export const ConquestBattle = () => {
                         >
                             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
                                 <div><Swords size={18} style={{ display: 'inline', verticalAlign: 'middle', marginRight: '4px' }} /> Heavy</div>
-                                <div style={{ fontSize: '0.7rem', opacity: 0.8 }}>(50%) chance at max hit: {Math.floor(player.atk * 1.5 * battle.playerDamageModifier)}</div>
+                                {battle.heavyAttackCooldown > 0
+                                    ? <div style={{ fontSize: '0.7rem', color: '#ef4444' }}>Cooldown: {battle.heavyAttackCooldown} turn remaining</div>
+                                    : <div style={{ fontSize: '0.7rem', opacity: 0.8 }}>50% chance · 150% dmg · CD: 1 turn</div>
+                                }
                             </div>
                         </button>
 
@@ -242,15 +247,16 @@ export const ConquestBattle = () => {
                             onClick={() => {
                                 setIsRolling(true);
                                 const maxHit = Math.floor(player.atk * battle.playerDamageModifier);
+                                const minHit = Math.floor(maxHit * 0.7);
                                 
                                 let rolls = 0;
                                 const maxRolls = 10;
                                 const interval = setInterval(() => {
-                                    setRollValue(Math.floor(Math.random() * (maxHit + 1)));
+                                    setRollValue(Math.floor(minHit + Math.random() * (maxHit - minHit + 1)));
                                     rolls++;
                                     if (rolls >= maxRolls) {
                                         clearInterval(interval);
-                                        const finalRoll = Math.floor(Math.random() * (maxHit + 1));
+                                        const finalRoll = Math.floor(minHit + Math.random() * (maxHit - minHit + 1));
                                         setRollValue(finalRoll);
                                         setTimeout(() => {
                                             battle.selectAbility({ 
@@ -279,21 +285,25 @@ export const ConquestBattle = () => {
                                     {isRolling && rollValue !== null ? (
                                         <span style={{ color: '#fbbf24', fontWeight: 'bold', fontSize: '1rem' }}>🎲 {rollValue}</span>
                                     ) : (
-                                        '(Roll die, hit any # up to max)'
+                                        'Reliable strike (70%–100%)'
                                     )}
                                 </div>
                             </div>
                         </button>
 
-                        {/* 2. Cast Spell */}
+                        {/* 3. Cast Spell */}
                         {(() => {
                             const equippedSpellId = battle.equippedSpells[0];
                             const spell = equippedSpellId ? getOwnedSpells().find(s => s.id === equippedSpellId) : null;
+                            const spellCooldownTurns = battle.spellCooldownTurns;
+                            const onCooldown = spellCooldownTurns > 0;
                             const expectedDamage = spell && spell.effect.type === 'damage' 
-                                ? Math.round(spell.effect.value * getMagicAttack() * battle.playerDamageModifier)
+                                ? (spell.baseDamage !== undefined && spell.tier !== 'old'
+                                    ? Math.round(spell.baseDamage * (1 + (useGameStore.getState().skills['Intelligence']?.level ?? 1) * 0.03) * battle.playerDamageModifier)
+                                    : Math.round(spell.effect.value * getMagicAttack() * battle.playerDamageModifier))
                                 : null;
                             
-                            const canCast = spell && battle.currentMP >= spell.mpCost;
+                            const canCast = spell && battle.currentMP >= spell.mpCost && !onCooldown;
 
                             return (
                                 <button
@@ -320,9 +330,16 @@ export const ConquestBattle = () => {
                                         <Sparkles size={18} /> 
                                         {!spell 
                                             ? 'No Spell Equipped' 
-                                            : `Cast ${spell.name} ${expectedDamage ? `(${expectedDamage} dmg)` : ''}`}
+                                            : onCooldown
+                                                ? `${spell.name} on Cooldown`
+                                                : `Cast ${spell.name} ${expectedDamage ? `(${expectedDamage} dmg)` : ''}`}
                                     </div>
-                                    {spell && (
+                                    {spell && onCooldown && (
+                                        <div style={{ fontSize: '0.8rem', color: '#ef4444' }}>
+                                            {spellCooldownTurns} turn{spellCooldownTurns !== 1 ? 's' : ''} remaining
+                                        </div>
+                                    )}
+                                    {spell && !onCooldown && (
                                         <div style={{ fontSize: '0.8rem', color: canCast ? '#d8b4fe' : '#ef4444' }}>
                                             {spell.mpCost} MP
                                         </div>

@@ -38,7 +38,7 @@ export const WakeUpModal = ({ onComplete }: { onComplete: () => void }) => {
 
         // Award XP to Sleep skill
         if (xp > 0) {
-            addSkillXp('Sleep', xp);
+            addSkillXp('Sleep', xp, { capExempt: true });
         }
 
         // Transition to check-in stage after brief XP display

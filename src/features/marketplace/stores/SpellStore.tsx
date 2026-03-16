@@ -12,6 +12,22 @@ interface Props {
     onClose: () => void;
 }
 
+const TIER_ORDER: Array<Spell['tier']> = ['novice', 'apprentice', 'adept', 'master', 'old'];
+const TIER_LABELS: Record<string, string> = {
+    novice: '⚡ Novice Spells',
+    apprentice: '🔥 Apprentice Spells',
+    adept: '🌩️ Adept Spells',
+    master: '💀 Master Spells',
+    old: '📜 Old Spells',
+};
+const TIER_COLORS: Record<string, string> = {
+    novice: '#22c55e',
+    apprentice: '#f59e0b',
+    adept: '#3b82f6',
+    master: '#a855f7',
+    old: '#6b7280',
+};
+
 const SpellCard = ({ spell, isOwned, canAfford, onBuy }: {
     spell: Spell;
     isOwned: boolean;
@@ -23,7 +39,9 @@ const SpellCard = ({ spell, isOwned, canAfford, onBuy }: {
             case 'heal':
                 return `Restores ${spell.effect.value}% HP`;
             case 'damage':
-                return `${spell.effect.value}x Magic ATK damage`;
+                return spell.baseDamage !== undefined && spell.tier !== 'old'
+                    ? `Base Damage: ${spell.baseDamage}`
+                    : `${spell.effect.value}x Magic ATK damage`;
             case 'shield':
                 return `Absorbs damage for ${spell.effect.value} turns`;
             default:
@@ -55,6 +73,11 @@ const SpellCard = ({ spell, isOwned, canAfford, onBuy }: {
                 <div className="spell-stats">
                     <span className="spell-effect">{getEffectDescription()}</span>
                     <span className="spell-mp-cost">💧 {spell.mpCost} MP</span>
+                    {(spell.cooldownTurns ?? 0) > 0 ? (
+                        <span className="spell-cooldown">⏳ Cooldown: {spell.cooldownTurns} turn{spell.cooldownTurns !== 1 ? 's' : ''}</span>
+                    ) : (
+                        <span className="spell-cooldown" style={{ opacity: 0.5 }}>⏳ No cooldown</span>
+                    )}
                 </div>
             </div>
 
@@ -71,7 +94,7 @@ const SpellCard = ({ spell, isOwned, canAfford, onBuy }: {
                         disabled={!canAfford}
                     >
                         <Coins size={16} />
-                        {spell.goldCost}g
+                        {spell.goldCost.toLocaleString()}g
                     </button>
                 )}
             </div>
@@ -90,13 +113,18 @@ export const SpellStore = ({ onClose }: Props) => {
     const ownedCount = allSpells.filter(s => hasSpell(s.id)).length;
 
     const handleBuySpell = (spellId: string) => {
-        // buySpell doesn't return success status in useMagicStore, so check gold manually
         const spell = SPELL_DB[spellId];
         if (spell && gold >= spell.goldCost && !hasSpell(spellId)) {
             buySpell(spellId);
             setShowEquipPrompt(spellId);
         }
     };
+
+    // Group spells by tier
+    const spellsByTier: Record<string, Spell[]> = {};
+    for (const tier of TIER_ORDER) {
+        spellsByTier[tier as string] = allSpells.filter(s => (s.tier ?? 'old') === tier);
+    }
 
     return (
         <StoreLayout
@@ -141,27 +169,41 @@ export const SpellStore = ({ onClose }: Props) => {
                 <span>Spells Learned: {ownedCount} / {allSpells.length}</span>
             </div>
 
-            {/* Spell Grid */}
-            <div className="spells-grid">
-                {allSpells.map((spell) => (
-                    <SpellCard
-                        key={spell.id}
-                        spell={spell}
-                        isOwned={hasSpell(spell.id)}
-                        canAfford={canAffordSpell(spell.id)}
-                        onBuy={() => handleBuySpell(spell.id)}
-                    />
-                ))}
-            </div>
+            {/* Spell Grid — Grouped by tier */}
+            {TIER_ORDER.map(tier => {
+                const tierSpells = spellsByTier[tier as string];
+                if (!tierSpells || tierSpells.length === 0) return null;
+                return (
+                    <div key={tier} className="spell-tier-section">
+                        <div
+                            className="spell-tier-header"
+                            style={{ borderLeftColor: TIER_COLORS[tier as string] ?? '#6b7280', color: TIER_COLORS[tier as string] ?? '#6b7280' }}
+                        >
+                            {TIER_LABELS[tier as string] ?? tier}
+                        </div>
+                        <div className="spells-grid">
+                            {tierSpells.map((spell) => (
+                                <SpellCard
+                                    key={spell.id}
+                                    spell={spell}
+                                    isOwned={hasSpell(spell.id)}
+                                    canAfford={canAffordSpell(spell.id)}
+                                    onBuy={() => handleBuySpell(spell.id)}
+                                />
+                            ))}
+                        </div>
+                    </div>
+                );
+            })}
 
             {/* Info Section */}
             <div className="spell-info-section">
                 <h4>📖 How Spells Work</h4>
                 <ul>
                     <li><strong>Purchase:</strong> Buy spells with gold (one-time cost)</li>
-                    <li><strong>Equip:</strong> Equip your spell in the Character Loadout panel</li>
-                    <li><strong>Cast in Battle:</strong> Use the Cast Spell button in Arena / Conquest</li>
-                    <li><strong>MP Cost:</strong> Each spell costs MP to cast</li>
+                    <li><strong>Equip:</strong> Equip your spell in the Character Loadout or the Arena/Conquest battle prep screen</li>
+                    <li><strong>Cast in Battle:</strong> Use the Cast Spell button — costs MP and may enter cooldown</li>
+                    <li><strong>New Spells:</strong> Use BaseDamage × (1 + Int × 3%). Old Spells use Magic ATK × multiplier</li>
                     <li><strong>Intelligence:</strong> Level up by reading books to increase Magic ATK and Max MP</li>
                 </ul>
             </div>

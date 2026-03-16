@@ -16,29 +16,26 @@ const SCREENS: TutorialScreen[] = [
     {
         id: 'welcome',
         title: 'Welcome, Adventurer!',
-        text: 'Complete real-life habit tasks to power up your character and conquer the world.',
+        text: 'Complete real-life habit tasks to power up your character and conquer the world. Keep in mind: daily and weekly tasks have a maximum XP cap per skill each day to prevent grinding!',
         icon: <Sparkles size={48} />,
         color: '#f59e0b',
     },
     {
-        id: 'combat_stats',
-        title: 'Combat Scaling',
-        text: <>Your habits directly calculate your combat stats. Here is the exact breakdown:<br/><br/>
-        • <strong>Strength:</strong> Increases Physical Attack (+1.5 Attack per Lv)<br/>
-        • <strong>Cardio:</strong> Increases Max HP (+15 HP per Lv) & Speed<br/>
-        • <strong>Intelligence:</strong> Increases Magic Attack (+2.0 per Lv)<br/>
-        • <strong>Sleep:</strong> Increases Max Mana (+4 MP per Lv)<br/>
-        </>,
-        icon: <Crosshair size={48} />,
-        color: '#ef4444',
-    },
-    {
-        id: 'defense_stats',
-        title: 'Defense & Maintenance',
-        text: <><strong>Defense</strong> scales from the average level of 5 core skills: <strong>Sleep, Hygiene, Cardio, Flexibility, and Habit</strong> (Average × 1.5).<br/><br/>
-        <em>Warning:</em> If your Sleep or Hygiene fall below level 5, your physical defense is halved! Neglecting them also causes your defense to slowly decay day by day.</>,
+        id: 'caps_exemptions',
+        title: 'XP Caps & Exemptions',
+        text: <>XP from daily and weekly tasks is capped per skill each day (e.g. 6 Strength XP/day).<br/><br/>However, <strong>Sleep logging, Daily Check-Ins, and Combat rewards</strong> bypass these caps entirely!</>,
         icon: <Shield size={48} />,
         color: '#3b82f6',
+    },
+    {
+        id: 'build_guidance',
+        title: 'Fantasy Builds',
+        text: <>Focus on real-world habits that fit your desired fantasy class!<br/><br/>
+        • <strong>Warriors:</strong> Focus on Strength (Lifting) and Health (Diet) for HP and physical damage.<br/>
+        • <strong>Mages:</strong> Focus on Intelligence (Learning) and Flexibility (Stretching) for magic damage and spell tiers.<br/>
+        • <strong>Rogues:</strong> Focus on Cardio (Running) and Habit (Consistency) for speed, dodge, and critical hits.</>,
+        icon: <Crosshair size={48} />,
+        color: '#ef4444',
     },
     {
         id: 'social',
@@ -58,7 +55,7 @@ const SCREENS: TutorialScreen[] = [
         id: 'luck',
         title: 'Good Luck, Warrior!',
         text: 'Grow stronger by building real-world habits, conquer territories, and build your legend.',
-        icon: <Shield size={48} />,
+        icon: <Sparkles size={48} />,
         color: '#ec4899',
     }
 ];

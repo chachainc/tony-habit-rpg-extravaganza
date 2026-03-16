@@ -1,4 +1,4 @@
-import { useGameStore, type SkillName } from '../../store/useGameStore';
+import { useGameStore } from '../../store/useGameStore';
 import { useSkillTrophyStore } from '../../store/useSkillTrophyStore';
 import { useBookTrophyStore } from '../../store/useBookTrophyStore';
 import { useStrategyStore } from '../../store/useStrategyStore';
@@ -18,7 +18,6 @@ interface StatLine {
     type?: 'base' | 'bonus' | 'total' | 'penalty';
 }
 
-const DEFENSE_SKILLS: SkillName[] = ['Sleep', 'Hygiene', 'Cardio', 'Flexibility', 'Habit'];
 
 export const CharacterPage = () => {
     const game = useGameStore();
@@ -41,7 +40,7 @@ export const CharacterPage = () => {
         return '🗡️';                  // Adventurer / no rank
     };
 
-    const { skills, getAttack, getDefense, getMagicAttack, getGlobalLevel, isDefenseSuppressed, defenseDecayAmount } = game;
+    const { skills, getAttack, getDefense, getMagicAttack, getGlobalLevel } = game;
     const equipBonuses = getPassiveBonuses();
 
     // ─── ATTACK BREAKDOWN ───────────────────────────
@@ -60,22 +59,15 @@ export const CharacterPage = () => {
     atkLines.push({ label: 'Total Attack', value: `${totalAtk}`, type: 'total' });
 
     // ─── DEFENSE BREAKDOWN ──────────────────────────
-    const defLevels = DEFENSE_SKILLS.map(s => skills[s]?.level ?? 1);
-    const avgDefLevel = defLevels.reduce((a, b) => a + b, 0) / 5;
-    let rawBaseDef = Math.floor(avgDefLevel * 1.2) + 3;
+    const hygieneLevel = skills['Hygiene']?.level ?? 1;
+    const mitigationPct = hygieneLevel; // 1% per level
     const equipDef = equipBonuses.defense_bonus;
     const trophyDef = skillTrophy.getSleepDEFBonus();
     const totalDef = getDefense() + equipDef; // Manually add here for now
-    const suppressed = isDefenseSuppressed();
 
-    const defLines: StatLine[] = DEFENSE_SKILLS.map(s => ({
-        label: `${s} Lv.${skills[s]?.level ?? 1}`,
-        value: `contributes to DEF`,
-        type: 'base' as const,
-    }));
-    defLines.push({ label: `Avg defense skill → base DEF`, value: `${rawBaseDef}`, type: 'base' });
-    if (defenseDecayAmount > 0) defLines.push({ label: `Defense decay (−${Math.round(defenseDecayAmount * 100)}%)`, value: `-${Math.floor(rawBaseDef * defenseDecayAmount)}`, type: 'penalty' });
-    if (suppressed) defLines.push({ label: `Sleep/Hygiene suppression (−50%)`, value: `penalty active`, type: 'penalty' });
+    const defLines: StatLine[] = [
+        { label: `Hygiene Lv.${hygieneLevel}`, value: `${mitigationPct}% Mitigation`, type: 'base' },
+    ];
     if (equipDef > 0) defLines.push({ label: `Equipment → +DEF`, value: `+${equipDef}`, type: 'bonus' });
     if (trophyDef > 0) defLines.push({ label: `Sleep Trophies → +DEF`, value: `+${trophyDef}`, type: 'bonus' });
     defLines.push({ label: 'Total Defense', value: `${totalDef}`, type: 'total' });
@@ -105,17 +97,15 @@ export const CharacterPage = () => {
     mpLines.push({ label: 'Total Max MP', value: `${totalMP}`, type: 'total' });
 
     // ─── HP BREAKDOWN ───────────────────────────────
-    const cardioLevel = skills['Cardio']?.level ?? 1;
-    const baseHP = Math.round(cardioLevel * 15 + 80);
     const equipHP = equipBonuses.max_hp_bonus;
     const trophyHP = skillTrophy.getSleepHPBonus();
 
     const hpLines: StatLine[] = [
-        { label: `Cardio Lv.${cardioLevel} → base HP`, value: `${baseHP}`, type: 'base' },
+        { label: `Health Lv.${skills['Health']?.level ?? 1} → base HP`, value: `${Math.round((skills['Health']?.level ?? 1) * 2 + 80)}`, type: 'base' },
     ];
     if (equipHP > 0) hpLines.push({ label: `Equipment → +HP`, value: `+${equipHP}`, type: 'bonus' });
     if (trophyHP > 0) hpLines.push({ label: `Sleep Trophies → +HP`, value: `+${trophyHP}`, type: 'bonus' });
-    hpLines.push({ label: 'Total Max HP', value: `${baseHP + equipHP + trophyHP}`, type: 'total' });
+    hpLines.push({ label: 'Total Max HP', value: `${Math.round((skills['Health']?.level ?? 1) * 2 + 80) + equipHP + trophyHP}`, type: 'total' });
 
     // ─── STRATEGY / CONQUEST ────────────────────────
     const stratLines: StatLine[] = [
@@ -178,8 +168,7 @@ export const CharacterPage = () => {
                 </div>
 
                 <p className="char-explainer">
-                    Here's how your daily habits, equipment, and trophies shape your character's power.
-                    Every skill you train makes you stronger!
+                    Your character's power comes from real-world habits! Keep in mind: daily and weekly tasks have a maximum XP cap per skill each day to prevent overworking. Sleep logging, daily check-ins, and combat rewards bypass these caps entirely.
                 </p>
 
                 {/* Sleep insight */}

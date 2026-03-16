@@ -20,16 +20,16 @@ export type SkillName =
 
 // Daily XP caps by skill (task-earned XP only; 0 = blocked)
 export const DAILY_XP_CAPS: Partial<Record<SkillName, number>> = {
-    'Health': 10,
-    'Hygiene': 10,
-    'Habit': 10,
-    'Social': 8,
-    'Work': 6,   // Changed from 8 to 6 per spec
-    'Sleep': 6,
     'Strength': 6,
     'Cardio': 6,
-    'Intelligence': 6,
-    'Flexibility': 6,
+    'Health': 6,
+    'Hygiene': 5,
+    'Sleep': 5,
+    'Habit': 8,
+    'Work': 6,
+    'Social': 5,
+    'Intelligence': 4,
+    'Flexibility': 4,
     'Luck': 0, // Luck cannot be earned from tasks
 };
 
@@ -345,7 +345,7 @@ export const useGameStore = create<GameState>()(
                         },
                         dailyXpGained: {
                             ...s.dailyXpGained,
-                            [skillName]: currentDailyXp + actualXp,
+                            [skillName]: capExempt ? currentDailyXp : currentDailyXp + actualXp,
                         },
                         cumulativeLogs: {
                             ...s.cumulativeLogs,
@@ -412,12 +412,12 @@ export const useGameStore = create<GameState>()(
                 return Math.floor(avgSkillLevel) + bonusLevels;
             },
 
-            // Attack from Strength (very slow) + equipment + trophy bonus
+            // Attack from Strength
             getAttack: () => {
                 const { skills } = get();
                 const strengthLevel = skills['Strength']?.level ?? 1;
-                // Ultra slow: level × 1.5 + 5
-                const baseAtk = Math.floor(strengthLevel * 1.5) + 5;
+                // Damage = Strength
+                const baseAtk = strengthLevel;
                 // Add equipment bonus
                 const equipBonus = getPassiveBonuses().attack_bonus;
                 // Add Strength trophy bonus
@@ -449,56 +449,69 @@ export const useGameStore = create<GameState>()(
                 return Math.max(1, baseDef + equipBonus + trophyBonus);
             },
 
-            // Magic Attack from Intelligence skill + trophy bonus
+            // Magic Attack from Intelligence
             getMagicAttack: () => {
                 const { skills } = get();
                 const intelligenceLevel = skills['Intelligence']?.level ?? 1;
+                // MagicDamage = BaseSpellDamage * (1 + (Intelligence * 0.03))
+                // Assuming Base is 5 for the UI display
+                const baseMagicAtk = Math.floor(5 * (1 + (intelligenceLevel * 0.03)));
                 const trophyBonus = useBookTrophyStore.getState().getIntelligenceBonus();
-                return Math.floor(5 + (intelligenceLevel * 2) + trophyBonus);
+                return baseMagicAtk + trophyBonus;
             },
 
-            // Magic Defense from Social skill
+            // Magic Defense from Social
             getMagicDefense: () => {
                 const { skills } = get();
                 const socialLevel = skills['Social']?.level ?? 1;
-                return Math.floor(3 + socialLevel * 1.2);
+                // UI display only, mitigated in useBattleStore
+                const baseMDef = Math.floor(socialLevel * 1.5);
+                return baseMDef;
             },
 
-            // Max MP from Sleep skill + trophy bonus
+            // Max MP from Sleep
             getMaxMP: () => {
                 const { skills } = get();
                 const sleepLevel = skills['Sleep']?.level ?? 1;
-                const trophyMPBonus = useBookTrophyStore.getState().getMaxMPBonus();
-                return Math.floor(50 + (sleepLevel * 4) + trophyMPBonus);
+                // MaxMana = BaseMana + (Sleep * 5)
+                const baseMp = Math.floor(50 + sleepLevel * 5);
+                const trophyBonus = useBookTrophyStore.getState().getMaxMPBonus();
+                return baseMp + trophyBonus;
             },
 
-            // Crit rate from Habit skill (0.3% per level)
+            // Crit Rate from Habit
             getCritRate: () => {
                 const { skills } = get();
                 const habitLevel = skills['Habit']?.level ?? 1;
-                const equipBonus = getPassiveBonuses().crit_bonus ?? 0;
-                return Math.min(0.75, 0.05 + habitLevel * 0.003 + equipBonus / 100);
+                // CritChance = HabitBuilding * 0.01
+                const baseCrit = habitLevel * 0.01;
+                const trophyBonus = useSkillTrophyStore.getState().getLuckCritBonus();
+                const equipBonus = getPassiveBonuses().crit_bonus / 100;
+                return baseCrit + trophyBonus + equipBonus; // Cap naturally at 1.0 (100%) later
             },
 
-            // Max spell tier from Flexibility (tier 1–5, unlocked every 5 levels)
+            // Max Spell Tier from Flexibility
             getMaxSpellTier: () => {
                 const { skills } = get();
                 const flexLevel = skills['Flexibility']?.level ?? 1;
-                return Math.min(5, Math.floor(flexLevel / 5) + 1);
+                // SpellTierUnlocked = floor(Flexibility / 5) + 1
+                return Math.floor(flexLevel / 5) + 1;
             },
 
-            // Attack speed tier from Cardio (used as multiplier)
+            // Attack Speed Tier from Cardio
             getAttackSpeedTier: () => {
                 const { skills } = get();
                 const cardioLevel = skills['Cardio']?.level ?? 1;
-                return 1 + (cardioLevel * 0.01);
+                // AttackSpeed = 1 + (Cardio * 0.02)
+                return 1 + (cardioLevel * 0.02);
             },
 
-            // Dodge chance from Cardio
+            // Dodge Chance from Cardio
             getDodgeChance: () => {
                 const { skills } = get();
                 const cardioLevel = skills['Cardio']?.level ?? 1;
-                return Math.min(0.75, cardioLevel * 0.0025);
+                // DodgeChance = Cardio * 0.005
+                return cardioLevel * 0.005;
             },
 
             isDefenseSuppressed: () => {

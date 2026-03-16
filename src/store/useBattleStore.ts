@@ -87,6 +87,11 @@ interface BattleState {
     activeFloorModifier: any | null; // Use FloorModifier if imported, or any
     activeRunBuffs: any[]; // Use RunBuff[] if imported, or any
 
+    /** Turns remaining before the equipped spell can be cast again (0 = ready) */
+    spellCooldownTurns: number;
+    /** Turns remaining before Heavy Attack can be used again (0 = ready) */
+    heavyAttackCooldown: number;
+
     // Actions
     initBattle: (enemyId: string, options?: { context?: 'arena' | 'conquest' | 'conquest_elite' | 'conquest_boss' | 'conquest_vault'; conquestTier?: number }) => void;
     selectAbility: (ability: Ability) => void;
@@ -169,6 +174,8 @@ export const useBattleStore = create<BattleState>()((set, get) => ({
     weaknessActive: false,
     activeFloorModifier: null,
     activeRunBuffs: [],
+    spellCooldownTurns: 0,
+    heavyAttackCooldown: 0,
     introGracePeriod: false,
     context: 'arena',
     conquestTier: null,
@@ -196,7 +203,7 @@ export const useBattleStore = create<BattleState>()((set, get) => ({
         const levelScaleHp = 1 + (globalLevel * 0.15);
         const levelScaleStats = 1 + (globalLevel * 0.05);
 
-        let playerHp = Math.round((gameStore.skills['Health']?.level ?? 1) * 5 + 80) + roomBonuses.maxHP;
+        let playerHp = Math.round((gameStore.skills['Health']?.level ?? 1) * 2 + 80) + roomBonuses.maxHP;
         let playerAtk = Math.round(gameStore.getAttack());
         let playerDef = Math.round(gameStore.getDefense());
         // Speed determined by Cardio speed tier (not Flexibility)
@@ -651,10 +658,19 @@ export const useBattleStore = create<BattleState>()((set, get) => ({
 
 
         // Decrement pet ability cooldown at start of player turn
-        const { petAbilityCooldown } = get();
+        const curState = get();
+        const { petAbilityCooldown } = curState;
         const newPetCooldown = nextTurn === 'player' && petAbilityCooldown > 0
             ? petAbilityCooldown - 1
             : petAbilityCooldown;
+
+        // Decrement spell and heavy attack cooldowns after player's turn ends
+        const newSpellCD = currentTurn === 'player' && curState.spellCooldownTurns > 0
+            ? curState.spellCooldownTurns - 1
+            : curState.spellCooldownTurns;
+        const newHeavyCD = currentTurn === 'player' && curState.heavyAttackCooldown > 0
+            ? curState.heavyAttackCooldown - 1
+            : curState.heavyAttackCooldown;
 
         set({
             player: currentTurn === 'player' ? updatedCurrent as Combatant : player,
@@ -664,6 +680,8 @@ export const useBattleStore = create<BattleState>()((set, get) => ({
             phase: nextTurn === 'player' ? 'select_action' : 'enemy_turn',
             combatLog: newLog,
             petAbilityCooldown: newPetCooldown,
+            spellCooldownTurns: newSpellCD,
+            heavyAttackCooldown: newHeavyCD,
         });
 
         // If enemy turn, execute after delay
@@ -856,7 +874,18 @@ export const useBattleStore = create<BattleState>()((set, get) => ({
 
         // New Mitigation-based Formula
         const rawDamage = effectiveAtk * ability.damageMultiplier * critMult * elementMult * towerMult;
-        const mitigatedDamage = rawDamage * (100 / (100 + effectiveDef));
+        let mitigatedDamage = rawDamage * (100 / (100 + effectiveDef));
+
+        if (defender.isPlayer) {
+            const gameStore = useGameStore.getState();
+            if (ability.isMagic) {
+                const socialLvl = gameStore.skills['Social']?.level ?? 1;
+                mitigatedDamage = rawDamage * Math.max(0, 1 - (socialLvl * 0.01));
+            } else {
+                const hygieneLvl = gameStore.skills['Hygiene']?.level ?? 1;
+                mitigatedDamage = rawDamage * Math.max(0, 1 - (hygieneLvl * 0.01));
+            }
+        }
 
         // Incoming damage modifiers
         let incomingModifiers = 1.0;
@@ -1010,6 +1039,8 @@ export const useBattleStore = create<BattleState>()((set, get) => ({
             goldenSlimeTurnsRemaining: 3,
             petAbilityCooldown: 0,
             petAbilityUsedThisBattle: false,
+            spellCooldownTurns: 0,
+            heavyAttackCooldown: 0,
         });
     },
 
@@ -1067,24 +1098,44 @@ export const useBattleStore = create<BattleState>()((set, get) => ({
                 }]
             });
         } else if (spell.effect.type === 'damage') {
-            const tempAbility: Ability = {
-                id: spell.id,
-                name: spell.name,
-                type: 'skill',
-                description: spell.description,
-                icon: spell.icon,
-                element: 'neutral', // Spells currently default to neutral
-                isMagic: true, // Flags for MATK and temporary MDEF
-                damageMultiplier: spell.effect.value,
-                cooldown: 0,
-                energyCost: 0,
-            };
+            // New-tier spells (baseDamage present) use flat base formula:
+            //   Damage = baseDamage * (1 + Intelligence * 0.03)
+            // Old spells use multiplier * MagicATK via applyDamage.
+            if (spell.baseDamage !== undefined && spell.tier !== 'old') {
+                const intLevel = useGameStore.getState().skills['Intelligence']?.level ?? 1;
+                const rawDmg = Math.round(spell.baseDamage * (1 + intLevel * 0.03) * get().playerDamageModifier);
+                const finalDmg = Math.max(1, rawDmg);
+                updatedEnemy.hp = Math.max(0, updatedEnemy.hp - finalDmg);
+                set({
+                    enemy: updatedEnemy,
+                    player: updatedPlayer,
+                    lastDamage: { target: updatedEnemy.id, amount: finalDmg, isCrit: false, elementBonus: 1 },
+                    combatLog: [...get().combatLog, {
+                        message: `${updatedEnemy.name} takes ${finalDmg} spell damage!`,
+                        type: 'damage',
+                        value: finalDmg,
+                    }],
+                });
+            } else {
+                const tempAbility: Ability = {
+                    id: spell.id,
+                    name: spell.name,
+                    type: 'skill',
+                    description: spell.description,
+                    icon: spell.icon,
+                    element: (spell.effect.element ?? 'neutral') as Element,
+                    isMagic: true, // Flags for MATK and temporary MDEF
+                    damageMultiplier: spell.effect.value,
+                    cooldown: 0,
+                    energyCost: 0,
+                };
 
-            // applyDamage mutates updatedEnemy's HP and pushes its own logs
-            get().applyDamage(updatedPlayer, updatedEnemy, tempAbility);
+                // applyDamage mutates updatedEnemy's HP and pushes its own logs
+                get().applyDamage(updatedPlayer, updatedEnemy, tempAbility);
 
-            // Sync mutated objects to store
-            set({ enemy: updatedEnemy, player: updatedPlayer });
+                // Sync mutated objects to store
+                set({ enemy: updatedEnemy, player: updatedPlayer });
+            }
 
         } else if (spell.effect.type === 'shield') {
             updatedPlayer.manaShieldActive = true;
@@ -1101,7 +1152,8 @@ export const useBattleStore = create<BattleState>()((set, get) => ({
         // Add extra energy for casting spells (+15% faster ultimate)
         const bonusEnergy = Math.min(100 - updatedPlayer.energy, 15);
         updatedPlayer.energy += bonusEnergy;
-        set({ player: updatedPlayer }); // Final player sync
+        // Set spell cooldown from spell definition, then do final player sync
+        set({ player: updatedPlayer, spellCooldownTurns: spell.cooldownTurns ?? 0 });
 
         // Check for victory
         if (updatedEnemy.hp <= 0) {

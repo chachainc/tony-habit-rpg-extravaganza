@@ -155,7 +155,7 @@ export const Arena = ({ onClose }: { onClose: () => void }) => {
         startBattle,
     } = useBattleStore();
 
-    const getOwnedSpells = useMagicStore(s => s.getOwnedSpells);
+    const { getOwnedSpells, equippedSpell, equipSpell } = useMagicStore();
 
     const [view, setView] = useState<'map' | 'battle'>(location.state?.startBattle ? 'battle' : 'map');
     const [autoAttack, setAutoAttack] = useState(false);
@@ -508,8 +508,7 @@ export const Arena = ({ onClose }: { onClose: () => void }) => {
             const { activePet: activePetId } = usePetStore.getState();
             const activePet = activePetId ? PET_DATABASE[activePetId] : null;
 
-            // Get owned spells for display
-            const allOwnedSpells = getOwnedSpells();
+
 
             return (
                 <div className="modal-overlay arena-overlay">
@@ -648,22 +647,51 @@ export const Arena = ({ onClose }: { onClose: () => void }) => {
                                                 </div>
                                             </div>
 
-                                            {/* Owned Spells */}
-
-                                            {allOwnedSpells.length > 0 && (
-                                                <div className="prep-spells-section">
-                                                    <div className="prep-section-label">OWNED SPELLS</div>
-                                                    <div className="prep-spells-list">
-                                                        {allOwnedSpells.map(spell => (
-                                                            <div key={spell.id} className="prep-spell-item">
-                                                                <span className="prep-spell-icon">{spell.icon}</span>
-                                                                <span className="prep-spell-name">{spell.name}</span>
-                                                                <span className="prep-spell-cost">{spell.mpCost} MP</span>
-                                                            </div>
-                                                        ))}
-                                                    </div>
-                                                </div>
-                                            )}
+                                            {/* Spell Equip — Dropdown to pick equipped spell */}
+                                            <div className="active-pet-section">
+                                                <div className="prep-section-label">EQUIPPED SPELL</div>
+                                                {(() => {
+                                                    const ownedSpells = getOwnedSpells();
+                                                    if (ownedSpells.length === 0) {
+                                                        return <div className="no-buffs">No spells owned — visit the Arcane Emporium</div>;
+                                                    }
+                                                    return (
+                                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                                                            <select
+                                                                value={equippedSpell ?? ''}
+                                                                onChange={e => equipSpell(e.target.value || null)}
+                                                                style={{
+                                                                    width: '100%',
+                                                                    padding: '0.4rem 0.6rem',
+                                                                    background: 'rgba(30,20,60,0.8)',
+                                                                    border: '1px solid rgba(139,92,246,0.4)',
+                                                                    borderRadius: '8px',
+                                                                    color: '#e9d5ff',
+                                                                    fontSize: '0.875rem',
+                                                                }}
+                                                            >
+                                                                <option value="">— No Spell Equipped —</option>
+                                                                {ownedSpells.map(s => (
+                                                                    <option key={s.id} value={s.id}>
+                                                                        {s.icon} {s.name} ({s.mpCost} MP{(s.cooldownTurns ?? 0) > 0 ? `, CD: ${s.cooldownTurns}t` : ''})
+                                                                    </option>
+                                                                ))}
+                                                            </select>
+                                                            {equippedSpell && (() => {
+                                                                const sp = ownedSpells.find(s => s.id === equippedSpell);
+                                                                if (!sp) return null;
+                                                                return (
+                                                                    <div style={{ fontSize: '0.75rem', color: '#a78bfa', padding: '0.4rem' }}>
+                                                                        {sp.icon} {sp.name} — {sp.mpCost} MP
+                                                                        {sp.baseDamage !== undefined && sp.tier !== 'old' ? ` · ${sp.baseDamage} base dmg` : ''}
+                                                                        {(sp.cooldownTurns ?? 0) > 0 ? ` · Cooldown: ${sp.cooldownTurns}t` : ''}
+                                                                    </div>
+                                                                );
+                                                            })()}
+                                                        </div>
+                                                    );
+                                                })()}
+                                            </div>
                                         </div>
                                     </Panel>
                                 </div>
@@ -736,12 +764,13 @@ export const Arena = ({ onClose }: { onClose: () => void }) => {
                                     {/* 1. Heavy Attack */}
                                     <button
                                         className="command-btn attack"
-                                        disabled={phase !== 'select_action' || autoAttack || isRolling}
+                                        disabled={phase !== 'select_action' || autoAttack || isRolling || useBattleStore.getState().heavyAttackCooldown > 0}
                                         onClick={() => {
-                                            if (phase === 'select_action') {
+                                            if (phase === 'select_action' && useBattleStore.getState().heavyAttackCooldown === 0) {
                                                 const maxHit = Math.floor(player.atk * 1.5 * useBattleStore.getState().playerDamageModifier);
                                                 const isSuccess = Math.random() > 0.5;
                                                 const finalDamage = isSuccess ? maxHit : 0;
+                                                useBattleStore.setState({ heavyAttackCooldown: 1 });
                                                 selectAbility({ 
                                                     id: 'heavy_strike', 
                                                     name: 'Heavy Strike', 
@@ -761,7 +790,10 @@ export const Arena = ({ onClose }: { onClose: () => void }) => {
                                         <div className="btn-icon"><Swords /></div>
                                         <div className="btn-label" style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
                                             <span>Heavy</span>
-                                            <span style={{ fontSize: '0.7rem', opacity: 0.8 }}>(50%) chance at max hit: {Math.floor(player.atk * 1.5 * useBattleStore.getState().playerDamageModifier)}</span>
+                                            {useBattleStore.getState().heavyAttackCooldown > 0
+                                                ? <span style={{ fontSize: '0.7rem', color: '#ef4444' }}>Cooldown: {useBattleStore.getState().heavyAttackCooldown} turn remaining</span>
+                                                : <span style={{ fontSize: '0.7rem', opacity: 0.8 }}>50% chance · 150% dmg · CD: 1 turn</span>
+                                            }
                                         </div>
                                     </button>
 
@@ -773,15 +805,16 @@ export const Arena = ({ onClose }: { onClose: () => void }) => {
                                             if (phase === 'select_action') {
                                                 setIsRolling(true);
                                                 const maxHit = Math.floor(player.atk * useBattleStore.getState().playerDamageModifier);
+                                                const minHit = Math.floor(maxHit * 0.7);
                                                 
                                                 let rolls = 0;
                                                 const maxRolls = 10;
                                                 const interval = setInterval(() => {
-                                                    setRollValue(Math.floor(Math.random() * (maxHit + 1)));
+                                                    setRollValue(Math.floor(minHit + Math.random() * (maxHit - minHit + 1)));
                                                     rolls++;
                                                     if (rolls >= maxRolls) {
                                                         clearInterval(interval);
-                                                        const finalRoll = Math.floor(Math.random() * (maxHit + 1));
+                                                        const finalRoll = Math.floor(minHit + Math.random() * (maxHit - minHit + 1));
                                                         setRollValue(finalRoll);
                                                         setTimeout(() => {
                                                             selectAbility({ 
@@ -812,7 +845,7 @@ export const Arena = ({ onClose }: { onClose: () => void }) => {
                                                 {isRolling && rollValue !== null ? (
                                                     <span style={{ color: '#fbbf24', fontWeight: 'bold', fontSize: '1rem' }}>🎲 {rollValue}</span>
                                                 ) : (
-                                                    '(Roll die, hit any # up to max)'
+                                                    'Reliable strike (70%–100%)'
                                                 )}
                                             </span>
                                         </div>
@@ -822,11 +855,15 @@ export const Arena = ({ onClose }: { onClose: () => void }) => {
                                     {(() => {
                                         const equippedSpellId = useBattleStore.getState().equippedSpells[0];
                                         const spell = equippedSpellId ? getOwnedSpells().find(s => s.id === equippedSpellId) : null;
+                                        const spellCooldownTurns = useBattleStore.getState().spellCooldownTurns;
                                         const expectedDamage = spell && spell.effect.type === 'damage' 
-                                            ? Math.round(spell.effect.value * getMagicAttack() * useBattleStore.getState().playerDamageModifier)
+                                            ? (spell.baseDamage !== undefined && spell.tier !== 'old'
+                                                ? Math.round(spell.baseDamage * (1 + (useGameStore.getState().skills['Intelligence']?.level ?? 1) * 0.03) * useBattleStore.getState().playerDamageModifier)
+                                                : Math.round(spell.effect.value * getMagicAttack() * useBattleStore.getState().playerDamageModifier))
                                             : null;
                                         
-                                        const canCast = spell && currentMP >= spell.mpCost;
+                                        const onCooldown = spellCooldownTurns > 0;
+                                        const canCast = spell && currentMP >= spell.mpCost && !onCooldown;
 
                                         return (
                                             <button
@@ -842,9 +879,16 @@ export const Arena = ({ onClose }: { onClose: () => void }) => {
                                                 <div className="btn-label">
                                                     {!spell 
                                                         ? 'No Spell Equipped' 
-                                                        : `Cast ${spell.name} ${expectedDamage ? `(${expectedDamage} dmg)` : ''}`}
+                                                        : onCooldown
+                                                            ? `${spell.name} on Cooldown`
+                                                            : `Cast ${spell.name} ${expectedDamage ? `(${expectedDamage} dmg)` : ''}`}
                                                 </div>
-                                                {spell && (
+                                                {spell && onCooldown && (
+                                                    <div className="mp-display" style={{ color: '#ef4444' }}>
+                                                        {spellCooldownTurns} turn{spellCooldownTurns !== 1 ? 's' : ''} remaining
+                                                    </div>
+                                                )}
+                                                {spell && !onCooldown && (
                                                     <div className="mp-display" style={{ color: canCast ? 'inherit' : '#ef4444' }}>
                                                         {spell.mpCost} MP
                                                     </div>

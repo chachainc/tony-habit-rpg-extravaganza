@@ -113,7 +113,7 @@ export const useCheckInStore = create<CheckInState>()(
                 // Note: Dynamic imports to avoid circular dependency
                 import('./useGameStore').then(({ useGameStore }) => {
                     useGameStore.getState().addCurrency(finalReward.gold);
-                    if (finalReward.habitXp) { useGameStore.getState().addSkillXp('Habit', finalReward.habitXp); }
+                    if (finalReward.habitXp) { useGameStore.getState().addSkillXp('Habit', finalReward.habitXp, { capExempt: true }); }
                 });
 
                 if (finalReward.buffType && finalReward.buffValue && finalReward.buffDuration) {
