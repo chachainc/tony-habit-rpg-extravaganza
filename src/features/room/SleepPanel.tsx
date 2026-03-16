@@ -20,7 +20,7 @@ export const SleepPanel = ({ onClose }: { onClose: () => void }) => {
         e.preventDefault();
         const xp = logSleep(sleepScore, durationMinutes);
         if (xp > 0) {
-            addSkillXp('Sleep', xp);
+            addSkillXp('Sleep', xp, { capExempt: true });
             addGlobalXp(Math.floor(xp * 0.2));
         }
         // Jump to history to see the new entry
@@ -31,7 +31,7 @@ export const SleepPanel = ({ onClose }: { onClose: () => void }) => {
         e.preventDefault();
         const xp = logReadiness(readinessScore);
         if (xp > 0) {
-            addSkillXp('Sleep', xp);
+            addSkillXp('Sleep', xp, { capExempt: true });
             addGlobalXp(Math.floor(xp * 0.2));
         }
         setActiveTab('history');

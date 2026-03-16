@@ -16,10 +16,8 @@ interface Props {
     onClose: () => void;
 }
 
-// Hospital/First Aid store items (always accessible, no skill gates)
+// Hospital/First Aid store items
 const HOSPITAL_ITEMS = [
-    'consumable_health_potion',
-    'consumable_defense_stabilizer',
     'consumable_streak_shield',
     'consumable_monopoly_refresh',
     'consumable_xp_boost',
@@ -49,6 +47,14 @@ export const HospitalStore = ({ onClose }: Props) => {
 
         if (success) {
             playPurchaseSound();
+            
+            // Instantly apply monopoly refresh effect
+            if (confirmItem.id === 'consumable_monopoly_refresh') {
+                import('../../../store/useMonopolyStore').then(({ useMonopolyStore }) => {
+                    useMonopolyStore.getState().addDailyTickets(5);
+                });
+            }
+
             setSuccessItem(confirmItem);
             setShowSuccess(true);
         }

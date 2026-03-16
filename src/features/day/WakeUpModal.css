@@ -73,10 +73,16 @@
     }
 
     .wake-checkin__reward-overlay {
+        position: fixed;
         min-width: unset;
-        width: 90%;
-        max-width: 320px;
-        padding: 1rem;
+        width: 92vw;
+        max-width: 340px;
+        padding: 1.5rem;
+        box-sizing: border-box;
+        max-height: 85vh;
+        overflow-y: auto;
+        /* Safe area bottoms */
+        margin-bottom: env(safe-area-inset-bottom, 20px);
     }
 
     .task-prompt__title {
@@ -452,7 +458,7 @@
 
 /* Reward overlay (inside the modal) */
 .wake-checkin__reward-overlay {
-    position: absolute;
+    position: fixed;
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
@@ -461,7 +467,7 @@
     border-radius: 14px;
     padding: 1.5rem;
     text-align: center;
-    z-index: 10;
+    z-index: 1000;
     min-width: 300px;
     box-shadow: 0 16px 48px rgba(0, 0, 0, 0.5);
 }

@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { usePetStore, PET_DATABASE } from '../../store/usePetStore';
 import { useInventoryStore, ITEM_DB } from '../../store/useInventoryStore';
 import { useDayStore } from '../../store/useDayStore';
+import { useRoomStore } from '../../store/useRoomStore';
 import { Heart, Zap, Gamepad2, Utensils } from 'lucide-react';
 import { Card } from '../../components/ui/Card';
 import { ITEM_DATABASE } from '../../data/items';
@@ -36,6 +37,8 @@ export const PetPage = () => {
     const { activePet, name, health, hunger, mood, energy, feed, play } = usePetStore();
     const { items, removeItem } = useInventoryStore();
     const { playerCurrentHP, playerMaxHP, heal } = useDayStore();
+    const roomBonuses = useRoomStore((s) => s.getRoomCombatBonuses());
+    const effectiveMaxHP = playerMaxHP + roomBonuses.maxHP;
 
     // ── Sub-tab state ──────────────────────────────────────────────────────────
     const [activeTab, setActiveTab] = useState<'pets' | 'fusion'>('pets');
@@ -195,9 +198,9 @@ export const PetPage = () => {
                                     <h3>Your HP</h3>
                                     <div className="hp-display">
                                         <div className="hp-bar-large">
-                                            <div className="hp-fill" style={{ width: `${(playerCurrentHP / playerMaxHP) * 100}%` }}></div>
+                                            <div className="hp-fill" style={{ width: `${(playerCurrentHP / effectiveMaxHP) * 100}%` }}></div>
                                         </div>
-                                        <span className="hp-text">{playerCurrentHP}/{playerMaxHP}</span>
+                                        <span className="hp-text">{playerCurrentHP}/{effectiveMaxHP}</span>
                                     </div>
                                 </Card>
 

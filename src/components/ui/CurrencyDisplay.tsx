@@ -2,6 +2,7 @@ import { Coins, Ticket, Diamond, Heart, Sword, Shield } from 'lucide-react';
 import { useCurrencyStore } from '../../store/useCurrencyStore';
 import { useGameStore } from '../../store/useGameStore';
 import { useDayStore } from '../../store/useDayStore';
+import { useRoomStore } from '../../store/useRoomStore';
 import './CurrencyDisplay.css';
 
 interface Props {
@@ -12,10 +13,12 @@ export const CurrencyDisplay = ({ compact = false }: Props) => {
     const { gold, tickets, diamonds } = useCurrencyStore();
     const { getAttack, getDefense } = useGameStore();
     const { playerCurrentHP, playerMaxHP } = useDayStore();
+    const roomBonuses = useRoomStore((s) => s.getRoomCombatBonuses());
+    const effectiveMaxHP = playerMaxHP + roomBonuses.maxHP;
 
     const attack = getAttack();
     const defense = getDefense();
-    const hpPercent = Math.round((playerCurrentHP / playerMaxHP) * 100);
+    const hpPercent = Math.round((playerCurrentHP / effectiveMaxHP) * 100);
 
     if (compact) {
         return (
@@ -66,7 +69,7 @@ export const CurrencyDisplay = ({ compact = false }: Props) => {
                     <div className="currency-info">
                         <span className="currency-label">HP</span>
                         <span className="currency-value">
-                            {playerCurrentHP}/{playerMaxHP}
+                            {playerCurrentHP}/{effectiveMaxHP}
                             <span className="hp-percent">({hpPercent}%)</span>
                         </span>
                     </div>

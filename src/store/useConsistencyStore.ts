@@ -102,7 +102,7 @@ export const useConsistencyStore = create<ConsistencyState>()(
 
                 // Award 5 XP to Habit Building skill for weekly consistency
                 const habitBuildingXp = 5;
-                useGameStore.getState().addSkillXp('Habit Building', habitBuildingXp);
+                useGameStore.getState().addSkillXp('Habit', habitBuildingXp);
 
                 set({
                     hasClaimedWeeklyBonus: true,

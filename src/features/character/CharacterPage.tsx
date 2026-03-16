@@ -1,10 +1,11 @@
-import { useGameStore, type SkillName } from '../../store/useGameStore';
+import { useGameStore } from '../../store/useGameStore';
 import { useSkillTrophyStore } from '../../store/useSkillTrophyStore';
 import { useBookTrophyStore } from '../../store/useBookTrophyStore';
 import { useStrategyStore } from '../../store/useStrategyStore';
 import { useDayStore } from '../../store/useDayStore';
 import { useProfileStore } from '../../store/useProfileStore';
 import { getPassiveBonuses } from '../../store/usePassiveEffects';
+import { SKILL_COMBAT_ROLES } from '../../store/useCombatFormulas';
 import { useNavigate } from 'react-router-dom';
 import { Sword, Shield, Sparkles, Droplet, Heart, Crown, BookOpen } from 'lucide-react';
 import { useHeroImage } from '../../hooks/useHeroImage';
@@ -17,7 +18,6 @@ interface StatLine {
     type?: 'base' | 'bonus' | 'total' | 'penalty';
 }
 
-const DEFENSE_SKILLS: SkillName[] = ['Sleep', 'Hygiene', 'Cardio', 'Flexibility', 'Habit Building'];
 
 export const CharacterPage = () => {
     const game = useGameStore();
@@ -40,11 +40,11 @@ export const CharacterPage = () => {
         return '🗡️';                  // Adventurer / no rank
     };
 
-    const { skills, getAttack, getDefense, getMagicAttack, getMaxMP, getGlobalLevel, isDefenseSuppressed, defenseDecayAmount } = game;
+    const { skills, getAttack, getDefense, getMagicAttack, getGlobalLevel } = game;
     const equipBonuses = getPassiveBonuses();
 
     // ─── ATTACK BREAKDOWN ───────────────────────────
-    const strengthLevel = skills['Strength'].level;
+    const strengthLevel = skills['Strength']?.level ?? 1;
     const baseAtk = Math.floor(strengthLevel * 1.5) + 5;
     const equipAtk = equipBonuses.attack_bonus;
     const trophyAtk = skillTrophy.getStrengthATKBonus();
@@ -59,28 +59,21 @@ export const CharacterPage = () => {
     atkLines.push({ label: 'Total Attack', value: `${totalAtk}`, type: 'total' });
 
     // ─── DEFENSE BREAKDOWN ──────────────────────────
-    const defLevels = DEFENSE_SKILLS.map(s => skills[s].level);
-    const avgDefLevel = defLevels.reduce((a, b) => a + b, 0) / 5;
-    let rawBaseDef = Math.floor(avgDefLevel * 1.2) + 3;
+    const hygieneLevel = skills['Hygiene']?.level ?? 1;
+    const mitigationPct = hygieneLevel; // 1% per level
     const equipDef = equipBonuses.defense_bonus;
     const trophyDef = skillTrophy.getSleepDEFBonus();
     const totalDef = getDefense() + equipDef; // Manually add here for now
-    const suppressed = isDefenseSuppressed();
 
-    const defLines: StatLine[] = DEFENSE_SKILLS.map(s => ({
-        label: `${s} Lv.${skills[s].level}`,
-        value: `contributes to DEF`,
-        type: 'base' as const,
-    }));
-    defLines.push({ label: `Avg defense skill → base DEF`, value: `${rawBaseDef}`, type: 'base' });
-    if (defenseDecayAmount > 0) defLines.push({ label: `Defense decay (−${Math.round(defenseDecayAmount * 100)}%)`, value: `-${Math.floor(rawBaseDef * defenseDecayAmount)}`, type: 'penalty' });
-    if (suppressed) defLines.push({ label: `Sleep/Hygiene suppression (−50%)`, value: `penalty active`, type: 'penalty' });
+    const defLines: StatLine[] = [
+        { label: `Hygiene Lv.${hygieneLevel}`, value: `${mitigationPct}% Mitigation`, type: 'base' },
+    ];
     if (equipDef > 0) defLines.push({ label: `Equipment → +DEF`, value: `+${equipDef}`, type: 'bonus' });
     if (trophyDef > 0) defLines.push({ label: `Sleep Trophies → +DEF`, value: `+${trophyDef}`, type: 'bonus' });
     defLines.push({ label: 'Total Defense', value: `${totalDef}`, type: 'total' });
 
     // ─── MAGIC ATK BREAKDOWN ────────────────────────
-    const intLevel = skills['Intelligence'].level;
+    const intLevel = skills['Intelligence']?.level ?? 1;
     const baseMagicAtk = Math.floor(5 + intLevel * 2);
     const trophyInt = bookTrophy.getIntelligenceBonus();
     const totalMagicAtk = getMagicAttack();
@@ -88,44 +81,43 @@ export const CharacterPage = () => {
     const magicLines: StatLine[] = [
         { label: `Intelligence Lv.${intLevel} → base Magic ATK`, value: `${baseMagicAtk}`, type: 'base' },
     ];
-    if (trophyInt > 0) magicLines.push({ label: `Book Trophies → +INT`, value: `+${trophyInt}`, type: 'bonus' });
+    if (trophyInt > 0) magicLines.push({ label: `Book Trophies → +Magic ATK`, value: `+${trophyInt}`, type: 'bonus' });
     magicLines.push({ label: 'Total Magic ATK', value: `${totalMagicAtk}`, type: 'total' });
 
     // ─── MP BREAKDOWN ───────────────────────────────
-    const baseMP = Math.floor(50 + intLevel * 10);
+    const sleepManaLevel = skills['Sleep']?.level ?? 1;
+    const baseMP = Math.floor(50 + sleepManaLevel * 10);
     const trophyMP = bookTrophy.getMaxMPBonus();
-    const totalMP = getMaxMP();
+    const totalMP = baseMP + trophyMP;
 
     const mpLines: StatLine[] = [
-        { label: `Intelligence Lv.${intLevel} → base MP`, value: `${baseMP}`, type: 'base' },
+        { label: `Sleep Lv.${sleepManaLevel} → base MP`, value: `${baseMP}`, type: 'base' },
     ];
     if (trophyMP > 0) mpLines.push({ label: `Book Trophies → +MP`, value: `+${trophyMP}`, type: 'bonus' });
     mpLines.push({ label: 'Total Max MP', value: `${totalMP}`, type: 'total' });
 
     // ─── HP BREAKDOWN ───────────────────────────────
-    const healthLevel = skills['Health'].level;
-    const baseHP = 95 + healthLevel * 5;
     const equipHP = equipBonuses.max_hp_bonus;
     const trophyHP = skillTrophy.getSleepHPBonus();
 
     const hpLines: StatLine[] = [
-        { label: `Health Lv.${healthLevel} → base HP`, value: `${baseHP}`, type: 'base' },
+        { label: `Health Lv.${skills['Health']?.level ?? 1} → base HP`, value: `${Math.round((skills['Health']?.level ?? 1) * 2 + 80)}`, type: 'base' },
     ];
     if (equipHP > 0) hpLines.push({ label: `Equipment → +HP`, value: `+${equipHP}`, type: 'bonus' });
     if (trophyHP > 0) hpLines.push({ label: `Sleep Trophies → +HP`, value: `+${trophyHP}`, type: 'bonus' });
-    hpLines.push({ label: 'Total Max HP', value: `${baseHP + equipHP + trophyHP}`, type: 'total' });
+    hpLines.push({ label: 'Total Max HP', value: `${Math.round((skills['Health']?.level ?? 1) * 2 + 80) + equipHP + trophyHP}`, type: 'total' });
 
     // ─── STRATEGY / CONQUEST ────────────────────────
     const stratLines: StatLine[] = [
-        { label: `Strategy Level`, value: `${strategy.strategyLevel}`, type: 'base' },
-        { label: `Conquest Power Score`, value: `${strategy.strategyLevel * 10}`, type: 'total' },
+        { label: `Strategy Level`, value: `${strategy.strategyLevel ?? 1}`, type: 'base' },
+        { label: `Conquest Power Score`, value: `${(strategy.strategyLevel ?? 1) * 10}`, type: 'total' },
         { label: `Equipment Strategy Bonus`, value: `+${equipBonuses.strategy_bonus}`, type: 'bonus' },
         { label: `Raised by: daily chess`, value: `♟️`, type: 'base' },
     ];
 
     // ─── SLEEP SUMMARY ──────────────────────────────
-    const sleepCount = day.sleepLogs.length;
-    const totalSleepXp = day.sleepLogs.reduce((sum, l) => sum + l.xpEarned, 0);
+    const sleepCount = day.sleepLogs?.length ?? 0;
+    const totalSleepXp = day.sleepLogs?.reduce((sum, l) => sum + l.xpEarned, 0) ?? 0;
 
     // ─── RENDER ─────────────────────────────────────
     const renderStatSection = (title: string, icon: React.ReactNode, lines: StatLine[], color: string) => (
@@ -176,8 +168,7 @@ export const CharacterPage = () => {
                 </div>
 
                 <p className="char-explainer">
-                    Here's how your daily habits, equipment, and trophies shape your character's power.
-                    Every skill you train makes you stronger!
+                    Your character's power comes from real-world habits! Keep in mind: daily and weekly tasks have a maximum XP cap per skill each day to prevent overworking. Sleep logging, daily check-ins, and combat rewards bypass these caps entirely.
                 </p>
 
                 {/* Sleep insight */}
@@ -204,16 +195,11 @@ export const CharacterPage = () => {
                 <div className="char-how-section">
                     <h3>How Your Habits Help</h3>
                     <div className="char-how-list">
-                        <div className="char-how-item">💪 <strong>Strength</strong> training → increases your Attack</div>
-                        <div className="char-how-item">😴 <strong>Sleep</strong> quality → increases your Defense & HP</div>
-                        <div className="char-how-item">🏃 <strong>Cardio</strong> → increases Defense & movement speed</div>
-                        <div className="char-how-item">🤸 <strong>Flexibility</strong> → increases Defense</div>
-                        <div className="char-how-item">🧼 <strong>Hygiene</strong> → increases Defense (low = suppressed!)</div>
-                        <div className="char-how-item">🔥 <strong>Habit Building</strong> → directly boosts Defense</div>
-                        <div className="char-how-item">🧠 <strong>Intelligence</strong> (reading) → Magic ATK & Max MP</div>
-                        <div className="char-how-item">♟️ <strong>Daily Chess</strong> → Strategy Level → Conquest power</div>
-                        <div className="char-how-item">🛡️ <strong>Equipment</strong> → flat bonuses to ATK, DEF, HP</div>
-                        <div className="char-how-item">🏆 <strong>Trophies</strong> → permanent stat bonuses</div>
+                        {Object.entries(SKILL_COMBAT_ROLES).map(([skillName, role]) => (
+                            <div key={skillName} className="char-how-item">
+                                {role.icon} <strong>{skillName}</strong> → {role.description}
+                            </div>
+                        ))}
                     </div>
                 </div>
             </div>

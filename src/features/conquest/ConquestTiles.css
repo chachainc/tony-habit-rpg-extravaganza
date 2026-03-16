@@ -11,6 +11,7 @@
     flex-direction: column;
     background: #050a14;
     overflow: hidden;
+    padding-bottom: env(safe-area-inset-bottom, 0px);
 }
 
 .tiles-bg-blur {
@@ -399,14 +400,46 @@
 
 /* ─── RESPONSIVE CLAMPING ──────────────────────────── */
 @media (max-width: 600px) {
-    .tiles-board-tile { width: 44px; height: 52px; }
-    .tile-face { font-size: 1.4rem; }
-    .tile-face-img { width: 36px; height: 36px; }
-    .tiles-power-btn { width: 48px; height: 48px; font-size: 1.2rem; }
-    .tiles-powers { width: 52px; gap: 0.5rem; }
-    .tiles-tray-bar { width: 60px; padding: 0.4rem; }
-    .tiles-tray-slot, .tiles-tray-tile { width: 44px; height: 52px; }
-    .tiles-tray-vertical { gap: 4px; }
+    .tiles-game-main {
+        flex-direction: column;
+        align-items: center;
+        padding: 0.5rem;
+    }
+    .tiles-powers {
+        flex-direction: row;
+        width: 100%;
+        height: auto;
+        justify-content: center;
+        gap: 1.5rem;
+        margin-bottom: 0px;
+    }
+    .tiles-board-tile { width: 38px; height: 46px; }
+    .tile-face { font-size: 1.3rem; }
+    .tile-face-img { width: 32px; height: 32px; }
+    .tiles-power-btn { width: 44px; height: 44px; font-size: 1.2rem; }
+    .tiles-tray-bar {
+        width: 100%;
+        max-width: 360px;
+        flex-direction: row;
+        margin-top: auto;
+        padding: 0.5rem;
+        border-radius: 12px;
+        margin-bottom: max(env(safe-area-inset-bottom, 0px), 8px);
+    }
+    .tiles-tray-vertical {
+        flex-direction: row;
+        justify-content: center;
+        gap: 4px;
+        width: auto;
+    }
+    .tiles-tray-slot, .tiles-tray-tile { width: 38px; height: 46px; }
+    .tiles-tray-label {
+        flex-direction: column;
+        margin-top: 0;
+        margin-left: auto;
+        padding-top: 0;
+        justify-content: center;
+    }
 }
 
 

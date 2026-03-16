@@ -26,19 +26,17 @@ export interface SkillCombatRole {
 }
 
 export const SKILL_COMBAT_ROLES: Record<SkillName, SkillCombatRole> = {
-    'Strength': { skill: 'Strength', primaryStat: 'ATK', description: 'Pure attack power scaling', icon: '💪' },
-    'Cardio': { skill: 'Cardio', primaryStat: 'SPD', description: 'Crit chance, speed, HP pool', icon: '🏃' },
-    'Sleep': { skill: 'Sleep', primaryStat: 'DEF', description: 'Defense contributor, HP regen', icon: '😴' },
-    'Intelligence': { skill: 'Intelligence', primaryStat: 'MATK', description: 'Magic ATK, XP multiplier', icon: '🧠' },
-    'Flexibility': { skill: 'Flexibility', primaryStat: 'SPD', description: 'Dodge chance, speed, DEF contributor', icon: '🤸' },
-    'Hygiene': { skill: 'Hygiene', primaryStat: 'DEF', description: 'Resistance, DEF contributor', icon: '🧼' },
-    'Habit Building': { skill: 'Habit Building', primaryStat: 'DEF', description: 'DEF contributor, streak bonus', icon: '🔥' },
-    'Luck': { skill: 'Luck', primaryStat: 'CRIT', description: 'Crit chance scaling', icon: '🍀' },
-    'Clothing': { skill: 'Clothing', primaryStat: 'MISC', description: 'Social stat', icon: '👔' },
-    'Housemaid': { skill: 'Housemaid', primaryStat: 'MP', description: 'Mana pool scaling', icon: '🧹' },
-    'Work': { skill: 'Work', primaryStat: 'GOLD', description: 'Currency generation', icon: '💼' },
-    'Health': { skill: 'Health', primaryStat: 'HP', description: 'Survivability', icon: '❤️' },
-    'Social': { skill: 'Social', primaryStat: 'MISC', description: 'Social stat', icon: '🤝' },
+    'Strength': { skill: 'Strength', primaryStat: 'ATK', description: 'Physical attack damage', icon: '💪' },
+    'Cardio': { skill: 'Cardio', primaryStat: 'SPD', description: 'Attack speed + small dodge chance', icon: '🏃' },
+    'Health': { skill: 'Health', primaryStat: 'HP', description: 'Max HP', icon: '❤️' },
+    'Hygiene': { skill: 'Hygiene', primaryStat: 'DEF', description: 'Physical defense', icon: '🧼' },
+    'Sleep': { skill: 'Sleep', primaryStat: 'MP', description: 'Mana pool', icon: '😴' },
+    'Intelligence': { skill: 'Intelligence', primaryStat: 'MATK', description: 'Magic attack scaling', icon: '🧠' },
+    'Flexibility': { skill: 'Flexibility', primaryStat: 'TIER', description: 'Spell tier control', icon: '🤸' },
+    'Habit': { skill: 'Habit', primaryStat: 'CRIT', description: 'Critical hit chance', icon: '🔥' },
+    'Social': { skill: 'Social', primaryStat: 'MDEF', description: 'Magic defense', icon: '🤝' },
+    'Work': { skill: 'Work', primaryStat: 'ECON', description: 'Economic bonuses (shop discounts, gold rewards)', icon: '💼' },
+    'Luck': { skill: 'Luck', primaryStat: 'DROP', description: 'Rare reward probability (spins, drops, etc.)', icon: '🍀' },
 };
 
 // ═══════════════════════════════════════════
@@ -156,7 +154,7 @@ export function getDetailedCombatBreakdown(): CombatBreakdown {
     const auraStore = useAuraStore.getState();
     const consistencyStore = useConsistencyStore.getState();
     const activeRiskRegions = useRiskStore.getState().getActiveRegionBonuses();
-    const { skills, defenseDecayAmount } = gameStore;
+    const { skills } = gameStore;
 
     const activeAura = AURAS.find(a => a.id === auraStore.activeAuraId);
     const weeklyProgress = consistencyStore.getWeeklyProgress();
@@ -164,7 +162,7 @@ export function getDetailedCombatBreakdown(): CombatBreakdown {
     const synergy = getSkillSynergyBonus();
 
     // ── ATK ──────────────────────────────
-    const strengthLevel = skills['Strength'].level;
+    const strengthLevel = skills['Strength']?.level ?? 1;
     const baseAtk = Math.floor(strengthLevel * 1.5) + 5;
     const equipAtk = passives.attack_bonus;
     const trophyAtk = skillTrophyStore.getStrengthATKBonus();
@@ -210,36 +208,17 @@ export function getDetailedCombatBreakdown(): CombatBreakdown {
     }
 
     // ── DEF ──────────────────────────────
-    const sleepLevel = skills['Sleep'].level;
-    const hygieneLevel = skills['Hygiene'].level;
-    const cardioLevel = skills['Cardio'].level;
-    const flexLevel = skills['Flexibility'].level;
-    const habitLevel = skills['Habit Building'].level;
-    const avgDefenseSkills = (sleepLevel + hygieneLevel + cardioLevel + flexLevel + habitLevel) / 5;
-    let baseDef = Math.floor(avgDefenseSkills * 1.2) + 3;
-
+    const hygieneLevel = skills['Hygiene']?.level ?? 1;
     const defSources: StatSource[] = [
-        { label: `Skills avg (${Math.round(avgDefenseSkills)})`, value: baseDef },
+        { label: `Hygiene Mitigation (%)`, value: hygieneLevel },
     ];
-
-    if (defenseDecayAmount > 0) {
-        const decayPenalty = Math.floor(baseDef * defenseDecayAmount);
-        baseDef = Math.floor(baseDef * (1 - defenseDecayAmount));
-        defSources.push({ label: `Decay (-${Math.round(defenseDecayAmount * 100)}%)`, value: -decayPenalty });
-    }
-
-    if (gameStore.isDefenseSuppressed()) {
-        const suppressPenalty = Math.floor(baseDef * 0.5);
-        baseDef = Math.floor(baseDef * 0.5);
-        defSources.push({ label: 'Suppressed (-50%)', value: -suppressPenalty });
-    }
 
     const equipDef = passives.defense_bonus;
     const trophyDef = skillTrophyStore.getSleepDEFBonus();
-    defSources.push({ label: 'Equipment', value: equipDef });
-    defSources.push({ label: 'Trophies', value: trophyDef });
+    defSources.push({ label: 'Equipment Flat DEF', value: equipDef });
+    defSources.push({ label: 'Trophies Flat DEF', value: trophyDef });
 
-    let defSubtotal = Math.max(1, baseDef + equipDef + trophyDef);
+    let defSubtotal = Math.max(1, gameStore.getDefense() + equipDef + trophyDef);
 
     if (activeRiskRegions.includes('iron_highlands')) {
         const riskDefVal = Math.round(defSubtotal * 0.10);
@@ -261,21 +240,22 @@ export function getDetailedCombatBreakdown(): CombatBreakdown {
     }
 
     // ── MATK ─────────────────────────────
-    const intLevel = skills['Intelligence'].level;
-    const baseMatk = Math.floor(5 + intLevel * 2);
+    const intLevel = skills['Intelligence']?.level ?? 1;
+    const baseMatk = Math.floor(5 * (1 + (intLevel * 0.03)));
     const bookTrophyBonus = bookTrophyStore.getIntelligenceBonus();
     const matkSources: StatSource[] = [
-        { label: `Intelligence Lv.${intLevel}`, value: baseMatk },
+        { label: `Int Lv.${intLevel} Base`, value: baseMatk },
         { label: 'Book Trophies', value: bookTrophyBonus },
     ];
 
     // ── HP ───────────────────────────────
-    const baseHp = Math.round(cardioLevel * 15 + 80);
+    const healthLevel = skills['Health']?.level ?? 1;
+    const baseHp = Math.round(healthLevel * 2 + 80);
     const roomHp = roomBonuses.maxHP;
     const trophyHp = skillTrophyStore.getSleepHPBonus();
     const equipHp = passives.max_hp_bonus;
     const hpSources: StatSource[] = [
-        { label: `Cardio Lv.${cardioLevel}`, value: baseHp },
+        { label: `Health Lv.${healthLevel}`, value: baseHp },
         { label: 'Room', value: roomHp },
         { label: 'Trophies', value: trophyHp },
         { label: 'Equipment', value: equipHp },
@@ -286,10 +266,12 @@ export function getDetailedCombatBreakdown(): CombatBreakdown {
     }
 
     // ── SPD ──────────────────────────────
-    const baseSpd = Math.round(flexLevel * 2 + 50);
+    const cardioLevel = skills['Cardio']?.level ?? 1;
+    const cardioTier = 1 + (cardioLevel * 0.02);
+    const baseSpd = Math.round(cardioTier * 20 + 10);
     const trophySpd = skillTrophyStore.getCardioSPDBonus();
     const spdSources: StatSource[] = [
-        { label: `Flexibility Lv.${flexLevel}`, value: baseSpd },
+        { label: `Cardio Speed`, value: baseSpd },
         { label: 'Trophies', value: trophySpd },
     ];
     let spdSubtotal = baseSpd + trophySpd;
@@ -318,11 +300,11 @@ export function getDetailedCombatBreakdown(): CombatBreakdown {
     }
 
     // ── MP ───────────────────────────────
-    const housemaidLevel = skills['Housemaid'].level;
-    const baseMp = Math.round(50 + housemaidLevel * 5);
+    const sleepManaLevel = skills['Sleep']?.level ?? 1;
+    const baseMp = Math.round(50 + sleepManaLevel * 5);
     const bookMpBonus = bookTrophyStore.getMaxMPBonus();
     const mpSources: StatSource[] = [
-        { label: `Housemaid Lv.${housemaidLevel}`, value: baseMp },
+        { label: `Sleep Lv.${sleepManaLevel}`, value: baseMp },
         { label: 'Book Trophies', value: bookMpBonus },
     ];
 

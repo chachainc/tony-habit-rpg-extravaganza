@@ -6,7 +6,7 @@ import { Card } from '../../components/ui';
 import { useGameStore, type SkillName } from '../../store/useGameStore';
 import { safeUUID } from '../../utils/safeUUID';
 
-import { useRecurringTasksStore, type BundleType } from '../../store/useRecurringTasksStore';
+import { useRecurringTasksStore, type BundleType, DAILY_TASKS_TEMPLATE } from '../../store/useRecurringTasksStore';
 import { useCalendarStore } from '../../store/useCalendarStore';
 import { WeightInput } from '../../components/WeightInput/WeightInput';
 import { TrainingInput } from './TrainingInput';
@@ -22,13 +22,11 @@ const SKILL_ICONS: Record<SkillName, string> = {
     'Flexibility': '🧘',
     'Strength': '💪',
     'Cardio': '🏃',
-    'Clothing': '👔',
-    'Housemaid': '🧹',
     'Work': '💼',
     'Health': '❤️',
     'Social': '🤝',
     'Luck': '🍀',
-    'Habit Building': '🔥',
+    'Habit': '🔥',
     'Intelligence': '🧠',
 };
 
@@ -39,13 +37,11 @@ const SKILL_COLORS: Record<SkillName, string> = {
     'Flexibility': '#ec4899',
     'Strength': '#ef4444',
     'Cardio': '#f59e0b',
-    'Clothing': '#3b82f6',
-    'Housemaid': '#22c55e',
     'Work': '#64748b',
     'Health': '#f43f5e',
     'Social': '#f97316',
     'Luck': '#fcd34d',
-    'Habit Building': '#ff6b35',
+    'Habit': '#ff6b35',
     'Intelligence': '#a78bfa',
 };
 
@@ -81,8 +77,7 @@ export const TasksPage = () => {
 
     // Form State
     const [taskTitle, setTaskTitle] = useState('');
-    const [customXp, setCustomXp] = useState(1);
-    const [selectedSkill, setSelectedSkill] = useState<SkillName>('Sleep');
+    const [customSkills, setCustomSkills] = useState<{skill: SkillName, xp: number}[]>([{ skill: 'Sleep', xp: 1 }]);
     const [taskType, setTaskType] = useState<'today' | 'calendar' | 'recurring'>('today');
     const [selectedBundle, setSelectedBundle] = useState<BundleType>('morning');
 
@@ -128,16 +123,16 @@ export const TasksPage = () => {
         if (!taskTitle.trim()) return;
 
         if (taskType === 'recurring') {
-            addCustomRecurringTask(taskTitle, selectedBundle, [{
-                skillId: selectedSkill,
-                xp: customXp
-            }]);
+            addCustomRecurringTask(taskTitle, selectedBundle, customSkills.map(cs => ({
+                skillId: cs.skill,
+                xp: cs.xp
+            })));
         } else if (taskType === 'today') {
             const newTask = {
                 id: safeUUID(),
                 text: taskTitle,
                 completed: false,
-                skillId: selectedSkill,
+                skillId: customSkills[0].skill,
                 difficulty: 'medium' as 'easy' | 'medium' | 'hard'
             };
             addCalendarTask(dayjs().format('YYYY-MM-DD'), newTask);
@@ -147,7 +142,7 @@ export const TasksPage = () => {
                 id: safeUUID(),
                 text: taskTitle,
                 completed: false,
-                skillId: selectedSkill,
+                skillId: customSkills[0].skill,
                 difficulty: 'medium' as 'easy' | 'medium' | 'hard'
             };
             addCalendarTask(selectedDate, newTask);
@@ -158,7 +153,8 @@ export const TasksPage = () => {
 
 
 
-    const skillNames = Object.keys(skills) as SkillName[];
+    // Filter Luck out — it cannot be assigned to tasks
+    const skillNames = (Object.keys(skills) as SkillName[]).filter(s => s !== 'Luck');
 
     const getTimeUntilWeeklyReset = () => {
         const now = new Date();
@@ -177,7 +173,12 @@ export const TasksPage = () => {
     };
 
     const renderBundle = (bundleType: BundleType) => {
-        const bundleTasks = dailyTasks.filter(t => t.bundle === bundleType);
+        const templateIds = new Set(DAILY_TASKS_TEMPLATE.map(t => t.id));
+        const bundleTasksRaw = dailyTasks.filter(t => t.bundle === bundleType);
+        
+        // Hide anything removed from template unless it's a custom task
+        const bundleTasks = bundleTasksRaw.filter(t => templateIds.has(t.id) || t.id.startsWith('custom-'));
+
         if (bundleTasks.length === 0) return null;
 
         const status = getBundleStatus(bundleType);
@@ -571,56 +572,88 @@ export const TasksPage = () => {
                             />
 
                             <div className="task-form__row">
-                                {/* XP Selector */}
-                                <div className="form-group xp-picker-group">
-                                    <label>XP Reward</label>
-                                    <div className="xp-presets">
-                                        {[{ label: 'Easy', xp: 1 }, { label: 'Medium', xp: 3 }, { label: 'Hard', xp: 5 }].map(p => (
-                                            <button
-                                                key={p.label}
-                                                type="button"
-                                                className={`xp-preset-btn ${customXp === p.xp ? 'active' : ''}`}
-                                                onClick={() => setCustomXp(p.xp)}
+                                {customSkills.map((cs, idx) => (
+                                    <div key={idx} className="multi-skill-row" style={{ border: '1px solid rgba(255,255,255,0.1)', padding: '1rem', borderRadius: '8px', marginBottom: '1rem', background: 'rgba(0,0,0,0.2)' }}>
+                                        <div className="form-group" style={{ marginBottom: '1rem' }}>
+                                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
+                                                <label style={{ margin: 0 }}>Skill {idx + 1}</label>
+                                                {customSkills.length > 1 && (
+                                                    <button type="button" onClick={() => setCustomSkills(customSkills.filter((_, i) => i !== idx))} className="task-delete-btn" style={{ background: 'transparent', padding: '4px' }}>
+                                                        <Trash2 size={16} />
+                                                    </button>
+                                                )}
+                                            </div>
+                                            <select
+                                                value={cs.skill}
+                                                onChange={(e) => {
+                                                    const newArray = [...customSkills];
+                                                    newArray[idx].skill = e.target.value as SkillName;
+                                                    setCustomSkills(newArray);
+                                                }}
+                                                className="form-select"
                                             >
-                                                {p.label}<br /><span>{p.xp} XP</span>
-                                            </button>
-                                        ))}
-                                    </div>
-                                    <div className="xp-slider-row">
-                                        <input
-                                            type="range"
-                                            min={1}
-                                            max={25}
-                                            value={customXp}
-                                            onChange={e => setCustomXp(Number(e.target.value))}
-                                            className="xp-slider"
-                                        />
-                                        <span className="xp-value-bubble">{customXp} XP</span>
-                                    </div>
-                                    {customXp >= 10 && (
-                                        <div className="xp-extreme-label">
-                                            {customXp >= 25 ? '💀 Impossible'
-                                                : customXp >= 20 ? '🌋 Super Duper Insane'
-                                                    : customXp >= 15 ? '🤯 You\'re Crazy'
-                                                        : '😤 Insane'}
+                                                {skillNames.map(skill => (
+                                                    <option key={skill} value={skill}>
+                                                        {SKILL_ICONS[skill]} {skill}
+                                                    </option>
+                                                ))}
+                                            </select>
                                         </div>
-                                    )}
-                                </div>
+                                        <div className="form-group xp-picker-group">
+                                            <label>XP Reward</label>
+                                            <div className="xp-presets">
+                                                {[{ label: 'Easy', xp: 1 }, { label: 'Medium', xp: 3 }, { label: 'Hard', xp: 5 }].map(p => (
+                                                    <button
+                                                        key={p.label}
+                                                        type="button"
+                                                        className={`xp-preset-btn ${cs.xp === p.xp ? 'active' : ''}`}
+                                                        onClick={() => {
+                                                            const newArray = [...customSkills];
+                                                            newArray[idx].xp = p.xp;
+                                                            setCustomSkills(newArray);
+                                                        }}
+                                                    >
+                                                        {p.label}<br /><span>{p.xp} XP</span>
+                                                    </button>
+                                                ))}
+                                            </div>
+                                            <div className="xp-slider-row">
+                                                <input
+                                                    type="range"
+                                                    min={1}
+                                                    max={15}
+                                                    value={cs.xp}
+                                                    onChange={e => {
+                                                        const newArray = [...customSkills];
+                                                        newArray[idx].xp = Number(e.target.value);
+                                                        setCustomSkills(newArray);
+                                                    }}
+                                                    className="xp-slider"
+                                                />
+                                                <span className="xp-value-bubble">{cs.xp} XP</span>
+                                            </div>
+                                            {cs.xp >= 5 && (
+                                                <div className="xp-extreme-label" style={{ marginTop: '0.5rem' }}>
+                                                    {cs.xp === 15 ? '💀 Impossible'
+                                                        : cs.xp >= 12 ? '🌋 Super Duper Insane'
+                                                            : cs.xp >= 10 ? '🤯 You\'re Crazy'
+                                                                : '😤 Insane'}
+                                                </div>
+                                            )}
+                                        </div>
+                                    </div>
+                                ))}
 
-                                <div className="form-group">
-                                    <label>Skill</label>
-                                    <select
-                                        value={selectedSkill}
-                                        onChange={(e) => setSelectedSkill(e.target.value as SkillName)}
-                                        className="form-select"
+                                {customSkills.length < 3 && (
+                                    <button 
+                                        type="button" 
+                                        className="tasks-header-nav-btn" 
+                                        onClick={() => setCustomSkills([...customSkills, { skill: 'Sleep', xp: 1 }])} 
+                                        style={{ marginBottom: '1.5rem', alignSelf: 'flex-start' }}
                                     >
-                                        {skillNames.map(skill => (
-                                            <option key={skill} value={skill}>
-                                                {SKILL_ICONS[skill]} {skill}
-                                            </option>
-                                        ))}
-                                    </select>
-                                </div>
+                                        <Plus size={16} /> Add Another Skill
+                                    </button>
+                                )}
 
                                 <div className="form-group">
                                     <label>Task Type</label>

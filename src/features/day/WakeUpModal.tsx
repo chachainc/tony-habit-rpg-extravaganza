@@ -6,6 +6,7 @@ import { useDayStore } from '../../store/useDayStore';
 import { useGameStore } from '../../store/useGameStore';
 import { useCheckInStore, type CheckInReward } from '../../store/useCheckInStore';
 import { useHealthStore } from '../../store/useHealthStore';
+import { useRecurringTasksStore } from '../../store/useRecurringTasksStore';
 import './WakeUpModal.css';
 
 type Stage = 'sleep' | 'checkin' | 'weight' | 'xp_summary' | 'task_prompt';
@@ -13,10 +14,11 @@ type Stage = 'sleep' | 'checkin' | 'weight' | 'xp_summary' | 'task_prompt';
 export const WakeUpModal = ({ onComplete }: { onComplete: () => void }) => {
     const navigate = useNavigate();
     const { wakeUp, getEasternTime } = useDayStore();
-    const { addSkillXp, addGlobalXp } = useGameStore();
+    const { addSkillXp } = useGameStore();
     const { streakDay, streakCount, checkIn, getRewardForDay, getStreakStatus } = useCheckInStore();
     const { canCheckIn, missedYesterday } = getStreakStatus();
     const { logWeight, hasLoggedWeightToday, getLastWeight } = useHealthStore();
+    const { completeTask } = useRecurringTasksStore();
 
     const [sleepScore, setSleepScore] = useState(75);
     const [readinessScore, setReadinessScore] = useState(75);
@@ -27,14 +29,16 @@ export const WakeUpModal = ({ onComplete }: { onComplete: () => void }) => {
     const [weightInput, setWeightInput] = useState('');
 
     const handleWakeUp = () => {
+        // Fix: Force the daily task reset FIRST so that if the user logs their weight
+        // below, it doesn't get wiped out right after when TasksPage mounts.
+        useRecurringTasksStore.getState().checkAndReset();
+
         const xp = wakeUp(sleepScore, readinessScore);
         setSleepXpEarned(xp);
 
         // Award XP to Sleep skill
         if (xp > 0) {
-            addSkillXp('Sleep', xp);
-            // Also add 20% to global XP for overall level
-            addGlobalXp(Math.floor(xp * 0.2));
+            addSkillXp('Sleep', xp, { capExempt: true });
         }
 
         // Transition to check-in stage after brief XP display
@@ -76,6 +80,7 @@ export const WakeUpModal = ({ onComplete }: { onComplete: () => void }) => {
         const w = parseFloat(weightInput);
         if (!isNaN(w) && w > 0) {
             logWeight(w);
+            completeTask('weigh_self', { weight: w });
         }
         setStage('xp_summary');
     };
@@ -217,7 +222,7 @@ export const WakeUpModal = ({ onComplete }: { onComplete: () => void }) => {
                                         </div>
                                         <div className="wake-checkin__day-rewards">
                                             <span>💰 {reward.gold}</span>
-                                            <span>✨ {reward.xp} XP</span>
+                                            {reward.habitXp && <span>✨ +{reward.habitXp} Habit XP</span>}
                                             {reward.buffType && <span className="wake-checkin__buff">+Buff</span>}
                                             {reward.gachaTicket && <span className="wake-checkin__ticket">🎫</span>}
                                         </div>
@@ -269,7 +274,7 @@ export const WakeUpModal = ({ onComplete }: { onComplete: () => void }) => {
                             <h3>Daily Weigh-In</h3>
                         </div>
                         <p style={{ color: '#94a3b8', fontSize: '0.85rem', marginBottom: '1rem' }}>
-                            Step on the scale — track your progress!
+                            Step on the scale — track your progress! (+1 Health XP)
                         </p>
                         {getLastWeight() && (
                             <p style={{ color: '#475569', fontSize: '0.8rem', marginBottom: '0.5rem' }}>
@@ -322,11 +327,11 @@ export const WakeUpModal = ({ onComplete }: { onComplete: () => void }) => {
                         initial={{ scale: 0 }}
                         animate={{ scale: 1 }}
                     >
-                        <p>+{(sleepXpEarned ?? 0) + (checkInReward?.xp ?? 0)} Total XP!</p>
+                        <p>+{(sleepXpEarned ?? 0) + (checkInReward?.habitXp ?? 0)} Total XP!</p>
                         <p className="hp-msg">HP Restored to Full!</p>
                         <div className="xp-breakdown" style={{ fontSize: '0.85rem', color: '#94a3b8', marginTop: '0.75rem', lineHeight: 1.6 }}>
                             {sleepXpEarned != null && <div>🛏️ Sleep: +{sleepXpEarned} XP</div>}
-                            {checkInReward && <div>📅 Check-In: +{checkInReward.xp} XP</div>}
+                            {checkInReward && checkInReward.habitXp && <div>📅 Check-In: +{checkInReward.habitXp} Habit XP</div>}
                             {checkInReward?.gold && <div>💰 Gold: +{checkInReward.gold}</div>}
                         </div>
                         <button
@@ -382,10 +387,12 @@ export const WakeUpModal = ({ onComplete }: { onComplete: () => void }) => {
                                 <span>💰 Gold:</span>
                                 <span className="wake-checkin__reward-value">+{checkInReward.gold}</span>
                             </div>
-                            <div className="wake-checkin__reward-item">
-                                <span>✨ XP:</span>
-                                <span className="wake-checkin__reward-value">+{checkInReward.xp}</span>
-                            </div>
+                            {checkInReward.habitXp && (
+                                <div className="wake-checkin__reward-item">
+                                    <span>✨ Habit XP:</span>
+                                    <span className="wake-checkin__reward-value">+{checkInReward.habitXp}</span>
+                                </div>
+                            )}
                             {checkInReward.buffType && (
                                 <div className="wake-checkin__reward-item">
                                     <span>🔥 Buff:</span>

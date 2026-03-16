@@ -26,6 +26,7 @@ export const BookshelfPanel = ({ onClose }: { onClose: () => void }) => {
     const [notes, setNotes] = useState('');
     const [isCompleted, setIsCompleted] = useState(true);
     const [bookType, setBookType] = useState<BookType>('fantasy');
+    const [bookFormat, setBookFormat] = useState<'physical' | 'audiobook'>('physical');
 
     const handleLogBook = (e: React.FormEvent) => {
         e.preventDefault();
@@ -34,11 +35,11 @@ export const BookshelfPanel = ({ onClose }: { onClose: () => void }) => {
         const pagesNum = parseInt(pages) || undefined;
 
         if (isCompleted) {
-            logCompletedBook(title, author, bookType, pagesNum, notes);
+            logCompletedBook(title, author, bookType, bookFormat, pagesNum, notes);
             incrementBooksRead();
             addGlobalXp(50); // Reading grants global XP
         } else {
-            addBook(title, author, bookType, pagesNum, notes);
+            addBook(title, author, bookType, bookFormat, pagesNum, notes);
         }
 
         // Reset form
@@ -117,6 +118,16 @@ export const BookshelfPanel = ({ onClose }: { onClose: () => void }) => {
                                         {type.label}
                                     </option>
                                 ))}
+                            </select>
+                        </div>
+                        <div className="form-group">
+                            <label>Format</label>
+                            <select
+                                value={bookFormat}
+                                onChange={(e) => setBookFormat(e.target.value === 'audiobook' ? 'audiobook' : 'physical')}
+                            >
+                                <option value="physical">Physical</option>
+                                <option value="audiobook">Audiobook</option>
                             </select>
                         </div>
                         <div className="form-group">

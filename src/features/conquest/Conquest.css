@@ -574,4 +574,275 @@
 .campfire-modal h2 { color: #f97316; }
 .shrine-modal h2 { color: #fbbf24; }
 .cursed-modal h2 { color: #a855f7; }
-.run-complete-modal h2 { color: #f1f5f9; font-size: 1.8rem; }
+.run-complete-modal h2 { color: #f1f5f9; font-size: 1.8rem; }
+
+/* ===========================
+   CONQUEST BATTLE (Standalone)
+   =========================== */
+
+.cq-battle-container {
+    position: fixed;
+    inset: 0;
+    z-index: 100;
+    display: flex;
+    flex-direction: column;
+    background-color: #0b0f19;
+    background-size: cover;
+    background-position: center;
+    color: #e2e8f0;
+    overflow: hidden;
+}
+
+.cq-battle-header {
+    position: relative;
+    z-index: 10;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.75rem 1rem;
+    background: rgba(10, 12, 22, 0.9);
+    border-bottom: 1px solid rgba(139, 92, 246, 0.2);
+    gap: 0.5rem;
+}
+
+.cq-back-btn {
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+    padding: 0.4rem 0.75rem;
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 8px;
+    color: #94a3b8;
+    font-size: 0.85rem;
+    cursor: pointer;
+    white-space: nowrap;
+}
+
+.cq-battle-title {
+    font-weight: 800;
+    font-size: 1rem;
+    color: #f59e0b;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    text-align: center;
+    flex: 1;
+}
+
+.cq-run-hp-chip {
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: #22c55e;
+    background: rgba(34,197,94,0.1);
+    border: 1px solid rgba(34,197,94,0.2);
+    border-radius: 6px;
+    padding: 0.3rem 0.6rem;
+    white-space: nowrap;
+}
+
+.cq-battle-arena {
+    flex: 1;
+    position: relative;
+    z-index: 5;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-around;
+    padding: 1rem;
+    gap: 1rem;
+    overflow: hidden;
+}
+
+.cq-combatant {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.cq-combatant-name {
+    font-weight: 800;
+    font-size: 1.1rem;
+    text-align: center;
+}
+
+.cq-enemy-icon {
+    font-size: 4rem;
+    line-height: 1;
+    filter: drop-shadow(0 0 16px rgba(239, 68, 68, 0.4));
+}
+
+.cq-boss-warning {
+    font-size: 0.75rem;
+    color: #f87171;
+    font-weight: 700;
+    background: rgba(239,68,68,0.1);
+    border: 1px solid rgba(239,68,68,0.3);
+    border-radius: 4px;
+    padding: 0.2rem 0.5rem;
+}
+
+.cq-hero-img {
+    width: 72px;
+    height: 72px;
+    border-radius: 50%;
+    border: 2px solid #a78bfa;
+    object-fit: cover;
+}
+
+.cq-hp-bar-wrap {
+    width: 220px;
+    height: 16px;
+    background: rgba(0,0,0,0.5);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 8px;
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.cq-hp-bar {
+    position: absolute;
+    left: 0; top: 0; bottom: 0;
+    transition: width 0.4s ease, background 0.3s ease;
+    border-radius: 8px;
+}
+
+.cq-hp-label {
+    position: relative;
+    z-index: 2;
+    font-size: 0.65rem;
+    font-weight: 700;
+    color: white;
+    text-shadow: 0 1px 2px black;
+}
+
+.cq-energy-bar-wrap {
+    width: 220px;
+    height: 8px;
+    background: rgba(0,0,0,0.4);
+    border: 1px solid rgba(251,191,36,0.2);
+    border-radius: 4px;
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+}
+
+.cq-energy-bar {
+    position: absolute;
+    left: 0; top: 0; bottom: 0;
+    background: linear-gradient(90deg, #f59e0b, #fde047);
+    transition: width 0.4s ease;
+}
+
+.cq-run-buffs {
+    display: flex;
+    gap: 0.4rem;
+    flex-wrap: wrap;
+    justify-content: center;
+}
+
+.cq-buff-chip {
+    font-size: 1rem;
+    width: 28px;
+    height: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0,0,0,0.4);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 6px;
+}
+
+/* Combat Log */
+.cq-combat-log {
+    position: relative;
+    z-index: 5;
+    padding: 0.5rem 1rem;
+    border-top: 1px solid rgba(255,255,255,0.05);
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    max-height: 90px;
+    overflow: hidden;
+}
+
+.cq-log-entry {
+    font-size: 0.78rem;
+    color: #94a3b8;
+    padding: 0.2rem 0;
+    border-bottom: 1px solid rgba(255,255,255,0.03);
+}
+
+.cq-log-damage { color: #f87171; }
+.cq-log-heal   { color: #4ade80; }
+.cq-log-victory { color: #22c55e; font-weight: 800; }
+.cq-log-defeat  { color: #ef4444; font-weight: 800; }
+.cq-log-buff    { color: #a78bfa; }
+.cq-log-debuff  { color: #f97316; }
+.cq-log-info    { color: #94a3b8; }
+.cq-log-element { color: #60a5fa; }
+
+/* Action Panel */
+.cq-action-panel {
+    position: relative;
+    z-index: 10;
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.75rem;
+    padding: 0.75rem 1rem 1.5rem 1rem;
+    background: rgba(8, 11, 22, 0.9);
+    border-top: 1px solid rgba(139,92,246,0.15);
+}
+
+.cq-action-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.4rem;
+    padding: 0.9rem;
+    border-radius: 12px;
+    font-weight: 700;
+    font-size: 0.9rem;
+    cursor: pointer;
+    border: 1.5px solid transparent;
+    transition: all 0.15s ease;
+}
+
+.cq-action-btn:active:not(:disabled) { transform: scale(0.97); }
+.cq-action-btn:disabled { opacity: 0.35; cursor: not-allowed; filter: grayscale(50%); }
+.cq-action-btn.dimmed { opacity: 0.5; }
+
+.cq-action-btn.attack  { background: linear-gradient(135deg, #b91c1c, #7f1d1d); border-color: #ef4444; color: #fca5a5; }
+.cq-action-btn.defend  { background: linear-gradient(135deg, #1e3a5f, #0f2040); border-color: #3b82f6; color: #93c5fd; }
+.cq-action-btn.ultimate{ background: linear-gradient(135deg, #78350f, #451a03); border-color: #fbbf24; color: #fde68a; }
+.cq-action-btn.pet     { background: linear-gradient(135deg, #134e4a, #0a2e2b); border-color: #10b981; color: #6ee7b7; }
+.cq-action-btn.primary { grid-column: 1 / -1; background: linear-gradient(135deg, #7c3aed, #4f46e5); border-color: #a78bfa; color: #ede9fe; font-size: 1.05rem; }
+
+.cq-turn-indicator {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: rgba(0,0,0,0.8);
+    color: #f59e0b;
+    font-weight: 800;
+    font-size: 0.9rem;
+    padding: 0.5rem 1.25rem;
+    border-radius: 20px;
+    border: 1px solid rgba(245,158,11,0.3);
+    z-index: 20;
+    pointer-events: none;
+    animation: pulse 1s infinite alternate;
+}
+
+@keyframes pulse {
+    from { opacity: 0.8; }
+    to { opacity: 1; box-shadow: 0 0 12px rgba(245,158,11,0.4); }
+}
+

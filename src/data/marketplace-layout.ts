@@ -106,17 +106,7 @@ export const MARKETPLACE_LAYOUT: MarketplaceLayout = {
             interactionRadius: 2,
             inventoryCategories: ['jewelry'],
         },
-        {
-            id: 'daily-shop',
-            name: 'Daily Specialties',
-            icon: '📦',
-            emoji: '📦',
-            position: { x: 8, y: 7 }, // near the fountain
-            description: 'Rare imports rotating daily.',
-            color: '#f59e0b',
-            interactionRadius: 2,
-            inventoryCategories: ['misc'],
-        },
+
     ],
 
     // Define obstacles (non-walkable tiles) - fountain in center, decorative elements

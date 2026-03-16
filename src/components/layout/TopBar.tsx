@@ -13,7 +13,8 @@ import './TopBar.css';
 export const TopBar = () => {
     const navigate = useNavigate();
     const location = useLocation();
-    const { currency, gems, globalXp, getGlobalLevel, getAttack, getDefense, getMagicAttack, getMaxMP } = useGameStore();
+    const { globalXp, getGlobalLevel, getAttack, getDefense, getMagicAttack, getMaxMP } = useGameStore();
+    const { gold, diamonds } = useCurrencyStore();
     const { streakCount } = useCheckInStore();
     const { dailyTickets } = useMonopolyStore();
     const { player, currentMP } = useBattleStore();
@@ -79,7 +80,7 @@ export const TopBar = () => {
                         <Coins size={18} />
                     </div>
                     <div className="top-bar__content">
-                        <span className="top-bar__value">{currency.toLocaleString()}</span>
+                        <span className="top-bar__value">{gold.toLocaleString()}</span>
                     </div>
                 </div>
 
@@ -195,11 +196,11 @@ export const TopBar = () => {
                 <div
                     className="top-bar__item top-bar__item--clickable top-bar__item--gems"
                     onClick={() => navigate('/marketplace')}
-                    title="Gems"
+                    title="Diamonds"
                 >
                     <div className="top-bar__icon">💎</div>
                     <div className="top-bar__content">
-                        <span className="top-bar__value">{gems}</span>
+                        <span className="top-bar__value">{diamonds}</span>
                     </div>
                 </div>
 

@@ -30,7 +30,8 @@ const isYesterday = (dateStr: string): boolean => {
 
 export interface CheckInReward {
     gold: number;
-    xp: number;
+    xp?: number; // legacy
+    habitXp?: number;
     buffType?: 'xp_boost' | 'gold_boost';
     buffValue?: number;
     buffDuration?: number; // hours
@@ -40,18 +41,18 @@ export interface CheckInReward {
 
 // Day 1-7 reward cycle - escalating rewards
 const DAY_REWARDS: Record<number, CheckInReward> = {
-    1: { gold: 50, xp: 10 },
-    2: { gold: 75, xp: 15 },
-    3: { gold: 100, xp: 20, buffType: 'xp_boost', buffValue: 0.05, buffDuration: 24 },
-    4: { gold: 125, xp: 25 },
-    5: { gold: 150, xp: 30, buffType: 'gold_boost', buffValue: 0.10, buffDuration: 24 },
-    6: { gold: 200, xp: 40 },
-    7: { gold: 300, xp: 50, gachaTicket: true },
+    1: { gold: 50 },
+    2: { gold: 75 },
+    3: { gold: 100, buffType: 'xp_boost', buffValue: 0.05, buffDuration: 24 },
+    4: { gold: 125 },
+    5: { gold: 150, buffType: 'gold_boost', buffValue: 0.10, buffDuration: 24 },
+    6: { gold: 200 },
+    7: { gold: 300, gachaTicket: true },
 };
 
 const CONSOLATION_REWARD: CheckInReward = {
     gold: 25,
-    xp: 5,
+    // xp: 5,
 };
 
 interface CheckInState {
@@ -105,25 +106,28 @@ export const useCheckInStore = create<CheckInState>()(
                     reward = DAY_REWARDS[newStreakDay];
                 }
 
+                let finalReward = { ...reward };
+                if (newStreakCount > 5) finalReward.habitXp = 1;
+
                 // Apply rewards immediately
                 // Note: Dynamic imports to avoid circular dependency
                 import('./useGameStore').then(({ useGameStore }) => {
-                    useGameStore.getState().addCurrency(reward.gold);
-                    useGameStore.getState().addGlobalXp(reward.xp);
+                    useGameStore.getState().addCurrency(finalReward.gold);
+                    if (finalReward.habitXp) { useGameStore.getState().addSkillXp('Habit', finalReward.habitXp, { capExempt: true }); }
                 });
 
-                if (reward.buffType && reward.buffValue && reward.buffDuration) {
+                if (finalReward.buffType && finalReward.buffValue && finalReward.buffDuration) {
                     import('./useBuffStore').then(({ useBuffStore }) => {
                         useBuffStore.getState().addBuff(
-                            reward.buffType!,
-                            reward.buffValue!,
-                            reward.buffDuration!,
+                            finalReward.buffType!,
+                            finalReward.buffValue!,
+                            finalReward.buffDuration!,
                             `Daily Check-In Bonus`
                         );
                     });
                 }
 
-                if (reward.gachaTicket) {
+                if (finalReward.gachaTicket) {
                     import('./useGachaStore').then(({ useGachaStore }) => {
                         useGachaStore.getState().addTickets(1);
                     });
@@ -162,7 +166,7 @@ export const useCheckInStore = create<CheckInState>()(
                     }).catch(() => { });
                 }
 
-                return reward;
+                return finalReward;
             },
 
             getRewardForDay: (day: number) => {

@@ -1,6 +1,8 @@
 import { Lock, Check } from 'lucide-react';
 import { motion } from 'framer-motion';
 import type { Item } from '../../../data/items';
+import { useGameStore } from '../../../store/useGameStore';
+import { getPassiveBonuses } from '../../../store/usePassiveEffects';
 import './ItemCard.css';
 
 interface Props {
@@ -22,6 +24,18 @@ export const ItemCard = ({
     missingCurrency,
     onPurchase
 }: Props) => {
+    // Work / Gold discount
+    const rawDiscount = useGameStore.getState().getWorkDiscount();
+    const equipDiscount = getPassiveBonuses().gold_multiplier ?? 0;
+    const discountPercent = Math.min(50, rawDiscount + equipDiscount);
+    const discountMult = 1 - (discountPercent / 100);
+
+    const discountedGoldCost = item.cost.gold ? Math.max(1, Math.floor(item.cost.gold * discountMult)) : undefined;
+    
+    // We strictly use discountedGoldCost for "canAfford" calculations related to gold if that logic was passed down,
+    // but right now `canAfford` is computed in the parent store. 
+    // Wait, we need to display it correctly here.
+
     const canPurchase = isUnlocked && canAfford && !isOwned;
 
     return (
@@ -50,7 +64,19 @@ export const ItemCard = ({
 
                 {/* Cost */}
                 <div className="item-cost">
-                    {(item.cost.gold ?? 0) > 0 && <span className="cost-item">💰 {item.cost.gold}</span>}
+                    {item.cost.gold !== undefined && item.cost.gold > 0 && (
+                        discountPercent > 0 ? (
+                            <span className="cost-item">
+                                <span style={{ textDecoration: 'line-through', opacity: 0.6, fontSize: '0.85em', marginRight: '4px' }}>
+                                    {item.cost.gold}
+                                </span>
+                                <span style={{ color: '#ef4444' }}>{discountedGoldCost}</span>
+                                <span style={{ color: '#ef4444', fontSize: '0.8em', marginLeft: '4px' }}>(-{discountPercent}%)</span> 💰
+                            </span>
+                        ) : (
+                            <span className="cost-item">💰 {item.cost.gold}</span>
+                        )
+                    )}
                     {(item.cost.tickets ?? 0) > 0 && <span className="cost-item">🎫 {item.cost.tickets}</span>}
                     {(item.cost.diamonds ?? 0) > 0 && <span className="cost-item">💎 {item.cost.diamonds}</span>}
                     {item.cost.tokens && Object.entries(item.cost.tokens).map(([skill, amount]) => (

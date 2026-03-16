@@ -3,6 +3,7 @@ import { motion } from 'framer-motion';
 import { usePetStore } from '../../store/usePetStore';
 import { useInventoryStore, ITEM_DB } from '../../store/useInventoryStore';
 import { useDayStore } from '../../store/useDayStore';
+import { useRoomStore } from '../../store/useRoomStore';
 import { ITEM_DATABASE } from '../../data/items';
 import './HomeModal.css';
 
@@ -12,6 +13,8 @@ export const HomeModal = ({ onClose }: Props) => {
     const { activePet, name, health, hunger, mood, energy, feed, play } = usePetStore();
     const { items, removeItem } = useInventoryStore();
     const { playerCurrentHP, playerMaxHP, heal } = useDayStore();
+    const roomBonuses = useRoomStore((s) => s.getRoomCombatBonuses());
+    const effectiveMaxHP = playerMaxHP + roomBonuses.maxHP;
 
     // Get active pet data from database
     const petData = ITEM_DATABASE[activePet];
@@ -87,8 +90,8 @@ export const HomeModal = ({ onClose }: Props) => {
                     <div className="player-hp">
                         <span>Your HP</span>
                         <div className="hp-bar-mini">
-                            <div className="hp-fill" style={{ width: `${(playerCurrentHP / playerMaxHP) * 100}%` }}></div>
-                            <span>{playerCurrentHP}/{playerMaxHP}</span>
+                            <div className="hp-fill" style={{ width: `${(playerCurrentHP / effectiveMaxHP) * 100}%` }}></div>
+                            <span>{playerCurrentHP}/{effectiveMaxHP}</span>
                         </div>
                     </div>
 

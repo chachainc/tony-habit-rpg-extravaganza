@@ -11,14 +11,29 @@ export type SkillName =
     | 'Flexibility'
     | 'Strength'
     | 'Cardio'
-    | 'Clothing'
-    | 'Housemaid'
     | 'Work'
     | 'Health'
     | 'Social'
     | 'Luck'
-    | 'Habit Building'
+    | 'Habit'
     | 'Intelligence';
+
+// Daily XP caps by skill (task-earned XP only; 0 = blocked)
+export const DAILY_XP_CAPS: Partial<Record<SkillName, number>> = {
+    'Strength': 6,
+    'Cardio': 6,
+    'Health': 6,
+    'Hygiene': 5,
+    'Sleep': 5,
+    'Habit': 8,
+    'Work': 6,
+    'Social': 5,
+    'Intelligence': 4,
+    'Flexibility': 4,
+    'Luck': 0, // Luck cannot be earned from tasks
+};
+
+
 
 interface Skill {
     level: number;
@@ -42,7 +57,11 @@ interface GameState {
     // Actions
     addCurrency: (amount: number) => void;
     addGems: (amount: number) => void;
-    addSkillXp: (skill: SkillName, amount: number) => { actual: number; overflow: number; leveledUp?: boolean };
+    addSkillXp: (
+        skill: SkillName,
+        amount: number,
+        options?: { capExempt?: boolean }
+    ) => { actual: number; overflow: number; leveledUp?: boolean; capHit?: boolean };
     addGlobalXp: (amount: number) => void;
     getGlobalLevel: () => number;
     clearLevelUp: () => void; // Clear pending level-up
@@ -51,7 +70,12 @@ interface GameState {
     getAttack: () => number;
     getDefense: () => number;
     getMagicAttack: () => number;
+    getMagicDefense: () => number;
     getMaxMP: () => number;
+    getCritRate: () => number;
+    getMaxSpellTier: () => number;
+    getAttackSpeedTier: () => number;
+    getDodgeChance: () => number;
     isDefenseSuppressed: () => boolean;
     applyDefenseDecay: () => void;
 
@@ -60,6 +84,7 @@ interface GameState {
     getXpProgress: (skillName: SkillName) => { current: number; required: number; percentage: number };
     resetDailyXp: () => void;
     getDailyXpEarned: (skillName: SkillName) => number;
+    getDailyCap: (skillName: SkillName) => number;
     getCumulativeLogs: (skillName: SkillName) => number;
 
     // Phase 8: Progression Systems
@@ -67,6 +92,7 @@ interface GameState {
     consecutiveDays: Record<SkillName, number>; // Track streaks for fatigue
     lastLogDate: Record<SkillName, string>; // Track last log date per skill for fatigue
     getFatiguePenalty: (skillName: SkillName) => number; // Returns multiplier (e.g. 0.95)
+    getWorkDiscount: () => number; // Returns % shop discount from Work skill (0–15)
 }
 
 export const INITIAL_SKILLS: Record<SkillName, Skill> = {
@@ -75,14 +101,27 @@ export const INITIAL_SKILLS: Record<SkillName, Skill> = {
     'Flexibility': { level: 1, xp: 0, totalXp: 0 },
     'Strength': { level: 1, xp: 0, totalXp: 0 },
     'Cardio': { level: 1, xp: 0, totalXp: 0 },
-    'Clothing': { level: 1, xp: 0, totalXp: 0 },
-    'Housemaid': { level: 1, xp: 0, totalXp: 0 },
     'Work': { level: 1, xp: 0, totalXp: 0 },
     'Health': { level: 1, xp: 0, totalXp: 0 },
     'Social': { level: 1, xp: 0, totalXp: 0 },
     'Luck': { level: 1, xp: 0, totalXp: 0 },
-    'Habit Building': { level: 1, xp: 0, totalXp: 0 },
+    'Habit': { level: 1, xp: 0, totalXp: 0 },
     'Intelligence': { level: 1, xp: 0, totalXp: 0 },
+};
+
+// Helper: merge old save skills with new structure safely
+export const mergeSkillsFromSave = (saved: Record<string, Skill>): Record<SkillName, Skill> => {
+    const merged = { ...INITIAL_SKILLS };
+    for (const [key, val] of Object.entries(saved)) {
+        // Handle legacy rename: 'Habit Building' -> 'Habit'
+        if (key === 'Habit Building') {
+            merged['Habit'] = val;
+        } else if (key in merged) {
+            (merged as Record<string, Skill>)[key] = val;
+        }
+        // Ignore Clothing / Housemaid — they are dropped
+    }
+    return merged;
 };
 
 
@@ -97,7 +136,9 @@ export const INITIAL_SKILLS: Record<SkillName, Skill> = {
 // Level 29 -> 30: ~16,431 XP
 const getXpForLevel = (level: number): number => {
     if (level <= 0) return 100;
-    return Math.floor(100 * Math.pow(level, 1.5));
+    // RuneScape style delta XP (adjusted base)
+    const base = level + 300 * Math.pow(2, level / 7.0);
+    return Math.floor(base / 4) + 25;
 };
 
 // Get current date in Eastern Time
@@ -119,13 +160,11 @@ const INITIAL_DAILY_XP: Record<SkillName, number> = {
     'Flexibility': 0,
     'Strength': 0,
     'Cardio': 0,
-    'Clothing': 0,
-    'Housemaid': 0,
     'Work': 0,
     'Health': 0,
     'Social': 0,
     'Luck': 0,
-    'Habit Building': 0,
+    'Habit': 0,
     'Intelligence': 0,
 };
 
@@ -149,8 +188,8 @@ export const useGameStore = create<GameState>()(
             consecutiveDays: { ...INITIAL_DAILY_XP },
             lastLogDate: {
                 'Sleep': '', 'Hygiene': '', 'Flexibility': '', 'Strength': '', 'Cardio': '',
-                'Clothing': '', 'Housemaid': '', 'Work': '', 'Health': '', 'Social': '',
-                'Luck': '', 'Habit Building': '', 'Intelligence': ''
+                'Work': '', 'Health': '', 'Social': '',
+                'Luck': '', 'Habit': '', 'Intelligence': ''
             }, // Empty strings for dates
 
             getFatiguePenalty: (skillName) => {
@@ -162,21 +201,36 @@ export const useGameStore = create<GameState>()(
                 return 1.0;
             },
 
-            addCurrency: (amount) => set((state) => ({
-                currency: Math.max(0, state.currency + amount)
-            })),
+            addCurrency: (amount) => {
+                import('./useCurrencyStore').then(({ useCurrencyStore }) => {
+                    // Forward positive gains/losses to the modern currency store
+                    if (amount > 0) useCurrencyStore.getState().addGold(amount);
+                    if (amount < 0) useCurrencyStore.getState().spendGold(Math.abs(amount));
+                });
+                set((state) => ({
+                    currency: Math.max(0, state.currency + amount)
+                }));
+            },
 
-            addGems: (amount) => set((state) => ({
-                gems: Math.max(0, state.gems + amount)
-            })),
+            addGems: (amount) => {
+                import('./useCurrencyStore').then(({ useCurrencyStore }) => {
+                    // Forward positive gains/losses to the modern currency store
+                    if (amount > 0) useCurrencyStore.getState().addDiamonds(amount);
+                    if (amount < 0) useCurrencyStore.getState().spendDiamonds(Math.abs(amount));
+                });
+                set((state) => ({
+                    gems: Math.max(0, state.gems + amount)
+                }));
+            },
 
             addGlobalXp: (amount) => set((state) => ({
                 globalXp: state.globalXp + amount
             })),
 
-            addSkillXp: (skillName, amount) => {
+            addSkillXp: (skillName, amount, options) => {
                 const state = get();
                 const today = getEasternDateString();
+                const capExempt = options?.capExempt === true;
 
                 // Check if we need to reset daily XP
                 if (state.lastXpResetDate !== today) {
@@ -188,12 +242,22 @@ export const useGameStore = create<GameState>()(
                         dailyXpGained: { ...INITIAL_DAILY_XP },
                         lastXpResetDate: today,
                         dailyQuestSkill: randomSkill,
-                        // Apply defense decay checks on new day
-                        defenseDecayAmount: state.defenseDecayAmount, // Trigger logic below properly if needed? 
-                        // Actually applyDefenseDecay is separate. We should strictly call it or handle it.
-                        // Existing code calls applyDefenseDecay implicitly? No, it's an action. 
-                        // We'll leave it to the UI/App init to call applyDefenseDecay.
+                        defenseDecayAmount: state.defenseDecayAmount,
                     });
+                }
+
+                // ── Daily XP Cap Enforcement ─────────────────────────────
+                if (!capExempt) {
+                    const cap = DAILY_XP_CAPS[skillName];
+                    if (cap !== undefined) {
+                        const earned = state.dailyXpGained[skillName] || 0;
+                        if (earned >= cap) {
+                            // Cap already hit — block entirely
+                            return { actual: 0, overflow: 0, capHit: true };
+                        }
+                        // Trim to remaining allowance
+                        amount = Math.min(amount, cap - earned);
+                    }
                 }
 
                 // Phase 8: Fatigue System Update
@@ -281,7 +345,7 @@ export const useGameStore = create<GameState>()(
                         },
                         dailyXpGained: {
                             ...s.dailyXpGained,
-                            [skillName]: currentDailyXp + actualXp,
+                            [skillName]: capExempt ? currentDailyXp : currentDailyXp + actualXp,
                         },
                         cumulativeLogs: {
                             ...s.cumulativeLogs,
@@ -348,12 +412,12 @@ export const useGameStore = create<GameState>()(
                 return Math.floor(avgSkillLevel) + bonusLevels;
             },
 
-            // Attack from Strength (very slow) + equipment + trophy bonus
+            // Attack from Strength
             getAttack: () => {
                 const { skills } = get();
-                const strengthLevel = skills['Strength'].level;
-                // Ultra slow: level × 1.5 + 5
-                const baseAtk = Math.floor(strengthLevel * 1.5) + 5;
+                const strengthLevel = skills['Strength']?.level ?? 1;
+                // Damage = Strength
+                const baseAtk = strengthLevel;
                 // Add equipment bonus
                 const equipBonus = getPassiveBonuses().attack_bonus;
                 // Add Strength trophy bonus
@@ -361,18 +425,13 @@ export const useGameStore = create<GameState>()(
                 return baseAtk + equipBonus + trophyBonus;
             },
 
-            // Defense from 5 skills including Habit Building + trophy bonus
+            // Physical Defense from average of 5 core skills + decay + trophy bonus
             getDefense: () => {
                 const { skills, defenseDecayAmount } = get();
-                const sleepLevel = skills['Sleep'].level;
-                const hygieneLevel = skills['Hygiene'].level;
-                const cardioLevel = skills['Cardio'].level;
-                const flexLevel = skills['Flexibility'].level;
-                const habitLevel = skills['Habit Building'].level;
-
-                // Habit Building contributes directly to defense
-                const avgDefenseSkills = (sleepLevel + hygieneLevel + cardioLevel + flexLevel + habitLevel) / 5;
-                let baseDef = Math.floor(avgDefenseSkills * 1.2) + 3;
+                
+                const defLevels = ['Sleep', 'Hygiene', 'Cardio', 'Flexibility', 'Habit'].map(s => skills[s as SkillName]?.level ?? 1);
+                const avgDefLevel = defLevels.reduce((a, b) => a + b, 0) / 5;
+                let baseDef = Math.floor(avgDefLevel * 1.5);
 
                 // Apply decay
                 baseDef = Math.floor(baseDef * (1 - defenseDecayAmount));
@@ -390,29 +449,74 @@ export const useGameStore = create<GameState>()(
                 return Math.max(1, baseDef + equipBonus + trophyBonus);
             },
 
-            // Magic Attack from Intelligence skill + trophy bonus
+            // Magic Attack from Intelligence
             getMagicAttack: () => {
                 const { skills } = get();
-                const intelligenceLevel = skills['Intelligence'].level;
-                // Get trophy bonus from book completions
+                const intelligenceLevel = skills['Intelligence']?.level ?? 1;
+                // MagicDamage = BaseSpellDamage * (1 + (Intelligence * 0.03))
+                // Assuming Base is 5 for the UI display
+                const baseMagicAtk = Math.floor(5 * (1 + (intelligenceLevel * 0.03)));
                 const trophyBonus = useBookTrophyStore.getState().getIntelligenceBonus();
-                // Base magic attack: 5 + (level * 2) + trophy Intelligence bonus
-                return Math.floor(5 + (intelligenceLevel * 2) + trophyBonus);
+                return baseMagicAtk + trophyBonus;
             },
 
-            // Max MP from Intelligence skill + trophy bonus
+            // Magic Defense from Social
+            getMagicDefense: () => {
+                const { skills } = get();
+                const socialLevel = skills['Social']?.level ?? 1;
+                // UI display only, mitigated in useBattleStore
+                const baseMDef = Math.floor(socialLevel * 1.5);
+                return baseMDef;
+            },
+
+            // Max MP from Sleep
             getMaxMP: () => {
                 const { skills } = get();
-                const intelligenceLevel = skills['Intelligence'].level;
-                // Get trophy MP bonus from book completions
-                const trophyMPBonus = useBookTrophyStore.getState().getMaxMPBonus();
-                // Base MP: 50 + (level * 10) + trophy MP bonus
-                return Math.floor(50 + (intelligenceLevel * 10) + trophyMPBonus);
+                const sleepLevel = skills['Sleep']?.level ?? 1;
+                // MaxMana = BaseMana + (Sleep * 5)
+                const baseMp = Math.floor(50 + sleepLevel * 5);
+                const trophyBonus = useBookTrophyStore.getState().getMaxMPBonus();
+                return baseMp + trophyBonus;
+            },
+
+            // Crit Rate from Habit
+            getCritRate: () => {
+                const { skills } = get();
+                const habitLevel = skills['Habit']?.level ?? 1;
+                // CritChance = HabitBuilding * 0.01
+                const baseCrit = habitLevel * 0.01;
+                const trophyBonus = useSkillTrophyStore.getState().getLuckCritBonus();
+                const equipBonus = getPassiveBonuses().crit_bonus / 100;
+                return baseCrit + trophyBonus + equipBonus; // Cap naturally at 1.0 (100%) later
+            },
+
+            // Max Spell Tier from Flexibility
+            getMaxSpellTier: () => {
+                const { skills } = get();
+                const flexLevel = skills['Flexibility']?.level ?? 1;
+                // SpellTierUnlocked = floor(Flexibility / 5) + 1
+                return Math.floor(flexLevel / 5) + 1;
+            },
+
+            // Attack Speed Tier from Cardio
+            getAttackSpeedTier: () => {
+                const { skills } = get();
+                const cardioLevel = skills['Cardio']?.level ?? 1;
+                // AttackSpeed = 1 + (Cardio * 0.02)
+                return 1 + (cardioLevel * 0.02);
+            },
+
+            // Dodge Chance from Cardio
+            getDodgeChance: () => {
+                const { skills } = get();
+                const cardioLevel = skills['Cardio']?.level ?? 1;
+                // DodgeChance = Cardio * 0.005
+                return cardioLevel * 0.005;
             },
 
             isDefenseSuppressed: () => {
                 const { skills } = get();
-                return skills['Sleep'].level < 5 || skills['Hygiene'].level < 5;
+                return (skills['Sleep']?.level ?? 1) < 5 || (skills['Hygiene']?.level ?? 1) < 5;
             },
 
             // NEW: Defense decay -1% per day if Sleep or Hygiene neglected
@@ -450,12 +554,16 @@ export const useGameStore = create<GameState>()(
             },
 
             resetDailyXp: () => {
+                const skillKeys = Object.keys(get().skills) as SkillName[];
                 set({
                     dailyXpGained: { ...INITIAL_DAILY_XP },
                     lastXpResetDate: getEasternDateString(),
-                    // Re-roll daily quest on manual reset too
-                    dailyQuestSkill: (Object.keys(get().skills) as SkillName[])[Math.floor(Math.random() * 13)],
+                    dailyQuestSkill: skillKeys[Math.floor(Math.random() * skillKeys.length)],
                 });
+            },
+
+            getDailyCap: (skillName) => {
+                return DAILY_XP_CAPS[skillName] ?? Infinity;
             },
 
             getDailyXpEarned: (skillName) => {
@@ -471,6 +579,11 @@ export const useGameStore = create<GameState>()(
 
             getCumulativeLogs: (skillName) => {
                 return get().cumulativeLogs[skillName] || 0;
+            },
+
+            getWorkDiscount: () => {
+                const workLevel = get().skills['Work']?.level ?? 1;
+                return Math.min(Math.floor(workLevel * 0.5), 15); // 0.5% per level, max 15%
             },
         }),
         {

@@ -18,6 +18,7 @@ import homeCampBg from '../../assets/room-bg.jpg';
 import trophyCaseBg from '../../assets/backgrounds/trophy_case.png';
 import bookshelfBg from '../../assets/backgrounds/bookshelf_display.png';
 import { useHeroImage } from '../../hooks/useHeroImage';
+import { LibraryCodex } from '../library/LibraryCodex';
 import './WalkableRoom.css';
 
 // Room layout config
@@ -188,7 +189,7 @@ export const WalkableRoom = () => {
     // Contextual interact
     const handleInteract = () => {
         if (nearTrophy) setShowTrophyCase(true);
-        else if (nearBookshelf) navigate('/library');
+        else if (nearBookshelf) setShowBookshelf(true);
         else if (nearCloset) setShowCloset(true);
         else if (nearMirror) setShowMirror(true);
     };
@@ -205,15 +206,6 @@ export const WalkableRoom = () => {
     const unlockedAuraItems = useMemo(() => AURAS.filter(a => unlockedAuras.includes(a.id)), [unlockedAuras]);
     const unlockedTitleDefs = useMemo(() => getUnlockedTitleDefs(), [unlockedTitles, getUnlockedTitleDefs]);
 
-    // Group books by year
-    const booksByYear = completedBooks.reduce((acc, book) => {
-        if (book.completedAt) {
-            const year = new Date(book.completedAt).getFullYear();
-            if (!acc[year]) acc[year] = [];
-            acc[year].push(book);
-        }
-        return acc;
-    }, {} as Record<number, typeof completedBooks>);
 
     return (
         <>
@@ -710,60 +702,8 @@ export const WalkableRoom = () => {
                 )}
             </AnimatePresence>
 
-            {/* Bookshelf Modal */}
-            <AnimatePresence>
-                {showBookshelf && (
-                    <motion.div
-                        className="room-modal-overlay"
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        exit={{ opacity: 0 }}
-                        onClick={() => setShowBookshelf(false)}
-                    >
-                        <motion.div
-                            className="room-modal room-bookshelf-modal"
-                            initial={{ scale: 0.8, opacity: 0 }}
-                            animate={{ scale: 1, opacity: 1 }}
-                            exit={{ scale: 0.8, opacity: 0 }}
-                            onClick={(e) => e.stopPropagation()}
-                        >
-                            <button className="modal-close-btn" onClick={() => setShowBookshelf(false)}>
-                                <X size={20} />
-                            </button>
-                            <img src={bookshelfBg} alt="Bookshelf" className="modal-bg-image" />
-                            <div className="modal-content">
-                                <h2>📚 My Library</h2>
-                                <p className="library-subtitle">{completedBooks.length} books completed</p>
-
-                                <div className="books-by-year">
-                                    {Object.entries(booksByYear)
-                                        .sort(([a], [b]) => Number(b) - Number(a))
-                                        .map(([year, books]) => (
-                                            <div key={year} className="year-section">
-                                                <h3 className="year-header">{year} ({books.length})</h3>
-                                                <ul className="book-list">
-                                                    {books.map(book => (
-                                                        <li key={book.id} className="book-entry">
-                                                            <span className="book-title">{book.title}</span>
-                                                            <span className="book-author">by {book.author}</span>
-                                                        </li>
-                                                    ))}
-                                                </ul>
-                                            </div>
-                                        ))
-                                    }
-                                    {completedBooks.length === 0 && (
-                                        <div className="empty-library">
-                                            <p>📖 No books completed yet!</p>
-                                            <p>Visit the Library to start reading.</p>
-                                        </div>
-                                    )}
-                                </div>
-                            </div>
-                        </motion.div>
-                    </motion.div>
-                )}
-            </AnimatePresence>
+            {/* Bookshelf — Library Codex */}
+            {showBookshelf && <LibraryCodex onClose={() => setShowBookshelf(false)} />}
 
             {/* Mirror / Health Modal */}
             <AnimatePresence>

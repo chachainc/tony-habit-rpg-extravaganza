@@ -8,26 +8,24 @@ import './LevelUpModal.css';
 // Skill icons map — unchanged
 const SKILL_ICONS: Record<SkillName, string> = {
     'Sleep': '😴', 'Hygiene': '🚿', 'Flexibility': '🧘', 'Strength': '🏋️',
-    'Cardio': '🏃', 'Clothing': '👔', 'Housemaid': '🧹', 'Work': '💼',
-    'Health': '❤️', 'Social': '👥', 'Luck': '🎲', 'Habit Building': '🔥',
+    'Cardio': '🏃', 'Work': '💼',
+    'Health': '❤️', 'Social': '👥', 'Luck': '🎲', 'Habit': '🔥',
     'Intelligence': '🧠',
 };
 
 // Stat gains per skill — unchanged
 const SKILL_STAT_GAINS: Record<SkillName, string[]> = {
-    'Sleep':          ['Defend +1', 'HP Regen'],
-    'Hygiene':        ['Defense +1'],
-    'Flexibility':    ['Defense +1', 'Speed'],
-    'Strength':       ['Attack +1'],
-    'Cardio':         ['Speed +1', 'Defense +1'],
-    'Clothing':       ['Style +1'],
-    'Housemaid':      ['Max Mana +5'],
-    'Work':           ['Gold Earn +1'],
-    'Health':         ['Max HP +5'],
-    'Social':         ['Influence +1'],
-    'Luck':           ['Crit Rate +1%'],
-    'Habit Building': ['Defense +1', 'Berserk'],
-    'Intelligence':   ['Magic ATK +2', 'Max MP +10'],
+    'Sleep':       ['Defend +1', 'HP Regen'],
+    'Hygiene':     ['Defense +1'],
+    'Flexibility': ['Defense +1', 'Speed'],
+    'Strength':    ['Attack +1'],
+    'Cardio':      ['Speed +1', 'Defense +1'],
+    'Work':        ['Gold Earn +1'],
+    'Health':      ['Max HP +5'],
+    'Social':      ['Influence +1'],
+    'Luck':        ['Crit Rate +1%'],
+    'Habit':       ['Defense +1', 'Consistency'],
+    'Intelligence':['Magic ATK +2', 'Max MP +10'],
 };
 
 interface LevelUpData {

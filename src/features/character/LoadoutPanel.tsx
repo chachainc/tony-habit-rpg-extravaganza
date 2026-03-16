@@ -10,12 +10,13 @@ import { useGameStore } from '../../store/useGameStore';
 import type { SkillName } from '../../store/useGameStore';
 import { ITEM_DATABASE } from '../../data/items';
 import { useHeroImage } from '../../hooks/useHeroImage';
+import { useMagicStore, SPELL_DB } from '../../store/useMagicStore';
 import './LoadoutPanel.css';
 
 type RadialSlotId = 
     | 'helm' | 'amulet' | 'cape' | 'weapon' | 'body' | 'shield' 
-    | 'legs' | 'gloves' | 'boots' | 'ring' | 'pet' | 'book' 
-    | 'artifact' | 'relic';
+    | 'legs' | 'gloves' | 'boots' | 'ring' | 'pet' | 'pet_accessory' | 'book' 
+    | 'artifact' | 'relic' | 'spell';
 
 interface SelectionItem {
     id: string;
@@ -34,6 +35,7 @@ export const LoadoutPanel = ({ onClose }: { onClose: () => void }) => {
     const invStore = useInventoryStore();
     const auraStore = useAuraStore();
     const petStore = usePetStore();
+    const magicStore = useMagicStore();
 
     // ── UI State ──
     const [activeSlot, setActiveSlot] = useState<RadialSlotId | null>(null);
@@ -87,6 +89,12 @@ export const LoadoutPanel = ({ onClose }: { onClose: () => void }) => {
             case 'relic':
                 const relic = invStore.equipped.relic ? ITEM_DB[invStore.equipped.relic] : null;
                 return { icon: relic?.icon || '', name: relic?.name || '', emptyIcon: '🏺' };
+            case 'pet_accessory':
+                const pAcc = invStore.equipped.pet_accessory ? ITEM_DATABASE[invStore.equipped.pet_accessory] : null;
+                return { icon: pAcc?.icon || '', name: pAcc?.name || '', emptyIcon: '🎀' };
+            case 'spell':
+                const spelling = magicStore.equippedSpell ? SPELL_DB[magicStore.equippedSpell] : null;
+                return { icon: spelling?.icon || '', name: spelling?.name || '', emptyIcon: '🪄' };
         }
     };
     const activeAuraId = auraStore.activeAuraId;
@@ -165,6 +173,7 @@ export const LoadoutPanel = ({ onClose }: { onClose: () => void }) => {
             shield: invStore.equipped.armor ?? null,
             ring: equipStore.equippedAccessory ?? null,
             pet: petStore.activePet ?? null,
+            pet_accessory: invStore.equipped.pet_accessory ?? null,
             book: invStore.equipped.book ?? null,
             artifact: invStore.equipped.artifact ?? null,
             relic: invStore.equipped.relic ?? null
@@ -191,63 +200,84 @@ export const LoadoutPanel = ({ onClose }: { onClose: () => void }) => {
         if (snapshot.book) invStore.equipItem(snapshot.book, 'book'); else invStore.unequipItem('book');
         if (snapshot.artifact) invStore.equipItem(snapshot.artifact, 'artifact'); else invStore.unequipItem('artifact');
         if (snapshot.relic) invStore.equipItem(snapshot.relic, 'relic'); else invStore.unequipItem('relic');
+        if (snapshot.pet_accessory) invStore.equipItem(snapshot.pet_accessory, 'pet_accessory'); else invStore.unequipItem('pet_accessory');
         
         if (snapshot.pet) petStore.switchPet(snapshot.pet);
     };
 
 
     // ── Selection Modal Logic ──
-    const getSelectionList = (slot: RadialSlotId): SelectionItem[] => {
+    const getSelectionList = (slot: RadialSlotId): (SelectionItem & { isLocked?: boolean })[] => {
+        let list: (SelectionItem & { isLocked?: boolean })[] = [];
+        
         switch (slot) {
             case 'helm':
-                return charStore.ownedCosmetics
-                    .map(id => COSMETICS_DB[id]).filter(c => c && c.slot === 'head')
-                    .map(c => ({ id: c.id, name: c.name, icon: '🪖', desc: 'Cosmetic' }));
+                list = Object.values(COSMETICS_DB).filter(c => c && c.slot === 'head')
+                    .map(c => ({ id: c.id, name: c.name, icon: '🪖', desc: 'Cosmetic', isLocked: !charStore.ownedCosmetics.includes(c.id) }));
+                break;
             case 'body':
-                return charStore.ownedCosmetics
-                    .map(id => COSMETICS_DB[id]).filter(c => c && c.slot === 'body')
-                    .map(c => ({ id: c.id, name: c.name, icon: '👕', desc: 'Cosmetic' }));
+                list = Object.values(COSMETICS_DB).filter(c => c && c.slot === 'body')
+                    .map(c => ({ id: c.id, name: c.name, icon: '👕', desc: 'Cosmetic', isLocked: !charStore.ownedCosmetics.includes(c.id) }));
+                break;
             case 'legs':
-                return charStore.ownedCosmetics
-                    .map(id => COSMETICS_DB[id]).filter(c => c && c.slot === 'legs')
-                    .map(c => ({ id: c.id, name: c.name, icon: '👖', desc: 'Cosmetic' }));
+                list = Object.values(COSMETICS_DB).filter(c => c && c.slot === 'legs')
+                    .map(c => ({ id: c.id, name: c.name, icon: '👖', desc: 'Cosmetic', isLocked: !charStore.ownedCosmetics.includes(c.id) }));
+                break;
             case 'boots':
-                return charStore.ownedCosmetics
-                    .map(id => COSMETICS_DB[id]).filter(c => c && c.slot === 'feet')
-                    .map(c => ({ id: c.id, name: c.name, icon: '👟', desc: 'Cosmetic' }));
+                list = Object.values(COSMETICS_DB).filter(c => c && c.slot === 'feet')
+                    .map(c => ({ id: c.id, name: c.name, icon: '👟', desc: 'Cosmetic', isLocked: !charStore.ownedCosmetics.includes(c.id) }));
+                break;
             case 'amulet':
-                return charStore.ownedCosmetics
-                    .map(id => COSMETICS_DB[id]).filter(c => c && c.slot === 'accessory')
-                    .map(c => ({ id: c.id, name: c.name, icon: '📿', desc: 'Cosmetic' }));
+                list = Object.values(COSMETICS_DB).filter(c => c && c.slot === 'accessory')
+                    .map(c => ({ id: c.id, name: c.name, icon: '📿', desc: 'Cosmetic', isLocked: !charStore.ownedCosmetics.includes(c.id) }));
+                break;
             case 'cape':
-                return AURAS.filter(a => auraStore.unlockedAuras.includes(a.id))
-                    .map(a => ({ id: a.id, name: a.name, icon: a.icon, desc: 'Aura boost' }));
+                list = AURAS.map(a => ({ id: a.id, name: a.name, icon: a.icon, desc: 'Aura boost', isLocked: !auraStore.unlockedAuras.includes(a.id) }));
+                break;
             case 'weapon':
-                return equipStore.ownedEquipment.map(id => EQUIPMENT_DB[id]).filter(e => e && e.slot === 'weapon')
-                    .map(e => ({ id: e.id, name: e.name, icon: e.icon, desc: `ATK +${e.atkBonus}` }));
+                list = Object.values(EQUIPMENT_DB).filter(e => e && e.slot === 'weapon')
+                    .map(e => ({ id: e.id, name: e.name, icon: e.icon, desc: `ATK +${e.atkBonus}`, isLocked: !equipStore.ownedEquipment.includes(e.id) }));
+                break;
             case 'shield':
-                return Object.keys(invStore.items).map(id => ITEM_DB[id]).filter(i => i && i.type === 'armor')
-                    .map(i => ({ id: i.id, name: i.name, icon: i.icon, desc: `DEF +${i.value}` }));
+                list = Object.values(ITEM_DB).filter(i => i && i.type === 'armor')
+                    .map(i => ({ id: i.id, name: i.name, icon: i.icon, desc: `DEF +${i.value}`, isLocked: (invStore.items[i.id] || 0) <= 0 }));
+                break;
             case 'ring':
-                return equipStore.ownedEquipment.map(id => EQUIPMENT_DB[id]).filter(e => e && e.slot === 'accessory')
-                    .map(e => ({ id: e.id, name: e.name, icon: e.icon, desc: `ATK +${e.atkBonus}` }));
+                list = Object.values(EQUIPMENT_DB).filter(e => e && e.slot === 'accessory')
+                    .map(e => ({ id: e.id, name: e.name, icon: e.icon, desc: `ATK +${e.atkBonus}`, isLocked: !equipStore.ownedEquipment.includes(e.id) }));
+                break;
             case 'pet':
-                // from marketplaceOwned or gacha owned if using different system, assuming pet_ gear or direct ITEM_DATABASE
-                return Object.keys(ITEM_DATABASE).filter(id => ITEM_DATABASE[id] && ITEM_DATABASE[id].type === 'pet')
-                    .map(id => ({ id, name: ITEM_DATABASE[id].name, icon: ITEM_DATABASE[id].icon, desc: 'Companion' }));
+                list = Object.values(ITEM_DATABASE).filter(i => i && i.type === 'pet')
+                    .map(i => ({ id: i.id, name: i.name, icon: i.icon, desc: 'Companion', isLocked: !petStore.ownedPets.includes(i.id) }));
+                break;
+            case 'pet_accessory':
+                list = Object.values(ITEM_DATABASE).filter(i => i && i.type === 'pet_accessory')
+                    .map(i => ({ id: i.id, name: i.name, icon: i.icon, desc: 'Cosmetic', isLocked: !invStore.marketplaceOwned.includes(i.id) }));
+                break;
             case 'book':
-                return Object.keys(invStore.items).map(id => ITEM_DB[id]).filter(i => i && i.type === 'book')
-                    .map(i => ({ id: i.id, name: i.name, icon: i.icon, desc: i.effect || '' }));
+                list = Object.values(ITEM_DB).filter(i => i && i.type === 'book')
+                    .map(i => ({ id: i.id, name: i.name, icon: i.icon, desc: i.effect || '', isLocked: (invStore.items[i.id] || 0) <= 0 }));
+                break;
             case 'artifact':
-                return Object.keys(invStore.items).map(id => ITEM_DB[id]).filter(i => i && i.type === 'artifact')
-                    .map(i => ({ id: i.id, name: i.name, icon: i.icon, desc: i.effect || '' }));
+                list = Object.values(ITEM_DB).filter(i => i && i.type === 'artifact')
+                    .map(i => ({ id: i.id, name: i.name, icon: i.icon, desc: i.effect || '', isLocked: (invStore.items[i.id] || 0) <= 0 }));
+                break;
             case 'relic':
-                return Object.keys(invStore.items).map(id => ITEM_DB[id]).filter(i => i && i.type === 'relic')
-                    .map(i => ({ id: i.id, name: i.name, icon: i.icon, desc: i.effect || '' }));
+                list = Object.values(ITEM_DB).filter(i => i && i.type === 'relic')
+                    .map(i => ({ id: i.id, name: i.name, icon: i.icon, desc: i.effect || '', isLocked: (invStore.items[i.id] || 0) <= 0 }));
+                break;
+            case 'spell':
+                list = magicStore.ownedSpells.map(id => {
+                    const s = SPELL_DB[id];
+                    return { id: s.id, name: s.name, icon: s.icon, desc: `${s.mpCost} MP`, isLocked: false };
+                });
+                break;
             case 'gloves':
-                return [];
+                list = [];
+                break;
         }
-        return [];
+
+        return list.sort((a, b) => Number(a.isLocked) - Number(b.isLocked));
     };
 
     const handleSelect = (itemId: string | null) => {
@@ -266,9 +296,11 @@ export const LoadoutPanel = ({ onClose }: { onClose: () => void }) => {
                 case 'shield': invStore.unequipItem('armor'); break;
                 case 'ring': equipStore.unequipSlot('accessory'); break;
                 case 'pet': break; // Pet cannot be fully unequiped natively, just switched. Or maybe switch to empty string if store allowed.
+                case 'pet_accessory': invStore.unequipItem('pet_accessory'); break;
                 case 'book': invStore.unequipItem('book'); break;
                 case 'artifact': invStore.unequipItem('artifact'); break;
                 case 'relic': invStore.unequipItem('relic'); break;
+                case 'spell': magicStore.equipSpell(null); break;
                 case 'gloves': break;
             }
         } else {
@@ -284,9 +316,11 @@ export const LoadoutPanel = ({ onClose }: { onClose: () => void }) => {
                 case 'shield': invStore.equipItem(itemId, 'armor'); break;
                 case 'ring': equipStore.equipItem(itemId); break;
                 case 'pet': petStore.switchPet(itemId); break;
+                case 'pet_accessory': invStore.equipItem(itemId, 'pet_accessory'); break;
                 case 'book': invStore.equipItem(itemId, 'book'); break;
                 case 'artifact': invStore.equipItem(itemId, 'artifact'); break;
                 case 'relic': invStore.equipItem(itemId, 'relic'); break;
+                case 'spell': magicStore.equipSpell(itemId); break;
                 case 'gloves': break;
             }
         }
@@ -347,8 +381,10 @@ export const LoadoutPanel = ({ onClose }: { onClose: () => void }) => {
                         {/* Outside floaters */}
                         {renderSlot('artifact', 'ls-artifact')}
                         {renderSlot('pet', 'ls-pet')}
+                        {renderSlot('pet_accessory', 'ls-pet-accessory')}
                         {renderSlot('book', 'ls-book')}
                         {renderSlot('relic', 'ls-relic')}
+                        {renderSlot('spell', 'ls-spell')}
                     </div>
                 </div>
 
@@ -455,10 +491,19 @@ export const LoadoutPanel = ({ onClose }: { onClose: () => void }) => {
                             </button>
                             
                             {getSelectionList(activeSlot).map(item => (
-                                <button key={item.id} className="ls-item-row" onClick={() => handleSelect(item.id)}>
+                                <button 
+                                    key={item.id} 
+                                    className={`ls-item-row ${item.isLocked ? 'locked' : ''}`} 
+                                    onClick={() => !item.isLocked && handleSelect(item.id)}
+                                    disabled={item.isLocked}
+                                    style={{ opacity: item.isLocked ? 0.5 : 1, filter: item.isLocked ? 'grayscale(100%)' : 'none', cursor: item.isLocked ? 'not-allowed' : 'pointer', position: 'relative' }}
+                                >
                                     <span className="ls-item-icon">{item.icon}</span>
-                                    <div className="ls-item-details">
-                                        <span className="ls-item-name">{item.name}</span>
+                                    <div className="ls-item-details" style={{ display: 'flex', flexDirection: 'column', flex: 1 }}>
+                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                            <span className="ls-item-name">{item.name}</span>
+                                            {item.isLocked && <span style={{ fontSize: '0.7rem', padding: '0.1rem 0.3rem', background: '#334155', color: '#94a3b8', borderRadius: '4px' }}>🔒 Locked</span>}
+                                        </div>
                                         <span className="ls-item-stats">{item.desc}</span>
                                     </div>
                                 </button>

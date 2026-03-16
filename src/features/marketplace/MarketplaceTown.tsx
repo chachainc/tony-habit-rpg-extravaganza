@@ -8,10 +8,10 @@ import { HospitalStore } from './stores/HospitalStore';
 import { ArmorStore } from './stores/ArmorStore';
 import { PetShop } from './stores/PetShop';
 import { WeaponStore } from './stores/WeaponStore';
-import { FurnitureStore } from './stores/FurnitureStore';
 import { SpellStore } from './stores/SpellStore';
+import { ShopModal } from '../shop/ShopModal';
 import { JewelryStore } from './stores/JewelryStore';
-import { DailyShop } from './stores/DailyShop';
+
 import { SceneShell } from '../../components/scene';
 import marketplaceNightBg from '../../assets/backgrounds/marketplace_night.png';
 import { useHeroImage } from '../../hooks/useHeroImage';
@@ -364,16 +364,13 @@ export const MarketplaceTown = () => {
                     <WeaponStore onClose={closeStore} />
                 )}
                 {activeStore === 'furniture-store' && (
-                    <FurnitureStore onClose={closeStore} />
+                    <ShopModal category="furniture" onClose={closeStore} />
                 )}
                 {activeStore === 'spell-store' && (
                     <SpellStore onClose={closeStore} />
                 )}
                 {activeStore === 'jewelry-store' && (
                     <JewelryStore onClose={closeStore} />
-                )}
-                {activeStore === 'daily-shop' && (
-                    <DailyShop onClose={closeStore} />
                 )}
             </AnimatePresence>
         </>

@@ -102,6 +102,33 @@
     gap: 1.25rem;
 }
 
+/* Section divider labels (DAILY GAMES / TEST YOUR POWER / EXPAND YOUR ARMY) */
+.combat-section-label {
+    font-size: 0.7rem;
+    font-weight: 800;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: rgba(255, 255, 255, 0.35);
+    padding: 0.25rem 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    margin-top: 0.5rem;
+}
+
+/* 1/day or 3/day badge next to option titles */
+.combat-limit-badge {
+    display: inline-block;
+    font-size: 0.6rem;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 0.3rem;
+    padding: 0.1rem 0.35rem;
+    margin-left: 0.5rem;
+    vertical-align: middle;
+    color: rgba(255, 255, 255, 0.55);
+}
+
 .combat-option {
     display: flex;
     align-items: center;

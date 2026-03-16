@@ -13,16 +13,207 @@ export interface Spell {
     description: string;
     goldCost: number;
     mpCost: number;
+    flexibilityTier: number; // 1-5: requires Flexibility skill at that tier (getMaxSpellTier)
     intelligenceRequired?: number; // Min Intelligence level to purchase
     booksRequired?: number; // Special unlock from book trophies
+    /** Which store section this spell belongs to */
+    tier?: 'novice' | 'apprentice' | 'adept' | 'master' | 'old';
+    /** Flat base damage (used by new-tier spells). Damage = baseDamage * (1 + Intelligence * 0.03) */
+    baseDamage?: number;
+    /** Turns this spell is on cooldown after being cast (0 = no cooldown) */
+    cooldownTurns?: number;
     effect: {
         type: 'heal' | 'damage' | 'shield';
-        value: number; // % for heal, multiplier for damage, turns for shield
+        value: number; // % for heal, multiplier for damage (old spells), baseDamage for new spells, turns for shield
         element?: 'fire' | 'ice' | 'lightning' | 'cosmic' | 'neutral';
     };
 }
 
 export const SPELL_DB: Record<string, Spell> = {
+    // ══════════════════════════════════════════════
+    // NOVICE SPELLS
+    // ══════════════════════════════════════════════
+    'spark': {
+        id: 'spark',
+        name: 'Spark',
+        icon: '✨',
+        description: 'A quick burst of arcane energy.',
+        goldCost: 150,
+        mpCost: 3,
+        flexibilityTier: 1,
+        tier: 'novice',
+        baseDamage: 3,
+        cooldownTurns: 0,
+        effect: { type: 'damage', value: 3, element: 'neutral' },
+    },
+    'stone_flick': {
+        id: 'stone_flick',
+        name: 'Stone Flick',
+        icon: '🪨',
+        description: 'Hurl a sharp stone at the enemy.',
+        goldCost: 250,
+        mpCost: 4,
+        flexibilityTier: 1,
+        tier: 'novice',
+        baseDamage: 5,
+        cooldownTurns: 0,
+        effect: { type: 'damage', value: 5, element: 'neutral' },
+    },
+    'poison_needle': {
+        id: 'poison_needle',
+        name: 'Poison Needle',
+        icon: '🧪',
+        description: 'A venomous needle that pierces deep.',
+        goldCost: 350,
+        mpCost: 4,
+        flexibilityTier: 1,
+        tier: 'novice',
+        baseDamage: 4,
+        cooldownTurns: 1,
+        effect: { type: 'damage', value: 4, element: 'neutral' },
+    },
+
+    // ══════════════════════════════════════════════
+    // APPRENTICE SPELLS
+    // ══════════════════════════════════════════════
+    'firebolt': {
+        id: 'firebolt',
+        name: 'Firebolt',
+        icon: '🔥',
+        description: 'A bolt of roaring flame.',
+        goldCost: 600,
+        mpCost: 6,
+        flexibilityTier: 1,
+        intelligenceRequired: 3,
+        tier: 'apprentice',
+        baseDamage: 10,
+        cooldownTurns: 2,
+        effect: { type: 'damage', value: 10, element: 'fire' },
+    },
+    'ice_shard': {
+        id: 'ice_shard',
+        name: 'Ice Shard',
+        icon: '❄️',
+        description: 'A shard of freezing ice.',
+        goldCost: 750,
+        mpCost: 6,
+        flexibilityTier: 1,
+        intelligenceRequired: 3,
+        tier: 'apprentice',
+        baseDamage: 8,
+        cooldownTurns: 2,
+        effect: { type: 'damage', value: 8, element: 'ice' },
+    },
+    'shadow_dart': {
+        id: 'shadow_dart',
+        name: 'Shadow Dart',
+        icon: '🌑',
+        description: 'A dart from the shadows.',
+        goldCost: 900,
+        mpCost: 7,
+        flexibilityTier: 1,
+        intelligenceRequired: 4,
+        tier: 'apprentice',
+        baseDamage: 9,
+        cooldownTurns: 2,
+        effect: { type: 'damage', value: 9, element: 'neutral' },
+    },
+
+    // ══════════════════════════════════════════════
+    // ADEPT SPELLS
+    // ══════════════════════════════════════════════
+    'lightning_strike': {
+        id: 'lightning_strike',
+        name: 'Lightning Strike',
+        icon: '⚡',
+        description: 'Call down a bolt from the sky.',
+        goldCost: 1500,
+        mpCost: 10,
+        flexibilityTier: 2,
+        intelligenceRequired: 6,
+        tier: 'adept',
+        baseDamage: 20,
+        cooldownTurns: 3,
+        effect: { type: 'damage', value: 20, element: 'lightning' },
+    },
+    'soul_burn': {
+        id: 'soul_burn',
+        name: 'Soul Burn',
+        icon: '💀',
+        description: 'Scorches the enemy from within.',
+        goldCost: 2200,
+        mpCost: 10,
+        flexibilityTier: 2,
+        intelligenceRequired: 7,
+        tier: 'adept',
+        baseDamage: 16,
+        cooldownTurns: 3,
+        effect: { type: 'damage', value: 16, element: 'neutral' },
+    },
+    'arcane_spear': {
+        id: 'arcane_spear',
+        name: 'Arcane Spear',
+        icon: '🔮',
+        description: 'A piercing lance of pure arcane energy.',
+        goldCost: 3000,
+        mpCost: 14,
+        flexibilityTier: 3,
+        intelligenceRequired: 9,
+        tier: 'adept',
+        baseDamage: 25,
+        cooldownTurns: 3,
+        effect: { type: 'damage', value: 25, element: 'neutral' },
+    },
+
+    // ══════════════════════════════════════════════
+    // MASTER SPELLS
+    // ══════════════════════════════════════════════
+    'meteor_fragment': {
+        id: 'meteor_fragment',
+        name: 'Meteor Fragment',
+        icon: '☄️',
+        description: 'Drop a shard of a celestial body.',
+        goldCost: 5000,
+        mpCost: 20,
+        flexibilityTier: 3,
+        intelligenceRequired: 12,
+        tier: 'master',
+        baseDamage: 40,
+        cooldownTurns: 5,
+        effect: { type: 'damage', value: 40, element: 'fire' },
+    },
+    'void_lance': {
+        id: 'void_lance',
+        name: 'Void Lance',
+        icon: '🕳️',
+        description: 'Pierce reality itself.',
+        goldCost: 7000,
+        mpCost: 22,
+        flexibilityTier: 4,
+        intelligenceRequired: 15,
+        tier: 'master',
+        baseDamage: 50,
+        cooldownTurns: 5,
+        effect: { type: 'damage', value: 50, element: 'neutral' },
+    },
+    'storm_collapse': {
+        id: 'storm_collapse',
+        name: 'Storm Collapse',
+        icon: '🌩️',
+        description: 'Collapse the storm on a single target.',
+        goldCost: 9000,
+        mpCost: 30,
+        flexibilityTier: 4,
+        intelligenceRequired: 18,
+        tier: 'master',
+        baseDamage: 65,
+        cooldownTurns: 6,
+        effect: { type: 'damage', value: 65, element: 'lightning' },
+    },
+
+    // ══════════════════════════════════════════════
+    // OLD SPELLS (legacy — fully backward compatible)
+    // ══════════════════════════════════════════════
     'lesser_heal': {
         id: 'lesser_heal',
         name: 'Lesser Heal',
@@ -30,7 +221,9 @@ export const SPELL_DB: Record<string, Spell> = {
         description: 'Restore 15% of max HP',
         goldCost: 1500,
         mpCost: 20,
+        flexibilityTier: 1,
         intelligenceRequired: 1,
+        tier: 'old',
         effect: { type: 'heal', value: 15 }
     },
     'fireball': {
@@ -40,7 +233,9 @@ export const SPELL_DB: Record<string, Spell> = {
         description: 'Deal 2.0x Magic Attack damage',
         goldCost: 3500,
         mpCost: 30,
+        flexibilityTier: 2,
         intelligenceRequired: 5,
+        tier: 'old',
         effect: { type: 'damage', value: 2.0, element: 'fire' }
     },
     'mana_shield': {
@@ -50,7 +245,9 @@ export const SPELL_DB: Record<string, Spell> = {
         description: 'Absorb damage with MP for 2 turns (2 MP = 1 HP)',
         goldCost: 5000,
         mpCost: 50,
+        flexibilityTier: 2,
         intelligenceRequired: 8,
+        tier: 'old',
         effect: { type: 'shield', value: 2 }
     },
     'frost_bolt': {
@@ -60,7 +257,9 @@ export const SPELL_DB: Record<string, Spell> = {
         description: 'Deal 1.5x Magic Attack damage + slow enemy',
         goldCost: 2500,
         mpCost: 25,
+        flexibilityTier: 1,
         intelligenceRequired: 3,
+        tier: 'old',
         effect: { type: 'damage', value: 1.5, element: 'ice' }
     },
     'thunder_strike': {
@@ -70,7 +269,9 @@ export const SPELL_DB: Record<string, Spell> = {
         description: 'Deal 2.5x Magic Attack damage',
         goldCost: 7500,
         mpCost: 40,
+        flexibilityTier: 4,
         intelligenceRequired: 10,
+        tier: 'old',
         effect: { type: 'damage', value: 2.5, element: 'lightning' }
     },
     'greater_heal': {
@@ -80,7 +281,9 @@ export const SPELL_DB: Record<string, Spell> = {
         description: 'Restore 35% of max HP',
         goldCost: 6500,
         mpCost: 45,
+        flexibilityTier: 3,
         intelligenceRequired: 7,
+        tier: 'old',
         effect: { type: 'heal', value: 35 }
     },
     'astral_fire': {
@@ -90,7 +293,9 @@ export const SPELL_DB: Record<string, Spell> = {
         description: 'Unleash cosmic flames for 3.5x Magic Attack damage',
         goldCost: 25000,
         mpCost: 60,
+        flexibilityTier: 5,
         booksRequired: 50,
+        tier: 'old',
         effect: { type: 'damage', value: 3.5, element: 'cosmic' }
     },
     'ice_wall': {
@@ -100,7 +305,9 @@ export const SPELL_DB: Record<string, Spell> = {
         description: 'Erect a wall of ice that absorbs damage for 3 turns',
         goldCost: 4000,
         mpCost: 35,
+        flexibilityTier: 3,
         intelligenceRequired: 6,
+        tier: 'old',
         effect: { type: 'shield', value: 3, element: 'ice' }
     },
     'chain_lightning': {
@@ -110,7 +317,9 @@ export const SPELL_DB: Record<string, Spell> = {
         description: 'Lightning arcs for 2.0x Magic Attack damage',
         goldCost: 8000,
         mpCost: 45,
+        flexibilityTier: 4,
         intelligenceRequired: 12,
+        tier: 'old',
         effect: { type: 'damage', value: 2.0, element: 'lightning' }
     },
     'healing_surge': {
@@ -120,7 +329,9 @@ export const SPELL_DB: Record<string, Spell> = {
         description: 'A powerful surge of life that restores 50% of max HP',
         goldCost: 12000,
         mpCost: 55,
+        flexibilityTier: 5,
         intelligenceRequired: 14,
+        tier: 'old',
         effect: { type: 'heal', value: 50 }
     },
     'inferno': {
@@ -130,7 +341,9 @@ export const SPELL_DB: Record<string, Spell> = {
         description: 'Engulf the battlefield in flames for 3.0x Magic Attack damage',
         goldCost: 15000,
         mpCost: 50,
+        flexibilityTier: 4,
         intelligenceRequired: 16,
+        tier: 'old',
         effect: { type: 'damage', value: 3.0, element: 'fire' }
     },
     'arcane_missile': {
@@ -140,7 +353,9 @@ export const SPELL_DB: Record<string, Spell> = {
         description: 'Pure arcane energy strikes for 1.8x Magic Attack damage',
         goldCost: 2200,
         mpCost: 22,
+        flexibilityTier: 1,
         intelligenceRequired: 4,
+        tier: 'old',
         effect: { type: 'damage', value: 1.8, element: 'neutral' }
     },
     'cosmic_nova': {
@@ -150,7 +365,9 @@ export const SPELL_DB: Record<string, Spell> = {
         description: 'Channel the power of the cosmos for 5.0x Magic Attack damage',
         goldCost: 50000,
         mpCost: 80,
+        flexibilityTier: 5,
         booksRequired: 100,
+        tier: 'old',
         effect: { type: 'damage', value: 5.0, element: 'cosmic' }
     },
     'void_blast': {
@@ -160,7 +377,9 @@ export const SPELL_DB: Record<string, Spell> = {
         description: 'Tear a hole in reality for 2.2x Magic Attack damage',
         goldCost: 5500,
         mpCost: 35,
+        flexibilityTier: 3,
         intelligenceRequired: 6,
+        tier: 'old',
         effect: { type: 'damage', value: 2.2, element: 'neutral' }
     },
     'rejuvenation': {
@@ -170,7 +389,9 @@ export const SPELL_DB: Record<string, Spell> = {
         description: 'Nature restores 25% of max HP over time',
         goldCost: 4500,
         mpCost: 30,
+        flexibilityTier: 3,
         intelligenceRequired: 5,
+        tier: 'old',
         effect: { type: 'heal', value: 25 }
     },
     'blizzard': {
@@ -180,7 +401,9 @@ export const SPELL_DB: Record<string, Spell> = {
         description: 'A raging blizzard for 2.8x Magic Attack damage',
         goldCost: 11000,
         mpCost: 50,
+        flexibilityTier: 4,
         intelligenceRequired: 11,
+        tier: 'old',
         effect: { type: 'damage', value: 2.8, element: 'ice' }
     },
     'divine_light': {
@@ -190,7 +413,9 @@ export const SPELL_DB: Record<string, Spell> = {
         description: 'Radiant light restores 70% of max HP',
         goldCost: 35000,
         mpCost: 70,
+        flexibilityTier: 5,
         intelligenceRequired: 18,
+        tier: 'old',
         effect: { type: 'heal', value: 70 }
     },
     'temporal_rift': {
@@ -200,7 +425,9 @@ export const SPELL_DB: Record<string, Spell> = {
         description: 'Bend time itself for 4.0x Magic Attack damage',
         goldCost: 40000,
         mpCost: 65,
+        flexibilityTier: 5,
         booksRequired: 75,
+        tier: 'old',
         effect: { type: 'damage', value: 4.0, element: 'cosmic' }
     },
 };
@@ -215,6 +442,9 @@ interface MagicState {
     canAffordSpell: (spellId: string) => boolean;
     isSpellUnlocked: (spellId: string) => boolean; // Check if spell requirements are met
     getSpellLockReason: (spellId: string) => string | null; // Get reason why spell is locked
+    
+    equippedSpell: string | null;
+    equipSpell: (spellId: string | null) => void;
 }
 
 export const useMagicStore = create<MagicState>()(
@@ -273,6 +503,14 @@ export const useMagicStore = create<MagicState>()(
                     }
                 }
 
+                // Check Flexibility tier requirement
+                if (spell.flexibilityTier) {
+                    const maxTier = gameStore.getMaxSpellTier();
+                    if (spell.flexibilityTier > maxTier) {
+                        return false;
+                    }
+                }
+
                 return true;
             },
 
@@ -282,22 +520,27 @@ export const useMagicStore = create<MagicState>()(
 
                 const gameStore = useGameStore.getState();
                 const intelligenceLevel = gameStore.skills['Intelligence']?.level || 1;
+                const bookTrophyCount = useBookTrophyStore.getState().totalBooksRead;
 
-                // Check Intelligence requirement
                 if (spell.intelligenceRequired && intelligenceLevel < spell.intelligenceRequired) {
-                    return `Requires Intelligence Level ${spell.intelligenceRequired}`;
+                    return `Requires Intelligence Lv. ${spell.intelligenceRequired}`;
                 }
 
-                // Check books requirement
-                if (spell.booksRequired) {
-                    const booksRead = useBookTrophyStore.getState().totalBooksRead;
-                    if (booksRead < spell.booksRequired) {
-                        return `Complete ${spell.booksRequired} books to unlock`;
-                    }
+                if (spell.flexibilityTier && gameStore.skills['Flexibility'].level < spell.flexibilityTier * 5) {
+                    return `Requires Flexibility Lv. ${spell.flexibilityTier * 5}`;
+                }
+
+                if (spell.booksRequired && bookTrophyCount < spell.booksRequired) {
+                    return `Requires ${spell.booksRequired} Books Read`;
                 }
 
                 return null;
             },
+
+            equippedSpell: null,
+            equipSpell: (spellId: string | null) => {
+                set({ equippedSpell: spellId });
+            }
         }),
         {
             name: PERSIST_REGISTRY.magic.persistKey,

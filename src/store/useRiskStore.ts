@@ -75,7 +75,7 @@ export interface RiskState {
 
     initializeMap: () => void;
     resetAndAscendMap: () => void;
-    resolveRiskBattle: (nodeId: string) => RiskBattleResult | null;
+    resolveRiskBattle: (nodeId: string, committedSoldiers: number) => RiskBattleResult | null;
     buySoldier: () => boolean;
     buyCard: (id: RiskCardId) => boolean;
     gainCard: (id: RiskCardId) => void;
@@ -83,6 +83,7 @@ export interface RiskState {
     unequipCard: (id: RiskCardId) => void;
     getSoldierLabel: (count: number) => string;
     getActiveRegionBonuses: () => RegionId[];
+    getMaxRevealedTiles: () => number;
 }
 
 export const REGIONS: Record<RegionId, RegionDef> = {
@@ -103,13 +104,11 @@ const NODE_DEFS: Omit<TerritoryNode, 'owner' | 'neighbors' | 'soldierCount'>[] =
     { id: 'vp1',     name: 'Start Hold',       defenseValue: 0,   nodeType: 'combat',  trait: 'none',      region: 'verdant_plains', mapX: 45, mapY: 80 },
     { id: 'vp2',     name: 'Greenveil',         defenseValue: 8,   nodeType: 'combat',  trait: 'resource',  region: 'verdant_plains', mapX: 60, mapY: 74 },
     { id: 'vp3',     name: 'Windswept Fields',  defenseValue: 12,  nodeType: 'combat',  trait: 'none',      region: 'verdant_plains', mapX: 30, mapY: 72 },
-    { id: 'vp_shop', name: 'Plains Market',     defenseValue: 0,   nodeType: 'shop',    trait: 'resource',  region: 'verdant_plains', mapX: 45, mapY: 65 },
 
     // Ashlands — mid-left
     { id: 'al1',     name: 'Valley of Ash',     defenseValue: 15,  nodeType: 'combat',  trait: 'none',      region: 'ashlands',       mapX: 22, mapY: 58 },
     { id: 'al2',     name: 'Cinder Ruins',      defenseValue: 20,  nodeType: 'elite',   trait: 'mystic',    region: 'ashlands',       mapX: 12, mapY: 47 },
     { id: 'al3',     name: 'Black Dunes',        defenseValue: 25,  nodeType: 'elite',   trait: 'fortified', region: 'ashlands',       mapX: 28, mapY: 37 },
-    { id: 'al_shop', name: 'Ash Camp',           defenseValue: 0,   nodeType: 'shop',    trait: 'none',      region: 'ashlands',       mapX: 15, mapY: 32 },
 
     // Iron Highlands — center
     { id: 'ih1',     name: 'Iron Ridge',         defenseValue: 18,  nodeType: 'combat',  trait: 'fortified', region: 'iron_highlands', mapX: 50, mapY: 58 },
@@ -121,7 +120,6 @@ const NODE_DEFS: Omit<TerritoryNode, 'owner' | 'neighbors' | 'soldierCount'>[] =
     { id: 'cc1',     name: 'Storm Coast',        defenseValue: 22,  nodeType: 'combat',  trait: 'none',      region: 'crystal_coast',  mapX: 78, mapY: 68 },
     { id: 'cc2',     name: 'Lighthouse Watch',   defenseValue: 30,  nodeType: 'elite',   trait: 'mystic',    region: 'crystal_coast',  mapX: 88, mapY: 55 },
     { id: 'cc3',     name: 'Siren Break',        defenseValue: 38,  nodeType: 'elite',   trait: 'fortified', region: 'crystal_coast',  mapX: 82, mapY: 38 },
-    { id: 'cc_shop', name: 'Harbor Market',      defenseValue: 0,   nodeType: 'shop',    trait: 'resource',  region: 'crystal_coast',  mapX: 92, mapY: 42 },
 
     // Frozen North — upper
     { id: 'fn1',     name: 'Frostmarch',         defenseValue: 35,  nodeType: 'elite',   trait: 'none',      region: 'frozen_north',   mapX: 38, mapY: 22 },
@@ -136,22 +134,19 @@ const NODE_DEFS: Omit<TerritoryNode, 'owner' | 'neighbors' | 'soldierCount'>[] =
 ];
 
 const ADJACENCY_MAP: Record<string, string[]> = {
-    vp1:     ['vp2', 'vp3', 'vp_shop', 'ih1'],
-    vp2:     ['vp1', 'ih1', 'cc1', 'vp_shop'],
-    vp3:     ['vp1', 'al1', 'ih1', 'vp_shop'],
-    vp_shop: ['vp1', 'vp2', 'vp3'],
+    vp1:     ['vp2', 'vp3', 'ih1'],
+    vp2:     ['vp1', 'ih1', 'cc1'],
+    vp3:     ['vp1', 'al1', 'ih1'],
     al1:     ['vp3', 'al2', 'al3', 'ih1'],
-    al2:     ['al1', 'al3', 'al_shop'],
-    al3:     ['al1', 'al2', 'ih3', 'fn3', 'al_shop'],
-    al_shop: ['al2', 'al3'],
+    al2:     ['al1', 'al3'],
+    al3:     ['al1', 'al2', 'ih3', 'fn3'],
     ih1:     ['vp1', 'vp2', 'vp3', 'al1', 'ih2', 'ih3'],
     ih2:     ['ih1', 'ih3', 'cc1', 'cc2'],
     ih3:     ['ih1', 'ih2', 'al3', 'fn1', 'ih_boss'],
     ih_boss: ['ih3', 'fn1'],
     cc1:     ['vp2', 'ih2', 'cc2'],
-    cc2:     ['cc1', 'ih2', 'cc3', 'cc_shop'],
-    cc3:     ['cc2', 'se1', 'se2', 'cc_shop'],
-    cc_shop: ['cc2', 'cc3'],
+    cc2:     ['cc1', 'ih2', 'cc3'],
+    cc3:     ['cc2', 'se1', 'se2'],
     fn1:     ['ih3', 'fn2', 'fn3', 'se1', 'fn_boss'],
     fn2:     ['fn1', 'fn3', 'se1', 'fn_boss'],
     fn3:     ['al3', 'fn1', 'fn2'],
@@ -164,8 +159,8 @@ const ADJACENCY_MAP: Record<string, string[]> = {
 function generateMap(ascensionLevel: number): Record<string, TerritoryNode> {
     const mapNodes: Record<string, TerritoryNode> = {};
     NODE_DEFS.forEach(def => {
-        let soldiers = def.nodeType === 'shop' ? 0 : defToSoldiers(def.defenseValue);
-        if (def.id !== 'vp1' && def.nodeType !== 'shop') {
+        let soldiers = defToSoldiers(def.defenseValue);
+        if (def.id !== 'vp1') {
             soldiers = Math.max(1, Math.floor(soldiers * (1 + ascensionLevel * 0.5)));
         }
         mapNodes[def.id] = {
@@ -248,13 +243,13 @@ export const useRiskStore = create<RiskState>()(
                 set(state => ({ equippedCards: state.equippedCards.filter(c => c !== id) }));
             },
 
-            resolveRiskBattle: (nodeId: string) => {
+            resolveRiskBattle: (nodeId: string, committedSoldiers: number) => {
                 const state = get();
                 const node = state.mapNodes[nodeId];
                 if (!node || node.owner === 'player' || node.nodeType === 'shop') return null;
 
                 const equipped = state.equippedCards;
-                let playerDice = state.playerSoldiers;
+                let playerDice = Math.min(state.playerSoldiers, committedSoldiers);
                 const enemyDice = Math.max(1, node.soldierCount);
                 const triggeredEffects: string[] = [];
 
@@ -318,8 +313,9 @@ export const useRiskStore = create<RiskState>()(
                         import('./useConquestStore').then(({ useConquestStore: cs }) => cs.getState().addSigils(extraSigils));
                     }
                 } else {
-                    // Attrition: chip away enemy soldiers
+                    // Defeat: lose committed soldiers
                     set(s => ({
+                        playerSoldiers: Math.max(0, s.playerSoldiers - committedSoldiers),
                         mapNodes: {
                             ...s.mapNodes,
                             [nodeId]: { ...s.mapNodes[nodeId], soldierCount: Math.max(1, s.mapNodes[nodeId].soldierCount - 1) }
@@ -357,6 +353,13 @@ export const useRiskStore = create<RiskState>()(
                     const owners = groups[rId];
                     return owners.length > 0 && owners.every(o => o === 'player');
                 });
+            },
+
+            getMaxRevealedTiles: () => {
+                const { mapNodes } = get();
+                const allNodes = Object.values(mapNodes);
+                const ownedCount = allNodes.filter(n => n.owner === 'player').length;
+                return Math.min(allNodes.length, 3 + ownedCount * 2);
             },
         }),
         {

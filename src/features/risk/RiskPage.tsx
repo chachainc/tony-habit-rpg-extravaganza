@@ -8,6 +8,8 @@ import './RiskPage.css';
 // Map canvas dimensions (pixels)
 const CANVAS_W = 1200;
 const CANVAS_H = 900;
+const MIN_ZOOM = 0.4;
+const MAX_ZOOM = 2.0;
 
 const NODE_TYPE_STYLE: Record<string, { border: string; glow: string; icon: string }> = {
     combat:   { border: '#64748b', glow: '0 0 8px rgba(100,116,139,0.5)',   icon: '⚔️' },
@@ -25,9 +27,14 @@ export const RiskPage = () => {
 
     // Pannable map state
     const viewportRef = useRef<HTMLDivElement>(null);
-    const [panOffset, setPanOffset] = useState({ x: 0, y: 0 });
-    const panStart = useRef<{ px: number; py: number; ox: number; oy: number } | null>(null);
+    const [panOffset, setPanOffset] = useState({ x: 0, y: 0, scale: 1 });
     const isPanning = useRef(false);
+
+    // Multi-touch tracking
+    const activePointers = useRef<Map<number, React.PointerEvent>>(new Map());
+    const initialPinchDist = useRef<number | null>(null);
+    const initialPinchScale = useRef<number>(1);
+    const lastPanPoint = useRef<{ x: number, y: number } | null>(null);
 
     // UI state
     const [selectedNode, setSelectedNode] = useState<TerritoryNode | null>(null);
@@ -35,6 +42,9 @@ export const RiskPage = () => {
     const [showCardHelp, setShowCardHelp] = useState(false);
     const [justConqueredRegion, setJustConqueredRegion] = useState<RegionId | null>(null);
     const [showCardShop, setShowCardShop] = useState(false);
+    const [committedSoldiers, setCommittedSoldiers] = useState<number>(1);
+    const [isRolling, setIsRolling] = useState(false);
+    const [rollAnimDice, setRollAnimDice] = useState<{p: number[], e: number[]}>({ p: [], e: [] });
 
     useEffect(() => {
         risk.initializeMap();
@@ -42,57 +52,185 @@ export const RiskPage = () => {
         if (viewportRef.current) {
             const vw = viewportRef.current.clientWidth;
             const vh = viewportRef.current.clientHeight;
-            setPanOffset({ x: -(CANVAS_W * 0.45) + vw / 2, y: -(CANVAS_H * 0.80) + vh / 2 });
+            
+            // Calculate an ideal initial zoom to fit the map width, capped at 1
+            const idealScale = Math.min(1, Math.max(MIN_ZOOM, vw / CANVAS_W));
+            
+            setPanOffset({ 
+                x: -(CANVAS_W * 0.45 * idealScale) + vw / 2, 
+                y: -(CANVAS_H * 0.80 * idealScale) + vh / 2,
+                scale: idealScale
+            });
         }
     }, []);
 
+    // Helper to calculate distance between two pointers
+    const getPointersDist = (p1: React.PointerEvent, p2: React.PointerEvent) => {
+        return Math.hypot(p1.clientX - p2.clientX, p1.clientY - p2.clientY);
+    };
+
+    // Helper to clamp pan offset based on current scale
+    const clampOffset = (x: number, y: number, scale: number) => {
+        const vw = viewportRef.current?.clientWidth ?? 0;
+        const vh = viewportRef.current?.clientHeight ?? 0;
+        
+        // Map scaled dimensions
+        const scaledW = CANVAS_W * scale;
+        const scaledH = CANVAS_H * scale;
+
+        // If scaled map is smaller than viewport, center it or bind it tightly.
+        // Usually, we just want to ensure we can't pan the map entirely off screen.
+        // A standard approach is limiting x between `vw - scaledW` and `0`.
+        // If scaledW < vw, this means minX > 0, which would break the math, so we handle that case.
+        const minX = Math.min(0, vw - scaledW);
+        const maxX = Math.max(0, vw - scaledW); // Allow centering if smaller
+
+        const minY = Math.min(0, vh - scaledH);
+        const maxY = Math.max(0, vh - scaledH);
+
+        return {
+            x: Math.max(minX, Math.min(maxX, x)),
+            y: Math.max(minY, Math.min(maxY, y))
+        };
+    };
+
     // Pointer pan handlers
     const onPointerDown = (e: React.PointerEvent) => {
-        isPanning.current = false;
-        panStart.current = { px: e.clientX, py: e.clientY, ox: panOffset.x, oy: panOffset.y };
         (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
+        activePointers.current.set(e.pointerId, e);
+
+        if (activePointers.current.size === 1) {
+            isPanning.current = false;
+            lastPanPoint.current = { x: e.clientX, y: e.clientY };
+        } else if (activePointers.current.size === 2) {
+            isPanning.current = true;
+            const pts = Array.from(activePointers.current.values());
+            initialPinchDist.current = getPointersDist(pts[0], pts[1]);
+            initialPinchScale.current = panOffset.scale;
+            lastPanPoint.current = null; // Disable standard panning during pinch
+        }
     };
 
     const onPointerMove = (e: React.PointerEvent) => {
-        if (!panStart.current) return;
-        const dx = e.clientX - panStart.current.px;
-        const dy = e.clientY - panStart.current.py;
-        if (Math.abs(dx) > 4 || Math.abs(dy) > 4) isPanning.current = true;
-        if (!isPanning.current) return;
-        const vw = viewportRef.current?.clientWidth ?? 0;
-        const vh = viewportRef.current?.clientHeight ?? 0;
-        const minX = vw - CANVAS_W;
-        const minY = vh - CANVAS_H;
-        setPanOffset({
-            x: Math.min(0, Math.max(minX, panStart.current.ox + dx)),
-            y: Math.min(0, Math.max(minY, panStart.current.oy + dy)),
-        });
+        if (!activePointers.current.has(e.pointerId)) return;
+        
+        // Update the stored pointer event
+        activePointers.current.set(e.pointerId, e);
+
+        if (activePointers.current.size === 1 && lastPanPoint.current) {
+            // Single finger pan
+            const dx = e.clientX - lastPanPoint.current.x;
+            const dy = e.clientY - lastPanPoint.current.y;
+            
+            if (Math.abs(dx) > 4 || Math.abs(dy) > 4) isPanning.current = true;
+            if (!isPanning.current) return;
+
+            setPanOffset(prev => {
+                const newX = prev.x + dx;
+                const newY = prev.y + dy;
+                return { ...prev, ...clampOffset(newX, newY, prev.scale) };
+            });
+
+            lastPanPoint.current = { x: e.clientX, y: e.clientY };
+
+        } else if (activePointers.current.size === 2 && initialPinchDist.current !== null) {
+            // Two finger pinch zoom
+            const pts = Array.from(activePointers.current.values());
+            const currentDist = getPointersDist(pts[0], pts[1]);
+            
+            // Calculate new scale
+            const scaleRatio = currentDist / initialPinchDist.current;
+            let newScale = initialPinchScale.current * scaleRatio;
+            newScale = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, newScale));
+
+            // Determine pinch center to zoom around that point
+            const centerX = (pts[0].clientX + pts[1].clientX) / 2;
+            const centerY = (pts[0].clientY + pts[1].clientY) / 2;
+
+            setPanOffset(prev => {
+                if (!viewportRef.current) return prev;
+                const rect = viewportRef.current.getBoundingClientRect();
+                
+                // Mouse position relative to the map container
+                const relX = centerX - rect.left;
+                const relY = centerY - rect.top;
+
+                // How much the scale changed since last frame/prev state
+                const scaleDiff = newScale / prev.scale;
+
+                // Adjust offset so the point under the fingers stays in the same place
+                const newX = relX - (relX - prev.x) * scaleDiff;
+                const newY = relY - (relY - prev.y) * scaleDiff;
+
+                return { scale: newScale, ...clampOffset(newX, newY, newScale) };
+            });
+        }
     };
 
-    const onPointerUp = () => { panStart.current = null; };
+    const onPointerUp = (e: React.PointerEvent) => { 
+        activePointers.current.delete(e.pointerId);
+        if (activePointers.current.size < 2) {
+            initialPinchDist.current = null;
+        }
+        if (activePointers.current.size === 1) {
+            // Resume panning from the remaining finger
+            const remaining = Array.from(activePointers.current.values())[0];
+            lastPanPoint.current = { x: remaining.clientX, y: remaining.clientY };
+        } else if (activePointers.current.size === 0) {
+            lastPanPoint.current = null;
+        }
+    };
 
     const handleNodeTap = (node: TerritoryNode) => {
         if (isPanning.current) return;
         setSelectedNode(node);
         setBattleResult(null);
+        setCommittedSoldiers(risk.playerSoldiers); // default to max
+        setIsRolling(false);
     };
 
     const handleAttack = (nodeId: string) => {
         const prev = risk.getActiveRegionBonuses();
-        const result = risk.resolveRiskBattle(nodeId);
-        if (!result) return;
-        setBattleResult(result);
+        
+        // Start animation
+        setIsRolling(true);
+        setBattleResult(null);
 
-        if (result.success) {
-            const next = useRiskStore.getState().getActiveRegionBonuses();
-            const newRegion = next.find(r => !prev.includes(r));
-            if (newRegion) {
-                setJustConqueredRegion(newRegion);
-                setTimeout(() => setJustConqueredRegion(null), 4000);
+        // Simulate rolling visual
+        const pCount = Math.min(risk.playerSoldiers, committedSoldiers);
+        const eCount = Math.max(1, selectedNode?.soldierCount || 1);
+        
+        let ticks = 0;
+        const rollInterval = setInterval(() => {
+            setRollAnimDice({
+                p: Array.from({length: pCount}, () => Math.floor(Math.random() * 6) + 1),
+                e: Array.from({length: eCount}, () => Math.floor(Math.random() * 6) + 1)
+            });
+            ticks++;
+            if (ticks > 8) { // run ~8 frames of animation
+                clearInterval(rollInterval);
+                setIsRolling(false);
+
+                // Actually resolve battle
+                const result = risk.resolveRiskBattle(nodeId, committedSoldiers);
+                if (!result) return;
+                setBattleResult(result);
+
+                if (result.success) {
+                    const next = useRiskStore.getState().getActiveRegionBonuses();
+                    const newRegion = next.find(r => !prev.includes(r));
+                    if (newRegion) {
+                        setJustConqueredRegion(newRegion);
+                        setTimeout(() => setJustConqueredRegion(null), 4000);
+                    }
+                    // Update selected node to reflect new owner
+                    setSelectedNode(useRiskStore.getState().mapNodes[nodeId]);
+                } else {
+                    // Update node to reflect attrition or reinforcements
+                    setSelectedNode(useRiskStore.getState().mapNodes[nodeId]);
+                }
             }
-            // Update selected node to reflect new owner
-            setSelectedNode(useRiskStore.getState().mapNodes[nodeId]);
-        }
+        }, 80);
     };
 
     const activeRegions = risk.getActiveRegionBonuses();
@@ -108,6 +246,15 @@ export const RiskPage = () => {
 
     const isLocked = (node: TerritoryNode) =>
         node.owner === 'enemy' && !isAttackable(node) && node.id !== 'vp1';
+
+    const allNodes = Object.values(risk.mapNodes);
+    const maxRevealed = risk.getMaxRevealedTiles();
+    const sortedNodes = [...allNodes].sort((a, b) => a.defenseValue - b.defenseValue);
+    
+    const visibleNodeIds = new Set([
+        ...allNodes.filter(n => n.owner === 'player').map(n => n.id),
+        ...sortedNodes.slice(0, maxRevealed).map(n => n.id)
+    ]);
 
     return (
         <div className="risk-page">
@@ -162,13 +309,13 @@ export const RiskPage = () => {
 
                     <div
                         className="risk-map-canvas"
-                        style={{ transform: `translate(${panOffset.x}px, ${panOffset.y}px)` }}
+                        style={{ transform: `translate(${panOffset.x}px, ${panOffset.y}px) scale(${panOffset.scale})` }}
                     >
                         {/* SVG paths between connected nodes */}
                         <svg className="map-paths-svg" width={CANVAS_W} height={CANVAS_H} style={{ position: 'absolute', inset: 0, pointerEvents: 'none' }}>
                             {Object.values(risk.mapNodes).flatMap(node =>
                                 node.neighbors
-                                    .filter(nId => nId > node.id) // avoid drawing twice
+                                    .filter(nId => nId > node.id && visibleNodeIds.has(node.id) && visibleNodeIds.has(nId)) // avoid drawing twice and only if both visible
                                     .map(nId => {
                                         const nb = risk.mapNodes[nId];
                                         if (!nb) return null;
@@ -191,7 +338,7 @@ export const RiskPage = () => {
                         </svg>
 
                         {/* Node pins */}
-                        {Object.values(risk.mapNodes).map(node => {
+                        {Object.values(risk.mapNodes).filter(node => visibleNodeIds.has(node.id)).map(node => {
                             const cx = (node.mapX ?? 50) / 100 * CANVAS_W;
                             const cy = (node.mapY ?? 50) / 100 * CANVAS_H;
                             const owned = node.owner === 'player';
@@ -213,18 +360,10 @@ export const RiskPage = () => {
                                     onClick={() => handleNodeTap(node)}
                                     disabled={locked}
                                 >
-                                    <span className="pin-type-icon">
-                                        {owned ? '🏰' : style.icon}
+                                    <span className="pin-type-icon" style={{ fontSize: '1rem', fontWeight: 900 }}>
+                                        {owned ? risk.playerSoldiers : node.soldierCount}
                                     </span>
-                                    <span className="pin-name">{node.name}</span>
-                                    {!owned && node.nodeType !== 'shop' && (
-                                        <span className="pin-soldiers">
-                                            {node.soldierCount}× {risk.getSoldierLabel(node.soldierCount)}
-                                        </span>
-                                    )}
-                                    {node.nodeType === 'shop' && !owned && (
-                                        <span className="pin-soldiers">Enter Shop</span>
-                                    )}
+                                    <span className="pin-name" style={{ marginTop: '2px' }}>{node.name}</span>
                                 </button>
                             );
                         })}
@@ -327,7 +466,9 @@ export const RiskPage = () => {
                         <button className="close-btn" onClick={() => { setSelectedNode(null); setBattleResult(null); }}><X size={20} /></button>
 
                         <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.75rem' }}>
-                            <span style={{ fontSize: '2rem' }}>{NODE_TYPE_STYLE[selectedNode.nodeType]?.icon ?? '⚔️'}</span>
+                            <span style={{ fontSize: '2rem', fontWeight: 900, color: selectedNode.owner === 'player' ? '#10b981' : NODE_TYPE_STYLE[selectedNode.nodeType]?.border }}>
+                                {selectedNode.owner === 'player' ? risk.playerSoldiers : selectedNode.soldierCount}
+                            </span>
                             <div>
                                 <h2 style={{ margin: 0, fontSize: '1.3rem', color: selectedNode.owner === 'player' ? '#10b981' : '#fff' }}>
                                     {selectedNode.name}
@@ -349,9 +490,29 @@ export const RiskPage = () => {
                                     </div>
                                 </div>
                                 <div className="dice-preview">
-                                    <span>You roll: <strong>{risk.playerSoldiers}d6</strong></span>
+                                    <span>You deploy: <strong>{Math.min(risk.playerSoldiers, committedSoldiers)}d6</strong></span>
                                     <span>They roll: <strong>{selectedNode.soldierCount}d6</strong></span>
                                 </div>
+                                
+                                {isAttackable(selectedNode) && !isRolling && !battleResult && (
+                                    <div className="soldier-commit-section" style={{ marginTop: '1rem' }}>
+                                        <label style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem', marginBottom: '0.3rem' }}>
+                                            <span>Combat Commitment</span>
+                                            <span style={{ color: '#f59e0b', fontWeight: 700 }}>{committedSoldiers} / {risk.playerSoldiers}</span>
+                                        </label>
+                                        <input 
+                                            type="range" 
+                                            min="1" 
+                                            max={Math.max(1, risk.playerSoldiers)}
+                                            value={committedSoldiers}
+                                            onChange={(e) => setCommittedSoldiers(parseInt(e.target.value))}
+                                            style={{ width: '100%', accentColor: '#f59e0b' }}
+                                        />
+                                        <p style={{ fontSize: '0.75rem', color: '#f87171', margin: '0.3rem 0 0', fontStyle: 'italic', textAlign: 'center' }}>
+                                            ⚠️ Committed soldiers are lost permanently on defeat!
+                                        </p>
+                                    </div>
+                                )}
                             </div>
                         )}
 
@@ -372,8 +533,13 @@ export const RiskPage = () => {
 
                         {selectedNode.owner === 'enemy' && selectedNode.nodeType !== 'shop' && (
                             isAttackable(selectedNode) ? (
-                                <button className="risk-attack-btn" onClick={() => handleAttack(selectedNode.id)}>
-                                    <Swords size={20} /> Attack ({risk.playerSoldiers} vs {selectedNode.soldierCount})
+                                <button 
+                                    className="risk-attack-btn" 
+                                    onClick={() => handleAttack(selectedNode.id)}
+                                    disabled={isRolling || risk.playerSoldiers === 0}
+                                    style={{ opacity: isRolling || risk.playerSoldiers === 0 ? 0.5 : 1 }}
+                                >
+                                    {isRolling ? 'Rolling...' : <><Swords size={20} /> 🎲 Roll Dice ({committedSoldiers} vs {selectedNode.soldierCount})</>}
                                 </button>
                             ) : (
                                 <p style={{ color: '#888', fontStyle: 'italic', textAlign: 'center', marginTop: '1rem' }}>
@@ -388,13 +554,25 @@ export const RiskPage = () => {
                             </button>
                         )}
 
+                        {/* Rolling Animation Overlay */}
+                        {isRolling && (
+                            <div className="risk-rolling-anim" style={{ marginTop: '1rem', textAlign: 'center' }}>
+                                <h4 style={{ margin: '0 0 0.5rem', color: '#f59e0b' }}>🎲 ROLLING...</h4>
+                                <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center', flexWrap: 'wrap', fontSize: '1.2rem', marginBottom: '0.5rem' }}>
+                                    <span style={{ color: '#60a5fa' }}>{rollAnimDice.p.join('  ')}</span>
+                                    <span style={{ color: '#94a3b8' }}>vs</span>
+                                    <span style={{ color: '#ef4444' }}>{rollAnimDice.e.join('  ')}</span>
+                                </div>
+                            </div>
+                        )}
+
                         {/* Battle Result */}
-                        {battleResult && (
+                        {!isRolling && battleResult && (
                             <div className={`risk-battle-result modal-result ${battleResult.success ? 'victory' : 'defeat'}`} style={{ marginTop: '1rem' }}>
                                 <h4 style={{ margin: '0 0 0.5rem' }}>{battleResult.success ? '⚔️ VICTORY' : '💀 DEFEAT'}</h4>
                                 <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center', flexWrap: 'wrap', fontSize: '0.85rem', marginBottom: '0.5rem' }}>
-                                    <span>You: {battleResult.playerRolls.join(', ')} → <strong>{battleResult.playerWins} wins</strong></span>
-                                    <span>Enemy: {battleResult.enemyRolls.join(', ')} → <strong>{battleResult.enemyWins} wins</strong></span>
+                                    <span>You: {battleResult.playerRolls.map((r, i) => <span key={i} className="dice-result">{r}</span>)} → <strong>{battleResult.playerWins} wins</strong></span>
+                                    <span>Enemy: {battleResult.enemyRolls.map((r, i) => <span key={i} className="dice-result enemy-dice">{r}</span>)} → <strong>{battleResult.enemyWins} wins</strong></span>
                                 </div>
                                 {battleResult.triggeredEffects.length > 0 && (
                                     <div style={{ fontSize: '0.78rem', color: '#a3e635' }}>
@@ -407,7 +585,9 @@ export const RiskPage = () => {
                                     </div>
                                 )}
                                 {!battleResult.success && (
-                                    <div style={{ fontSize: '0.8rem', color: '#f59e0b', marginTop: '0.3rem' }}>⚔️ Enemy lost 1 soldier (attrition)</div>
+                                    <div style={{ fontSize: '0.8rem', color: '#f87171', marginTop: '0.3rem' }}>
+                                        ⚔️ You lost {committedSoldiers} soldiers!
+                                    </div>
                                 )}
                             </div>
                         )}

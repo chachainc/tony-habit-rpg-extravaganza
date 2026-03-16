@@ -74,18 +74,39 @@ export interface ConquestState {
     runFloor: number;
     runBuffs: RunBuff[];
     runComplete: 'none' | 'victory' | 'defeat';
-    
+    lastRunDate: string | null;
+
+    // NEW — run resources
+    balloons: number;
+    shmeckles: number;
+
+    // NEW — run progression tracking
+    treasureVaultsCompleted: number;
+    runArtifacts: string[];   // artifact IDs active this run
+    runRelics: string[];      // relic IDs purchased this run
+    rewardAmplifierActive: boolean;
+
     // Meta Progression
     runsCompleted: number;
     bestFloor: number;
 
     // Run Actions
     startRun: () => void;
+    isDailyRunLocked: () => boolean;
     takeDamage: (amount: number) => void;
     healHP: (amount: number) => void;
     addRunBuff: (buff: RunBuff) => void;
     completeRun: (victory: boolean) => void;
     resetRun: () => void;
+
+    // NEW run resource actions
+    addBalloons: (n: number) => void;
+    addShmeckles: (n: number) => void;
+    completeTreasureVault: () => void;
+    addRunArtifact: (id: string) => void;
+    addRunRelic: (id: string) => void;
+    activateRewardAmplifier: () => void;
+    getVaultScaledBossMultiplier: () => number;
 
     // Memory Log
     memoryLog: MemoryLog;
@@ -243,6 +264,17 @@ export const useConquestStore = create<ConquestState>()(
             runFloor: 0,
             runBuffs: [],
             runComplete: 'none',
+            lastRunDate: null,
+
+            // NEW — run resources
+            balloons: 0,
+            shmeckles: 0,
+
+            // NEW — run progression
+            treasureVaultsCompleted: 0,
+            runArtifacts: [],
+            runRelics: [],
+            rewardAmplifierActive: false,
 
             // Meta
             runsCompleted: 0,
@@ -276,6 +308,17 @@ export const useConquestStore = create<ConquestState>()(
                 const state = get();
                 return findExactDistanceNodes(state.currentNodeId, 1, CONQUEST_MAP_NODES);
             },
+            
+            isDailyRunLocked: () => {
+                const state = get();
+                if (!state.lastRunDate) return false;
+                
+                const today = new Date();
+                const lastRun = new Date(state.lastRunDate);
+                
+                return today.toDateString() === lastRun.toDateString();
+            },
+
             movePlayer: (nodeId: string) => {
                 const state = get();
                 if (!state.completedNodes.includes(nodeId)) {
@@ -295,18 +338,24 @@ export const useConquestStore = create<ConquestState>()(
             },
 
             grantSpireReward: (gold: number, sigils: number, gems: number = 0) => {
-                if (gold > 0) {
+                // Apply strict reward caps
+                const cappedGold = Math.min(gold, 25);
+                const cappedSigils = Math.min(sigils, 3);
+                // Also capping gems just in case they are generated somewhere and misused
+                const cappedGems = Math.min(gems, 3);
+
+                if (cappedGold > 0) {
                     import('./useCurrencyStore').then(({ useCurrencyStore }) => {
-                        useCurrencyStore.getState().addGold(gold);
+                        useCurrencyStore.getState().addGold(cappedGold);
                     }).catch(() => { });
                 }
-                if (gems > 0) {
+                if (cappedGems > 0) {
                     import('./useGameStore').then(({ useGameStore }) => {
-                        useGameStore.getState().addGems(gems);
+                        useGameStore.getState().addGems(cappedGems);
                     }).catch(() => { });
                 }
-                if (sigils > 0) {
-                    get().addSigils(sigils);
+                if (cappedSigils > 0) {
+                    get().addSigils(cappedSigils);
                 }
 
                 // 25% chance to drop a Risk card as connective progression
@@ -321,14 +370,30 @@ export const useConquestStore = create<ConquestState>()(
 
             // ─── RUN ACTIONS ───
             startRun: () => {
+                const today = new Date().toISOString().split('T')[0];
+                const state = get();
+                
+                if (state.lastRunDate === today) {
+                    console.warn("[Conquest] Run already completed today.");
+                    return;
+                }
+
                 set({
+                    lastRunDate: today,
                     runHP: get().runMaxHP,
                     runFloor: 0,
                     runBuffs: [],
                     runComplete: 'none',
                     currentNodeId: 'start',
                     completedNodes: ['start'],
-                    activeDiceRoll: null
+                    activeDiceRoll: null,
+                    // Reset new run fields
+                    balloons: 0,
+                    shmeckles: 0,
+                    treasureVaultsCompleted: 0,
+                    runArtifacts: [],
+                    runRelics: [],
+                    rewardAmplifierActive: false,
                 });
             },
 
@@ -345,7 +410,10 @@ export const useConquestStore = create<ConquestState>()(
             healHP: (amount: number) => {
                 if (amount <= 0) return;
                 const state = get();
-                set({ runHP: Math.min(state.runMaxHP, state.runHP + amount) });
+                // Ensure healing doesn't exceed 50% max HP of the player's runMaxHP from nodes
+                // Note: param "amount" may be used elsewhere. For Conquest campfires we cap to Math.min(amount, max/2)
+                const actualAmount = Math.min(amount, Math.floor(state.runMaxHP * 0.5));
+                set({ runHP: Math.min(state.runMaxHP, state.runHP + actualAmount) });
             },
 
             addRunBuff: (buff: RunBuff) => {
@@ -353,11 +421,31 @@ export const useConquestStore = create<ConquestState>()(
                 set({ runBuffs: [...state.runBuffs, buff] });
             },
 
+            // ─── NEW RUN ACTIONS ───
+            addBalloons: (n: number) => set(s => ({ balloons: s.balloons + n })),
+            addShmeckles: (n: number) => set(s => ({ shmeckles: s.shmeckles + n })),
+
+            completeTreasureVault: () => set(s => ({ treasureVaultsCompleted: s.treasureVaultsCompleted + 1 })),
+
+            addRunArtifact: (id: string) => set(s => ({ runArtifacts: [...s.runArtifacts, id] })),
+
+            addRunRelic: (id: string) => set(s => ({ runRelics: [...s.runRelics, id] })),
+
+            activateRewardAmplifier: () => set({ rewardAmplifierActive: true }),
+
+            getVaultScaledBossMultiplier: () => {
+                const vaults = get().treasureVaultsCompleted;
+                return 1 + vaults * 0.10; // +10% ATK & HP per vault
+            },
+
             completeRun: (victory: boolean) => {
                 const state = get();
+                const today = new Date().toISOString().split('T')[0];
                 set({ 
                     runComplete: victory ? 'victory' : 'defeat',
-                    runsCompleted: victory ? state.runsCompleted + 1 : state.runsCompleted
+                    runsCompleted: victory ? state.runsCompleted + 1 : state.runsCompleted,
+                    // Lock out the day on defeat too
+                    lastRunDate: victory ? state.lastRunDate : today,
                 });
             },
 

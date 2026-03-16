@@ -72,6 +72,7 @@ interface HealthState {
     weightLogs: WeightEntry[];
     foodLogs: FoodEntry[];
     progressPhotos: ProgressPhoto[];
+    photoRewardLastClaimDate: string | null;
 
     // Weight Actions
     logWeight: (weight: number, date?: string) => void;
@@ -92,6 +93,7 @@ interface HealthState {
     getPhotosForDate: (date: string) => ProgressPhoto[];
     getAllPhotos: () => ProgressPhoto[];
     deletePhoto: (id: string) => void;
+    setPhotoRewardClaimDate: (date: string) => void;
 }
 
 export const useHealthStore = create<HealthState>()(
@@ -100,6 +102,7 @@ export const useHealthStore = create<HealthState>()(
             weightLogs: [],
             foodLogs: [],
             progressPhotos: [],
+            photoRewardLastClaimDate: null,
             // ── Weight ────────────────────────────────────────
 
             logWeight: (weight: number, date?: string) => {
@@ -282,6 +285,10 @@ export const useHealthStore = create<HealthState>()(
                 set((state) => ({
                     progressPhotos: state.progressPhotos.filter((p) => p.id !== id),
                 }));
+            },
+
+            setPhotoRewardClaimDate: (date: string) => {
+                set({ photoRewardLastClaimDate: date });
             },
         }),
         {

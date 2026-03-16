@@ -1,9 +1,10 @@
 .checkin-modal {
     width: 100%;
-    max-height: 100%;
+    max-height: calc(100vh - env(safe-area-inset-bottom, 0px));
     max-width: 600px;
     border-radius: var(--radius-md);
     padding: 1rem;
+    padding-bottom: calc(1rem + env(safe-area-inset-bottom, 0px));
     display: flex;
     flex-direction: column;
     justify-content: flex-start;
@@ -271,6 +272,25 @@
     opacity: 0.7;
 }
 
+.board-reward-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 1000;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    pointer-events: none;
+    padding: 1rem;
+    padding-bottom: calc(1rem + env(safe-area-inset-bottom, 20px));
+}
+
+.board-reward-overlay > * {
+    pointer-events: auto;
+}
+
 .reward-popup {
     position: relative;
     background: linear-gradient(135deg, rgba(30, 30, 40, 0.98), rgba(20, 20, 30, 0.98));
@@ -278,7 +298,10 @@
     border-radius: 16px;
     padding: 1.5rem;
     text-align: center;
-    min-width: 0;
+    width: 100%;
+    max-width: 340px;
+    max-height: 90vh;
+    overflow-y: auto;
     box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
 }
 

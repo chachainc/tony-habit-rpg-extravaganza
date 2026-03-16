@@ -7,7 +7,7 @@ import { ITEM_DATABASE } from '../data/items';
 import { useCurrencyStore } from './useCurrencyStore';
 import type { SkillName } from './useGameStore';
 
-export type ItemType = 'food' | 'toy' | 'potion' | 'weapon' | 'armor' | 'pet_gear' | 'ticket' | 'furniture' | 'book' | 'relic' | 'artifact' | 'jewelry';
+export type ItemType = 'food' | 'toy' | 'potion' | 'weapon' | 'armor' | 'pet_gear' | 'ticket' | 'furniture' | 'book' | 'relic' | 'artifact' | 'jewelry' | 'pet_accessory';
 export type Rarity = 'common' | 'rare' | 'epic' | 'legendary';
 export type ShopCategory = 'blacksmith' | 'armory' | 'first_aid' | 'general' | 'furniture' | 'library' | 'jeweler';
 
@@ -19,8 +19,11 @@ export interface ItemStatBonuses {
     crit?: number;           // Flat crit chance bonus in percentage points (e.g. 5 = +5%)
     xpMultiplier?: number;   // Percentage bonus to XP gains (e.g. 10 = +10%)
     goldMultiplier?: number; // Percentage bonus to gold gains
+    goldDiscount?: number;   // Percentage discount in shops (from Commerce tomes)
     intelligence?: number;   // Intelligence skill bonus
     strategy?: number;       // Strategy XP bonus
+    maxMana?: number;        // Max mana/MP bonus (from Fantasy tomes)
+    habitBonus?: number;     // Flat Habit skill bonus (from Discipline tomes)
 }
 
 export interface ItemDef {
@@ -118,7 +121,7 @@ export const ITEM_DB: Record<string, ItemDef> = mergeExternalItems({
     'gacha_ticket': { id: 'gacha_ticket', name: 'Summon Ticket', type: 'ticket', rarity: 'rare', shopCategory: 'general', value: 0, price: 1000, icon: '🎫' },
 
     // ========== FURNITURE (Furniture Store) ==========
-    'basic_bed': { id: 'basic_bed', name: 'Basic Bed', type: 'furniture', rarity: 'common', shopCategory: 'furniture', value: 1, price: 500, icon: '🛏️', description: 'A place to rest.', requiredEnemy: 'fatigue_wraith' },
+    'basic_bed': { id: 'basic_bed', name: 'Basic Bed', type: 'furniture', rarity: 'common', shopCategory: 'furniture', value: 2, price: 500, icon: '🛏️', description: 'A place to rest.', requiredEnemy: 'fatigue_wraith' },
     'fancy_bed': { id: 'fancy_bed', name: 'Fancy Bed', type: 'furniture', rarity: 'rare', shopCategory: 'furniture', value: 3, price: 1500, icon: '🛏️', description: 'Sleep in style.', requiredEnemy: 'insomnia_echo' },
     'desk': { id: 'desk', name: 'Work Desk', type: 'furniture', rarity: 'common', shopCategory: 'furniture', value: 1, price: 400, icon: '🪑', description: 'For productivity.', requiredEnemy: 'chaos_of_clutter' },
     'lamp': { id: 'lamp', name: 'Cozy Lamp', type: 'furniture', rarity: 'common', shopCategory: 'furniture', value: 1, price: 200, icon: '🪔', description: 'Warm lighting.', requiredEnemy: 'fatigue_wraith' },
@@ -127,29 +130,30 @@ export const ITEM_DB: Record<string, ItemDef> = mergeExternalItems({
     'plant': { id: 'plant', name: 'Potted Plant', type: 'furniture', rarity: 'common', shopCategory: 'furniture', value: 1, price: 250, icon: '🪴', description: 'Brings life to the room.', requiredEnemy: 'chaos_of_clutter' },
     'bookshelf': { id: 'bookshelf', name: 'Bookshelf', type: 'furniture', rarity: 'rare', shopCategory: 'furniture', value: 2, price: 800, icon: '📚', description: 'Store your knowledge.', requiredEnemy: 'procrastination_specter' },
 
-    // ========== BOOKS (Library) — equippable for persistent passive ==========
-    'fantasy_book_1': { id: 'fantasy_book_1', name: 'Fantasy Tome I', type: 'book', category: 'fantasy', level: 1, fusionRequired: 3, effect: '+2 Intelligence', rarity: 'common', shopCategory: 'library', value: 0, price: 0, icon: '📘', statBonuses: { intelligence: 2 } },
-    'fantasy_book_2': { id: 'fantasy_book_2', name: 'Fantasy Tome II', type: 'book', category: 'fantasy', level: 2, fusionRequired: 3, effect: '+5 Intelligence', rarity: 'rare', shopCategory: 'library', value: 0, price: 0, icon: '📘', statBonuses: { intelligence: 5 } },
-    'fantasy_book_3': { id: 'fantasy_book_3', name: 'Fantasy Tome III', type: 'book', category: 'fantasy', level: 3, fusionRequired: 0, effect: '+10 Intelligence', rarity: 'epic', shopCategory: 'library', value: 0, price: 0, icon: '📘', statBonuses: { intelligence: 10 } },
+    // ========== BOOKS / TOMES (Library) — equippable for persistent passive ==========
+    // --- Fantasy Tomes (Max Mana, Purple) ---
+    'fantasy_tome_1': { id: 'fantasy_tome_1', name: 'Fantasy Tome I',   type: 'book', category: 'fantasy', level: 1, fusionRequired: 3, effect: '+2 Max Mana',  rarity: 'common',    shopCategory: 'library', value: 0, price: 0, icon: '📘', statBonuses: { maxMana: 2 } },
+    'fantasy_tome_2': { id: 'fantasy_tome_2', name: 'Fantasy Tome II',  type: 'book', category: 'fantasy', level: 2, fusionRequired: 3, effect: '+8 Max Mana',  rarity: 'rare',      shopCategory: 'library', value: 0, price: 0, icon: '📘', statBonuses: { maxMana: 8 } },
+    'fantasy_tome_3': { id: 'fantasy_tome_3', name: 'Fantasy Tome III', type: 'book', category: 'fantasy', level: 3, fusionRequired: 3, effect: '+25 Max Mana', rarity: 'epic',      shopCategory: 'library', value: 0, price: 0, icon: '📘', statBonuses: { maxMana: 25 } },
+    'fantasy_tome_4': { id: 'fantasy_tome_4', name: 'Fantasy Tome IV',  type: 'book', category: 'fantasy', level: 4, fusionRequired: 3, effect: '+70 Max Mana', rarity: 'legendary', shopCategory: 'library', value: 0, price: 0, icon: '📘', statBonuses: { maxMana: 70 } },
+    'fantasy_tome_5': { id: 'fantasy_tome_5', name: 'Fantasy Tome V',   type: 'book', category: 'fantasy', level: 5, fusionRequired: 0, effect: '+150 Max Mana',rarity: 'legendary', shopCategory: 'library', value: 0, price: 0, icon: '📘', statBonuses: { maxMana: 150 } },
 
-    'business_book_1': { id: 'business_book_1', name: 'Business Tome I', type: 'book', category: 'business', level: 1, fusionRequired: 3, effect: '+2 Intelligence, +5 Strategy XP', rarity: 'common', shopCategory: 'library', value: 0, price: 0, icon: '📓', statBonuses: { intelligence: 2, strategy: 5 } },
-    'business_book_2': { id: 'business_book_2', name: 'Business Tome II', type: 'book', category: 'business', level: 2, fusionRequired: 3, effect: '+5 Intelligence, +10 Strategy XP', rarity: 'rare', shopCategory: 'library', value: 0, price: 0, icon: '📓', statBonuses: { intelligence: 5, strategy: 10 } },
-    'business_book_3': { id: 'business_book_3', name: 'Business Tome III', type: 'book', category: 'business', level: 3, fusionRequired: 0, effect: '+10 Intelligence, +25 Strategy XP', rarity: 'epic', shopCategory: 'library', value: 0, price: 0, icon: '📓', statBonuses: { intelligence: 10, strategy: 25 } },
+    // --- Discipline Tomes (Habit Building, Gold) ---
+    'discipline_tome_1': { id: 'discipline_tome_1', name: 'Discipline Tome I',   type: 'book', category: 'self-improvement', level: 1, fusionRequired: 3, effect: '+1 Habit',  rarity: 'common',    shopCategory: 'library', value: 0, price: 0, icon: '📒', statBonuses: { habitBonus: 1 } },
+    'discipline_tome_2': { id: 'discipline_tome_2', name: 'Discipline Tome II',  type: 'book', category: 'self-improvement', level: 2, fusionRequired: 3, effect: '+3 Habit',  rarity: 'rare',      shopCategory: 'library', value: 0, price: 0, icon: '📒', statBonuses: { habitBonus: 3 } },
+    'discipline_tome_3': { id: 'discipline_tome_3', name: 'Discipline Tome III', type: 'book', category: 'self-improvement', level: 3, fusionRequired: 3, effect: '+7 Habit',  rarity: 'epic',      shopCategory: 'library', value: 0, price: 0, icon: '📒', statBonuses: { habitBonus: 7 } },
+    'discipline_tome_4': { id: 'discipline_tome_4', name: 'Discipline Tome IV',  type: 'book', category: 'self-improvement', level: 4, fusionRequired: 3, effect: '+15 Habit', rarity: 'legendary', shopCategory: 'library', value: 0, price: 0, icon: '📒', statBonuses: { habitBonus: 15 } },
+    'discipline_tome_5': { id: 'discipline_tome_5', name: 'Discipline Tome V',   type: 'book', category: 'self-improvement', level: 5, fusionRequired: 0, effect: '+30 Habit', rarity: 'legendary', shopCategory: 'library', value: 0, price: 0, icon: '📒', statBonuses: { habitBonus: 30 } },
 
-    'self-improvement_book_1': { id: 'self-improvement_book_1', name: 'Self-Improvement Tome I', type: 'book', category: 'self-improvement', level: 1, fusionRequired: 3, effect: '+2 Intelligence', rarity: 'common', shopCategory: 'library', value: 0, price: 0, icon: '📒', statBonuses: { intelligence: 2, xpMultiplier: 5 } },
-    'self-improvement_book_2': { id: 'self-improvement_book_2', name: 'Self-Improvement Tome II', type: 'book', category: 'self-improvement', level: 2, fusionRequired: 3, effect: '+5 Intelligence', rarity: 'rare', shopCategory: 'library', value: 0, price: 0, icon: '📒', statBonuses: { intelligence: 5, xpMultiplier: 10 } },
-    'self-improvement_book_3': { id: 'self-improvement_book_3', name: 'Self-Improvement Tome III', type: 'book', category: 'self-improvement', level: 3, fusionRequired: 0, effect: '+10 Intelligence', rarity: 'epic', shopCategory: 'library', value: 0, price: 0, icon: '📒', statBonuses: { intelligence: 10, xpMultiplier: 15 } },
-
-    'history_book_1': { id: 'history_book_1', name: 'History Tome I', type: 'book', category: 'history', level: 1, fusionRequired: 3, effect: '+2 Intelligence', rarity: 'common', shopCategory: 'library', value: 0, price: 0, icon: '📖', statBonuses: { intelligence: 2 } },
-    'history_book_2': { id: 'history_book_2', name: 'History Tome II', type: 'book', category: 'history', level: 2, fusionRequired: 3, effect: '+5 Intelligence', rarity: 'rare', shopCategory: 'library', value: 0, price: 0, icon: '📖', statBonuses: { intelligence: 5 } },
-    'history_book_3': { id: 'history_book_3', name: 'History Tome III', type: 'book', category: 'history', level: 3, fusionRequired: 0, effect: '+10 Intelligence', rarity: 'epic', shopCategory: 'library', value: 0, price: 0, icon: '📖', statBonuses: { intelligence: 10 } },
-
-    'philosophy_book_1': { id: 'philosophy_book_1', name: 'Philosophy Tome I', type: 'book', category: 'philosophy', level: 1, fusionRequired: 3, effect: '+2 Intelligence', rarity: 'common', shopCategory: 'library', value: 0, price: 0, icon: '📚', statBonuses: { intelligence: 2, strategy: 3 } },
-    'philosophy_book_2': { id: 'philosophy_book_2', name: 'Philosophy Tome II', type: 'book', category: 'philosophy', level: 2, fusionRequired: 3, effect: '+5 Intelligence', rarity: 'rare', shopCategory: 'library', value: 0, price: 0, icon: '📚', statBonuses: { intelligence: 5, strategy: 8 } },
-    'philosophy_book_3': { id: 'philosophy_book_3', name: 'Philosophy Tome III', type: 'book', category: 'philosophy', level: 3, fusionRequired: 0, effect: '+10 Intelligence', rarity: 'epic', shopCategory: 'library', value: 0, price: 0, icon: '📚', statBonuses: { intelligence: 10, strategy: 15 } },
+    // --- Commerce Tomes (Gold Rewards %, Green) ---
+    'commerce_tome_1': { id: 'commerce_tome_1', name: 'Commerce Tome I',   type: 'book', category: 'business', level: 1, fusionRequired: 3, effect: '+2% Gold',  rarity: 'common',    shopCategory: 'library', value: 0, price: 0, icon: '📓', statBonuses: { goldMultiplier: 2 } },
+    'commerce_tome_2': { id: 'commerce_tome_2', name: 'Commerce Tome II',  type: 'book', category: 'business', level: 2, fusionRequired: 3, effect: '+5% Gold',  rarity: 'rare',      shopCategory: 'library', value: 0, price: 0, icon: '📓', statBonuses: { goldMultiplier: 5 } },
+    'commerce_tome_3': { id: 'commerce_tome_3', name: 'Commerce Tome III', type: 'book', category: 'business', level: 3, fusionRequired: 3, effect: '+10% Gold', rarity: 'epic',      shopCategory: 'library', value: 0, price: 0, icon: '📓', statBonuses: { goldMultiplier: 10 } },
+    'commerce_tome_4': { id: 'commerce_tome_4', name: 'Commerce Tome IV',  type: 'book', category: 'business', level: 4, fusionRequired: 3, effect: '+18% Gold', rarity: 'legendary', shopCategory: 'library', value: 0, price: 0, icon: '📓', statBonuses: { goldMultiplier: 18 } },
+    'commerce_tome_5': { id: 'commerce_tome_5', name: 'Commerce Tome V',   type: 'book', category: 'business', level: 5, fusionRequired: 0, effect: '+30% Gold', rarity: 'legendary', shopCategory: 'library', value: 0, price: 0, icon: '📓', statBonuses: { goldMultiplier: 30 } },
 });
 
-export type EquipmentSlot = 'weapon' | 'armor' | 'relic' | 'artifact' | 'pet' | 'book' | 'jewelry';
+export type EquipmentSlot = 'weapon' | 'armor' | 'relic' | 'artifact' | 'pet' | 'pet_accessory' | 'book' | 'jewelry';
 
 /** Returns a summary string of the stat bonuses for display */
 export function formatStatBonuses(bonuses: ItemStatBonuses | undefined): string {
@@ -197,6 +201,7 @@ interface InventoryState {
     removeItem: (itemId: string, amount?: number) => void;
     equipItem: (itemId: string, slot: EquipmentSlot) => void;
     unequipItem: (slot: EquipmentSlot) => void;
+    fuseTomes: (itemId: string) => boolean;
     getStatBonus: (stat: 'attack' | 'defense') => number;
     getEquippedWeapon: () => ItemDef | null;
     getEquippedItemForSlot: (slot: EquipmentSlot) => ItemDef | null;
@@ -221,6 +226,7 @@ export const useInventoryStore = create<InventoryState>()(
                 relic: null,
                 artifact: null,
                 pet: null,
+                pet_accessory: null,
                 book: null,
                 jewelry: null,
             },
@@ -263,6 +269,7 @@ export const useInventoryStore = create<InventoryState>()(
                     if (slot === 'artifact' && item.type !== 'artifact') return;
                     if (slot === 'book' && item.type !== 'book') return;
                     if (slot === 'jewelry' && item.type !== 'jewelry') return;
+                    if (slot === 'pet_accessory' && item.type !== 'pet_accessory') return;
                 }
 
                 set((state) => ({
@@ -274,6 +281,38 @@ export const useInventoryStore = create<InventoryState>()(
                 set((state) => ({
                     equipped: { ...state.equipped, [slot]: null }
                 })),
+
+            fuseTomes: (itemId) => {
+                const state = get();
+                const itemDef = ITEM_DB[itemId];
+                
+                // Verify this is a fuseable book
+                if (!itemDef || itemDef.type !== 'book' || !itemDef.category || !itemDef.level || !itemDef.fusionRequired) {
+                    return false;
+                }
+
+                // Verify player has enough copies
+                const count = state.items[itemId] || 0;
+                if (count < itemDef.fusionRequired) {
+                    return false;
+                }
+
+                // Find the next level tome in the same category
+                const nextLevel = itemDef.level + 1;
+                const nextTome = Object.values(ITEM_DB).find(
+                    i => i.type === 'book' && i.category === itemDef.category && i.level === nextLevel
+                );
+
+                if (!nextTome) {
+                    return false; // Already max level
+                }
+
+                // Execute fusion
+                state.removeItem(itemId, itemDef.fusionRequired);
+                state.addItem(nextTome.id, 1);
+                
+                return true;
+            },
 
             getStatBonus: (stat) => {
                 const { equipped } = get();
@@ -409,6 +448,7 @@ export const useInventoryStore = create<InventoryState>()(
                         relic: null,
                         artifact: null,
                         pet: null,
+                        pet_accessory: null,
                         book: null,
                         jewelry: null,
                         ...(p.equipped ?? {}),

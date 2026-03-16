@@ -1,8 +1,11 @@
 import { useGameStore, type SkillName } from '../../store/useGameStore';
-import { getMilestoneForSkill } from '../../store/useCombatFormulas';
-import { BarChart2, Shield, Sword } from 'lucide-react';
+import { getMilestoneForSkill, SKILL_COMBAT_ROLES } from '../../store/useCombatFormulas';
+import { BarChart2, Shield, Sword, Trophy } from 'lucide-react';
 import { Card } from '../../components/ui/Card';
 import { ProgressBar } from '../../components/ui/ProgressBar';
+import { useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { TrophyPanel } from '../room/TrophyPanel';
 import './StatsPage.css';
 
 const SKILL_ICONS: Record<SkillName, string> = {
@@ -11,13 +14,11 @@ const SKILL_ICONS: Record<SkillName, string> = {
     'Flexibility': '🤸',
     'Strength': '💪',
     'Cardio': '🏃',
-    'Clothing': '👔',
-    'Housemaid': '🧹',
     'Work': '💼',
     'Health': '❤️',
     'Social': '🤝',
     'Luck': '🍀',
-    'Habit Building': '🔥',
+    'Habit': '🔥',
     'Intelligence': '🧠',
 };
 
@@ -38,6 +39,7 @@ function getRankIndex(level: number): number {
 }
 
 export const StatsPage = () => {
+    const [showTrophyPanel, setShowTrophyPanel] = useState(false);
     const {
         skills,
         globalXp,
@@ -63,6 +65,30 @@ export const StatsPage = () => {
 
     return (
         <div className="stats-page">
+            <AnimatePresence>
+                {showTrophyPanel && (
+                    <motion.div
+                        className="room-modal-overlay"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        onClick={() => setShowTrophyPanel(false)}
+                        style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, zIndex: 1000, background: 'rgba(0,0,0,0.6)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                    >
+                        <motion.div
+                            className="room-modal-container"
+                            initial={{ scale: 0.9, y: 30, opacity: 0 }}
+                            animate={{ scale: 1, y: 0, opacity: 1 }}
+                            exit={{ scale: 0.9, y: 30, opacity: 0 }}
+                            onClick={(e) => e.stopPropagation()}
+                            style={{ position: 'relative', width: '95%', maxWidth: '600px', maxHeight: '90vh', overflowY: 'auto', borderRadius: 'var(--radius-lg)' }}
+                        >
+                            <TrophyPanel onClose={() => setShowTrophyPanel(false)} />
+                        </motion.div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
+
             {/* Background Layers */}
             <div className="stats-bg">
                 <div className="stats-bg__image" />
@@ -149,10 +175,19 @@ export const StatsPage = () => {
 
                     {/* Skills Grid */}
                     <div className="skills-section">
-                        <h2 className="section-title">
-                            <BarChart2 size={20} />
-                            Skills
-                        </h2>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+                            <h2 className="section-title" style={{ margin: 0 }}>
+                                <BarChart2 size={20} />
+                                Skills
+                            </h2>
+                            <button
+                                className="action-button primary"
+                                onClick={() => setShowTrophyPanel(true)}
+                                style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.5rem 1rem' }}
+                            >
+                                <Trophy size={18} /> Trophy Hall
+                            </button>
+                        </div>
                         <div className="skills-grid">
                             {(Object.entries(skills) as [SkillName, typeof skills[SkillName]][]).map(([skillName, skill]) => {
                                 const progress = getXpProgress(skillName);
@@ -179,6 +214,10 @@ export const StatsPage = () => {
                                         {/* XP bar */}
                                         <div className="skill-progress-compact">
                                             <ProgressBar current={progress.current} max={progress.required} label="" />
+                                        </div>
+                                        
+                                        <div className="skill-combat-role-text" style={{ fontSize: '0.75rem', color: '#64748b', marginTop: '0.25rem', marginBottom: '0.5rem', fontStyle: 'italic' }}>
+                                            {SKILL_COMBAT_ROLES[skillName]?.description}
                                         </div>
 
                                         {/* Row 3: today + total + milestone */}

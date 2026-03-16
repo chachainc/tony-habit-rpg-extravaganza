@@ -4,7 +4,7 @@ import {
     BookOpen, Plus, Check, Trash2, Sparkles, Brain, Zap
 } from 'lucide-react';
 
-import { useBookStore, BOOK_GLOBAL_XP_REWARD, BOOK_INTELLIGENCE_XP_REWARD, BOOK_TYPES, BOOK_TYPE_MAP, type BookType } from '../../store/useBookStore';
+import { useBookStore, BOOK_GLOBAL_XP_REWARD, BOOK_TYPES, BOOK_TYPE_MAP, type BookType } from '../../store/useBookStore';
 import { useGameStore } from '../../store/useGameStore';
 import { useInventoryStore, ITEM_DB } from '../../store/useInventoryStore';
 import { Card } from '../../components/ui';
@@ -22,9 +22,11 @@ export const Library = () => {
     const [newTitle, setNewTitle] = useState('');
     const [newAuthor, setNewAuthor] = useState('');
     const [newBookType, setNewBookType] = useState<BookType>('fantasy');
+    const [newBookFormat, setNewBookFormat] = useState<'physical' | 'audiobook'>('physical');
     const [showCelebration, setShowCelebration] = useState(false);
     const [celebratedBook, setCelebratedBook] = useState('');
     const [celebratedBookType, setCelebratedBookType] = useState<BookType>('fantasy');
+    const [celebratedBookFormat, setCelebratedBookFormat] = useState<'physical' | 'audiobook'>('physical');
 
     const intelligenceProgress = getXpProgress('Intelligence');
 
@@ -34,14 +36,15 @@ export const Library = () => {
     const handleAddBook = (e: React.FormEvent) => {
         e.preventDefault();
         if (!newTitle.trim()) return;
-        addBook(newTitle, newAuthor || 'Unknown Author', newBookType);
+        addBook(newTitle, newAuthor || 'Unknown Author', newBookType, newBookFormat);
         setNewTitle('');
         setNewAuthor('');
     };
 
-    const handleCompleteBook = (bookId: string, bookTitle: string, bookType: BookType) => {
+    const handleCompleteBook = (bookId: string, bookTitle: string, bookType: BookType, format: 'physical' | 'audiobook') => {
         setCelebratedBook(bookTitle);
         setCelebratedBookType(bookType);
+        setCelebratedBookFormat(format);
         setShowCelebration(true);
         completeBook(bookId);
         setTimeout(() => setShowCelebration(false), 4000);
@@ -117,7 +120,7 @@ export const Library = () => {
                                 </div>
                                 <div className="reward-item reward-intelligence">
                                     <Brain size={20} />
-                                    <span>+{BOOK_INTELLIGENCE_XP_REWARD} Intelligence XP</span>
+                                    <span>+{celebratedBookFormat === 'audiobook' ? 25 : 50} Intelligence XP</span>
                                 </div>
                             </div>
                         </motion.div>
@@ -202,6 +205,24 @@ export const Library = () => {
                                         className="book-input"
                                     />
 
+                                    {/* Book Format Selector */}
+                                    <div className="lib-type-selector" style={{ marginBottom: '1rem' }}>
+                                        <button
+                                            type="button"
+                                            className={`lib-type-btn ${newBookFormat === 'physical' ? 'active' : ''}`}
+                                            onClick={() => setNewBookFormat('physical')}
+                                        >
+                                            📚 Physical
+                                        </button>
+                                        <button
+                                            type="button"
+                                            className={`lib-type-btn ${newBookFormat === 'audiobook' ? 'active' : ''}`}
+                                            onClick={() => setNewBookFormat('audiobook')}
+                                        >
+                                            🎧 Audiobook
+                                        </button>
+                                    </div>
+
                                     {/* Book Type Selector */}
                                     <div className="lib-type-selector">
                                         {BOOK_TYPES.map(t => (
@@ -272,6 +293,16 @@ export const Library = () => {
                                                             >
                                                                 {typeDef?.label ?? book.bookType}
                                                             </span>
+                                                            <span
+                                                                className="book-type-badge"
+                                                                style={{
+                                                                    background: `#3332`,
+                                                                    color: `#ccc`,
+                                                                    border: `1px solid #555`
+                                                                }}
+                                                            >
+                                                                {book.format === 'audiobook' ? '🎧 Audiobook' : '📚 Physical'}
+                                                            </span>
                                                             <span className="book-started">
                                                                 Started: {new Date(book.startedAt).toLocaleDateString()}
                                                             </span>
@@ -280,7 +311,7 @@ export const Library = () => {
                                                     <div className="book-actions">
                                                         <button
                                                             className="complete-btn"
-                                                            onClick={() => handleCompleteBook(book.id, book.title, book.bookType)}
+                                                            onClick={() => handleCompleteBook(book.id, book.title, book.bookType, book.format || 'physical')}
                                                         >
                                                             <Check size={18} />
                                                             Complete
@@ -335,6 +366,16 @@ export const Library = () => {
                                                                 }}
                                                             >
                                                                 {typeDef?.label ?? book.bookType}
+                                                            </span>
+                                                            <span
+                                                                className="book-type-badge"
+                                                                style={{
+                                                                    background: `#3332`,
+                                                                    color: `#ccc`,
+                                                                    border: `1px solid #555`
+                                                                }}
+                                                            >
+                                                                {book.format === 'audiobook' ? '🎧 Audiobook' : '📚 Physical'}
                                                             </span>
                                                             <span className="book-started">
                                                                 Completed: {book.completedAt ? new Date(book.completedAt).toLocaleDateString() : 'N/A'}

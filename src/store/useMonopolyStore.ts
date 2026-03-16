@@ -153,6 +153,7 @@ interface MonopolyState {
     // Actions
     rollDice: () => number;
     movePlayer: (spaces: number) => BoardSpace;
+    addDailyTickets: (amount: number) => void;
     resetDailyTickets: () => void;
     canRoll: () => boolean;
     setStreakMultiplier: (active: boolean) => void;
@@ -216,6 +217,12 @@ export const useMonopolyStore = create<MonopolyState>()(
                 }
 
                 return landedSpace;
+            },
+
+            addDailyTickets: (amount) => {
+                set((state) => ({
+                    dailyTickets: state.dailyTickets + amount,
+                }));
             },
 
             resetDailyTickets: () => {

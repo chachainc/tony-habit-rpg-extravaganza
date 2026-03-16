@@ -144,6 +144,10 @@
     height: 900px;
     will-change: transform;
     transition: none;
+    transform-origin: 0 0;
+    background-image: url('/assets/risk/scadrosharial_map.png');
+    background-size: cover;
+    background-position: center;
 }
 
 /* SVG path overlay */
@@ -595,10 +599,44 @@
 .card-equip-btn:disabled { background: rgba(255,255,255,0.1); color: rgba(255,255,255,0.25); cursor: not-allowed; }
 
 /* Card help modal */
-.card-help-list {
-    padding-left: 1.2rem;
-    color: var(--text-secondary);
-    font-size: 0.82rem;
-    line-height: 1.9;
-}
 .card-help-list li strong { color: var(--text-primary); }
+
+/* Soldier Commit Section */
+.soldier-commit-section {
+    background: rgba(0,0,0,0.25);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 8px;
+    padding: 0.75rem;
+}
+
+/* Rolling Animation */
+.risk-rolling-anim {
+    background: rgba(0,0,0,0.3);
+    border-radius: 8px;
+    padding: 1rem;
+    animation: slightPulse 0.4s infinite alternate;
+}
+
+@keyframes slightPulse {
+    from { background: rgba(0,0,0,0.2); }
+    to { background: rgba(0,0,0,0.4); }
+}
+
+/* Dice Results */
+.dice-result {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 20px;
+    height: 20px;
+    background: #1e293b;
+    border: 1px solid #60a5fa;
+    border-radius: 4px;
+    margin: 0 2px;
+    font-size: 0.8rem;
+    color: #eff6ff;
+}
+
+.enemy-dice {
+    border-color: #ef4444;
+}
