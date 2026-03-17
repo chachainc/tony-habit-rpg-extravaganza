@@ -230,6 +230,13 @@ export const WalkableRoom = () => {
                             height: ROOM_LAYOUT.gridSize.height * ROOM_LAYOUT.tileSize,
                         }}
                     >
+                        {/* ── Placement zone: center floor highlighted as buildable RPG base ── */}
+                        <div className="room-placement-zone">
+                            <span className="room-placement-label">
+                                {ownedFurniture.length === 0 ? '✦ Furniture Placement Zone' : `✦ ${ownedFurniture.length} item${ownedFurniture.length > 1 ? 's' : ''} placed`}
+                            </span>
+                        </div>
+
                         {/* Ground tiles */}
                         {Array.from({ length: ROOM_LAYOUT.gridSize.height }).map((_, y) =>
                             Array.from({ length: ROOM_LAYOUT.gridSize.width }).map((_, x) => (

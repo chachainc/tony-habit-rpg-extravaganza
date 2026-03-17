@@ -11,7 +11,8 @@
     width: 95vw;
     max-width: 920px;
     height: auto;
-    max-height: 92vh;
+    /* Use dvh + safe area so it never clips behind browser chrome or notch */
+    max-height: calc(100dvh - env(safe-area-inset-top) - env(safe-area-inset-bottom) - 16px);
     background: #0c1117;
     border: 2px solid rgba(101, 163, 13, 0.35);
     border-radius: 14px;
@@ -104,14 +105,13 @@
 .walkable-board-container {
     flex: 1;
     padding: 0.75rem;
-    overflow: auto;
+    overflow: hidden;
     display: flex;
     align-items: center;
     justify-content: center;
     position: relative;
-    /* Basic fallback background, will be overridden by Farm Background later */
+    min-height: 0;
     background:
-        /* terrain gradient */
         radial-gradient(ellipse at center, rgba(30, 45, 30, 0.9) 0%, rgba(15, 25, 15, 1) 100%);
 }
 
@@ -161,13 +161,13 @@
     transition: all 0.25s ease;
     cursor: default;
 
-    /* Base dirt road tile */
+    /* Darker base dirt road tile for better readability against bright background */
     background:
-        linear-gradient(145deg, rgba(60, 55, 45, 0.7) 0%, rgba(40, 38, 32, 0.8) 100%);
-    border: 1.5px solid rgba(100, 90, 70, 0.35);
+        linear-gradient(145deg, rgba(28, 24, 17, 0.92) 0%, rgba(18, 16, 11, 0.95) 100%);
+    border: 1.5px solid rgba(80, 70, 50, 0.75);
     box-shadow:
-        inset 0 1px 0 rgba(255, 255, 255, 0.04),
-        0 2px 4px rgba(0, 0, 0, 0.3);
+        inset 0 1px 0 rgba(255, 255, 255, 0.05),
+        0 2px 6px rgba(0, 0, 0, 0.6);
 }
 
 .path-tile::after {
@@ -239,9 +239,9 @@
 /* ---- Tile Type: Empty (Grass/Path) ---- */
 .path-tile.empty {
     background:
-        linear-gradient(145deg, rgba(35, 40, 30, 0.6) 0%, rgba(25, 30, 22, 0.7) 100%);
-    border-color: rgba(60, 70, 50, 0.3);
-    opacity: 0.85;
+        linear-gradient(145deg, rgba(18, 22, 14, 0.88) 0%, rgba(12, 16, 10, 0.92) 100%);
+    border-color: rgba(50, 60, 40, 0.6);
+    opacity: 1;
 }
 
 /* ---- Current tile the player is on ---- */
@@ -330,9 +330,11 @@
     justify-content: center;
     gap: 0.75rem;
     padding: 0.6rem 1rem;
+    padding-bottom: calc(0.6rem + env(safe-area-inset-bottom, 0px));
     background: linear-gradient(180deg, rgba(12, 22, 12, 0.9) 0%, rgba(20, 30, 18, 0.95) 100%);
     border-top: 1px solid rgba(101, 163, 13, 0.2);
     flex-wrap: wrap;
+    flex-shrink: 0;
 }
 
 .roll-btn {
@@ -382,16 +384,55 @@
     color: rgba(255, 255, 255, 0.8);
 }
 
-/* ==================== ROLLING DISPLAY ==================== */
-.rolling-display {
-    display: flex;
-    align-items: center;
-    gap: 1rem;
+/* ==================== ROLLING STATUS PILL ==================== */
+.rolling-status-pill {
+    font-size: 0.82rem;
+    font-weight: 600;
+    color: #a3e635;
+    padding: 0.3rem 0.9rem;
+    background: rgba(163, 230, 53, 0.08);
+    border: 1px solid rgba(163, 230, 53, 0.2);
+    border-radius: 20px;
+    letter-spacing: 0.3px;
 }
 
-.dice-rolling {
-    font-size: 1.8rem;
-    filter: drop-shadow(0 0 8px rgba(163, 230, 53, 0.3));
+/* ==================== DICE CENTER OVERLAY ==================== */
+.dice-center-overlay {
+    position: absolute;
+    inset: 0;
+    z-index: 20;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(4px);
+    gap: 0.5rem;
+    pointer-events: none;
+}
+
+.dice-center-face {
+    font-size: 5rem;
+    line-height: 1;
+    filter: drop-shadow(0 0 20px rgba(163, 230, 53, 0.6));
+    user-select: none;
+}
+
+.dice-center-face.spinning {
+    filter: drop-shadow(0 0 14px rgba(163, 230, 53, 0.4));
+}
+
+.dice-center-face.revealed {
+    filter: drop-shadow(0 0 28px rgba(163, 230, 53, 0.9));
+}
+
+.dice-number-reveal {
+    font-size: 3.5rem;
+    font-weight: 900;
+    color: #a3e635;
+    text-shadow: 0 0 24px rgba(163, 230, 53, 0.8), 0 2px 4px rgba(0, 0, 0, 0.6);
+    letter-spacing: -1px;
+    line-height: 1;
 }
 
 .rng-display {
@@ -498,30 +539,66 @@
     margin-top: 0.2rem;
 }
 
-/* ==================== REWARDS INFO DROPDOWN ==================== */
+/* ==================== DROP ODDS PANEL ==================== */
 .rewards-info-dropdown {
-    padding: 0.6rem 1rem;
-    background: rgba(0, 0, 0, 0.5);
-    border-top: 1px solid rgba(101, 163, 13, 0.1);
-    overflow: hidden;
+    padding: 0.75rem 1rem;
+    background: rgba(0, 0, 0, 0.75);
+    border-top: 1px solid rgba(101, 163, 13, 0.15);
+    overflow-y: auto;
+    max-height: 220px;
+    flex-shrink: 0;
 }
 
-.rewards-row {
-    display: flex;
-    justify-content: center;
-    gap: 0.75rem;
-    flex-wrap: wrap;
+.odds-section-title {
+    font-size: 0.68rem;
+    font-weight: 700;
+    color: rgba(255, 255, 255, 0.4);
+    text-transform: uppercase;
+    letter-spacing: 0.6px;
     margin-bottom: 0.4rem;
 }
 
-.rewards-info-dropdown .reward-info-item {
-    display: flex;
-    gap: 0.3rem;
-    font-size: 0.65rem;
-    color: rgba(255, 255, 255, 0.6);
-    padding: 0.2rem 0.4rem;
+.odds-row {
+    display: grid;
+    grid-template-columns: 70px 52px 1fr;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.22rem 0.35rem;
+    border-radius: 5px;
+    font-size: 0.68rem;
+    margin-bottom: 0.2rem;
     background: rgba(255, 255, 255, 0.03);
-    border-radius: 4px;
+}
+
+.odds-rarity {
+    font-weight: 700;
+}
+
+.odds-pct {
+    font-weight: 800;
+    text-align: right;
+}
+
+.odds-items {
+    color: rgba(255, 255, 255, 0.55);
+    line-height: 1.3;
+}
+
+.odds-tile-icon {
+    font-size: 1.1rem;
+    line-height: 1;
+}
+
+.odds-tile-label {
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.7);
+    font-size: 0.65rem;
+}
+
+.odds-divider {
+    height: 1px;
+    background: rgba(255, 255, 255, 0.08);
+    margin: 0.5rem 0;
 }
 
 .ticket-display.lifetime-rolls {
@@ -703,84 +780,190 @@
     box-shadow: 0 6px 20px rgba(34, 197, 94, 0.4);
 }
 
-/* ==================== REWARD POPUP ==================== */
-.reward-popup {
+/* ==================== PREMIUM REWARD CARD ==================== */
+.reward-card-premium {
     position: relative;
-    padding: 1.25rem 1.5rem;
-    background: rgba(12, 18, 12, 0.98);
-    border: 2px solid rgba(163, 230, 53, 0.3);
-    border-radius: 14px;
-    text-align: center;
-    min-width: 0;
-    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.7);
+    padding: 1.25rem;
+    background: linear-gradient(160deg, rgba(14, 22, 14, 0.99), rgba(20, 30, 20, 0.99));
+    border: 2px solid rgba(163, 230, 53, 0.35);
+    border-radius: 16px;
+    min-width: 260px;
+    max-width: 320px;
+    box-shadow:
+        0 0 40px rgba(163, 230, 53, 0.1),
+        0 16px 48px rgba(0, 0, 0, 0.8);
+    overflow: hidden;
 }
 
-.reward-glow {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    width: 200%;
-    height: 200%;
-    transform: translate(-50%, -50%);
-    background: radial-gradient(circle at center, rgba(163, 230, 53, 0.06), transparent 50%);
-    pointer-events: none;
+.reward-card-header {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 1rem;
+    padding-bottom: 0.75rem;
+    border-bottom: 1px solid rgba(163, 230, 53, 0.12);
 }
 
-.dice-result {
-    font-size: 0.8rem;
+.reward-dice-badge {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    background: rgba(163, 230, 53, 0.1);
+    border: 1px solid rgba(163, 230, 53, 0.25);
+    border-radius: 10px;
+    padding: 0.4rem 0.6rem;
+    min-width: 50px;
+}
+
+.reward-dice-face {
+    font-size: 1.6rem;
+    line-height: 1;
+}
+
+.reward-dice-num {
+    font-size: 0.7rem;
+    font-weight: 800;
+    color: #a3e635;
+    margin-top: 2px;
+}
+
+.reward-card-tile-label {
+    font-size: 0.65rem;
     color: rgba(255, 255, 255, 0.4);
-    margin-bottom: 0.4rem;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    margin-bottom: 0.2rem;
 }
 
-.reward-popup h3 {
-    font-size: 1.1rem;
+.reward-card-tile-name {
+    font-size: 1.05rem;
+    font-weight: 700;
     color: white;
-    margin: 0 0 0.75rem;
 }
 
-.reward-list {
+.reward-card-body {
+    margin-bottom: 1rem;
     display: flex;
     flex-direction: column;
     gap: 0.4rem;
-    margin-bottom: 0.75rem;
 }
 
-.reward-item {
+.reward-line {
     display: flex;
     justify-content: space-between;
-    padding: 0.35rem 0.7rem;
-    background: rgba(163, 230, 53, 0.05);
-    border: 1px solid rgba(163, 230, 53, 0.1);
-    border-radius: 6px;
-    font-size: 0.8rem;
+    align-items: center;
+    padding: 0.45rem 0.7rem;
+    border-radius: 8px;
+    font-size: 0.85rem;
 }
 
-.reward-value {
+.reward-line.gold {
+    background: rgba(251, 191, 36, 0.08);
+    border: 1px solid rgba(251, 191, 36, 0.2);
+}
+
+.reward-line.shmeckles {
+    background: rgba(148, 163, 184, 0.08);
+    border: 1px solid rgba(148, 163, 184, 0.2);
+}
+
+.reward-line.tickets {
+    background: rgba(139, 92, 246, 0.08);
+    border: 1px solid rgba(139, 92, 246, 0.25);
+}
+
+.reward-line.sigils {
+    background: rgba(56, 189, 248, 0.08);
+    border: 1px solid rgba(56, 189, 248, 0.2);
+}
+
+.reward-val {
+    font-weight: 800;
     color: #22c55e;
-    font-weight: 700;
+    font-size: 1rem;
 }
 
-.reward-item.empty {
-    color: rgba(255, 255, 255, 0.35);
+.reward-empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 1rem 0.5rem;
+    gap: 0.3rem;
+    text-align: center;
+}
+
+.reward-empty-icon {
+    font-size: 2.2rem;
+    opacity: 0.6;
+}
+
+.reward-empty-text {
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.6);
+}
+
+.reward-empty-sub {
+    font-size: 0.72rem;
+    color: rgba(255, 255, 255, 0.3);
+    font-style: italic;
+}
+
+/* Roll badge inside mystery card */
+.reward-roll-badge {
+    font-size: 0.72rem;
+    color: rgba(255, 255, 255, 0.4);
+    margin-bottom: 0.3rem;
+    position: relative;
+    z-index: 1;
+}
+
+/* Action row with Roll Again + Continue */
+.reward-action-row {
+    display: flex;
+    gap: 0.6rem;
     justify-content: center;
-    border-color: transparent;
+    margin-top: 0;
+    position: relative;
+    z-index: 1;
+}
+
+.roll-again-btn {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.5rem 1.1rem;
+    background: linear-gradient(135deg, #a3e635, #65a30d);
+    border: 2px solid rgba(163, 230, 53, 0.5);
+    border-radius: 8px;
+    color: #0c1117;
+    font-size: 0.85rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s;
+    box-shadow: 0 4px 12px rgba(163, 230, 53, 0.25);
+}
+
+.roll-again-btn:hover {
+    transform: translateY(-1px) scale(1.04);
+    box-shadow: 0 6px 18px rgba(163, 230, 53, 0.4);
 }
 
 .continue-btn {
-    padding: 0.5rem 1.3rem;
-    background: linear-gradient(135deg, #3b82f6, #2563eb);
-    border: 2px solid rgba(59, 130, 246, 0.5);
+    padding: 0.5rem 1.1rem;
+    background: rgba(255, 255, 255, 0.07);
+    border: 1px solid rgba(255, 255, 255, 0.15);
     border-radius: 8px;
-    color: white;
+    color: rgba(255, 255, 255, 0.7);
     font-size: 0.85rem;
     font-weight: 600;
     cursor: pointer;
     transition: all 0.2s;
-    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.2);
 }
 
 .continue-btn:hover {
-    transform: translateY(-1px) scale(1.03);
+    background: rgba(255, 255, 255, 0.12);
+    color: white;
 }
 
 /* ==================== RESPONSIVE ==================== */
@@ -811,7 +994,8 @@
 @media (max-width: 480px) {
     .walkable-board-modal {
         width: 100%;
-        max-height: calc(100dvh - 16px);
+        max-height: calc(100dvh - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px) - 8px);
+        margin-top: env(safe-area-inset-top, 0px);
     }
 
     .walkable-board-header {
@@ -857,7 +1041,25 @@
     }
 
     .continue-btn,
-    .luck-continue-btn {
-        width: 100%;
+    .luck-continue-btn,
+    .roll-again-btn {
+        flex: 1;
+    }
+
+    .reward-action-row {
+        flex-direction: row;
+    }
+
+    .dice-center-face {
+        font-size: 3.8rem;
+    }
+
+    .dice-number-reveal {
+        font-size: 2.8rem;
+    }
+
+    .reward-card-premium {
+        min-width: 240px;
+        max-width: calc(100vw - 2rem);
     }
 }

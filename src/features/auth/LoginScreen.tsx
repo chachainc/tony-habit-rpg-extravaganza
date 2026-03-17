@@ -69,6 +69,18 @@ export const LoginScreen = () => {
 
     return (
         <div className="login-screen">
+            {/* Background video — bottom 50% of screen, loops silently */}
+            <video
+                className="login-bg-video"
+                autoPlay
+                loop
+                muted
+                playsInline
+                ref={(el) => { if (el) el.defaultMuted = true; }}
+            >
+                <source src="/videos/Cow_warrior_slicing_202603171609.mp4" type="video/mp4" />
+            </video>
+
             <motion.div
                 className="login-card"
                 initial={{ opacity: 0, y: 30, scale: 0.95 }}

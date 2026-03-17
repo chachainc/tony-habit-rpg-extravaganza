@@ -1,93 +1,171 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Target, Gift } from 'lucide-react';
-import { Panel } from '../../components/ui/Panel';
-import { GachaButton } from '../../components/ui/GachaButton';
+import { Target, Zap, DollarSign } from 'lucide-react';
 import { useBudgetStore, type GiftCurrency } from '../../store/useBudgetStore';
 import './BudgetSetupModal.css';
+
+type RewardOption = {
+    id: GiftCurrency;
+    icon: string;
+    label: string;
+    sublabel: string;
+    color: string;
+    glow: string;
+};
+
+const REWARD_OPTIONS: RewardOption[] = [
+    {
+        id: 'shmeckles',
+        icon: '🐌',
+        label: 'Shmeckles',
+        sublabel: 'Storm the Fort currency',
+        color: '#a78bfa',
+        glow: 'rgba(167, 139, 250, 0.25)',
+    },
+    {
+        id: 'balloons',
+        icon: '🎈',
+        label: 'Balloons',
+        sublabel: 'Conquest run resource',
+        color: '#60a5fa',
+        glow: 'rgba(96, 165, 250, 0.25)',
+    },
+    {
+        id: 'sigils',
+        icon: '🔱',
+        label: 'Sigils',
+        sublabel: 'Conquest meta currency',
+        color: '#fbbf24',
+        glow: 'rgba(251, 191, 36, 0.25)',
+    },
+];
 
 export const BudgetSetupModal: React.FC = () => {
     const { setupWeek, weeklyBudget } = useBudgetStore();
     const [budgetAmount, setBudgetAmount] = useState<string>('');
     const [rewardType, setRewardType] = useState<GiftCurrency | null>(null);
 
-    // If a budget is already active, hide the modal entirely
     if (weeklyBudget !== null) return null;
 
+    const parsed = parseInt(budgetAmount, 10);
+    const canConfirm = !isNaN(parsed) && parsed > 0 && !!rewardType;
+
     const handleConfirm = () => {
-        const parsed = parseInt(budgetAmount, 10);
-        if (isNaN(parsed) || parsed <= 0 || !rewardType) return;
-        setupWeek(parsed, rewardType);
+        if (!canConfirm) return;
+        setupWeek(parsed, rewardType!);
     };
+
+    const selected = REWARD_OPTIONS.find(o => o.id === rewardType);
 
     return (
         <AnimatePresence>
-            <div className="modal-overlay">
+            <div className="modal-overlay bsm-overlay">
                 <motion.div
-                    initial={{ scale: 0.9, opacity: 0 }}
-                    animate={{ scale: 1, opacity: 1 }}
-                    exit={{ scale: 0.9, opacity: 0 }}
-                    className="modal-content budget-setup-modal"
+                    initial={{ scale: 0.88, opacity: 0, y: 20 }}
+                    animate={{ scale: 1, opacity: 1, y: 0 }}
+                    exit={{ scale: 0.88, opacity: 0, y: 20 }}
+                    transition={{ type: 'spring', damping: 22, stiffness: 280 }}
+                    className="bsm-card"
                 >
-                    <Panel variant="glass" padding="lg">
-                        <div className="budget-setup-header">
-                            <Target size={32} className="text-gold" />
-                            <h2>Weekly Budget Challenge</h2>
-                            <p className="text-muted">
-                                Set a financial goal for the week. Staying under budget grants up to 1.5x Power Multiplier in combat and daily rewards.
-                            </p>
-                        </div>
+                    {/* Animated background shimmer */}
+                    <div className="bsm-shimmer" />
 
-                        <div className="budget-input-group">
-                            <label>Weekly Spending Budget ($)</label>
+                    {/* Header */}
+                    <div className="bsm-header">
+                        <motion.div
+                            className="bsm-target-icon"
+                            animate={{ rotate: [0, 8, -8, 0] }}
+                            transition={{ repeat: Infinity, duration: 4, ease: 'easeInOut' }}
+                        >
+                            <Target size={28} />
+                        </motion.div>
+                        <h2 className="bsm-title">Weekly Budget<br />Challenge</h2>
+                        <p className="bsm-desc">
+                            Set a spending goal for the week.<br />
+                            Stay under budget → earn <strong>up to 1.5× Power</strong> in combat &amp; daily rewards.
+                        </p>
+                    </div>
+
+                    {/* Budget Input */}
+                    <div className="bsm-input-section">
+                        <label className="bsm-label">
+                            <DollarSign size={14} className="bsm-label-icon" />
+                            Weekly Spending Limit
+                        </label>
+                        <div className="bsm-input-wrap">
+                            <span className="bsm-dollar">$</span>
                             <input
                                 type="number"
                                 min="1"
-                                placeholder="e.g. 100"
+                                placeholder="100"
                                 value={budgetAmount}
                                 onChange={(e) => setBudgetAmount(e.target.value)}
-                                className="budget-input"
+                                className="bsm-input"
                             />
                         </div>
+                    </div>
 
-                        <div className="reward-selection-group">
-                            <label>Choose Weekly Reward Currency</label>
-                            <div className="reward-options">
-                                <button
-                                    className={`reward-card ${rewardType === 'shmeckles' ? 'selected' : ''}`}
-                                    onClick={() => setRewardType('shmeckles')}
-                                >
-                                    <span className="reward-icon">🍎</span>
-                                    <span>Shmeckles</span>
-                                </button>
-                                <button
-                                    className={`reward-card ${rewardType === 'balloons' ? 'selected' : ''}`}
-                                    onClick={() => setRewardType('balloons')}
-                                >
-                                    <span className="reward-icon">🎈</span>
-                                    <span>Balloons</span>
-                                </button>
-                                <button
-                                    className={`reward-card ${rewardType === 'sigils' ? 'selected' : ''}`}
-                                    onClick={() => setRewardType('sigils')}
-                                >
-                                    <span className="reward-icon">⚔️</span>
-                                    <span>Sigils</span>
-                                </button>
-                            </div>
+                    {/* Reward Selection */}
+                    <div className="bsm-reward-section">
+                        <label className="bsm-label">
+                            <Zap size={14} className="bsm-label-icon" />
+                            Choose Your Weekly Reward
+                        </label>
+                        <div className="bsm-reward-grid">
+                            {REWARD_OPTIONS.map(opt => {
+                                const isSelected = rewardType === opt.id;
+                                return (
+                                    <motion.button
+                                        key={opt.id}
+                                        className={`bsm-reward-card ${isSelected ? 'bsm-selected' : ''}`}
+                                        style={{
+                                            '--card-color': opt.color,
+                                            '--card-glow': opt.glow,
+                                        } as React.CSSProperties}
+                                        onClick={() => setRewardType(opt.id)}
+                                        whileHover={{ scale: 1.05, y: -3 }}
+                                        whileTap={{ scale: 0.97 }}
+                                    >
+                                        <motion.span
+                                            className="bsm-reward-emoji"
+                                            animate={isSelected ? { scale: [1, 1.2, 1] } : {}}
+                                            transition={{ duration: 0.4 }}
+                                        >
+                                            {opt.icon}
+                                        </motion.span>
+                                        <span className="bsm-reward-label">{opt.label}</span>
+                                        <span className="bsm-reward-sub">{opt.sublabel}</span>
+                                        {isSelected && (
+                                            <motion.div
+                                                className="bsm-check"
+                                                initial={{ scale: 0 }}
+                                                animate={{ scale: 1 }}
+                                            >
+                                                ✓
+                                            </motion.div>
+                                        )}
+                                    </motion.button>
+                                );
+                            })}
                         </div>
+                    </div>
 
-                        <div className="budget-setup-actions">
-                            <GachaButton
-                                variant="primary"
-                                size="lg"
-                                disabled={!budgetAmount || parseInt(budgetAmount) <= 0 || !rewardType}
-                                onClick={handleConfirm}
-                            >
-                                <Gift size={18} /> Begin Challenge
-                            </GachaButton>
-                        </div>
-                    </Panel>
+                    {/* CTA */}
+                    <motion.button
+                        className="bsm-confirm-btn"
+                        style={selected ? {
+                            '--btn-color': selected.color,
+                            '--btn-glow': selected.glow,
+                        } as React.CSSProperties : {}}
+                        disabled={!canConfirm}
+                        onClick={handleConfirm}
+                        whileHover={canConfirm ? { scale: 1.03, y: -1 } : {}}
+                        whileTap={canConfirm ? { scale: 0.97 } : {}}
+                    >
+                        <span className="bsm-btn-icon">🎯</span>
+                        Begin Challenge
+                        {selected && <span className="bsm-btn-badge">{selected.icon}</span>}
+                    </motion.button>
                 </motion.div>
             </div>
         </AnimatePresence>

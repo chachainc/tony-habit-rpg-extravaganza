@@ -165,11 +165,10 @@ export const DAILY_TASKS_TEMPLATE: Omit<RecurringTask, 'completed'>[] = [
     {
         id: 'no_coffee',
         title: 'No Coffee After 12pm',
-        bundle: 'afternoon',
+        bundle: 'night',
         type: 'daily',
         rewards: [
-            { skillId: 'Habit', xp: 3 },
-            { skillId: 'Sleep', xp: 1 }
+            { skillId: 'Habit', xp: 2 }
         ],
     },
     {
@@ -269,8 +268,7 @@ export const DAILY_TASKS_TEMPLATE: Omit<RecurringTask, 'completed'>[] = [
         bundle: 'night',
         type: 'daily',
         rewards: [
-            { skillId: 'Habit', xp: 1 },
-            { skillId: 'Sleep', xp: 1 }
+            { skillId: 'Habit', xp: 1 }
         ],
     },
     {
@@ -301,6 +299,31 @@ export const DAILY_TASKS_TEMPLATE: Omit<RecurringTask, 'completed'>[] = [
         type: 'daily',
         rewards: [
             { skillId: 'Sleep', xp: 3 }
+        ],
+    },
+    {
+        id: 'take_magnesium',
+        title: 'Take Magnesium',
+        bundle: 'night',
+        type: 'daily',
+        rewards: [{ skillId: 'Sleep', xp: 1 }],
+    },
+    {
+        id: 'ate_protein_160g',
+        title: 'Ate 160+ Grams of Protein',
+        bundle: 'night',
+        type: 'daily',
+        rewards: [{ skillId: 'Strength', xp: 2 }],
+    },
+    {
+        id: 'ate_under_2200_cal',
+        title: 'Ate Less Than 2200 Calories',
+        bundle: 'night',
+        type: 'daily',
+        rewards: [
+            { skillId: 'Health', xp: 1 },
+            { skillId: 'Cardio', xp: 1 },
+            { skillId: 'Sleep', xp: 1 }
         ],
     },
 ];
@@ -663,8 +686,8 @@ export const useRecurringTasksStore = create<RecurringTasksState>()(
             },
         }),
         {
-            name: PERSIST_REGISTRY.recurringTasks.persistKey, // Bumped version to force fresh reset with new task IDs
-            version: 3, // Minor migration bump to ensure users get the new tasks
+            name: PERSIST_REGISTRY.recurringTasks.persistKey,
+            version: 4, // Bumped: new night tasks + adjusted rewards
         }
     )
 );

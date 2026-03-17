@@ -200,7 +200,7 @@ export const StatsPage = () => {
 
                                 return (
                                     <Card key={skillName} className="skill-card compact">
-                                        {/* Row 1: icon + name + level + xp ratio */}
+                                        {/* Row 1: name + level; Row 2: XP ratio on its own line */}
                                         <div className="skill-header-compact">
                                             <div className="skill-name-group">
                                                 <span className="skill-icon">{SKILL_ICONS[skillName]}</span>
@@ -208,13 +208,13 @@ export const StatsPage = () => {
                                                     {skillName}
                                                     <span className="skill-level"> Lv {skill.level}</span>
                                                 </h3>
+                                                <span className="skill-xp-ratio">{progress.current} / {progress.required} XP</span>
                                             </div>
-                                            <span className="skill-xp-ratio">{progress.current} / {progress.required} XP</span>
                                         </div>
 
-                                        {/* XP bar */}
+                                        {/* XP bar — numbers shown separately in skill-xp-ratio, so suppress inline label */}
                                         <div className="skill-progress-compact">
-                                            <ProgressBar current={progress.current} max={progress.required} label="" />
+                                            <ProgressBar current={progress.current} max={progress.required} label="" showNumbers={false} />
                                         </div>
                                         
                                         <div className="skill-combat-role-text" style={{ fontSize: '0.75rem', color: '#64748b', marginTop: '0.25rem', marginBottom: '0.5rem', fontStyle: 'italic' }}>
