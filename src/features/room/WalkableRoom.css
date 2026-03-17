@@ -98,16 +98,147 @@
     backdrop-filter: blur(2px);
 }
 
-/* Ground tiles */
+/* ──── Placement Zone Overlay ─────────────────
+   A centered region of the floor that communicates
+   this is where furniture / trophies can be placed.
+   Pure CSS, drawn behind all interactive elements.
+──────────────────────────────────────────────── */
+.room-placement-zone {
+    position: absolute;
+    /* Center 8×6 tiles of a 12×10 grid at 64px each: x=2*64=128, y=2*64=128 */
+    left: 128px;
+    top: 128px;
+    width: 512px;  /* 8 tiles × 64px */
+    height: 384px; /* 6 tiles × 64px */
+    pointer-events: none;
+    z-index: 1;
+    border-radius: 8px;
+    /* Soft amber glow on the floor — like candlelight illuminating a buildable zone */
+    background: radial-gradient(
+        ellipse at 50% 40%,
+        rgba(251, 191, 36, 0.07) 0%,
+        rgba(180, 120, 50, 0.04) 55%,
+        transparent 80%
+    );
+    border: 1px dashed rgba(251, 191, 36, 0.18);
+    box-shadow:
+        inset 0 0 40px rgba(251, 191, 36, 0.05),
+        0 0 30px rgba(100, 60, 10, 0.07);
+}
+
+/* Corner accent marks — reinforce that this is a structured placement zone */
+.room-placement-zone::before,
+.room-placement-zone::after {
+    content: '';
+    position: absolute;
+    width: 24px;
+    height: 24px;
+    border-color: rgba(251, 191, 36, 0.35);
+    border-style: solid;
+}
+
+.room-placement-zone::before {
+    top: -2px;
+    left: -2px;
+    border-width: 2px 0 0 2px;
+    border-radius: 4px 0 0 0;
+}
+
+.room-placement-zone::after {
+    bottom: -2px;
+    right: -2px;
+    border-width: 0 2px 2px 0;
+    border-radius: 0 0 4px 0;
+}
+
+/* Label inside placement zone */
+.room-placement-label {
+    position: absolute;
+    bottom: 8px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 0.6rem;
+    font-weight: 700;
+    letter-spacing: 0.8px;
+    text-transform: uppercase;
+    color: rgba(251, 191, 36, 0.4);
+    white-space: nowrap;
+    pointer-events: none;
+    user-select: none;
+}
+
+/* ==================== ROOM NAVIGATOR ==================== */
+.room-navigator {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    background: rgba(15, 15, 30, 0.85);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 24px;
+    padding: 0.3rem 0.6rem;
+    backdrop-filter: blur(6px);
+}
+
+.room-nav-arrow {
+    background: none;
+    border: none;
+    color: rgba(255, 255, 255, 0.7);
+    font-size: 0.75rem;
+    cursor: pointer;
+    padding: 0.2rem 0.4rem;
+    border-radius: 50%;
+    transition: all 0.2s;
+    line-height: 1;
+}
+
+.room-nav-arrow:hover:not(:disabled) {
+    background: rgba(255, 255, 255, 0.15);
+    color: white;
+}
+
+.room-nav-arrow:disabled {
+    opacity: 0.2;
+    cursor: not-allowed;
+}
+
+.room-nav-label {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    min-width: 110px;
+    justify-content: center;
+}
+
+.room-nav-icon {
+    font-size: 1rem;
+}
+
+.room-nav-name {
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: rgba(255, 255, 255, 0.9);
+    white-space: nowrap;
+}
+
+/* ==================== TOP BAR ==================== */
 .room-tile {
     position: absolute;
-    background: rgba(60, 40, 30, 0.3);
-    border: 1px solid rgba(255, 255, 255, 0.03);
+    /* Subtle stone-floor tiles — clearly intentional grid without overcrowding */
+    background: rgba(55, 38, 28, 0.22);
+    /* Crisp grid lines that read as RPG floor tiles */
+    border: 1px solid rgba(255, 255, 255, 0.07);
+    box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.25);
     transition: background 0.3s;
 }
 
 .room-tile:nth-child(even) {
-    background: rgba(50, 35, 25, 0.25);
+    background: rgba(45, 32, 22, 0.18);
+}
+
+/* Hover feedback so tiles feel interactive when in placement mode */
+.room-grid.placing-mode .room-tile:hover {
+    background: rgba(251, 191, 36, 0.12);
+    border-color: rgba(251, 191, 36, 0.3);
 }
 
 /* Player */
@@ -124,11 +255,11 @@
 .room-player .player-sprite {
     width: 100%;
     height: auto;
-    max-height: 200%;
+    max-height: 250%;
     object-fit: contain;
-    transform: translateY(-25%);
-    image-rendering: pixelated;
-    filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.6));
+    transform: translateY(-30%);
+    image-rendering: auto;
+    filter: drop-shadow(0 2px 8px rgba(0, 0, 0, 0.8));
 }
 
 /* Pet follower */
@@ -282,16 +413,26 @@
     margin: 0 0.25rem;
 }
 
-/* Responsive adjustments */
+/* ── Responsive scale — use transform-origin:center so room stays centered ── */
 @media (max-width: 1400px) {
     .room-grid {
-        transform: scale(0.8);
+        transform: scale(0.85);
+        transform-origin: center center;
     }
 }
 
 @media (max-width: 1000px) {
     .room-grid {
-        transform: scale(0.6);
+        transform: scale(0.7);
+        transform-origin: center center;
+    }
+}
+
+@media (max-width: 700px) {
+    /* On narrow phones keep it readable but never let it overflow */
+    .room-grid {
+        transform: scale(0.55);
+        transform-origin: center center;
     }
 }
 
@@ -602,6 +743,45 @@
     text-transform: uppercase;
     letter-spacing: 0.5px;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+/* Trophy Case hotspot \u2014 gold glow */
+.trophy-case-hotspot {
+    background: radial-gradient(circle at 50% 40%, rgba(255, 200, 50, 0.2), rgba(180, 120, 0, 0.1));
+    border: 2px solid rgba(255, 200, 50, 0.4) !important;
+    border-radius: 12px;
+    box-shadow:
+        0 0 18px rgba(255, 200, 50, 0.3),
+        inset 0 0 10px rgba(255, 200, 50, 0.1);
+}
+
+.trophy-case-hotspot:hover,
+.trophy-case-hotspot.nearby {
+    box-shadow:
+        0 0 28px rgba(255, 200, 50, 0.55),
+        inset 0 0 15px rgba(255, 200, 50, 0.2) !important;
+    border-color: rgba(255, 200, 50, 0.8) !important;
+}
+
+/* Close button used in inline wrappers */
+.room-close-btn {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: rgba(255, 255, 255, 0.7);
+    border-radius: 50%;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.room-close-btn:hover {
+    background: rgba(239, 68, 68, 0.2);
+    border-color: rgba(239, 68, 68, 0.4);
+    color: white;
 }
 
 /* ==================== MODAL OVERLAYS ==================== */

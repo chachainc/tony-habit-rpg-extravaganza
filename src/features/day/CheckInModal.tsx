@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Calendar, Flame, Trophy } from 'lucide-react';
 import { useCheckInStore } from '../../store/useCheckInStore';
@@ -102,58 +103,61 @@ export const CheckInModal = ({ onClose }: { onClose: () => void }) => {
 
             </motion.div>
 
-            <AnimatePresence>
-                {showReward && lastReward && (
-                    <div className="board-reward-overlay">
-                        <motion.div
-                            className="reward-popup modal-reward-card"
-                            initial={{ scale: 0, opacity: 0 }}
-                            animate={{ scale: 1, opacity: 1 }}
-                            exit={{ scale: 0, opacity: 0 }}
-                        >
-                            <div className="reward-glow" />
-                            <h3>🎉 Reward Claimed!</h3>
-                            <div className="reward-list">
-                                <div className="reward-item">
-                                    <span>💰 Gold:</span>
-                                    <span className="reward-value">+{lastReward.gold}</span>
-                                </div>
-                                {lastReward.habitXp && (
-                                    <div className="reward-item">
-                                        <span>✨ Habit XP:</span>
-                                        <span className="reward-value">+{lastReward.habitXp}</span>
-                                    </div>
-                                )}
-                                {lastReward.buffType && (
-                                    <div className="reward-item">
-                                        <span>🔥 Buff:</span>
-                                        <span className="reward-value">
-                                            {lastReward.buffType === 'xp_boost' && '+5% XP'}
-                                            {lastReward.buffType === 'gold_boost' && '+10% Gold'}
-                                            {' for ' + lastReward.buffDuration + 'h'}
-                                        </span>
-                                    </div>
-                                )}
-                                {lastReward.gachaTicket && (
-                                    <div className="reward-item special">
-                                        <span>🎫 Gacha Ticket:</span>
-                                        <span className="reward-value">+1</span>
-                                    </div>
-                                )}
-                            </div>
-                            <button
-                                className="continue-btn"
-                                onClick={() => {
-                                    setShowReward(false);
-                                    onClose();
-                                }}
+            {createPortal(
+                <AnimatePresence>
+                    {showReward && lastReward && (
+                        <div className="board-reward-overlay">
+                            <motion.div
+                                className="reward-popup modal-reward-card"
+                                initial={{ scale: 0, opacity: 0 }}
+                                animate={{ scale: 1, opacity: 1 }}
+                                exit={{ scale: 0, opacity: 0 }}
                             >
-                                Continue
-                            </button>
-                        </motion.div>
-                    </div>
-                )}
-            </AnimatePresence>
+                                <div className="reward-glow" />
+                                <h3>🎉 Reward Claimed!</h3>
+                                <div className="reward-list">
+                                    <div className="reward-item">
+                                        <span>💰 Gold:</span>
+                                        <span className="reward-value">+{lastReward.gold}</span>
+                                    </div>
+                                    {lastReward.habitXp && (
+                                        <div className="reward-item">
+                                            <span>✨ Habit XP:</span>
+                                            <span className="reward-value">+{lastReward.habitXp}</span>
+                                        </div>
+                                    )}
+                                    {lastReward.buffType && (
+                                        <div className="reward-item">
+                                            <span>🔥 Buff:</span>
+                                            <span className="reward-value">
+                                                {lastReward.buffType === 'xp_boost' && '+5% XP'}
+                                                {lastReward.buffType === 'gold_boost' && '+10% Gold'}
+                                                {' for ' + lastReward.buffDuration + 'h'}
+                                            </span>
+                                        </div>
+                                    )}
+                                    {lastReward.gachaTicket && (
+                                        <div className="reward-item special">
+                                            <span>🎫 Gacha Ticket:</span>
+                                            <span className="reward-value">+1</span>
+                                        </div>
+                                    )}
+                                </div>
+                                <button
+                                    className="continue-btn"
+                                    onClick={() => {
+                                        setShowReward(false);
+                                        onClose();
+                                    }}
+                                >
+                                    Continue
+                                </button>
+                            </motion.div>
+                        </div>
+                    )}
+                </AnimatePresence>,
+                document.body
+            )}
         </div>
     );
 };

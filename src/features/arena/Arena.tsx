@@ -767,10 +767,15 @@ export const Arena = ({ onClose }: { onClose: () => void }) => {
                                         disabled={phase !== 'select_action' || autoAttack || isRolling || useBattleStore.getState().heavyAttackCooldown > 0}
                                         onClick={() => {
                                             if (phase === 'select_action' && useBattleStore.getState().heavyAttackCooldown === 0) {
-                                                const maxHit = Math.floor(player.atk * 1.5 * useBattleStore.getState().playerDamageModifier);
+                                                const modifiedAtk = Math.max(1, player.atk * useBattleStore.getState().playerDamageModifier);
+                                                const lowHit = Math.max(1, Math.ceil(modifiedAtk * 0.5));
+                                                const bigHit = Math.max(1, Math.floor(modifiedAtk * 1.5));
+                                                
                                                 const isSuccess = Math.random() > 0.5;
-                                                const finalDamage = isSuccess ? maxHit : 0;
-                                                useBattleStore.setState({ heavyAttackCooldown: 1 });
+                                                const finalDamage = isSuccess ? bigHit : lowHit;
+                                                
+                                                // Buffer cooldown to 2 so it correctly blocks exactly 1 full player turn after this one finishes
+                                                useBattleStore.setState({ heavyAttackCooldown: 2 });
                                                 selectAbility({ 
                                                     id: 'heavy_strike', 
                                                     name: 'Heavy Strike', 
@@ -791,8 +796,8 @@ export const Arena = ({ onClose }: { onClose: () => void }) => {
                                         <div className="btn-label" style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
                                             <span>Heavy</span>
                                             {useBattleStore.getState().heavyAttackCooldown > 0
-                                                ? <span style={{ fontSize: '0.7rem', color: '#ef4444' }}>Cooldown: {useBattleStore.getState().heavyAttackCooldown} turn remaining</span>
-                                                : <span style={{ fontSize: '0.7rem', opacity: 0.8 }}>50% chance · 150% dmg · CD: 1 turn</span>
+                                                ? <span style={{ fontSize: '0.7rem', color: '#ef4444' }}>Heavy (Cooldown)</span>
+                                                : <span style={{ fontSize: '0.7rem', opacity: 0.8 }}>50% low hit / 50% big hit</span>
                                             }
                                         </div>
                                     </button>
@@ -804,17 +809,16 @@ export const Arena = ({ onClose }: { onClose: () => void }) => {
                                         onClick={() => {
                                             if (phase === 'select_action') {
                                                 setIsRolling(true);
-                                                const maxHit = Math.floor(player.atk * useBattleStore.getState().playerDamageModifier);
-                                                const minHit = Math.floor(maxHit * 0.7);
+                                                const modifiedAtk = Math.max(1, Math.floor(player.atk * useBattleStore.getState().playerDamageModifier));
                                                 
                                                 let rolls = 0;
                                                 const maxRolls = 10;
                                                 const interval = setInterval(() => {
-                                                    setRollValue(Math.floor(minHit + Math.random() * (maxHit - minHit + 1)));
+                                                    setRollValue(Math.floor(Math.random() * modifiedAtk) + 1);
                                                     rolls++;
                                                     if (rolls >= maxRolls) {
                                                         clearInterval(interval);
-                                                        const finalRoll = Math.floor(minHit + Math.random() * (maxHit - minHit + 1));
+                                                        const finalRoll = Math.floor(Math.random() * modifiedAtk) + 1;
                                                         setRollValue(finalRoll);
                                                         setTimeout(() => {
                                                             selectAbility({ 
@@ -845,7 +849,7 @@ export const Arena = ({ onClose }: { onClose: () => void }) => {
                                                 {isRolling && rollValue !== null ? (
                                                     <span style={{ color: '#fbbf24', fontWeight: 'bold', fontSize: '1rem' }}>🎲 {rollValue}</span>
                                                 ) : (
-                                                    'Reliable strike (70%–100%)'
+                                                    `Roll 1–${Math.max(1, Math.floor(player.atk * useBattleStore.getState().playerDamageModifier))}`
                                                 )}
                                             </span>
                                         </div>

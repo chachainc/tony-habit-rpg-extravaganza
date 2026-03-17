@@ -168,6 +168,7 @@ export const HealthTracker = () => {
     // Analysis data
     const sleepChartData = useMemo(() => {
         return [...sleepLogs]
+            .filter(l => !l.skipped)
             .sort((a, b) => a.date.localeCompare(b.date))
             .slice(-analysisRange)
             .map(l => ({ date: l.date, value: l.score }));
@@ -175,6 +176,7 @@ export const HealthTracker = () => {
 
     const readinessChartData = useMemo(() => {
         return [...readinessLogs]
+            .filter(l => !l.skipped)
             .sort((a, b) => a.date.localeCompare(b.date))
             .slice(-analysisRange)
             .map(l => ({ date: l.date, value: l.score }));

@@ -100,9 +100,11 @@
 .stats-content-wrapper {
     position: relative;
     z-index: 1;
-    padding: 1rem 1rem 6rem;
+    /* Extra bottom clearance so the last skill card clears the navigation bar */
+    padding: 1rem 1rem 7rem;
     max-width: 900px;
     margin: 0 auto;
+    box-sizing: border-box;
 }
 
 .page-header {
@@ -310,9 +312,19 @@
 
 .skills-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
-    gap: 0.5rem;
+    /* Single column on mobile so cards have full width and content never overflows */
+    grid-template-columns: 1fr;
+    gap: 0.6rem;
     align-items: start;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+/* Restore multi-column only on larger screens */
+@media (min-width: 580px) {
+    .skills-grid {
+        grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    }
 }
 
 /* ── Skill Card ── */
@@ -324,12 +336,15 @@
     height: auto;
     min-height: 0;
     overflow: visible;
+    box-sizing: border-box;
+    width: 100%;
     transition: transform 0.15s, box-shadow 0.15s;
 }
 
 .skill-card.compact {
-    padding: 0.55rem 0.7rem;
-    gap: 0.35rem;
+    /* Increased vertical padding so XP bar and numbers are never clipped */
+    padding: 0.75rem 0.9rem;
+    gap: 0.45rem;
 }
 
 .skill-card:hover {
@@ -338,11 +353,20 @@
     z-index: 10;
 }
 
-/* Row 1 */
+/* Row 1: icon + name + level on left, XP ratio wraps below on its own line */
 .skill-header-compact {
     display: flex;
-    justify-content: space-between;
+    flex-direction: column;
+    gap: 0.3rem;
+    width: 100%;
+}
+
+/* Inner row: name group + XP ratio side by side */
+.skill-header-compact > .skill-name-group {
+    display: flex;
     align-items: center;
+    gap: 0.4rem;
+    justify-content: space-between;
     width: 100%;
 }
 
@@ -355,13 +379,15 @@
 .skill-name-group .skill-icon {
     font-size: 1.1rem;
     line-height: 1;
+    flex-shrink: 0;
 }
 
 .skill-name-group .skill-name {
-    font-size: 0.88rem;
+    font-size: 0.9rem;
     font-weight: 700;
     color: var(--text-primary);
     margin: 0;
+    white-space: nowrap;
 }
 
 .skill-name-group .skill-level {
@@ -369,13 +395,19 @@
     color: #a78bfa;
     font-weight: 600;
     margin-left: 0.15rem;
+    flex-shrink: 0;
 }
 
+/* XP ratio: its own full-width line so it is never squeezed */
 .skill-xp-ratio {
-    font-size: 0.68rem;
+    font-size: 0.7rem;
     color: var(--text-secondary);
     font-family: monospace;
     white-space: nowrap;
+    /* Align to the right of the row */
+    text-align: right;
+    display: block;
+    width: 100%;
 }
 
 /* XP Bar row */

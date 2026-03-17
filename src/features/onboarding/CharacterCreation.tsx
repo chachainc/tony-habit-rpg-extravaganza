@@ -12,6 +12,9 @@ import verdantGuardianImg from '../../assets/characters/verdant_guardian.jpg';
 import shadowRogueImg from '../../assets/characters/shadow_rogue.png';
 import arcaneScholarImg from '../../assets/characters/arcane_scholar.jpg';
 
+// Video asset for sleep tracking
+import cowsSleepingVid from '../../assets/cows_sleeping.mp4';
+
 const ARCHETYPES = [
     { id: 'iron_vanguard', name: 'Iron Vanguard', img: ironVanguardImg, desc: 'A heavily-armored warrior. Wields a colossal blade radiating crimson energy to dominate the battlefield.' },
     { id: 'verdant_guardian', name: 'Verdant Guardian', img: verdantGuardianImg, desc: 'A guardian of the wilds. Channels nature\'s magic through an enchanted staff to protect the innocent.' },
@@ -38,11 +41,16 @@ export const CharacterCreation: React.FC = () => {
     };
 
     return (
-        <div className="char-create-container">
-            <Particles count={40} color="rgba(255, 200, 100, 0.5)" speed={0.5} />
+        <div className={`char-create-container ${step === 2 ? 'sleep-prompt-mode' : ''}`}>
+            {step === 1 && <Particles count={40} color="rgba(255, 200, 100, 0.5)" speed={0.5} />}
+            {step === 2 && (
+                 <video autoPlay loop muted playsInline className="sleep-bg-video" ref={(el) => { if (el) el.defaultMuted = true; }}>
+                     <source src={cowsSleepingVid} type="video/mp4" />
+                 </video>
+            )}
 
             <div className="char-create-content">
-                <h1 className="cc-title text-gold">Awaken, Hero</h1>
+                {step === 1 && <h1 className="cc-title text-gold">Awaken, Hero</h1>}
 
                 {/* STEP 1: Archetype */}
                 {step === 1 && (
@@ -81,9 +89,9 @@ export const CharacterCreation: React.FC = () => {
 
                 {/* STEP 2: Sleep Tracking */}
                 {step === 2 && (
-                    <Panel variant="glass" padding="lg" className="cc-panel animation-slide-up">
-                        <h2>Do You Track Your Sleep?</h2>
-                        <p className="text-muted mb-4">If yes, you'll log your sleep quality each morning and it will impact your in-game stats and recovery.</p>
+                    <Panel variant="glass" padding="lg" className="cc-panel sleep-panel-override animation-slide-up">
+                        <h2 className="sleep-title">Do You Track Your Sleep?</h2>
+                        <p className="text-muted mb-4 sleep-subtitle">If yes, you'll log your sleep quality each morning and it will impact your in-game stats and recovery.</p>
 
                         <div className="health-options">
                             <div

@@ -18,6 +18,7 @@ export const PERSIST_REGISTRY: Record<string, PersistConfig> = {
     boardCollection: { storeName: "useBoardCollectionStore", persistKey: "gl-board-collection-v1", syncEnabled: true, restoreEnabled: true },
     books: { storeName: "useBookStore", persistKey: "gl-books-storage-v2", syncEnabled: true, restoreEnabled: true },
     bookTrophies: { storeName: "useBookTrophyStore", persistKey: "gl-book-trophy-v1", syncEnabled: true, restoreEnabled: true },
+    budget: { storeName: "useBudgetStore", persistKey: "gl-budget-v1", syncEnabled: true, restoreEnabled: true },
     buffs: { storeName: "useBuffStore", persistKey: "gl-buffs-v2", syncEnabled: true, restoreEnabled: true },
     calendar: { storeName: "useCalendarStore", persistKey: "gl-calendar-storage", syncEnabled: true, restoreEnabled: true },
     campaign: { storeName: "useCampaignStore", persistKey: "gl-campaign-v2", syncEnabled: true, restoreEnabled: true },

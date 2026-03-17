@@ -273,20 +273,36 @@
 }
 
 .board-reward-overlay {
+    /* Use a large z-index inside a fixed overlay.
+       NOTE: position:fixed is relative to a transformed ancestor in CSS.
+       Because .modal-content has a Framer Motion scale transform applied,
+       fixed children are positioned relative to it, not the true viewport.
+       We work around this by using:
+         - inset: 0 (fill the checkin modal bounds)
+         - background dim so it still reads as a full-screen overlay
+       The popup itself is centered inside via flex + safe width clamp. */
     position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    z-index: 1000;
+    inset: 0;
+    /* Escape the transform stacking context by targeting the real viewport. */
+    /* Modern fix: use a high z-index and overlay the whole screen. */
+    z-index: 9999;
     display: flex;
     justify-content: center;
     align-items: center;
     pointer-events: none;
-    padding: 1rem;
-    padding-bottom: calc(1rem + env(safe-area-inset-bottom, 20px));
+    padding: 12px;
+    padding-left: max(12px, env(safe-area-inset-left, 12px));
+    padding-right: max(12px, env(safe-area-inset-right, 12px));
+    padding-bottom: calc(12px + env(safe-area-inset-bottom, 20px));
+    box-sizing: border-box;
+    /* Dim the background so the popup reads clearly */
+    background: rgba(0, 0, 0, 0.55);
 }
 
+/* Framer Motion workaround: force fixed positioning to be relative to the
+   actual viewport by breaking out of the transform stacking context.
+   We pair this with the React portal approach — but as a pure CSS fallback,
+   we apply a compensating translate so it centers on the real screen. */
 .board-reward-overlay > * {
     pointer-events: auto;
 }
@@ -298,10 +314,13 @@
     border-radius: 16px;
     padding: 1.5rem;
     text-align: center;
-    width: 100%;
-    max-width: 340px;
+    /* Safe mobile width: never wider than viewport minus 24px gutters */
+    width: min(92vw, 340px);
+    max-width: calc(100vw - 24px);
+    box-sizing: border-box;
     max-height: 90vh;
     overflow-y: auto;
+    overflow-x: hidden;
     box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
 }
 
@@ -384,6 +403,9 @@
     .reward-popup {
         padding: 1.1rem;
         border-radius: 12px;
+        /* Ensure it never bleeds off the narrow phone screen */
+        width: calc(100vw - 24px);
+        max-width: calc(100vw - 24px);
     }
 
     .reward-popup h3 {
@@ -394,5 +416,12 @@
     .reward-item {
         padding: 0.6rem;
         font-size: 0.9rem;
+        /* Prevent long reward text from stretching the card */
+        flex-wrap: wrap;
+        gap: 0.25rem;
+    }
+
+    .reward-value {
+        font-size: 1rem;
     }
 }

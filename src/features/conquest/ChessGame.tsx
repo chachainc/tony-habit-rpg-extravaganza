@@ -259,9 +259,7 @@ function evaluateBoard(board: Board): number {
     return score;
 }
 
-function aiMoveRandom(legalMoves: Move[]): Move {
-    return legalMoves[Math.floor(Math.random() * legalMoves.length)];
-}
+
 
 function aiMoveGreedy(board: Board, legalMoves: Move[], enPassant: [number, number] | null): Move {
     let bestScore = -Infinity;
@@ -309,12 +307,12 @@ function minimax(board: Board, depth: number, isMaximizing: boolean, alpha: numb
     }
 }
 
-function aiMoveMinimax(board: Board, legalMoves: Move[], enPassant: [number, number] | null): Move {
+function aiMoveMinimax(board: Board, legalMoves: Move[], enPassant: [number, number] | null, depth: number): Move {
     let bestScore = -Infinity;
     let bestMove = legalMoves[0];
     for (const move of legalMoves) {
         const nb = applyMove(board, move, enPassant);
-        const score = minimax(nb, 2, false, -Infinity, Infinity, null);
+        const score = minimax(nb, depth - 1, false, -Infinity, Infinity, null);
         if (score > bestScore) {
             bestScore = score;
             bestMove = move;
@@ -372,10 +370,13 @@ export const ChessGame = ({ onComplete, onClose, canPlay }: ChessGameProps) => {
 
             let aiMove: Move;
             switch (difficulty) {
-                case 1: aiMove = aiMoveRandom(legal); break;
-                case 2: aiMove = aiMoveGreedy(board, legal, enPassant); break;
-                case 3: aiMove = aiMoveMinimax(board, legal, enPassant); break;
-                default: aiMove = aiMoveRandom(legal);
+                // Easy: greedy (best immediate capture/position) — no more random blunders
+                case 1: aiMove = aiMoveGreedy(board, legal, enPassant); break;
+                // Medium: minimax 2-ply — looks 2 moves ahead
+                case 2: aiMove = aiMoveMinimax(board, legal, enPassant, 2); break;
+                // Hard: minimax 3-ply — looks 3 moves ahead
+                case 3: aiMove = aiMoveMinimax(board, legal, enPassant, 3); break;
+                default: aiMove = aiMoveGreedy(board, legal, enPassant);
             }
 
             const newBoard = applyMove(board, aiMove, enPassant);

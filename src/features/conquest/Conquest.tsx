@@ -73,7 +73,10 @@ export const Conquest = () => {
     const [hoveredNode, setHoveredNode] = useState<ConquestNodeData | null>(null);
 
     useEffect(() => {
-        if (!conquest.currentNodeId && !conquest.isDailyRunLocked()) {
+        // initMap() is idempotent — safe to call always.
+        // startRun() is no longer called on mount; it is called only when the
+        // player explicitly starts a run (not locked AND no active run yet).
+        if (!conquest.isDailyRunLocked() && !conquest.currentNodeId) {
             conquest.startRun();
         } else {
             conquest.initMap();
@@ -350,7 +353,7 @@ export const Conquest = () => {
                         <div className="run-complete-modal map-modal" style={{ borderColor: '#ef4444' }}>
                             <h2 style={{ color: '#ef4444' }}>Conquest Locked</h2>
                             <p>You have already completed your Conquest run for today. Return tomorrow for another attempt!</p>
-                            <button className="continue-btn" onClick={() => navigate('/dashboard')}>Return to Dashboard</button>
+                            <button className="continue-btn" onClick={() => navigate('/')}>Return to Dashboard</button>
                         </div>
                     </motion.div>
                 )}

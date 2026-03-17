@@ -13,6 +13,7 @@ import { getPassiveBonuses } from './usePassiveEffects';
 import { useRoomStore } from './useRoomStore';
 import { useSkillTrophyStore } from './useSkillTrophyStore';
 import { useRiskStore } from './useRiskStore';
+import { useBudgetStore } from './useBudgetStore';
 
 // ═══════════════════════════════════════════
 // SKILL IDENTITY ROLES
@@ -26,17 +27,18 @@ export interface SkillCombatRole {
 }
 
 export const SKILL_COMBAT_ROLES: Record<SkillName, SkillCombatRole> = {
-    'Strength': { skill: 'Strength', primaryStat: 'ATK', description: 'Physical attack damage', icon: '💪' },
-    'Cardio': { skill: 'Cardio', primaryStat: 'SPD', description: 'Attack speed + small dodge chance', icon: '🏃' },
-    'Health': { skill: 'Health', primaryStat: 'HP', description: 'Max HP', icon: '❤️' },
-    'Hygiene': { skill: 'Hygiene', primaryStat: 'DEF', description: 'Physical defense', icon: '🧼' },
-    'Sleep': { skill: 'Sleep', primaryStat: 'MP', description: 'Mana pool', icon: '😴' },
-    'Intelligence': { skill: 'Intelligence', primaryStat: 'MATK', description: 'Magic attack scaling', icon: '🧠' },
-    'Flexibility': { skill: 'Flexibility', primaryStat: 'TIER', description: 'Spell tier control', icon: '🤸' },
-    'Habit': { skill: 'Habit', primaryStat: 'CRIT', description: 'Critical hit chance', icon: '🔥' },
-    'Social': { skill: 'Social', primaryStat: 'MDEF', description: 'Magic defense', icon: '🤝' },
-    'Work': { skill: 'Work', primaryStat: 'ECON', description: 'Economic bonuses (shop discounts, gold rewards)', icon: '💼' },
-    'Luck': { skill: 'Luck', primaryStat: 'DROP', description: 'Rare reward probability (spins, drops, etc.)', icon: '🍀' },
+    'Strength': { skill: 'Strength', primaryStat: 'ATK', description: 'Physical attack damage (ATK = 1 + level)', icon: '💪' },
+    'Health': { skill: 'Health', primaryStat: 'HP', description: 'Max health (50 base HP, +5 per level after Lv1)', icon: '❤️' },
+    'Hygiene': { skill: 'Hygiene', primaryStat: 'DEF', description: 'Physical defense (DEF = 1 + level)', icon: '🧼' },
+    'Cardio': { skill: 'Cardio', primaryStat: 'SPD', description: 'Speed and dodge (SPD = level, Dodge = level%)', icon: '🏃' },
+    'Sleep': { skill: 'Sleep', primaryStat: 'MP', description: 'Mana pool (20 base MP, +5 per level after Lv1)', icon: '😴' },
+    'Intelligence': { skill: 'Intelligence', primaryStat: 'MATK', description: 'Magic attack (MAG = 1 + level)', icon: '🧠' },
+    'Social': { skill: 'Social', primaryStat: 'MDEF', description: 'Magic defense (MDEF = 1 + level)', icon: '🤝' },
+    'Habit': { skill: 'Habit', primaryStat: 'CRIT', description: 'Crit chance (Crit = level%)', icon: '🔥' },
+    'Work': { skill: 'Work', primaryStat: 'ECON', description: 'Shop discount (Discount = level%)', icon: '💼' },
+    'Housemaid': { skill: 'Housemaid', primaryStat: 'HP/GOLD', description: 'Chores and upkeep. Gives +1% Gold per level and unlocks Room upgrades. Pairs with Work for an Economic Build.', icon: '🧹' },
+    'Flexibility': { skill: 'Flexibility', primaryStat: 'TIER', description: 'Spell cooldown reduction (Cooldown reduction = level%)', icon: '🤸' },
+    'Luck': { skill: 'Luck', primaryStat: 'DROP', description: 'Rare reward probability (Drops = level%)', icon: '🍀' },
 };
 
 // ═══════════════════════════════════════════
@@ -160,10 +162,11 @@ export function getDetailedCombatBreakdown(): CombatBreakdown {
     const weeklyProgress = consistencyStore.getWeeklyProgress();
     const hasBerserk = weeklyProgress.daysCompleted >= 3;
     const synergy = getSkillSynergyBonus();
+    const budgetPower = useBudgetStore.getState().getPowerMultiplier();
 
     // ── ATK ──────────────────────────────
     const strengthLevel = skills['Strength']?.level ?? 1;
-    const baseAtk = Math.floor(strengthLevel * 1.5) + 5;
+    const baseAtk = 1 + strengthLevel;
     const equipAtk = passives.attack_bonus;
     const trophyAtk = skillTrophyStore.getStrengthATKBonus();
     const roomAtkPercent = roomBonuses.atkPercent;
@@ -207,6 +210,14 @@ export function getDetailedCombatBreakdown(): CombatBreakdown {
         atkSubtotal += berserkVal;
     }
 
+    if (budgetPower !== 1.0) {
+        // Multiplier acts on the total calculated so far
+        const newTotal = Math.round(atkSubtotal * budgetPower);
+        const diff = newTotal - atkSubtotal;
+        atkSources.push({ label: `Budget Power (x${budgetPower.toFixed(2)})`, value: diff });
+        atkSubtotal = newTotal;
+    }
+
     // ── DEF ──────────────────────────────
     const hygieneLevel = skills['Hygiene']?.level ?? 1;
     const defSources: StatSource[] = [
@@ -218,7 +229,7 @@ export function getDetailedCombatBreakdown(): CombatBreakdown {
     defSources.push({ label: 'Equipment Flat DEF', value: equipDef });
     defSources.push({ label: 'Trophies Flat DEF', value: trophyDef });
 
-    let defSubtotal = Math.max(1, gameStore.getDefense() + equipDef + trophyDef);
+    let defSubtotal = Math.max(1, (1 + hygieneLevel) + equipDef + trophyDef);
 
     if (activeRiskRegions.includes('iron_highlands')) {
         const riskDefVal = Math.round(defSubtotal * 0.10);
@@ -239,36 +250,65 @@ export function getDetailedCombatBreakdown(): CombatBreakdown {
         defSubtotal += auraVal;
     }
 
+    if (budgetPower !== 1.0) {
+        const newTotal = Math.round(defSubtotal * budgetPower);
+        const diff = newTotal - defSubtotal;
+        defSources.push({ label: `Budget Power (x${budgetPower.toFixed(2)})`, value: diff });
+        defSubtotal = newTotal;
+    }
+
     // ── MATK ─────────────────────────────
     const intLevel = skills['Intelligence']?.level ?? 1;
-    const baseMatk = Math.floor(5 * (1 + (intLevel * 0.03)));
+    let baseMatk = 1 + intLevel;
     const bookTrophyBonus = bookTrophyStore.getIntelligenceBonus();
     const matkSources: StatSource[] = [
         { label: `Int Lv.${intLevel} Base`, value: baseMatk },
         { label: 'Book Trophies', value: bookTrophyBonus },
     ];
 
+    let matkSubtotal = baseMatk + bookTrophyBonus;
+
+    if (budgetPower !== 1.0) {
+        const newTotal = Math.round(matkSubtotal * budgetPower);
+        const diff = newTotal - matkSubtotal;
+        matkSources.push({ label: `Budget Power (x${budgetPower.toFixed(2)})`, value: diff });
+        matkSubtotal = newTotal;
+    }
+
     // ── HP ───────────────────────────────
     const healthLevel = skills['Health']?.level ?? 1;
-    const baseHp = Math.round(healthLevel * 2 + 80);
+    const baseHp = 50 + ((healthLevel - 1) * 5);
     const roomHp = roomBonuses.maxHP;
     const trophyHp = skillTrophyStore.getSleepHPBonus();
     const equipHp = passives.max_hp_bonus;
     const hpSources: StatSource[] = [
-        { label: `Health Lv.${healthLevel}`, value: baseHp },
+        { label: `Health Lv.${healthLevel} Base`, value: baseHp },
+    ];
+
+    let totalHp = baseHp;
+
+    // Housemaid Level 10: "Better Bed" room upgrade grants +5 max HP
+    const housemaidLevel = skills['Housemaid']?.level ?? 1;
+    if (housemaidLevel >= 10) {
+        hpSources.push({ label: 'Housemaid Lv.10 (Better Bed)', value: 5 });
+        totalHp += 5;
+    }
+
+    hpSources.push(
         { label: 'Room', value: roomHp },
         { label: 'Trophies', value: trophyHp },
         { label: 'Equipment', value: equipHp },
-    ];
+    );
+    totalHp += roomHp + trophyHp + equipHp;
 
     if (activeRiskRegions.includes('sunken_expanse')) {
         hpSources.push({ label: 'Risk Sunken Expanse', value: 5 });
+        totalHp += 5;
     }
 
     // ── SPD ──────────────────────────────
     const cardioLevel = skills['Cardio']?.level ?? 1;
-    const cardioTier = 1 + (cardioLevel * 0.02);
-    const baseSpd = Math.round(cardioTier * 20 + 10);
+    const baseSpd = cardioLevel;
     const trophySpd = skillTrophyStore.getCardioSPDBonus();
     const spdSources: StatSource[] = [
         { label: `Cardio Speed`, value: baseSpd },
@@ -282,7 +322,8 @@ export function getDetailedCombatBreakdown(): CombatBreakdown {
     }
 
     // ── CRIT ─────────────────────────────
-    const baseCrit = 0.10;
+    const habitLevel = skills['Habit']?.level ?? 1;
+    const baseCrit = habitLevel / 100;
     const luckCrit = (skills['Luck']?.level || 1) * 0.01;
     const roomCrit = roomBonuses.critPercent / 100;
     const trophyCrit = skillTrophyStore.getLuckCritBonus();
@@ -301,7 +342,7 @@ export function getDetailedCombatBreakdown(): CombatBreakdown {
 
     // ── MP ───────────────────────────────
     const sleepManaLevel = skills['Sleep']?.level ?? 1;
-    const baseMp = Math.round(50 + sleepManaLevel * 5);
+    const baseMp = 20 + ((sleepManaLevel - 1) * 5);
     const bookMpBonus = bookTrophyStore.getMaxMPBonus();
     const mpSources: StatSource[] = [
         { label: `Sleep Lv.${sleepManaLevel}`, value: baseMp },
@@ -315,8 +356,8 @@ export function getDetailedCombatBreakdown(): CombatBreakdown {
     return {
         atk: { total: Math.round(atkSubtotal), sources: filterSources(atkSources) },
         def: { total: Math.round(defSubtotal), sources: filterSources(defSources) },
-        matk: { total: Math.round(baseMatk + bookTrophyBonus), sources: filterSources(matkSources) },
-        hp: { total: Math.round(baseHp + roomHp + trophyHp + equipHp), sources: filterSources(hpSources) },
+        matk: { total: Math.round(matkSubtotal), sources: filterSources(matkSources) },
+        hp: { total: Math.round(totalHp), sources: filterSources(hpSources) },
         spd: { total: Math.round(spdSubtotal), sources: filterSources(spdSources) },
         critChance: {
             total: Math.round((baseCrit + luckCrit + roomCrit + trophyCrit + (equipCritPct / 100) + auraCritBonus) * 100),

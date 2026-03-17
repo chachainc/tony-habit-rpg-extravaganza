@@ -58,6 +58,50 @@ export const FURNITURE_COMBAT_BONUSES: Record<string, FurnitureCombatBonus> = {
     guitar: { spdPercent: 1, xpBonusPercent: 2 },
 };
 
+// ─── ROOM CATALOG ─────────────────────────────────────────────────────────────
+export interface RoomDefinition {
+    id: string;
+    name: string;
+    icon: string;
+    description: string;
+    floorColor: string; // CSS color for floor tint
+    unlockCondition?: string; // Human-readable unlock hint
+}
+
+export const ROOM_CATALOG: RoomDefinition[] = [
+    {
+        id: 'bedroom',
+        name: 'Bedroom',
+        icon: '🛏️',
+        description: 'Your starting sanctuary. Bed, closet, and library.',
+        floorColor: 'rgba(60, 40, 30, 0.3)',
+    },
+    {
+        id: 'trophy_hall',
+        name: 'Trophy Hall',
+        icon: '🏆',
+        description: 'A hall of glory reserved for your achievements.',
+        floorColor: 'rgba(180, 140, 20, 0.15)',
+        unlockCondition: 'Complete 3 Conquest Runs',
+    },
+    {
+        id: 'library_wing',
+        name: 'Library Wing',
+        icon: '📚',
+        description: 'A grand library for expanded reading and codex.',
+        floorColor: 'rgba(20, 30, 80, 0.3)',
+        unlockCondition: 'Reach Housemaid Level 15',
+    },
+    {
+        id: 'armory',
+        name: 'Armory',
+        icon: '⚔️',
+        description: 'A combat-focused room with weapon racks and training gear.',
+        floorColor: 'rgba(50, 10, 10, 0.3)',
+        unlockCondition: 'Reach Work Level 10',
+    },
+];
+
 // ─── PURCHASABLE ROOM-FURNITURE CATALOG ──────────────────────────────────────
 export interface RoomFurnitureDef {
     id: string;
@@ -150,6 +194,12 @@ export interface PlacedFurniture {
 }
 
 interface RoomState {
+    // Multi-room system
+    currentRoomId: string;
+    unlockedRooms: string[];
+    switchRoom: (roomId: string) => void;
+    unlockRoom: (roomId: string) => void;
+
     // Legacy canvas-based furniture (kept for backward compat, not used for bonuses)
     furnitureItems: FurnitureItem[];
 
@@ -185,6 +235,24 @@ interface RoomState {
 export const useRoomStore = create<RoomState>()(
     persist(
         (set, get) => ({
+            // Multi-room system
+            currentRoomId: 'bedroom',
+            unlockedRooms: ['bedroom'],
+
+            switchRoom: (roomId) => {
+                const s = get();
+                if (s.unlockedRooms.includes(roomId)) {
+                    set({ currentRoomId: roomId });
+                }
+            },
+
+            unlockRoom: (roomId) => {
+                const s = get();
+                if (!s.unlockedRooms.includes(roomId)) {
+                    set({ unlockedRooms: [...s.unlockedRooms, roomId] });
+                }
+            },
+
             furnitureItems: [],
             ownedRoomFurniture: [],
             placedRoomFurniture: [],
@@ -323,6 +391,21 @@ export const useRoomStore = create<RoomState>()(
                 if (b.maxHP) lines.push({ label: '❤️ Max HP', value: `+${b.maxHP}` });
                 if (b.mpCostReduction) lines.push({ label: '🔮 MP Cost', value: `-${b.mpCostReduction}%` });
                 if (b.xpBonusPercent) lines.push({ label: '✨ XP Gain', value: `+${b.xpBonusPercent}%` });
+
+                // Housemaid Level Unlocks (Passive Room Upgrades)
+                import('./useGameStore').then(({ useGameStore }) => {
+                    const housemaidLevel = useGameStore.getState().skills['Housemaid']?.level ?? 1;
+                    if (housemaidLevel >= 5) {
+                        lines.push({ label: '🧹 Cleaning Supplies', value: '+2% Gold' });
+                    }
+                    if (housemaidLevel >= 10) {
+                        lines.push({ label: '🛏️ Better Bed', value: '+5 Max HP' });
+                    }
+                    if (housemaidLevel >= 15) {
+                        lines.push({ label: '📚 Organized Workspace', value: '+5% Task XP' });
+                    }
+                }).catch(() => {});
+
                 return lines;
             },
         }),

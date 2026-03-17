@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Sparkles, Shield, Crosshair, BookOpen, ChevronRight, Check, Users } from 'lucide-react';
+import { Sparkles, Shield, Crosshair, BookOpen, ChevronRight, Check, Sword } from 'lucide-react';
 import { useProfileStore } from '../../store/useProfileStore';
 import './WelcomeTutorialModal.css';
 
@@ -16,14 +16,14 @@ const SCREENS: TutorialScreen[] = [
     {
         id: 'welcome',
         title: 'Welcome, Adventurer!',
-        text: 'Complete real-life habit tasks to power up your character and conquer the world. Keep in mind: daily and weekly tasks have a maximum XP cap per skill each day to prevent grinding!',
+        text: 'Complete real-life habit tasks to power up your character and conquer the world. Keep in mind: daily tasks have a maximum XP cap per skill each day to prevent grinding!',
         icon: <Sparkles size={48} />,
         color: '#f59e0b',
     },
     {
         id: 'caps_exemptions',
         title: 'XP Caps & Exemptions',
-        text: <>XP from daily and weekly tasks is capped per skill each day (e.g. 6 Strength XP/day).<br/><br/>However, <strong>Sleep logging, Daily Check-Ins, and Combat rewards</strong> bypass these caps entirely!</>,
+        text: <>XP from daily tasks is capped per skill each day (e.g. 6 Strength XP/day).<br/><br/>However, <strong>Weekly tasks, Sleep logging, Daily Check-Ins, and Combat rewards</strong> bypass these caps entirely!</>,
         icon: <Shield size={48} />,
         color: '#3b82f6',
     },
@@ -31,23 +31,26 @@ const SCREENS: TutorialScreen[] = [
         id: 'build_guidance',
         title: 'Fantasy Builds',
         text: <>Focus on real-world habits that fit your desired fantasy class!<br/><br/>
-        • <strong>Warriors:</strong> Focus on Strength (Lifting) and Health (Diet) for HP and physical damage.<br/>
-        • <strong>Mages:</strong> Focus on Intelligence (Learning) and Flexibility (Stretching) for magic damage and spell tiers.<br/>
-        • <strong>Rogues:</strong> Focus on Cardio (Running) and Habit (Consistency) for speed, dodge, and critical hits.</>,
+        • <strong>Warriors:</strong> Focus on Strength for Physical Attack (ATK = 1 + level) and Health for Max HP (50 base + 5/level).<br/>
+        • <strong>Mages:</strong> Focus on Intelligence for Magic Attack (MAG = 1 + level) and Sleep for Mana pool (20 base + 5/level).<br/>
+        • <strong>Rogues:</strong> Focus on Cardio for Speed and Dodge (Level%) and Habit for Crit Chance (Level%).<br/>
+        • <strong>Economy:</strong> Housemaid ensures earning efficiency while Work ensures spending efficiency.</>,
         icon: <Crosshair size={48} />,
         color: '#ef4444',
     },
     {
-        id: 'social',
-        title: 'Social Influence',
-        text: <>Leveling up your <strong>Social</strong> skill directly impacts your influence in the kingdom.<br/><br/>Higher Social levels are required to unlock and adopt rare <strong>Pets</strong> in the marketplace, which provide powerful unique bonuses.</>,
-        icon: <Users size={48} />,
+        id: 'combat',
+        title: 'Combat Mechanics',
+        text: <>Engage in battles in the Arena and Conquest mode:<br/><br/>
+        • <strong>Light Attack:</strong> Deals random damage from 1 to your ATK.<br/>
+        • <strong>Heavy Attack:</strong> 50% chance for a low hit, 50% chance for a big hit. <strong>Heavy Attacks have a 1-turn cooldown!</strong></>,
+        icon: <Sword size={48} />,
         color: '#10b981',
     },
     {
-        id: 'knowledge',
+        id: 'arcane',
         title: 'Arcane Knowledge',
-        text: <><strong>Intelligence XP</strong> strengthens your mind and contributes to Mana and magic progression.<br/><br/><strong>Books</strong> are completed through your Library. Different book categories reward different XP types when completed:<br/>• Fantasy = Intelligence & Habit XP<br/>• Self-Improvement = Habit XP<br/>• Business = Work & Habit XP</>,
+        text: <><strong>Intelligence XP</strong> strengthens your mind and contributes to Magic Attack.<br/><br/><strong>Books</strong> are completed through your Library. Read real books to earn XP based on the genre!<br/>• Fantasy = Intelligence & Habit XP<br/>• Self-Improvement = Habit XP<br/>• Business = Work & Habit XP</>,
         icon: <BookOpen size={48} />,
         color: '#8b5cf6',
     },

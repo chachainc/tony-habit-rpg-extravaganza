@@ -1,0 +1,426 @@
+/* ─── PAGE CONTAINER ─────────────────────────────── */
+.budget-page-container {
+    display: flex;
+    flex-direction: column;
+    gap: 0.85rem;
+    padding: 1rem 1rem 6rem; /* bottom padding clears nav bar */
+    max-width: 680px;
+    margin: 0 auto;
+    width: 100%;
+}
+
+/* ─── PAGE HEADER ─────────────────────────────────── */
+.budget-header {
+    text-align: center;
+    padding: 0.25rem 0 0.25rem;
+}
+
+.budget-page-title {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-family: var(--font-family-heading, 'Inter', sans-serif);
+    font-size: 1.45rem;
+    font-weight: 800;
+    color: #fbbf24;
+    margin: 0 0 0.3rem;
+    letter-spacing: -0.3px;
+}
+
+.budget-title-icon {
+    color: #fbbf24;
+    opacity: 0.8;
+}
+
+.budget-subtitle {
+    font-size: 0.76rem;
+    color: rgba(255, 255, 255, 0.38);
+    margin: 0;
+    line-height: 1.4;
+}
+
+/* ─── CARD BASE ───────────────────────────────────── */
+.bp-card {
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.09);
+    border-radius: 14px;
+    padding: 1rem 1rem 0.9rem;
+}
+
+.bp-card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 0.75rem;
+}
+
+.bp-card-title {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-size: 0.78rem;
+    font-weight: 700;
+    color: rgba(255, 255, 255, 0.5);
+    text-transform: uppercase;
+    letter-spacing: 0.7px;
+}
+
+.bp-card-icon {
+    opacity: 0.6;
+}
+
+.bp-card-divider {
+    height: 1px;
+    background: rgba(255, 255, 255, 0.07);
+    margin: 0 -1rem 0.75rem;
+}
+
+/* ─── BUDGET PROGRESS ─────────────────────────────── */
+.bp-spent-label {
+    font-size: 0.85rem;
+    display: flex;
+    align-items: baseline;
+    gap: 0.15rem;
+}
+
+.bp-spent-val {
+    font-weight: 800;
+    color: #f1f5f9;
+    font-size: 0.95rem;
+}
+
+.bp-spent-sep {
+    color: rgba(255, 255, 255, 0.25);
+    font-size: 0.8rem;
+}
+
+.bp-budget-total {
+    color: rgba(255, 255, 255, 0.45);
+    font-size: 0.8rem;
+}
+
+/* Progress Bar */
+.bp-progress-track {
+    width: 100%;
+    height: 10px;
+    background: rgba(0, 0, 0, 0.45);
+    border-radius: 99px;
+    overflow: hidden;
+    box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.5);
+}
+
+.bp-progress-fill {
+    height: 100%;
+    border-radius: 99px;
+    transition: width 0.6s ease;
+}
+
+.bp-fill-safe {
+    background: linear-gradient(90deg, #059669, #34d399);
+    box-shadow: 0 0 10px rgba(52, 211, 153, 0.45);
+}
+
+.bp-fill-warning {
+    background: linear-gradient(90deg, #d97706, #fbbf24);
+    box-shadow: 0 0 10px rgba(251, 191, 36, 0.45);
+}
+
+.bp-fill-danger {
+    background: linear-gradient(90deg, #dc2626, #f87171);
+    box-shadow: 0 0 10px rgba(239, 68, 68, 0.45);
+}
+
+.bp-progress-meta {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 0.45rem;
+}
+
+.bp-meta-pct {
+    font-size: 0.72rem;
+    color: rgba(255, 255, 255, 0.3);
+}
+
+.bp-meta-remaining {
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: #34d399;
+}
+
+.bp-meta-remaining.bp-danger {
+    color: #f87171;
+}
+
+/* ─── STATS ROW (Power + Gift side by side) ────────── */
+.bp-stats-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.7rem;
+}
+
+.bp-stat-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: 0.2rem;
+    padding: 1rem 0.75rem;
+}
+
+.bp-stat-icon-wrap {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
+    margin-bottom: 0.35rem;
+}
+
+.bp-icon-gold {
+    background: rgba(251, 191, 36, 0.12);
+    border: 1px solid rgba(251, 191, 36, 0.25);
+    color: #fbbf24;
+}
+
+.bp-icon-purple {
+    background: rgba(168, 85, 247, 0.12);
+    border: 1px solid rgba(168, 85, 247, 0.25);
+    color: #a855f7;
+}
+
+.bp-stat-label {
+    font-size: 0.68rem;
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.38);
+    text-transform: uppercase;
+    letter-spacing: 0.6px;
+}
+
+.bp-stat-big {
+    font-size: 1.85rem;
+    font-weight: 900;
+    line-height: 1.1;
+    letter-spacing: -0.5px;
+}
+
+.bp-gold { color: #fbbf24; }
+.bp-purple { color: #a855f7; }
+
+.bp-stat-sub {
+    font-size: 0.65rem;
+    color: rgba(255, 255, 255, 0.3);
+    line-height: 1.3;
+    margin-top: 0.1rem;
+}
+
+/* ─── TRANSACTION CARD ────────────────────────────── */
+.bp-tx-card {
+    flex: 1;
+}
+
+/* + ADD button */
+.bp-add-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    padding: 0.3rem 0.7rem;
+    background: rgba(251, 191, 36, 0.1);
+    border: 1px solid rgba(251, 191, 36, 0.35);
+    border-radius: 8px;
+    color: #fbbf24;
+    font-size: 0.72rem;
+    font-weight: 800;
+    cursor: pointer;
+    letter-spacing: 0.5px;
+    transition: background 0.15s, border-color 0.15s;
+}
+
+.bp-add-btn:hover {
+    background: rgba(251, 191, 36, 0.18);
+}
+
+.bp-add-btn-cancel {
+    background: rgba(239, 68, 68, 0.08);
+    border-color: rgba(239, 68, 68, 0.3);
+    color: #f87171;
+}
+
+.bp-add-btn-cancel:hover {
+    background: rgba(239, 68, 68, 0.15);
+}
+
+/* ─── ADD FORM ────────────────────────────────────── */
+.add-tx-form {
+    background: rgba(0, 0, 0, 0.35);
+    padding: 0.75rem;
+    border-radius: 10px;
+    margin-bottom: 0.75rem;
+    border: 1px solid rgba(251, 191, 36, 0.25);
+    overflow: hidden;
+}
+
+.form-row {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 0.5rem;
+}
+
+.tx-input {
+    background: rgba(0, 0, 0, 0.45);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    color: #f1f5f9;
+    padding: 0.5rem 0.65rem;
+    width: 100%;
+    font-size: 0.85rem;
+}
+
+.tx-input:focus {
+    outline: none;
+    border-color: rgba(251, 191, 36, 0.5);
+}
+
+.tx-amount-wrapper {
+    position: relative;
+    width: 110px;
+    flex-shrink: 0;
+}
+
+.currency-symbol {
+    position: absolute;
+    left: 8px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: rgba(255, 255, 255, 0.4);
+    font-size: 0.85rem;
+}
+
+.amount-input {
+    padding-left: 20px;
+}
+
+.w-full { width: 100%; }
+.mt-2   { margin-top: 0.5rem; }
+
+/* ─── TX LIST ─────────────────────────────────────── */
+.tx-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.45rem;
+    max-height: 340px;
+    overflow-y: auto;
+    padding-right: 2px;
+}
+
+.tx-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: rgba(0, 0, 0, 0.25);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-radius: 9px;
+    padding: 0.6rem 0.75rem;
+    gap: 0.5rem;
+}
+
+.tx-info {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+}
+
+.tx-label {
+    font-weight: 600;
+    font-size: 0.85rem;
+    color: #e2e8f0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.tx-date {
+    font-size: 0.68rem;
+    color: rgba(255, 255, 255, 0.28);
+    margin-top: 1px;
+}
+
+.tx-right {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    flex-shrink: 0;
+}
+
+.tx-value {
+    font-weight: 700;
+    font-size: 0.9rem;
+    color: #f87171;
+}
+
+.tx-delete-btn {
+    background: transparent;
+    border: none;
+    color: rgba(255, 255, 255, 0.22);
+    cursor: pointer;
+    padding: 4px;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: color 0.15s, background 0.15s;
+}
+
+.tx-delete-btn:hover {
+    color: #f87171;
+    background: rgba(239, 68, 68, 0.12);
+}
+
+/* Empty State */
+.tx-empty {
+    text-align: center;
+    padding: 2rem 0 1.5rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.3rem;
+}
+
+.tx-empty-icon {
+    color: rgba(255, 255, 255, 0.12);
+    margin-bottom: 0.25rem;
+}
+
+.tx-empty p {
+    margin: 0;
+    font-size: 0.85rem;
+    color: rgba(255, 255, 255, 0.45);
+    font-weight: 500;
+}
+
+.tx-empty-sub {
+    font-size: 0.72rem !important;
+    color: rgba(255, 255, 255, 0.22) !important;
+}
+
+/* ─── EMPTY STATE ─────────────────────────────────── */
+.budget-empty-state {
+    text-align: center;
+    padding: 3rem 2rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+/* ─── RESPONSIVE ───────────────────────────────────── */
+@media (max-width: 380px) {
+    .bp-stat-big {
+        font-size: 1.55rem;
+    }
+
+    .budget-page-container {
+        padding: 0.75rem 0.75rem 6rem;
+    }
+}

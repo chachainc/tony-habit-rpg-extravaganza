@@ -30,6 +30,60 @@
     align-items: center;
 }
 
+/* Sleep Prompt Sub-Mode Extensions */
+.sleep-prompt-mode {
+    background: #050510; /* Darker base for behind video */
+    overflow: hidden;
+    align-items: center;
+}
+
+.sleep-bg-video {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    z-index: 0;
+    opacity: 0;
+    pointer-events: none;
+    animation: videoFadeIn 1s ease-in-out forwards;
+}
+
+@keyframes videoFadeIn {
+    0% { opacity: 0; }
+    100% { opacity: 1; }
+}
+
+.sleep-prompt-mode .char-create-content {
+    min-height: auto;
+    justify-content: center; /* Drops the prompt into vertical center */
+}
+
+.sleep-panel-override {
+    background: rgba(15, 20, 30, 0.75) !important;
+    backdrop-filter: blur(8px);
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.8) !important;
+    max-width: 600px;
+    padding: var(--space-6) !important;
+    text-align: center;
+}
+
+.sleep-title {
+    font-size: 2rem !important;
+    color: #e2e8f0;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.8);
+    margin-bottom: var(--space-3) !important;
+}
+
+.sleep-subtitle {
+    font-size: 1.1rem;
+    color: #cbd5e1 !important;
+    margin-bottom: var(--space-6) !important;
+    line-height: 1.5;
+}
+
 .cc-title {
     margin-bottom: var(--space-6);
     font-size: var(--text-3xl);

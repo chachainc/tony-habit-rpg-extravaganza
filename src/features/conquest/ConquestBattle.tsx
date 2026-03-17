@@ -212,10 +212,15 @@ export const ConquestBattle = () => {
                             disabled={!isPlayerTurn || isExecuting || isRolling || battle.heavyAttackCooldown > 0}
                             onClick={() => {
                                 if (battle.heavyAttackCooldown > 0) return;
-                                const maxHit = Math.floor(player.atk * 1.5 * battle.playerDamageModifier);
+                                const modifiedAtk = Math.max(1, player.atk * battle.playerDamageModifier);
+                                const lowHit = Math.max(1, Math.ceil(modifiedAtk * 0.5));
+                                const bigHit = Math.max(1, Math.floor(modifiedAtk * 1.5));
+                                
                                 const isSuccess = Math.random() > 0.5;
-                                const finalDamage = isSuccess ? maxHit : 0;
-                                useBattleStore.setState({ heavyAttackCooldown: 1 });
+                                const finalDamage = isSuccess ? bigHit : lowHit;
+                                
+                                // Buffer cooldown to 2
+                                useBattleStore.setState({ heavyAttackCooldown: 2 });
                                 battle.selectAbility({ 
                                     id: 'heavy_strike', 
                                     name: 'Heavy Strike', 
@@ -234,8 +239,8 @@ export const ConquestBattle = () => {
                             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
                                 <div><Swords size={18} style={{ display: 'inline', verticalAlign: 'middle', marginRight: '4px' }} /> Heavy</div>
                                 {battle.heavyAttackCooldown > 0
-                                    ? <div style={{ fontSize: '0.7rem', color: '#ef4444' }}>Cooldown: {battle.heavyAttackCooldown} turn remaining</div>
-                                    : <div style={{ fontSize: '0.7rem', opacity: 0.8 }}>50% chance · 150% dmg · CD: 1 turn</div>
+                                    ? <div style={{ fontSize: '0.7rem', color: '#ef4444' }}>Heavy (Cooldown)</div>
+                                    : <div style={{ fontSize: '0.7rem', opacity: 0.8 }}>50% low hit / 50% big hit</div>
                                 }
                             </div>
                         </button>
@@ -246,17 +251,16 @@ export const ConquestBattle = () => {
                             disabled={!isPlayerTurn || isExecuting || isRolling}
                             onClick={() => {
                                 setIsRolling(true);
-                                const maxHit = Math.floor(player.atk * battle.playerDamageModifier);
-                                const minHit = Math.floor(maxHit * 0.7);
+                                const modifiedAtk = Math.max(1, Math.floor(player.atk * battle.playerDamageModifier));
                                 
                                 let rolls = 0;
                                 const maxRolls = 10;
                                 const interval = setInterval(() => {
-                                    setRollValue(Math.floor(minHit + Math.random() * (maxHit - minHit + 1)));
+                                    setRollValue(Math.floor(Math.random() * modifiedAtk) + 1);
                                     rolls++;
                                     if (rolls >= maxRolls) {
                                         clearInterval(interval);
-                                        const finalRoll = Math.floor(minHit + Math.random() * (maxHit - minHit + 1));
+                                        const finalRoll = Math.floor(Math.random() * modifiedAtk) + 1;
                                         setRollValue(finalRoll);
                                         setTimeout(() => {
                                             battle.selectAbility({ 
@@ -285,7 +289,7 @@ export const ConquestBattle = () => {
                                     {isRolling && rollValue !== null ? (
                                         <span style={{ color: '#fbbf24', fontWeight: 'bold', fontSize: '1rem' }}>🎲 {rollValue}</span>
                                     ) : (
-                                        'Reliable strike (70%–100%)'
+                                        `Roll 1–${Math.max(1, Math.floor(player.atk * battle.playerDamageModifier))}`
                                     )}
                                 </div>
                             </div>

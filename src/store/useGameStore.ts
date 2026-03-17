@@ -1,8 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import { getPassiveBonuses } from './usePassiveEffects';
 import { useBookTrophyStore } from './useBookTrophyStore';
-import { useSkillTrophyStore } from './useSkillTrophyStore';
 import { PERSIST_REGISTRY } from '../data/persistRegistry';
 
 export type SkillName =
@@ -16,6 +14,7 @@ export type SkillName =
     | 'Social'
     | 'Luck'
     | 'Habit'
+    | 'Housemaid'
     | 'Intelligence';
 
 // Daily XP caps by skill (task-earned XP only; 0 = blocked)
@@ -30,6 +29,7 @@ export const DAILY_XP_CAPS: Partial<Record<SkillName, number>> = {
     'Social': 5,
     'Intelligence': 4,
     'Flexibility': 4,
+    'Housemaid': 6,
     'Luck': 0, // Luck cannot be earned from tasks
 };
 
@@ -106,39 +106,53 @@ export const INITIAL_SKILLS: Record<SkillName, Skill> = {
     'Social': { level: 1, xp: 0, totalXp: 0 },
     'Luck': { level: 1, xp: 0, totalXp: 0 },
     'Habit': { level: 1, xp: 0, totalXp: 0 },
+    'Housemaid': { level: 1, xp: 0, totalXp: 0 },
     'Intelligence': { level: 1, xp: 0, totalXp: 0 },
 };
 
 // Helper: merge old save skills with new structure safely
 export const mergeSkillsFromSave = (saved: Record<string, Skill>): Record<SkillName, Skill> => {
     const merged = { ...INITIAL_SKILLS };
+    
     for (const [key, val] of Object.entries(saved)) {
         // Handle legacy rename: 'Habit Building' -> 'Habit'
-        if (key === 'Habit Building') {
-            merged['Habit'] = val;
-        } else if (key in merged) {
-            (merged as Record<string, Skill>)[key] = val;
+        const targetKey = key === 'Habit Building' ? 'Habit' : key;
+        
+        if (targetKey in merged) {
+            const castKey = targetKey as SkillName;
+            const totalXp = val.totalXp ?? 0;
+            
+            // Recompute exact level and relative XP based entirely off lifetime total XP
+            let remainingXp = totalXp;
+            let calcLevel = 1;
+            
+            while (remainingXp >= getXpForLevel(calcLevel)) {
+                remainingXp -= getXpForLevel(calcLevel);
+                calcLevel++;
+            }
+            
+            merged[castKey] = {
+                level: calcLevel,
+                xp: remainingXp,
+                totalXp: totalXp
+            };
         }
-        // Ignore Clothing / Housemaid — they are dropped
+        // Legacy 'Clothing' is dropped, but Housemaid is now fully supported again.
     }
     return merged;
 };
 
 
 
-// ULTRA-SLOW progression for years of gameplay
-// Much steeper than previous level² × 10
-// This makes leveling take YEARS
-// Progression formula: Base XP required scales non-linearly
-// Level 1 -> 2: 100 XP
-// Level 9 -> 10: ~3,162 XP
-// Level 19 -> 20: ~8,944 XP
-// Level 29 -> 30: ~16,431 XP
-const getXpForLevel = (level: number): number => {
-    if (level <= 0) return 100;
-    // RuneScape style delta XP (adjusted base)
-    const base = level + 300 * Math.pow(2, level / 7.0);
-    return Math.floor(base / 4) + 25;
+// NEW PROGRESSION CURVE: 10 + (Level - 1) * 5
+// Level 1 = 0 total XP (base)
+// Level 2 = 10 total XP
+// Level 3 = 25 total XP
+// Level 4 = 45 total XP
+// Level 5 = 70 total XP
+export const getXpForLevel = (level: number): number => {
+    if (level <= 1) return 10;
+    return 10 + (Math.floor(level) - 1) * 5;
 };
 
 // Get current date in Eastern Time
@@ -165,6 +179,7 @@ const INITIAL_DAILY_XP: Record<SkillName, number> = {
     'Social': 0,
     'Luck': 0,
     'Habit': 0,
+    'Housemaid': 0,
     'Intelligence': 0,
 };
 
@@ -189,7 +204,7 @@ export const useGameStore = create<GameState>()(
             lastLogDate: {
                 'Sleep': '', 'Hygiene': '', 'Flexibility': '', 'Strength': '', 'Cardio': '',
                 'Work': '', 'Health': '', 'Social': '',
-                'Luck': '', 'Habit': '', 'Intelligence': ''
+                'Luck': '', 'Habit': '', 'Housemaid': '', 'Intelligence': ''
             }, // Empty strings for dates
 
             getFatiguePenalty: (skillName) => {
@@ -308,6 +323,13 @@ export const useGameStore = create<GameState>()(
                     }
                 }
 
+                // 4. Housemaid Lv. 15 "Organized Workspace" Global XP Buff (+5% to all task XP)
+                // Note: since this is Task XP processing, we apply this multiplier uniformly if the player is level 15+
+                const housemaidLevel = state.skills['Housemaid']?.level ?? 1;
+                if (housemaidLevel >= 15) {
+                    finalAmount *= 1.05;
+                }
+
                 const currentDailyXp = state.dailyXpGained[skillName] || 0;
                 const softCap = 1500;
                 if (currentDailyXp > softCap) {
@@ -412,82 +434,43 @@ export const useGameStore = create<GameState>()(
                 return Math.floor(avgSkillLevel) + bonusLevels;
             },
 
-            // Attack from Strength
+            // GET STATS
             getAttack: () => {
                 const { skills } = get();
                 const strengthLevel = skills['Strength']?.level ?? 1;
-                // Damage = Strength
-                const baseAtk = strengthLevel;
-                // Add equipment bonus
-                const equipBonus = getPassiveBonuses().attack_bonus;
-                // Add Strength trophy bonus
-                const trophyBonus = useSkillTrophyStore.getState().getStrengthATKBonus();
-                return baseAtk + equipBonus + trophyBonus;
+                return 1 + strengthLevel;
             },
 
-            // Physical Defense from average of 5 core skills + decay + trophy bonus
             getDefense: () => {
-                const { skills, defenseDecayAmount } = get();
-                
-                const defLevels = ['Sleep', 'Hygiene', 'Cardio', 'Flexibility', 'Habit'].map(s => skills[s as SkillName]?.level ?? 1);
-                const avgDefLevel = defLevels.reduce((a, b) => a + b, 0) / 5;
-                let baseDef = Math.floor(avgDefLevel * 1.5);
-
-                // Apply decay
-                baseDef = Math.floor(baseDef * (1 - defenseDecayAmount));
-
-                // Apply suppression if Sleep or Hygiene is too low
-                const isSuppressed = get().isDefenseSuppressed();
-                if (isSuppressed) {
-                    baseDef = Math.floor(baseDef * 0.5);
-                }
-
-                // Add equipment bonus
-                const equipBonus = getPassiveBonuses().defense_bonus;
-                // Add Sleep trophy DEF bonus
-                const trophyBonus = useSkillTrophyStore.getState().getSleepDEFBonus();
-                return Math.max(1, baseDef + equipBonus + trophyBonus);
+                const { skills } = get();
+                const hygieneLevel = skills['Hygiene']?.level ?? 1;
+                return 1 + hygieneLevel;
             },
 
-            // Magic Attack from Intelligence
             getMagicAttack: () => {
                 const { skills } = get();
                 const intelligenceLevel = skills['Intelligence']?.level ?? 1;
-                // MagicDamage = BaseSpellDamage * (1 + (Intelligence * 0.03))
-                // Assuming Base is 5 for the UI display
-                const baseMagicAtk = Math.floor(5 * (1 + (intelligenceLevel * 0.03)));
-                const trophyBonus = useBookTrophyStore.getState().getIntelligenceBonus();
-                return baseMagicAtk + trophyBonus;
+                return 1 + intelligenceLevel;
             },
 
-            // Magic Defense from Social
             getMagicDefense: () => {
                 const { skills } = get();
                 const socialLevel = skills['Social']?.level ?? 1;
-                // UI display only, mitigated in useBattleStore
-                const baseMDef = Math.floor(socialLevel * 1.5);
-                return baseMDef;
+                return 1 + socialLevel;
             },
 
-            // Max MP from Sleep
             getMaxMP: () => {
                 const { skills } = get();
                 const sleepLevel = skills['Sleep']?.level ?? 1;
-                // MaxMana = BaseMana + (Sleep * 5)
-                const baseMp = Math.floor(50 + sleepLevel * 5);
-                const trophyBonus = useBookTrophyStore.getState().getMaxMPBonus();
-                return baseMp + trophyBonus;
+                return 20 + ((sleepLevel - 1) * 5);
             },
 
-            // Crit Rate from Habit
+            // Crit Rate from Habit Building
             getCritRate: () => {
                 const { skills } = get();
                 const habitLevel = skills['Habit']?.level ?? 1;
-                // CritChance = HabitBuilding * 0.01
-                const baseCrit = habitLevel * 0.01;
-                const trophyBonus = useSkillTrophyStore.getState().getLuckCritBonus();
-                const equipBonus = getPassiveBonuses().crit_bonus / 100;
-                return baseCrit + trophyBonus + equipBonus; // Cap naturally at 1.0 (100%) later
+                // CritChance = HabitLevel %
+                return habitLevel / 100;
             },
 
             // Max Spell Tier from Flexibility
@@ -502,16 +485,15 @@ export const useGameStore = create<GameState>()(
             getAttackSpeedTier: () => {
                 const { skills } = get();
                 const cardioLevel = skills['Cardio']?.level ?? 1;
-                // AttackSpeed = 1 + (Cardio * 0.02)
-                return 1 + (cardioLevel * 0.02);
+                return cardioLevel;
             },
 
             // Dodge Chance from Cardio
             getDodgeChance: () => {
                 const { skills } = get();
                 const cardioLevel = skills['Cardio']?.level ?? 1;
-                // DodgeChance = Cardio * 0.005
-                return cardioLevel * 0.005;
+                // DodgeChance = Cardio Level %
+                return cardioLevel / 100;
             },
 
             isDefenseSuppressed: () => {
@@ -587,9 +569,21 @@ export const useGameStore = create<GameState>()(
             },
         }),
         {
-            name: PERSIST_REGISTRY.game.persistKey, // Added cumulative logs for pet evolution
+            name: PERSIST_REGISTRY.game.persistKey,
+            merge: (persistedState: any, currentState: GameState) => {
+                // Safely migrate skills from disk using absolute totalXp derivation
+                const mergedSkills = persistedState.skills 
+                    ? mergeSkillsFromSave(persistedState.skills) 
+                    : currentState.skills;
+                
+                return {
+                    ...currentState,
+                    ...persistedState,
+                    skills: mergedSkills,
+                };
+            }
         }
     )
 );
 
-export { getXpForLevel };
+

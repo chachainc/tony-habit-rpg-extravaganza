@@ -20,12 +20,14 @@ export interface SleepLogEntry {
     score: number;
     durationMinutes?: number;
     xpEarned: number;
+    skipped?: boolean;
 }
 
 export interface ReadinessLogEntry {
     date: string;
     score: number;
     xpEarned: number;
+    skipped?: boolean;
 }
 
 interface DayState {
@@ -39,6 +41,7 @@ interface DayState {
     logSleep: (score: number, durationMinutes?: number) => number; // Returns total XP earned
     logReadiness: (score: number) => number; // Returns total XP earned
     wakeUp: (sleepScore: number, readinessScore: number) => number; // Legacy compatibility
+    skipTracking: () => void;
     takeDamage: (amount: number) => void;
     heal: (amount: number) => void;
     getEasternTime: () => string;
@@ -136,6 +139,37 @@ export const useDayStore = create<DayState>()(
                 const sleepXp = get().logSleep(sleepScore);
                 const readinessXp = get().logReadiness(readinessScore);
                 return sleepXp + readinessXp;
+            },
+
+            skipTracking: () => {
+                const today = getEasternDateString();
+                const skipSleep: SleepLogEntry = { date: today, score: 0, xpEarned: 0, skipped: true };
+                const skipReady: ReadinessLogEntry = { date: today, score: 0, xpEarned: 0, skipped: true };
+
+                set((state) => {
+                    const existingSleepIdx = state.sleepLogs.findIndex((log) => log.date === today);
+                    let newSleepLogs = [...state.sleepLogs];
+                    if (existingSleepIdx >= 0) {
+                        newSleepLogs[existingSleepIdx] = skipSleep;
+                    } else {
+                        newSleepLogs = [skipSleep, ...state.sleepLogs].slice(0, 30);
+                    }
+
+                    const existingReadyIdx = state.readinessLogs.findIndex((log) => log.date === today);
+                    let newReadyLogs = [...state.readinessLogs];
+                    if (existingReadyIdx >= 0) {
+                        newReadyLogs[existingReadyIdx] = skipReady;
+                    } else {
+                        newReadyLogs = [skipReady, ...state.readinessLogs].slice(0, 30);
+                    }
+
+                    return {
+                        lastWakeDate: today,
+                        playerCurrentHP: state.playerMaxHP,
+                        sleepLogs: newSleepLogs,
+                        readinessLogs: newReadyLogs,
+                    };
+                });
             },
 
             takeDamage: (amount) => {

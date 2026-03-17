@@ -312,11 +312,10 @@ export const useConquestStore = create<ConquestState>()(
             isDailyRunLocked: () => {
                 const state = get();
                 if (!state.lastRunDate) return false;
-                
-                const today = new Date();
-                const lastRun = new Date(state.lastRunDate);
-                
-                return today.toDateString() === lastRun.toDateString();
+
+                // Compare using the same ISO YYYY-MM-DD format that completeRun() writes
+                const todayISO = new Date().toISOString().split('T')[0];
+                return state.lastRunDate === todayISO;
             },
 
             movePlayer: (nodeId: string) => {
@@ -370,16 +369,10 @@ export const useConquestStore = create<ConquestState>()(
 
             // ─── RUN ACTIONS ───
             startRun: () => {
-                const today = new Date().toISOString().split('T')[0];
-                const state = get();
-                
-                if (state.lastRunDate === today) {
-                    console.warn("[Conquest] Run already completed today.");
-                    return;
-                }
-
+                // NOTE: We do NOT stamp lastRunDate here — the date is only committed
+                // after the run ends (victory or defeat) in completeRun().
+                // This means visiting Conquest on a fresh profile is always unlocked.
                 set({
-                    lastRunDate: today,
                     runHP: get().runMaxHP,
                     runFloor: 0,
                     runBuffs: [],
@@ -440,12 +433,13 @@ export const useConquestStore = create<ConquestState>()(
 
             completeRun: (victory: boolean) => {
                 const state = get();
+                // Always stamp today's date on run completion (both victory AND defeat)
+                // so the daily lock fires correctly after any run ends.
                 const today = new Date().toISOString().split('T')[0];
                 set({ 
                     runComplete: victory ? 'victory' : 'defeat',
                     runsCompleted: victory ? state.runsCompleted + 1 : state.runsCompleted,
-                    // Lock out the day on defeat too
-                    lastRunDate: victory ? state.lastRunDate : today,
+                    lastRunDate: today,
                 });
             },
 
