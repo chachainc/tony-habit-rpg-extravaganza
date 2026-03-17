@@ -14,6 +14,7 @@ export type SkillName =
     | 'Social'
     | 'Luck'
     | 'Habit'
+    | 'Housemaid'
     | 'Intelligence';
 
 // Daily XP caps by skill (task-earned XP only; 0 = blocked)
@@ -28,6 +29,7 @@ export const DAILY_XP_CAPS: Partial<Record<SkillName, number>> = {
     'Social': 5,
     'Intelligence': 4,
     'Flexibility': 4,
+    'Housemaid': 6,
     'Luck': 0, // Luck cannot be earned from tasks
 };
 
@@ -104,6 +106,7 @@ export const INITIAL_SKILLS: Record<SkillName, Skill> = {
     'Social': { level: 1, xp: 0, totalXp: 0 },
     'Luck': { level: 1, xp: 0, totalXp: 0 },
     'Habit': { level: 1, xp: 0, totalXp: 0 },
+    'Housemaid': { level: 1, xp: 0, totalXp: 0 },
     'Intelligence': { level: 1, xp: 0, totalXp: 0 },
 };
 
@@ -134,7 +137,7 @@ export const mergeSkillsFromSave = (saved: Record<string, Skill>): Record<SkillN
                 totalXp: totalXp
             };
         }
-        // Ignore Clothing / Housemaid — they are dropped
+        // Legacy 'Clothing' is dropped, but Housemaid is now fully supported again.
     }
     return merged;
 };
@@ -176,6 +179,7 @@ const INITIAL_DAILY_XP: Record<SkillName, number> = {
     'Social': 0,
     'Luck': 0,
     'Habit': 0,
+    'Housemaid': 0,
     'Intelligence': 0,
 };
 
@@ -200,7 +204,7 @@ export const useGameStore = create<GameState>()(
             lastLogDate: {
                 'Sleep': '', 'Hygiene': '', 'Flexibility': '', 'Strength': '', 'Cardio': '',
                 'Work': '', 'Health': '', 'Social': '',
-                'Luck': '', 'Habit': '', 'Intelligence': ''
+                'Luck': '', 'Habit': '', 'Housemaid': '', 'Intelligence': ''
             }, // Empty strings for dates
 
             getFatiguePenalty: (skillName) => {
@@ -317,6 +321,13 @@ export const useGameStore = create<GameState>()(
                     if (hasMagicMultiplier) {
                         finalAmount *= 2;
                     }
+                }
+
+                // 4. Housemaid Lv. 15 "Organized Workspace" Global XP Buff (+5% to all task XP)
+                // Note: since this is Task XP processing, we apply this multiplier uniformly if the player is level 15+
+                const housemaidLevel = state.skills['Housemaid']?.level ?? 1;
+                if (housemaidLevel >= 15) {
+                    finalAmount *= 1.05;
                 }
 
                 const currentDailyXp = state.dailyXpGained[skillName] || 0;

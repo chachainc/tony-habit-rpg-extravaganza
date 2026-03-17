@@ -33,7 +33,8 @@ const SCREENS: TutorialScreen[] = [
         text: <>Focus on real-world habits that fit your desired fantasy class!<br/><br/>
         • <strong>Warriors:</strong> Focus on Strength for Physical Attack (ATK = 1 + level) and Health for Max HP (50 base + 5/level).<br/>
         • <strong>Mages:</strong> Focus on Intelligence for Magic Attack (MAG = 1 + level) and Sleep for Mana pool (20 base + 5/level).<br/>
-        • <strong>Rogues:</strong> Focus on Cardio for Speed and Dodge (Level%) and Habit Building for Crit Chance (Level%).</>,
+        • <strong>Rogues:</strong> Focus on Cardio for Speed and Dodge (Level%) and Habit for Crit Chance (Level%).<br/>
+        • <strong>Economy:</strong> Housemaid ensures earning efficiency while Work ensures spending efficiency.</>,
         icon: <Crosshair size={48} />,
         color: '#ef4444',
     },

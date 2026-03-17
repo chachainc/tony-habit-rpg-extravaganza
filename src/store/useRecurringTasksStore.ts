@@ -138,6 +138,13 @@ export const DAILY_TASKS_TEMPLATE: Omit<RecurringTask, 'completed'>[] = [
         type: 'daily',
         rewards: [{ skillId: 'Health', xp: 1 }],
     },
+    {
+        id: 'make_bed',
+        title: 'Make your bed',
+        bundle: 'morning',
+        type: 'daily',
+        rewards: [{ skillId: 'Housemaid', xp: 2 }],
+    },
 
     // ══ AFTERNOON PERFORMANCE ══════════════════════════════════════════════
     {
@@ -187,6 +194,13 @@ export const DAILY_TASKS_TEMPLATE: Omit<RecurringTask, 'completed'>[] = [
         rewards: [{ skillId: 'Work', xp: 2 }],
     },
     {
+        id: 'tidy_desk',
+        title: 'Tidy Desk',
+        bundle: 'afternoon',
+        type: 'daily',
+        rewards: [{ skillId: 'Housemaid', xp: 2 }],
+    },
+    {
         id: 'after_work_calls',
         title: 'After-Work Calls or Appointments (if any)',
         bundle: 'afternoon',
@@ -214,7 +228,7 @@ export const DAILY_TASKS_TEMPLATE: Omit<RecurringTask, 'completed'>[] = [
         title: 'Laundry / Put Away / Organize',
         bundle: 'night',
         type: 'daily',
-        rewards: [{ skillId: 'Work', xp: 1 }],
+        rewards: [{ skillId: 'Housemaid', xp: 2 }],
     },
     {
         id: 'water_night',
@@ -225,10 +239,10 @@ export const DAILY_TASKS_TEMPLATE: Omit<RecurringTask, 'completed'>[] = [
     },
     {
         id: 'clean_bottles',
-        title: 'Clean Water Bottles',
+        title: 'Clean Water Bottles / Tidy Desk',
         bundle: 'night',
         type: 'daily',
-        rewards: [{ skillId: 'Work', xp: 1 }],
+        rewards: [{ skillId: 'Housemaid', xp: 2 }],
     },
     {
         id: 'tongue_exercises',
@@ -237,7 +251,16 @@ export const DAILY_TASKS_TEMPLATE: Omit<RecurringTask, 'completed'>[] = [
         type: 'daily',
         rewards: [
             { skillId: 'Health', xp: 2 },
-            { skillId: 'Habit', xp: 2 }
+            { skillId: 'Habit', xp: 1 }
+        ],
+    },
+    {
+        id: 'check_finances',
+        title: 'Check finances + track daily money spent',
+        bundle: 'night',
+        type: 'daily',
+        rewards: [
+            { skillId: 'Habit', xp: 1 }
         ],
     },
     {
@@ -288,19 +311,25 @@ const WEEKLY_TASKS_TEMPLATE: Omit<RecurringTask, 'completed'>[] = [
         id: 'weekly-bathroom',
         title: 'Deep Clean Bathroom',
         type: 'weekly',
-        rewards: [{ skillId: 'Work', xp: 7 }],
+        rewards: [{ skillId: 'Housemaid', xp: 4 }],
     },
     {
         id: 'weekly-car',
         title: 'Clean Out Car',
         type: 'weekly',
-        rewards: [{ skillId: 'Work', xp: 7 }],
+        rewards: [{ skillId: 'Housemaid', xp: 4 }],
     },
     {
         id: 'weekly-cpap',
         title: 'Deep Clean CPAP Machine',
         type: 'weekly',
         rewards: [{ skillId: 'Health', xp: 7 }],
+    },
+    {
+        id: 'weekly-pills',
+        title: 'Fill Pill Planner',
+        type: 'weekly',
+        rewards: [{ skillId: 'Housemaid', xp: 1 }],
     },
 ];
 
@@ -408,6 +437,40 @@ export const useRecurringTasksStore = create<RecurringTasksState>()(
                             import('./useTraitStore').then(({ useTraitStore: ts }) => {
                                 ts.getState().logHabitCompletion('reading');
                             }).catch(() => {});
+                        }
+
+                        if (id === 'check_finances') {
+                            import('./useBudgetStore').then(({ useBudgetStore: bs }) => {
+                                const bState = bs.getState();
+                                const newStreak = bState.trackingStreak + 1;
+                                bs.setState({ trackingStreak: newStreak });
+                                
+                                if (newStreak > 0 && newStreak % 7 === 0) {
+                                    // 7-day streak reward!
+                                    const giftType = bState.weeklyGiftType;
+                                    import('./useCurrencyStore').then(({ useCurrencyStore }) => {
+                                        const msg = `7-Day Finance Tracking Streak!`;
+                                        if (giftType === 'shmeckles') {
+                                            useCurrencyStore.getState().addShmeckles(3);
+                                            import('../components/ui/Toast').then(({ useToastStore }) => {
+                                                useToastStore.getState().addToast({ type: 'success', message: `${msg} +3 Shmeckles`, duration: 4000 });
+                                            });
+                                        } else if (giftType === 'balloons') {
+                                            useCurrencyStore.getState().addBalloons(10);
+                                            import('../components/ui/Toast').then(({ useToastStore }) => {
+                                                useToastStore.getState().addToast({ type: 'success', message: `${msg} +10 Balloons`, duration: 4000 });
+                                            });
+                                        } else if (giftType === 'sigils') {
+                                            import('./useConquestStore').then(({ useConquestStore }) => {
+                                                useConquestStore.getState().addSigils(1);
+                                                import('../components/ui/Toast').then(({ useToastStore }) => {
+                                                    useToastStore.getState().addToast({ type: 'success', message: `${msg} +1 Sigil`, duration: 4000 });
+                                                });
+                                            });
+                                        }
+                                    });
+                                }
+                            });
                         }
 
                         return { dailyTasks: newTasks, weightHistory: newWeightHistory };
@@ -601,6 +664,7 @@ export const useRecurringTasksStore = create<RecurringTasksState>()(
         }),
         {
             name: PERSIST_REGISTRY.recurringTasks.persistKey, // Bumped version to force fresh reset with new task IDs
+            version: 3, // Minor migration bump to ensure users get the new tasks
         }
     )
 );

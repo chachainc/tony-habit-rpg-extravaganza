@@ -13,6 +13,7 @@ import { getPassiveBonuses } from './usePassiveEffects';
 import { useRoomStore } from './useRoomStore';
 import { useSkillTrophyStore } from './useSkillTrophyStore';
 import { useRiskStore } from './useRiskStore';
+import { useBudgetStore } from './useBudgetStore';
 
 // ═══════════════════════════════════════════
 // SKILL IDENTITY ROLES
@@ -35,6 +36,7 @@ export const SKILL_COMBAT_ROLES: Record<SkillName, SkillCombatRole> = {
     'Social': { skill: 'Social', primaryStat: 'MDEF', description: 'Magic defense (MDEF = 1 + level)', icon: '🤝' },
     'Habit': { skill: 'Habit', primaryStat: 'CRIT', description: 'Crit chance (Crit = level%)', icon: '🔥' },
     'Work': { skill: 'Work', primaryStat: 'ECON', description: 'Shop discount (Discount = level%)', icon: '💼' },
+    'Housemaid': { skill: 'Housemaid', primaryStat: 'HP/GOLD', description: 'Chores and upkeep. Gives +1% Gold per level and unlocks Room upgrades. Pairs with Work for an Economic Build.', icon: '🧹' },
     'Flexibility': { skill: 'Flexibility', primaryStat: 'TIER', description: 'Spell cooldown reduction (Cooldown reduction = level%)', icon: '🤸' },
     'Luck': { skill: 'Luck', primaryStat: 'DROP', description: 'Rare reward probability (Drops = level%)', icon: '🍀' },
 };
@@ -160,6 +162,7 @@ export function getDetailedCombatBreakdown(): CombatBreakdown {
     const weeklyProgress = consistencyStore.getWeeklyProgress();
     const hasBerserk = weeklyProgress.daysCompleted >= 3;
     const synergy = getSkillSynergyBonus();
+    const budgetPower = useBudgetStore.getState().getPowerMultiplier();
 
     // ── ATK ──────────────────────────────
     const strengthLevel = skills['Strength']?.level ?? 1;
@@ -207,6 +210,14 @@ export function getDetailedCombatBreakdown(): CombatBreakdown {
         atkSubtotal += berserkVal;
     }
 
+    if (budgetPower !== 1.0) {
+        // Multiplier acts on the total calculated so far
+        const newTotal = Math.round(atkSubtotal * budgetPower);
+        const diff = newTotal - atkSubtotal;
+        atkSources.push({ label: `Budget Power (x${budgetPower.toFixed(2)})`, value: diff });
+        atkSubtotal = newTotal;
+    }
+
     // ── DEF ──────────────────────────────
     const hygieneLevel = skills['Hygiene']?.level ?? 1;
     const defSources: StatSource[] = [
@@ -239,14 +250,30 @@ export function getDetailedCombatBreakdown(): CombatBreakdown {
         defSubtotal += auraVal;
     }
 
+    if (budgetPower !== 1.0) {
+        const newTotal = Math.round(defSubtotal * budgetPower);
+        const diff = newTotal - defSubtotal;
+        defSources.push({ label: `Budget Power (x${budgetPower.toFixed(2)})`, value: diff });
+        defSubtotal = newTotal;
+    }
+
     // ── MATK ─────────────────────────────
     const intLevel = skills['Intelligence']?.level ?? 1;
-    const baseMatk = 1 + intLevel;
+    let baseMatk = 1 + intLevel;
     const bookTrophyBonus = bookTrophyStore.getIntelligenceBonus();
     const matkSources: StatSource[] = [
         { label: `Int Lv.${intLevel} Base`, value: baseMatk },
         { label: 'Book Trophies', value: bookTrophyBonus },
     ];
+
+    let matkSubtotal = baseMatk + bookTrophyBonus;
+
+    if (budgetPower !== 1.0) {
+        const newTotal = Math.round(matkSubtotal * budgetPower);
+        const diff = newTotal - matkSubtotal;
+        matkSources.push({ label: `Budget Power (x${budgetPower.toFixed(2)})`, value: diff });
+        matkSubtotal = newTotal;
+    }
 
     // ── HP ───────────────────────────────
     const healthLevel = skills['Health']?.level ?? 1;
@@ -255,14 +282,28 @@ export function getDetailedCombatBreakdown(): CombatBreakdown {
     const trophyHp = skillTrophyStore.getSleepHPBonus();
     const equipHp = passives.max_hp_bonus;
     const hpSources: StatSource[] = [
-        { label: `Health Lv.${healthLevel}`, value: baseHp },
+        { label: `Health Lv.${healthLevel} Base`, value: baseHp },
+    ];
+
+    let totalHp = baseHp;
+
+    // Housemaid Level 10: "Better Bed" room upgrade grants +5 max HP
+    const housemaidLevel = skills['Housemaid']?.level ?? 1;
+    if (housemaidLevel >= 10) {
+        hpSources.push({ label: 'Housemaid Lv.10 (Better Bed)', value: 5 });
+        totalHp += 5;
+    }
+
+    hpSources.push(
         { label: 'Room', value: roomHp },
         { label: 'Trophies', value: trophyHp },
         { label: 'Equipment', value: equipHp },
-    ];
+    );
+    totalHp += roomHp + trophyHp + equipHp;
 
     if (activeRiskRegions.includes('sunken_expanse')) {
         hpSources.push({ label: 'Risk Sunken Expanse', value: 5 });
+        totalHp += 5;
     }
 
     // ── SPD ──────────────────────────────
@@ -315,8 +356,8 @@ export function getDetailedCombatBreakdown(): CombatBreakdown {
     return {
         atk: { total: Math.round(atkSubtotal), sources: filterSources(atkSources) },
         def: { total: Math.round(defSubtotal), sources: filterSources(defSources) },
-        matk: { total: Math.round(baseMatk + bookTrophyBonus), sources: filterSources(matkSources) },
-        hp: { total: Math.round(baseHp + roomHp + trophyHp + equipHp), sources: filterSources(hpSources) },
+        matk: { total: Math.round(matkSubtotal), sources: filterSources(matkSources) },
+        hp: { total: Math.round(totalHp), sources: filterSources(hpSources) },
         spd: { total: Math.round(spdSubtotal), sources: filterSources(spdSources) },
         critChance: {
             total: Math.round((baseCrit + luckCrit + roomCrit + trophyCrit + (equipCritPct / 100) + auraCritBonus) * 100),

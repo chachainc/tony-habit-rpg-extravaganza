@@ -69,10 +69,33 @@ export const useCurrencyStore = create<CurrencyState>()(
                 'Social': 0,
                 'Luck': 0,
                 'Habit': 0,
+                'Housemaid': 0,
                 'Intelligence': 0,
             },
 
-            addGold: (amount) => set((state) => ({ gold: state.gold + amount })),
+            addGold: (amount) => {
+                // Apply Housemaid Economy Bonus
+                let finalAmount = amount;
+                if (amount > 0) {
+                    import('./useGameStore').then(({ useGameStore }) => {
+                        const housemaidLevel = useGameStore.getState().skills['Housemaid']?.level ?? 1;
+                        let multiplier = 1 + (housemaidLevel * 0.01); // 1% per level
+                        
+                        // Level 5 Upgrade: Cleaning Supplies (+2% gold)
+                        if (housemaidLevel >= 5) {
+                            multiplier += 0.02;
+                        }
+
+                        finalAmount = Math.ceil(amount * multiplier);
+                        set((state) => ({ gold: state.gold + finalAmount }));
+                    }).catch(() => {
+                        // Fallback if import fails
+                        set((state) => ({ gold: state.gold + amount }));
+                    });
+                } else {
+                    set((state) => ({ gold: state.gold + amount }));
+                }
+            },
             addTickets: (amount) => set((state) => ({ tickets: state.tickets + amount })),
             addDiamonds: (amount) => set((state) => ({ diamonds: state.diamonds + amount })),
             // addShmeckles: also grants same amount of Balloons (mirrored)

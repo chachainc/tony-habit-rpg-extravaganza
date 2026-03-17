@@ -10,6 +10,7 @@ const SKILL_ICONS: Record<SkillName, string> = {
     'Sleep': '😴', 'Hygiene': '🚿', 'Flexibility': '🧘', 'Strength': '🏋️',
     'Cardio': '🏃', 'Work': '💼',
     'Health': '❤️', 'Social': '👥', 'Luck': '🎲', 'Habit': '🔥',
+    'Housemaid': '🧹',
     'Intelligence': '🧠',
 };
 
@@ -25,6 +26,7 @@ const SKILL_STAT_GAINS: Record<SkillName, string[]> = {
     'Social':      ['Influence +1'],
     'Luck':        ['Crit Rate +1%'],
     'Habit':       ['Defense +1', 'Consistency'],
+    'Housemaid':   ['Gold +1%', 'Room Buffs'],
     'Intelligence':['Magic ATK +2', 'Max MP +10'],
 };
 

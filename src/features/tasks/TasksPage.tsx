@@ -17,17 +17,18 @@ import './TasksPage.css';
 
 // Skill icons mapping
 const SKILL_ICONS: Record<SkillName, string> = {
-    'Sleep': '😴',
-    'Hygiene': '🧼',
-    'Flexibility': '🧘',
-    'Strength': '💪',
-    'Cardio': '🏃',
-    'Work': '💼',
-    'Health': '❤️',
-    'Social': '🤝',
-    'Luck': '🍀',
-    'Habit': '🔥',
-    'Intelligence': '🧠',
+    Sleep: '💤',
+    Hygiene: '🚿',
+    Flexibility: '🤸',
+    Strength: '💪',
+    Cardio: '🏃',
+    Work: '💼',
+    Health: '❤️',
+    Social: '🤝',
+    Luck: '🍀',
+    Habit: '🔥',
+    Housemaid: '🧹',
+    Intelligence: '🧠',
 };
 
 // Skill colors
@@ -39,10 +40,11 @@ const SKILL_COLORS: Record<SkillName, string> = {
     'Cardio': '#f59e0b',
     'Work': '#64748b',
     'Health': '#f43f5e',
-    'Social': '#f97316',
-    'Luck': '#fcd34d',
-    'Habit': '#ff6b35',
-    'Intelligence': '#a78bfa',
+    'Social': '#ec4899', // pink
+    'Luck': '#eab308',   // yellow
+    'Habit': '#f97316',  // orange
+    'Housemaid': '#a8a29e', // generic stone/gray
+    'Intelligence': '#8b5cf6', // purple
 };
 
 const BUNDLE_CONFIG: Record<BundleType, { title: string; icon: React.ReactNode; color: string }> = {

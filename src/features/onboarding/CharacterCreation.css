@@ -33,18 +33,21 @@
 /* Sleep Prompt Sub-Mode Extensions */
 .sleep-prompt-mode {
     background: #050510; /* Darker base for behind video */
+    overflow: hidden;
+    align-items: center;
 }
 
 .sleep-bg-video {
-    position: fixed;
+    position: absolute;
     top: 0;
     left: 0;
-    width: 100vw;
-    height: 100vh;
+    width: 100%;
+    height: 100%;
     object-fit: cover;
     z-index: 0;
     opacity: 0;
-    animation: videoFadeIn 1s var(--easing-standard) forwards;
+    pointer-events: none;
+    animation: videoFadeIn 1s ease-in-out forwards;
 }
 
 @keyframes videoFadeIn {
@@ -53,7 +56,7 @@
 }
 
 .sleep-prompt-mode .char-create-content {
-    min-height: calc(100vh - 8rem);
+    min-height: auto;
     justify-content: center; /* Drops the prompt into vertical center */
 }
 

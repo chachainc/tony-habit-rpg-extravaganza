@@ -28,6 +28,8 @@ import { TowerDefensePage } from './features/tower-defense/TowerDefensePage';
 import { StormTheFort } from './features/storm/StormTheFort';
 import { LoginScreen } from './features/auth/LoginScreen';
 import { CharacterCreation } from './features/onboarding/CharacterCreation';
+import { BudgetPage } from './features/budget/BudgetPage';
+import { BudgetSetupModal } from './features/budget/BudgetSetupModal';
 import { UIShowcase } from './features/showcase/UIShowcase';
 import { SettingsPage } from './features/settings/SettingsPage';
 import { CollectionCodex } from './features/codex/CollectionCodex';
@@ -41,6 +43,7 @@ import { PlayerRoom } from './features/room/PlayerRoom';
 import { useDayStore } from './store/useDayStore';
 import { useGameStore } from './store/useGameStore';
 import { useProfileStore, triggerAutoSync } from './store/useProfileStore';
+import { useBudgetStore } from './store/useBudgetStore';
 import { WelcomeTutorialModal } from './features/onboarding/WelcomeTutorialModal';
 
 // Town Hub wrapper to handle navigation
@@ -93,6 +96,7 @@ function App() {
 
   useEffect(() => {
     console.log('[BOOT] App mounted');
+    useBudgetStore.getState().processDailyLogin();
     if (isNewDay()) {
       setShowWakeUp(true);
     }
@@ -165,6 +169,9 @@ function App() {
         <WakeUpModal onComplete={() => setShowWakeUp(false)} />
       )}
 
+      {/* Budget Setup Modal */}
+      {isLoggedIn && characterArchetype && <BudgetSetupModal />}
+
       {/* Level Up Modal */}
       <AnimatePresence>
         {pendingLevelUp && (
@@ -193,6 +200,7 @@ function App() {
           <Route path="combat" element={<CombatPage />} />
           <Route path="risk" element={<RiskPage />} />
           <Route path="tower-defense" element={<TowerDefensePage />} />
+          <Route path="budget" element={<BudgetPage />} />
           <Route path="storm" element={<StormTheFort />} />
           <Route path="shop" element={<ShopModal category="general" onClose={() => window.history.back()} />} />
           <Route path="room" element={<PlayerRoomPage />} />
