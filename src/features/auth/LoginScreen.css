@@ -17,19 +17,16 @@
 ─────────────────────────────────────────────────── */
 .login-bg-video {
     position: fixed;
-    bottom: 0;
+    top: 0;
     left: 0;
     width: 100%;
-    height: 55vh;
+    height: 100%;
     object-fit: cover;
-    object-position: center top;
+    object-position: center center;
     z-index: 0;
     pointer-events: none;
-    /* Fade top edge so it blends into the dark background */
-    -webkit-mask-image: linear-gradient(to bottom, transparent 0%, rgba(0,0,0,0.6) 20%, rgba(0,0,0,0.85) 50%, black 100%);
-    mask-image: linear-gradient(to bottom, transparent 0%, rgba(0,0,0,0.6) 20%, rgba(0,0,0,0.85) 50%, black 100%);
-    /* Dim the video slightly so the card remains legible */
-    opacity: 0.65;
+    /* Subtle darkening so the card text stays readable */
+    opacity: 0.55;
 }
 
 
