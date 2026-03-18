@@ -46,13 +46,18 @@ export const ItemCard = ({
             whileHover={canPurchase ? { scale: 1.02 } : {}}
         >
             {/* Item Icon */}
-            <div className="item-card-icon" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                {item.image && !imageError ? (
+            <div className="item-card-icon">
+                {item.image ? (
                     <img 
                         src={item.image} 
                         alt={item.name} 
-                        style={{ width: '60%', height: 'auto', objectFit: 'contain', margin: '0 auto', display: 'block' }} 
-                        onError={() => setImageError(true)}
+                        className="item-card-image"
+                        onError={(e) => {
+                            console.error(`Failed to load image for ${item.name}: ${item.image}`);
+                            if (!imageError) setImageError(true);
+                            // Keep layout space, just hide broken icon
+                            e.currentTarget.style.opacity = '0';
+                        }}
                     />
                 ) : (
                     item.icon
