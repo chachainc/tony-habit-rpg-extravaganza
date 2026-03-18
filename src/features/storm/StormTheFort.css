@@ -112,7 +112,21 @@
     object-fit: cover;
     z-index: 0;
     pointer-events: none;
-    opacity: 0.75;
+    filter: blur(2px) saturate(0.8) brightness(0.78);
+}
+
+/* Enemy unit video — small animated combatant layered on battlefield */
+.storm-enemy-unit-video {
+    position: absolute;
+    bottom: 18%;
+    left: 8%;
+    width: 80px;
+    height: 80px;
+    object-fit: contain;
+    z-index: 6;
+    pointer-events: none;
+    border-radius: 6px;
+    opacity: 0.92;
 }
 
 .storm-spawn-zone {

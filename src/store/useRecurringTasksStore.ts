@@ -165,18 +165,11 @@ export const DAILY_TASKS_TEMPLATE: Omit<RecurringTask, 'completed'>[] = [
     {
         id: 'no_coffee',
         title: 'No Coffee After 12pm',
-        bundle: 'night',
+        bundle: 'afternoon',
         type: 'daily',
         rewards: [
             { skillId: 'Habit', xp: 2 }
         ],
-    },
-    {
-        id: 'night_routine_hygiene',
-        title: 'Brush / Floss / Face Wash',
-        bundle: 'afternoon',
-        type: 'daily',
-        rewards: [{ skillId: 'Hygiene', xp: 2 }],
     },
     {
         id: 'charge_devices',
@@ -186,20 +179,6 @@ export const DAILY_TASKS_TEMPLATE: Omit<RecurringTask, 'completed'>[] = [
         rewards: [{ skillId: 'Habit', xp: 1 }],
     },
     {
-        id: 'inbox_zero',
-        title: 'Inbox Zero (Emails + Texts)',
-        bundle: 'afternoon',
-        type: 'daily',
-        rewards: [{ skillId: 'Work', xp: 2 }],
-    },
-    {
-        id: 'tidy_desk',
-        title: 'Tidy Desk',
-        bundle: 'afternoon',
-        type: 'daily',
-        rewards: [{ skillId: 'Housemaid', xp: 2 }],
-    },
-    {
         id: 'after_work_calls',
         title: 'After-Work Calls or Appointments (if any)',
         bundle: 'afternoon',
@@ -207,11 +186,15 @@ export const DAILY_TASKS_TEMPLATE: Omit<RecurringTask, 'completed'>[] = [
         rewards: [{ skillId: 'Work', xp: 2 }],
     },
     {
-        id: 'reach_out_social',
-        title: 'Reach out to friends and family and spread positivity',
+        id: 'tongue_exercises',
+        title: 'Tongue Exercises',
         bundle: 'afternoon',
         type: 'daily',
-        rewards: [{ skillId: 'Social', xp: 5 }],
+        rewards: [
+            { skillId: 'Health', xp: 2 },
+            { skillId: 'Habit', xp: 1 },
+            { skillId: 'Flexibility', xp: 2 }
+        ],
     },
 
     // ══ NIGHT SHUTDOWN ═════════════════════════════════════════════════════
@@ -238,20 +221,38 @@ export const DAILY_TASKS_TEMPLATE: Omit<RecurringTask, 'completed'>[] = [
     },
     {
         id: 'clean_bottles',
-        title: 'Clean Water Bottles / Tidy Desk',
+        title: 'Clean Water Bottles',
         bundle: 'night',
         type: 'daily',
         rewards: [{ skillId: 'Housemaid', xp: 2 }],
     },
     {
-        id: 'tongue_exercises',
-        title: 'Tongue Exercises',
+        id: 'night_routine_hygiene',
+        title: 'Brush / Floss / Face Wash',
         bundle: 'night',
         type: 'daily',
-        rewards: [
-            { skillId: 'Health', xp: 2 },
-            { skillId: 'Habit', xp: 1 }
-        ],
+        rewards: [{ skillId: 'Hygiene', xp: 2 }],
+    },
+    {
+        id: 'reach_out_social',
+        title: 'Reach out to friends and family and spread positivity',
+        bundle: 'night',
+        type: 'daily',
+        rewards: [{ skillId: 'Social', xp: 5 }],
+    },
+    {
+        id: 'inbox_zero',
+        title: 'Inbox Zero (Emails + Texts)',
+        bundle: 'night',
+        type: 'daily',
+        rewards: [{ skillId: 'Work', xp: 2 }],
+    },
+    {
+        id: 'tidy_desk',
+        title: 'Tidy Desk',
+        bundle: 'night',
+        type: 'daily',
+        rewards: [{ skillId: 'Housemaid', xp: 2 }],
     },
     {
         id: 'check_finances',
@@ -263,50 +264,11 @@ export const DAILY_TASKS_TEMPLATE: Omit<RecurringTask, 'completed'>[] = [
         ],
     },
     {
-        id: 'charge_wear_oura',
-        title: 'Charge Phone + Wear Oura Ring',
-        bundle: 'night',
-        type: 'daily',
-        rewards: [
-            { skillId: 'Habit', xp: 1 }
-        ],
-    },
-    {
-        id: 'read_10_min',
-        title: 'Read 10 Minutes',
-        bundle: 'night',
-        type: 'daily',
-        rewards: [{ skillId: 'Intelligence', xp: 4 }],
-    },
-    {
-        id: 'stretch_10_min',
-        title: 'Stretch 10 Minutes',
-        bundle: 'night',
-        type: 'daily',
-        rewards: [{ skillId: 'Flexibility', xp: 2 }],
-    },
-    {
         id: 'hip_stretches',
         title: 'Hip Stretches',
         bundle: 'night',
         type: 'daily',
         rewards: [{ skillId: 'Flexibility', xp: 2 }],
-    },
-    {
-        id: 'clean_pillow_cpap',
-        title: 'Clean Pillowcase + Use CPAP',
-        bundle: 'night',
-        type: 'daily',
-        rewards: [
-            { skillId: 'Sleep', xp: 3 }
-        ],
-    },
-    {
-        id: 'take_magnesium',
-        title: 'Take Magnesium',
-        bundle: 'night',
-        type: 'daily',
-        rewards: [{ skillId: 'Sleep', xp: 1 }],
     },
     {
         id: 'ate_protein_160g',
@@ -324,6 +286,38 @@ export const DAILY_TASKS_TEMPLATE: Omit<RecurringTask, 'completed'>[] = [
             { skillId: 'Health', xp: 1 },
             { skillId: 'Cardio', xp: 1 },
             { skillId: 'Sleep', xp: 1 }
+        ],
+    },
+    {
+        id: 'take_magnesium',
+        title: 'Take Magnesium',
+        bundle: 'night',
+        type: 'daily',
+        rewards: [{ skillId: 'Sleep', xp: 1 }],
+    },
+    {
+        id: 'read_10_min',
+        title: 'Read 10 Minutes',
+        bundle: 'night',
+        type: 'daily',
+        rewards: [{ skillId: 'Intelligence', xp: 4 }],
+    },
+    {
+        id: 'charge_wear_oura',
+        title: 'Charge Phone + Wear Oura Ring',
+        bundle: 'night',
+        type: 'daily',
+        rewards: [
+            { skillId: 'Habit', xp: 1 }
+        ],
+    },
+    {
+        id: 'clean_pillow_cpap',
+        title: 'Use CPAP',
+        bundle: 'night',
+        type: 'daily',
+        rewards: [
+            { skillId: 'Sleep', xp: 3 }
         ],
     },
 ];

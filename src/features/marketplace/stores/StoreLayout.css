@@ -268,7 +268,7 @@
 
     .store-content {
         padding: var(--space-3);
-        padding-bottom: calc(var(--space-md) + 120px + env(safe-area-inset-bottom, 0px));
+        padding-bottom: calc(var(--space-md) + 160px + env(safe-area-inset-bottom, 0px));
     }
 
     .store-bottom-sheet {
@@ -277,7 +277,7 @@
 
     .store-mobile-close-btn {
         position: absolute;
-        bottom: calc(var(--space-md) + env(safe-area-inset-bottom, 0px));
+        bottom: calc(var(--space-md) + 65px + env(safe-area-inset-bottom, 0px));
         left: var(--space-md);
         right: var(--space-md);
         background: #ef4444; /* bright red / recognizable exit color */

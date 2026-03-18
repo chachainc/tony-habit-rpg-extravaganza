@@ -6,6 +6,7 @@ import type { PlacedTower } from '../../store/useTowerDefenseStore';
 import { TD_GRID_WIDTH, TD_GRID_HEIGHT, isPath, TD_TOWERS, TD_ENEMIES, TD_MAP_MODIFIERS, TD_WAVE_MODIFIERS, TD_PATH } from '../../data/towerDefense';
 import type { TowerType, TowerDef } from '../../data/towerDefense';
 import { Castle, ArrowLeft, Play, RefreshCw, X } from 'lucide-react';
+import cavernBg from '../../assets/backgrounds/td-cavern-bg.jpg';
 import './TowerDefensePage.css';
 
 export const TowerDefensePage = () => {
@@ -171,6 +172,8 @@ export const TowerDefensePage = () => {
 
     return (
         <div className="td-page">
+            {/* ── Full-Screen Cavern Background (Image A) ── */}
+            <img src={cavernBg} alt="" className="td-bg-image" aria-hidden="true" />
             {/* ── Compact Header ── */}
             <div className="td-header-compact">
                 <button className="td-back" onClick={() => navigate('/combat')}>

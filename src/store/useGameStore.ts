@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { useBookTrophyStore } from './useBookTrophyStore';
+import { getPassiveBonuses } from './usePassiveEffects';
 import { PERSIST_REGISTRY } from '../data/persistRegistry';
 
 export type SkillName =
@@ -450,19 +451,22 @@ export const useGameStore = create<GameState>()(
             getMagicAttack: () => {
                 const { skills } = get();
                 const intelligenceLevel = skills['Intelligence']?.level ?? 1;
-                return 1 + intelligenceLevel;
+                const passives = getPassiveBonuses();
+                return (1 + intelligenceLevel) + passives.magic_attack_bonus;
             },
 
             getMagicDefense: () => {
                 const { skills } = get();
                 const socialLevel = skills['Social']?.level ?? 1;
-                return 1 + socialLevel;
+                const passives = getPassiveBonuses();
+                return (1 + socialLevel) + passives.magic_defense_bonus;
             },
 
             getMaxMP: () => {
                 const { skills } = get();
                 const sleepLevel = skills['Sleep']?.level ?? 1;
-                return 20 + ((sleepLevel - 1) * 5);
+                const passives = getPassiveBonuses();
+                return 20 + ((sleepLevel - 1) * 5) + passives.max_mana_bonus;
             },
 
             // Crit Rate from Habit Building

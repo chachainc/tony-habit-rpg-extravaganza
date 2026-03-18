@@ -19,6 +19,10 @@ interface Props {
 // Pet items (gated by Social level)
 const PET_ITEMS = [
     'pet_cow',
+    'meditating_war_cow',
+    'highland_archer_cow',
+    'wizard_cow',
+    'cow_king',
     'pet_porcupine',
     'pet_dog',
     'pet_cat',
@@ -117,6 +121,11 @@ export const PetShop = ({ onClose }: Props) => {
 
                                 const purchaseCheck = canPurchaseItem(item, playerState, currencyStore);
                                 const isOwned = ownsMarketplaceItem(itemId);
+
+                                // Hidden pets should not be displayed at all until they are unlocked
+                                if (itemId === 'cow_king' && !purchaseCheck.canUnlock && !isOwned) {
+                                    return null;
+                                }
 
                                 return (
                                     <ItemCard
