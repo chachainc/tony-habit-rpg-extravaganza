@@ -6,7 +6,8 @@ import type { PlacedTower } from '../../store/useTowerDefenseStore';
 import { TD_GRID_WIDTH, TD_GRID_HEIGHT, isPath, TD_TOWERS, TD_ENEMIES, TD_MAP_MODIFIERS, TD_WAVE_MODIFIERS, TD_PATH } from '../../data/towerDefense';
 import type { TowerType, TowerDef } from '../../data/towerDefense';
 import { Castle, ArrowLeft, Play, RefreshCw, X } from 'lucide-react';
-import cavernBg from '../../assets/backgrounds/td-cavern-bg.jpg';
+import tdBg from '../../assets/backgrounds/td-bg.jpg';
+import warriorImg from '../../assets/backgrounds/td-cavern-bg.jpg';
 import './TowerDefensePage.css';
 
 export const TowerDefensePage = () => {
@@ -172,8 +173,8 @@ export const TowerDefensePage = () => {
 
     return (
         <div className="td-page">
-            {/* ── Full-Screen Cavern Background (Image A) ── */}
-            <img src={cavernBg} alt="" className="td-bg-image" aria-hidden="true" />
+            {/* ── Full-Screen Battlefield Background ── */}
+            <img src={tdBg} alt="" className="td-bg-image" aria-hidden="true" />
             {/* ── Compact Header ── */}
             <div className="td-header-compact">
                 <button className="td-back" onClick={() => navigate('/combat')}>
@@ -279,6 +280,9 @@ export const TowerDefensePage = () => {
                             const ex = p1.x + (p2.x - p1.x) * enemy.progress;
                             const ey = p1.y + (p2.y - p1.y) * enemy.progress;
 
+                            // Use image for warrior-type enemies, emoji for others
+                            const isWarrior = enemy.type === 'orc' || enemy.type === 'golem';
+
                             return (
                                 <div
                                     key={enemy.id}
@@ -290,7 +294,15 @@ export const TowerDefensePage = () => {
                                         height: `${100 / TD_GRID_HEIGHT}%`
                                     }}
                                 >
-                                    <div className="enemy-sprite">{def.icon}</div>
+                                    {isWarrior ? (
+                                        <img
+                                            src={warriorImg}
+                                            alt={def.name}
+                                            className="enemy-sprite-img"
+                                        />
+                                    ) : (
+                                        <div className="enemy-sprite">{def.icon}</div>
+                                    )}
                                     <div className="enemy-hp-bar-bg">
                                         <div 
                                             className="enemy-hp-bar-fill" 
