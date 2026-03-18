@@ -16,16 +16,15 @@ interface Props {
     onClose: () => void;
 }
 
-// Pet items (gated by Social level)
 const PET_ITEMS = [
     'pet_cow',
+    'pet_porcupine',
+    'pet_dog',
+    'pet_cat',
     'meditating_war_cow',
     'highland_archer_cow',
     'wizard_cow',
     'cow_king',
-    'pet_porcupine',
-    'pet_dog',
-    'pet_cat',
 ];
 
 // Pet accessories (gated by Social level)

@@ -1,5 +1,6 @@
 import { Lock, Check } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { useState } from 'react';
 import type { Item } from '../../../data/items';
 import { useGameStore } from '../../../store/useGameStore';
 import { getPassiveBonuses } from '../../../store/usePassiveEffects';
@@ -37,6 +38,7 @@ export const ItemCard = ({
     // Wait, we need to display it correctly here.
 
     const canPurchase = isUnlocked && canAfford && !isOwned;
+    const [imageError, setImageError] = useState(false);
 
     return (
         <motion.div
@@ -44,9 +46,14 @@ export const ItemCard = ({
             whileHover={canPurchase ? { scale: 1.02 } : {}}
         >
             {/* Item Icon */}
-            <div className="item-card-icon">
-                {item.image ? (
-                    <img src={item.image} alt={item.name} style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: 'inherit' }} />
+            <div className="item-card-icon" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                {item.image && !imageError ? (
+                    <img 
+                        src={item.image} 
+                        alt={item.name} 
+                        style={{ width: '60%', height: 'auto', objectFit: 'contain', margin: '0 auto', display: 'block' }} 
+                        onError={() => setImageError(true)}
+                    />
                 ) : (
                     item.icon
                 )}

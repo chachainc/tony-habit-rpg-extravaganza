@@ -143,7 +143,10 @@ export const DAILY_TASKS_TEMPLATE: Omit<RecurringTask, 'completed'>[] = [
         title: 'Make your bed',
         bundle: 'morning',
         type: 'daily',
-        rewards: [{ skillId: 'Housemaid', xp: 2 }],
+        rewards: [
+            { skillId: 'Housemaid', xp: 2 },
+            { skillId: 'Habit', xp: 1 }
+        ],
     },
 
     // ══ AFTERNOON PERFORMANCE ══════════════════════════════════════════════
@@ -168,7 +171,7 @@ export const DAILY_TASKS_TEMPLATE: Omit<RecurringTask, 'completed'>[] = [
         bundle: 'afternoon',
         type: 'daily',
         rewards: [
-            { skillId: 'Habit', xp: 2 }
+            { skillId: 'Habit', xp: 1 }
         ],
     },
     {

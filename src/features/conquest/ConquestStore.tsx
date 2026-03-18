@@ -1,13 +1,9 @@
 import { motion } from 'framer-motion';
-import { Crown } from 'lucide-react';
+import { Crown, Swords } from 'lucide-react';
 import { useConquestStore } from '../../store/useConquestStore';
-import type { SoldierRole } from '../../store/useConquestStore';
+import { useCurrencyStore } from '../../store/useCurrencyStore';
 import { SoldierCard } from './SoldierCard';
 
-const SOLDIER_NAMES = [
-    'Marcus', 'Elena', 'Theron', 'Sybil', 'Aldric', 'Renna',
-    'Gareth', 'Lyra', 'Daven', 'Isolde', 'Brecht', 'Kira',
-];
 
 interface ConquestStoreUIProps {
     onClose: () => void;
@@ -15,8 +11,8 @@ interface ConquestStoreUIProps {
 
 export const ConquestStoreUI = ({ onClose }: ConquestStoreUIProps) => {
     const conquest = useConquestStore();
+    const currency = useCurrencyStore();
 
-    const roles: SoldierRole[] = ['scout', 'morale', 'siege', 'healer'];
 
     return (
         <motion.div
@@ -42,28 +38,32 @@ export const ConquestStoreUI = ({ onClose }: ConquestStoreUIProps) => {
                 </div>
 
                 <div className="cq-store-body">
-                    {/* Recruit Soldiers */}
-                    {conquest.soldiers.length < conquest.maxTeamSize && (
-                        <div className="cq-store-section">
-                            <h3>🗡️ Recruit Soldier (30 Sigils)</h3>
-                            <div className="soldiers-grid">
-                                {roles.map(role => (
-                                    <SoldierCard
-                                        key={role}
-                                        name={`New ${role.charAt(0).toUpperCase() + role.slice(1)}`}
-                                        role={role}
-                                        cost={30}
-                                        isStoreView={true}
-                                        onAction={() => {
-                                            const name = SOLDIER_NAMES[Math.floor(Math.random() * SOLDIER_NAMES.length)];
-                                            conquest.recruitSoldier(name, role);
-                                        }}
-                                        actionDisabled={conquest.sigils < 30}
-                                    />
-                                ))}
+                <div className="cq-store-section">
+                        <h3><Swords size={16} style={{ display: 'inline', verticalAlign: 'middle', marginRight: 6 }} />Run Power-Up</h3>
+                        <div className="cq-store-item">
+                            <div className="cq-store-item-info">
+                                <span className="cq-store-item-name">⚔️ Warlord's Edge</span>
+                                <span className="cq-store-item-desc">+10 ATK for the duration of this run</span>
                             </div>
+                            <button
+                                className="cq-store-buy-btn"
+                                onClick={() => {
+                                    if (currency.gold >= 25) {
+                                        currency.spendGold(25);
+                                        conquest.addRunBuff({
+                                            id: `warlord_edge_${Date.now()}`,
+                                            type: 'strength',
+                                            label: "Warlord's Edge: +10 ATK",
+                                            amount: 10,
+                                        });
+                                    }
+                                }}
+                                disabled={currency.gold < 25}
+                            >
+                                💰 25 Gold
+                            </button>
                         </div>
-                    )}
+                    </div>
 
                     {/* Team Size */}
                     {conquest.maxTeamSize < 6 && (
