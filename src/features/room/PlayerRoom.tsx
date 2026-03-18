@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, BedDouble, BookOpen, Shirt, Scale, Dumbbell, Pencil, Check } from 'lucide-react';
+import { X, BedDouble, BookOpen, Shirt, Scale, Dumbbell, Pencil, Check, DollarSign } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useRoomStore, ROOM_CATALOG } from '../../store/useRoomStore';
 import { usePetStore } from '../../store/usePetStore';
@@ -490,6 +490,11 @@ export const PlayerRoom = ({ onClose }: { onClose: () => void }) => {
                                 <span>Gym</span>
                                 <small>Workout Tracker</small>
                             </button>
+                            <button className="room-feature-btn room-feature-btn--budget" onClick={() => navigate('/budget')}>
+                                <DollarSign size={28} />
+                                <span>Budget</span>
+                                <small>Manage Finances</small>
+                            </button>
                             <button className="room-feature-btn room-feature-btn--walkable" onClick={() => setActivePanel('furniture_edit')} style={{ borderColor: 'rgba(34,197,94,0.3)' }}>
                                 <Pencil size={22} />
                                 <span>Arrange</span>
@@ -521,6 +526,9 @@ export const PlayerRoom = ({ onClose }: { onClose: () => void }) => {
                         <div className="room-top-bar">
                             <button className="room-exit-btn" onClick={() => { setForceWalkable(false); onClose(); }}>
                                 <X size={20} /> Exit
+                            </button>
+                            <button className="room-exit-btn" onClick={() => navigate('/budget')}>
+                                <DollarSign size={20} /> Budget
                             </button>
 
                             {/* Room Navigator */}

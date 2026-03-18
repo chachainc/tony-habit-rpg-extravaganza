@@ -1,6 +1,8 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { PERSIST_REGISTRY } from '../data/persistRegistry';
+import { useCurrencyStore } from './useCurrencyStore';
+import { useMonopolyStore } from './useMonopolyStore';
 
 // Get current date string in Eastern Time
 const getEasternDateString = (): string => {
@@ -35,8 +37,7 @@ export interface CheckInReward {
     buffType?: 'xp_boost' | 'gold_boost';
     buffValue?: number;
     buffDuration?: number; // hours
-    gachaTicket?: boolean;
-    rareMaterial?: string;
+    dailyTickets?: number;
 }
 
 // Day 1-7 reward cycle - escalating rewards
@@ -47,7 +48,7 @@ const DAY_REWARDS: Record<number, CheckInReward> = {
     4: { gold: 125 },
     5: { gold: 150, buffType: 'gold_boost', buffValue: 0.10, buffDuration: 24 },
     6: { gold: 200 },
-    7: { gold: 300, gachaTicket: true },
+    7: { gold: 300, dailyTickets: 5 },
 };
 
 const CONSOLATION_REWARD: CheckInReward = {
@@ -109,12 +110,14 @@ export const useCheckInStore = create<CheckInState>()(
                 let finalReward = { ...reward };
                 if (newStreakCount > 5) finalReward.habitXp = 1;
 
-                // Apply rewards immediately
-                // Note: Dynamic imports to avoid circular dependency
-                import('./useGameStore').then(({ useGameStore }) => {
-                    useGameStore.getState().addCurrency(finalReward.gold);
-                    if (finalReward.habitXp) { useGameStore.getState().addSkillXp('Habit', finalReward.habitXp, { capExempt: true }); }
-                });
+                // Apply rewards immediately (direct static imports for immediate availability)
+                useCurrencyStore.getState().addGold(finalReward.gold);
+                
+                if (finalReward.habitXp) { 
+                    import('./useGameStore').then(({ useGameStore }) => {
+                        useGameStore.getState().addSkillXp('Habit', finalReward.habitXp!, { capExempt: true }); 
+                    });
+                }
 
                 if (finalReward.buffType && finalReward.buffValue && finalReward.buffDuration) {
                     import('./useBuffStore').then(({ useBuffStore }) => {
@@ -127,10 +130,8 @@ export const useCheckInStore = create<CheckInState>()(
                     });
                 }
 
-                if (finalReward.gachaTicket) {
-                    import('./useGachaStore').then(({ useGachaStore }) => {
-                        useGachaStore.getState().addTickets(1);
-                    });
+                if (finalReward.dailyTickets) {
+                    useMonopolyStore.getState().addDailyTickets(finalReward.dailyTickets);
                 }
 
                 // Sync with Calendar Store

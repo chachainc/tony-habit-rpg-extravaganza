@@ -49,6 +49,35 @@
     font-weight: bold;
     font-size: 0.9rem;
     border: 1px solid rgba(239, 68, 68, 0.2);
+    min-width: 160px;
+}
+
+.storm-fort-health-info {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    flex: 1;
+}
+
+.storm-fort-health-label {
+    font-size: 0.8rem;
+    font-weight: bold;
+    color: #ef4444;
+    line-height: 1;
+}
+
+.storm-fort-health-bar-track {
+    width: 100%;
+    height: 6px;
+    background: rgba(0, 0, 0, 0.4);
+    border-radius: 3px;
+    overflow: hidden;
+}
+
+.storm-fort-health-bar-fill {
+    height: 100%;
+    border-radius: 3px;
+    transition: width 0.2s ease, background 0.3s ease;
 }
 
 .storm-hud-right {

@@ -20,11 +20,11 @@ const PET_ITEMS = [
     'pet_cow',
     'pet_porcupine',
     'pet_dog',
-    'pet_cat',
-    'meditating_war_cow',
-    'highland_archer_cow',
-    'wizard_cow',
     'cow_king',
+    'wizard_cow',
+    'highland_archer_cow',
+    'meditating_war_cow',
+    'pet_cat',
 ];
 
 // Pet accessories (gated by Social level)

@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Sun, Moon, Zap, ListTodo, ArrowRight, Calendar, Gift, Flame, Trophy, Scale } from 'lucide-react';
+import { Sun, Moon, Zap, Calendar, Gift, Flame, Trophy, Scale } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useDayStore } from '../../store/useDayStore';
 import { useGameStore } from '../../store/useGameStore';
@@ -88,10 +88,6 @@ export const WakeUpModal = ({ onComplete }: { onComplete: () => void }) => {
             logWeight(w);
             completeTask('weigh_self', { weight: w });
         }
-        setStage('xp_summary');
-    };
-
-    const handleSkipWeight = () => {
         setStage('xp_summary');
     };
 
@@ -242,13 +238,13 @@ export const WakeUpModal = ({ onComplete }: { onComplete: () => void }) => {
                                     >
                                         <div className="wake-checkin__day-num">Day {day}</div>
                                         <div className="wake-checkin__day-icon">
-                                            {isPastDay ? '✓' : reward.gachaTicket ? '🎫' : '🎁'}
+                                            {isPastDay ? '✓' : reward.dailyTickets ? '🎫' : '🎁'}
                                         </div>
                                         <div className="wake-checkin__day-rewards">
                                             <span>💰 {reward.gold}</span>
                                             {reward.habitXp && <span>✨ +{reward.habitXp} Habit XP</span>}
                                             {reward.buffType && <span className="wake-checkin__buff">+Buff</span>}
-                                            {reward.gachaTicket && <span className="wake-checkin__ticket">🎫</span>}
+                                            {reward.dailyTickets && <span className="wake-checkin__ticket">🎫</span>}
                                         </div>
                                         {isCurrentDay && canCheckIn && (
                                             <div className="wake-checkin__tap-hint">Tap!</div>
@@ -330,7 +326,8 @@ export const WakeUpModal = ({ onComplete }: { onComplete: () => void }) => {
                             <span style={{ color: '#475569', fontSize: '0.8rem' }}>lbs</span>
                         </div>
                         <motion.button
-                            className="wake-checkin__btn"
+                            className={weightInput ? "wake-checkin__btn" : "wake-checkin__skip"}
+                            style={!weightInput ? { display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' } : undefined}
                             onClick={handleLogWeight}
                             whileHover={{ scale: 1.03 }}
                             whileTap={{ scale: 0.97 }}
@@ -338,9 +335,6 @@ export const WakeUpModal = ({ onComplete }: { onComplete: () => void }) => {
                             <Scale size={18} />
                             {weightInput ? 'Log Weight' : 'Skip'}
                         </motion.button>
-                        <button className="wake-checkin__skip" onClick={handleSkipWeight}>
-                            Skip for now →
-                        </button>
                     </motion.div>
                 )}
 
@@ -361,35 +355,9 @@ export const WakeUpModal = ({ onComplete }: { onComplete: () => void }) => {
                         <button
                             className="wake-checkin__skip"
                             style={{ marginTop: '1.5rem' }}
-                            onClick={() => setStage('task_prompt')}
+                            onClick={handleGoToTasks}
                         >
-                            Continue →
-                        </button>
-                    </motion.div>
-                )}
-
-                {/* ===== STAGE 5: TASK BOARD PROMPT ===== */}
-                {stage === 'task_prompt' && (
-                    <motion.div
-                        className="task-prompt"
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ duration: 0.4 }}
-                    >
-                        <div className="task-prompt__icon">
-                            <ListTodo size={40} />
-                        </div>
-                        <h3 className="task-prompt__title">Ready to conquer the day?</h3>
-                        <p className="task-prompt__subtitle">Check your daily quests and start earning XP!</p>
-
-                        <button className="task-prompt__go-btn" onClick={handleGoToTasks}>
-                            <ListTodo size={20} />
-                            Check Daily Tasks
-                            <ArrowRight size={18} />
-                        </button>
-
-                        <button className="task-prompt__skip-btn" onClick={onComplete}>
-                            Skip for now
+                            Continue to Tasks →
                         </button>
                     </motion.div>
                 )}
@@ -427,10 +395,10 @@ export const WakeUpModal = ({ onComplete }: { onComplete: () => void }) => {
                                     </span>
                                 </div>
                             )}
-                            {checkInReward.gachaTicket && (
+                            {checkInReward.dailyTickets && (
                                 <div className="wake-checkin__reward-item wake-checkin__reward-item--special">
-                                    <span>🎫 Gacha Ticket:</span>
-                                    <span className="wake-checkin__reward-value">+1</span>
+                                    <span>🎫 Daily Tickets:</span>
+                                    <span className="wake-checkin__reward-value">+{checkInReward.dailyTickets}</span>
                                 </div>
                             )}
                         </div>

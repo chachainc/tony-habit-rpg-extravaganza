@@ -1,6 +1,10 @@
 import { create } from 'zustand';
 import { useCurrencyStore } from './useCurrencyStore';
 
+// ── Castle / Base Health Tuning ───────────────────────────────────────────
+export const BASE_MAX_HP = 100;              // starting max HP (upgrades add to this)
+export const BASE_DAMAGE_PER_ENEMY_PER_TICK = 5;  // HP lost per enemy at base per second
+
 export type StormGameState = 'idle' | 'playing' | 'paused' | 'victory' | 'defeat';
 
 // Basic entity bounds for the side-view lane
@@ -229,7 +233,9 @@ export const useStormStore = create<StormState>()((set, get) => ({
         set(state => {
             const newState: Partial<StormState> = {
                 gameState: victory ? 'victory' : 'defeat',
-                wave: victory ? state.wave + 1 : state.wave
+                wave: victory ? state.wave + 1 : state.wave,
+                // Always reset fort HP to full at end of wave (win or loss)
+                fortHp: state.maxFortHp,
             };
             
             if (victory) {
@@ -243,11 +249,6 @@ export const useStormStore = create<StormState>()((set, get) => ({
                     cs.getState().addShmeckles(waveShmeckles);
                     cs.getState().addGold(waveGold);
                 });
-                
-                const repairAmount = state.upgrades.fortRepairLevel * 10;
-                if (repairAmount > 0) {
-                    newState.fortHp = Math.min(state.maxFortHp, state.fortHp + repairAmount);
-                }
             } else {
                 newState.lastWaveRewards = null;
             }
@@ -313,11 +314,13 @@ export const useStormStore = create<StormState>()((set, get) => ({
                 e.x += e.speed * slow * (deltaMs / 1000);
 
                 if (e.x >= 100) {
-                    // Deal damage to fort (reduced by armor) and die
+                    // Enemy has reached the base — clamp position and deal steady tick damage
+                    e.x = 100;
                     const damageReduction = state.upgrades.fortArmorLevel * 2;
-                    const finalDamage = Math.max(1, e.damage - damageReduction);
-                    fortHp -= finalDamage;
-                    e.hp = 0;
+                    const tickDamage = Math.max(0.5, BASE_DAMAGE_PER_ENEMY_PER_TICK - damageReduction);
+                    fortHp -= tickDamage * (deltaMs / 1000);
+                    // Enemy drains health while touching the fort; it dies after dealing ~its own damage worth
+                    e.hp -= tickDamage * (deltaMs / 1000);
                 }
             }
         }

@@ -50,12 +50,12 @@ export const ItemCard = ({
                 {item.image ? (
                     <img 
                         src={item.image} 
-                        alt={item.name} 
-                        className="item-card-image"
+                        alt={item.name}
+                        className={`item-card-image${item.type === 'pet' ? ' pet-img' : ''}`}
                         onError={(e) => {
                             console.error(`Failed to load image for ${item.name}: ${item.image}`);
                             if (!imageError) setImageError(true);
-                            // Keep layout space, just hide broken icon
+                            // Keep layout space, just hide broken icon — no emoji fallback
                             e.currentTarget.style.opacity = '0';
                         }}
                     />

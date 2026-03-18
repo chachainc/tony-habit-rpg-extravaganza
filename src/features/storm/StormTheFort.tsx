@@ -82,9 +82,26 @@ export const StormTheFort = () => {
                 </div>
 
                 <div className="storm-hud-center">
-                    <div className="storm-fort-health">
+                <div className="storm-fort-health">
                         <Heart size={16} color="#ef4444" fill="#ef4444" />
-                        <span>{Math.max(0, Math.floor(fortHp))} / {maxFortHp}</span>
+                        <div className="storm-fort-health-info">
+                            <span className="storm-fort-health-label">
+                                {Math.max(0, Math.ceil(fortHp))} / {maxFortHp}
+                            </span>
+                            <div className="storm-fort-health-bar-track">
+                                <div
+                                    className="storm-fort-health-bar-fill"
+                                    style={{
+                                        width: `${Math.max(0, (fortHp / maxFortHp) * 100)}%`,
+                                        background: fortHp / maxFortHp > 0.5
+                                            ? '#22c55e'
+                                            : fortHp / maxFortHp > 0.25
+                                                ? '#f59e0b'
+                                                : '#ef4444',
+                                    }}
+                                />
+                            </div>
+                        </div>
                     </div>
                 </div>
 

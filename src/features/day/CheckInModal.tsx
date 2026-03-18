@@ -76,13 +76,13 @@ export const CheckInModal = ({ onClose }: { onClose: () => void }) => {
                             >
                                 <div className="day-number">Day {day}</div>
                                 <div className="day-icon">
-                                    {isPastDay ? '✓' : reward.gachaTicket ? '🎫' : '🎁'}
+                                    {isPastDay ? '✓' : reward.dailyTickets ? '🎫' : '🎁'}
                                 </div>
                                 <div className="day-rewards">
                                     <span>💰 {reward.gold}</span>
                                     {reward.habitXp && <span>✨ +{reward.habitXp} Habit XP</span>}
                                     {reward.buffType && <span className="buff-badge">+Buff</span>}
-                                    {reward.gachaTicket && <span className="ticket-badge">🎫 Ticket</span>}
+                                    {reward.dailyTickets && <span className="ticket-badge">🎫 Ticket</span>}
                                 </div>
                                 {isCurrentDay && canCheckIn && (
                                     <div className="tap-hint">Tap to claim!</div>
@@ -136,10 +136,10 @@ export const CheckInModal = ({ onClose }: { onClose: () => void }) => {
                                             </span>
                                         </div>
                                     )}
-                                    {lastReward.gachaTicket && (
+                                    {lastReward.dailyTickets && (
                                         <div className="reward-item special">
-                                            <span>🎫 Gacha Ticket:</span>
-                                            <span className="reward-value">+1</span>
+                                            <span>🎫 Daily Tickets:</span>
+                                            <span className="reward-value">+{lastReward.dailyTickets}</span>
                                         </div>
                                     )}
                                 </div>
