@@ -331,28 +331,16 @@ export const TowerDefensePage = () => {
 
                         {/* 4. Projectiles Layer */}
                         {td.projectiles.map(proj => {
-                            const target = td.enemies.find(e => e.id === proj.targetId);
-                            if (!target) return null;
-
-                            const p1 = TD_PATH[target.pathIndex];
-                            const p2 = TD_PATH[target.pathIndex + 1] || p1;
-                            const tx = p1.x + (p2.x - p1.x) * target.progress;
-                            const ty = p1.y + (p2.y - p1.y) * target.progress;
-
-                            const dx = tx - proj.x;
-                            const dy = ty - proj.y;
-                            const angle = Math.atan2(dy, dx) * 180 / Math.PI;
-                            const dist = Math.sqrt(dx*dx + dy*dy);
+                            const currentX = proj.fromX + (proj.toX - proj.fromX) * proj.progress;
+                            const currentY = proj.fromY + (proj.toY - proj.fromY) * proj.progress;
 
                             return (
                                 <div 
                                     key={proj.id}
                                     className="td-projectile"
                                     style={{
-                                        left: `${(proj.x / TD_GRID_WIDTH) * 100 + (50 / TD_GRID_WIDTH)}%`,
-                                        top: `${(proj.y / TD_GRID_HEIGHT) * 100 + (50 / TD_GRID_HEIGHT)}%`,
-                                        width: `${(dist / TD_GRID_WIDTH) * 100}%`,
-                                        transform: `rotate(${angle}deg)`,
+                                        left: `${(currentX / TD_GRID_WIDTH) * 100}%`,
+                                        top: `${(currentY / TD_GRID_HEIGHT) * 100}%`,
                                         backgroundColor: proj.color
                                     }}
                                 />

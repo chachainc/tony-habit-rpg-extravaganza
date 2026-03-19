@@ -139,7 +139,7 @@ export const useCheckInStore = create<CheckInState>()(
                 if (newStreakCount > 5) finalReward.habitXp = 1;
 
                 // Apply rewards immediately (direct static imports for immediate availability)
-                useCurrencyStore.getState().addGold(finalReward.gold);
+                useCurrencyStore.getState().addGold(finalReward.gold, { exact: true });
                 
                 if (finalReward.habitXp) { 
                     import('./useGameStore').then(({ useGameStore }) => {

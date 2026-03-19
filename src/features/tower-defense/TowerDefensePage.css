@@ -6,7 +6,7 @@
     height: 100%;
     display: flex;
     flex-direction: column;
-    background: linear-gradient(135deg, #0f1115 0%, #1a1e2e 50%, #14182a 100%);
+    background: url('../../assets/backgrounds/td-bg.jpg') center/cover no-repeat;
     color: #e2e8f0;
     overflow: hidden;
     position: relative;
@@ -451,13 +451,14 @@
 /* Projectiles */
 .td-projectile {
     position: absolute;
-    height: 2px;
-    transform-origin: left center;
-    z-index: 3;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 5;
     pointer-events: none;
-    box-shadow: 0 0 8px currentColor;
-    border-radius: 2px;
-    opacity: 0.8;
+    box-shadow: 0 0 6px 2px currentColor, 0 0 12px 4px rgba(255,255,255,0.2);
+    opacity: 0.95;
 }
 
 /* ─── Bottom Drawer Shop ──────────────────────── */

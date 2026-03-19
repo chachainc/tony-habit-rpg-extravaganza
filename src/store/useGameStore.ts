@@ -220,7 +220,7 @@ export const useGameStore = create<GameState>()(
             addCurrency: (amount) => {
                 import('./useCurrencyStore').then(({ useCurrencyStore }) => {
                     // Forward positive gains/losses to the modern currency store
-                    if (amount > 0) useCurrencyStore.getState().addGold(amount);
+                    if (amount > 0) useCurrencyStore.getState().addGold(amount, { exact: true });
                     if (amount < 0) useCurrencyStore.getState().spendGold(Math.abs(amount));
                 });
                 set((state) => ({
@@ -410,7 +410,7 @@ export const useGameStore = create<GameState>()(
                     // Use dynamic import approach to avoid circular dependency issues
                     import('./useCurrencyStore').then(({ useCurrencyStore }) => {
                         const { addGold, addTickets } = useCurrencyStore.getState();
-                        addGold(50);
+                        addGold(50, { exact: true });
                         addTickets(1);
                     }).catch(() => {
                         // Currency store not available - skip milestone rewards

@@ -652,7 +652,7 @@ export const useRecurringTasksStore = create<RecurringTasksState>()(
 
                 if (status.isComplete && !status.isClaimed) {
                     import('./useCurrencyStore').then(({ useCurrencyStore }) => {
-                        useCurrencyStore.getState().addGold(25);
+                        useCurrencyStore.getState().addGold(25, { exact: true });
                     });
 
                     if (bundle === 'morning') set({ morningBundleClaimed: true });
@@ -669,7 +669,7 @@ export const useRecurringTasksStore = create<RecurringTasksState>()(
 
                 if (m.isComplete && a.isComplete && n.isComplete && !state.perfectDayClaimed) {
                     import('./useCurrencyStore').then(({ useCurrencyStore }) => {
-                        useCurrencyStore.getState().addGold(75);
+                        useCurrencyStore.getState().addGold(75, { exact: true });
                     });
                     set({ perfectDayClaimed: true });
                 }
@@ -686,7 +686,7 @@ export const useRecurringTasksStore = create<RecurringTasksState>()(
                 if (isComplete && !state.weeklyBonusClaimed) {
                     import('./useCurrencyStore').then(({ useCurrencyStore }) => {
                         const currency = useCurrencyStore.getState();
-                        currency.addGold(200);
+                        currency.addGold(200, { exact: true });
                         currency.addShmeckles(3);
                         currency.addDiamonds(1);
                     });

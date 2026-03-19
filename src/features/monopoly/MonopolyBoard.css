@@ -101,10 +101,17 @@
     color: white;
 }
 
+/* Lap counter display */
+.ticket-display.lap-display {
+    background: rgba(251, 191, 36, 0.1);
+    border: 1px solid rgba(251, 191, 36, 0.3);
+    margin-left: 0.5rem;
+}
+
 /* ==================== MAP CONTAINER ==================== */
 .walkable-board-container {
     flex: 1;
-    padding: 0.75rem;
+    padding: 0.5rem;
     overflow: hidden;
     display: flex;
     align-items: center;
@@ -132,28 +139,45 @@
     z-index: 2;
 }
 
-/* ==================== PATH GRID ==================== */
+/* ==================== PATH GRID (7×7) ==================== */
 .walkable-path-grid {
     display: grid;
-    /* 11x11 Perimeter Square */
-    grid-template-columns: repeat(11, 1fr);
-    grid-template-rows: repeat(11, 1fr);
-    gap: 2px; /* Smaller gaps so they pack neatly on mobile */
+    /* 7×7 Perimeter Square */
+    grid-template-columns: repeat(7, 1fr);
+    grid-template-rows: repeat(7, 1fr);
+    gap: 3px;
     width: 100%;
-    /* Keep it roughly square within the modal max-width (920) */
-    max-width: 800px;
+    max-width: 560px;
     aspect-ratio: 1; 
     position: relative;
     z-index: 1;
+}
+
+/* ==================== BOARD REFRESH ANIMATION ==================== */
+.board-refreshing {
+    animation: boardShimmer 0.6s ease-out;
+}
+
+@keyframes boardShimmer {
+    0% {
+        filter: brightness(1) saturate(1);
+    }
+    30% {
+        filter: brightness(1.6) saturate(0.3);
+    }
+    60% {
+        filter: brightness(0.8) saturate(1.5);
+    }
+    100% {
+        filter: brightness(1) saturate(1);
+    }
 }
 
 /* ==================== RPG PATH TILES ==================== */
 .path-tile {
     position: relative;
     aspect-ratio: 1;
-    min-width: 48px;
-    max-width: 78px;
-    border-radius: 6px;
+    border-radius: 8px;
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -161,86 +185,122 @@
     transition: all 0.25s ease;
     cursor: default;
 
-    /* Darker base dirt road tile for better readability against bright background */
+    /* Solid dark base tile — no transparency */
     background:
-        linear-gradient(145deg, rgba(28, 24, 17, 0.92) 0%, rgba(18, 16, 11, 0.95) 100%);
-    border: 1.5px solid rgba(80, 70, 50, 0.75);
+        linear-gradient(145deg, #1c1811 0%, #12100b 100%);
+    border: 2px solid rgba(80, 70, 50, 0.85);
     box-shadow:
-        inset 0 1px 0 rgba(255, 255, 255, 0.05),
-        0 2px 6px rgba(0, 0, 0, 0.6);
+        inset 0 1px 0 rgba(255, 255, 255, 0.06),
+        0 2px 8px rgba(0, 0, 0, 0.7);
 }
 
 .path-tile::after {
     content: '';
     position: absolute;
     inset: 0;
-    border-radius: 6px;
+    border-radius: 8px;
     background:
-        radial-gradient(circle at 30% 30%, rgba(255, 255, 255, 0.03) 0%, transparent 50%);
+        radial-gradient(circle at 30% 30%, rgba(255, 255, 255, 0.04) 0%, transparent 50%);
     pointer-events: none;
 }
 
 .path-tile:hover {
-    border-color: rgba(163, 230, 53, 0.4);
+    border-color: rgba(163, 230, 53, 0.5);
     transform: translateY(-1px);
     box-shadow:
-        inset 0 1px 0 rgba(255, 255, 255, 0.06),
-        0 4px 8px rgba(0, 0, 0, 0.4),
-        0 0 8px rgba(163, 230, 53, 0.1);
+        inset 0 1px 0 rgba(255, 255, 255, 0.08),
+        0 4px 10px rgba(0, 0, 0, 0.5),
+        0 0 10px rgba(163, 230, 53, 0.15);
 }
 
 /* ---- Tile Type: GO (Shrine / Waypoint) ---- */
-.path-tile.go {
+.path-tile.go,
+.path-tile.go-tile {
     background:
-        radial-gradient(circle at center, rgba(34, 197, 94, 0.2) 0%, transparent 70%),
-        linear-gradient(145deg, rgba(20, 80, 40, 0.7) 0%, rgba(15, 60, 30, 0.8) 100%);
-    border-color: rgba(34, 197, 94, 0.5);
+        radial-gradient(circle at center, rgba(251, 191, 36, 0.25) 0%, transparent 70%),
+        linear-gradient(145deg, #2d4a1c 0%, #1a3012 100%);
+    border-color: #fbbf24;
+    border-width: 2.5px;
     box-shadow:
-        inset 0 0 12px rgba(34, 197, 94, 0.1),
-        0 0 15px rgba(34, 197, 94, 0.15),
-        0 2px 4px rgba(0, 0, 0, 0.3);
+        inset 0 0 16px rgba(251, 191, 36, 0.12),
+        0 0 20px rgba(251, 191, 36, 0.2),
+        0 0 40px rgba(34, 197, 94, 0.1),
+        0 2px 6px rgba(0, 0, 0, 0.4);
 }
 
 .path-tile.go::before {
     content: '';
     position: absolute;
-    inset: -2px;
-    border-radius: 8px;
-    background: conic-gradient(from 0deg, transparent, rgba(34, 197, 94, 0.15), transparent, rgba(34, 197, 94, 0.1), transparent);
-    animation: shrineGlow 6s linear infinite;
+    inset: -3px;
+    border-radius: 10px;
+    background: conic-gradient(from 0deg, transparent, rgba(251, 191, 36, 0.2), transparent, rgba(34, 197, 94, 0.15), transparent);
+    animation: shrineGlow 4s linear infinite;
     pointer-events: none;
     z-index: -1;
+}
+
+.go-reward-label {
+    font-size: 0.55rem;
+    font-weight: 800;
+    color: #fbbf24;
+    text-shadow: 0 0 6px rgba(251, 191, 36, 0.5);
+    line-height: 1;
+    margin-top: 1px;
 }
 
 /* ---- Tile Type: Gold (Treasure) ---- */
 .path-tile.gold {
     background:
-        radial-gradient(circle at center, rgba(251, 191, 36, 0.15) 0%, transparent 70%),
-        linear-gradient(145deg, rgba(80, 60, 20, 0.7) 0%, rgba(55, 42, 15, 0.8) 100%);
-    border-color: rgba(251, 191, 36, 0.45);
+        radial-gradient(circle at center, rgba(251, 191, 36, 0.18) 0%, transparent 70%),
+        linear-gradient(145deg, #3b2a0e 0%, #271d08 100%);
+    border-color: rgba(251, 191, 36, 0.55);
     box-shadow:
-        inset 0 0 10px rgba(251, 191, 36, 0.08),
-        0 0 10px rgba(251, 191, 36, 0.1),
-        0 2px 4px rgba(0, 0, 0, 0.3);
+        inset 0 0 12px rgba(251, 191, 36, 0.1),
+        0 0 12px rgba(251, 191, 36, 0.12),
+        0 2px 6px rgba(0, 0, 0, 0.4);
+}
+
+/* ---- Tile Type: Shmeckles ---- */
+.path-tile.shmeckles {
+    background:
+        radial-gradient(circle at center, rgba(148, 163, 184, 0.15) 0%, transparent 70%),
+        linear-gradient(145deg, #1e2630 0%, #141a22 100%);
+    border-color: rgba(148, 163, 184, 0.5);
+    box-shadow:
+        inset 0 0 10px rgba(148, 163, 184, 0.08),
+        0 0 10px rgba(148, 163, 184, 0.1),
+        0 2px 4px rgba(0, 0, 0, 0.4);
 }
 
 /* ---- Tile Type: Ticket (Mysterious) ---- */
 .path-tile.ticket {
     background:
-        radial-gradient(circle at center, rgba(139, 92, 246, 0.2) 0%, transparent 70%),
-        linear-gradient(145deg, rgba(50, 30, 80, 0.7) 0%, rgba(35, 20, 60, 0.8) 100%);
-    border-color: rgba(139, 92, 246, 0.5);
+        radial-gradient(circle at center, rgba(139, 92, 246, 0.22) 0%, transparent 70%),
+        linear-gradient(145deg, #2a1a42 0%, #1c1230 100%);
+    border-color: rgba(139, 92, 246, 0.55);
     box-shadow:
-        inset 0 0 12px rgba(139, 92, 246, 0.1),
-        0 0 12px rgba(139, 92, 246, 0.15),
-        0 2px 4px rgba(0, 0, 0, 0.3);
+        inset 0 0 14px rgba(139, 92, 246, 0.12),
+        0 0 14px rgba(139, 92, 246, 0.18),
+        0 2px 6px rgba(0, 0, 0, 0.4);
+}
+
+/* ---- Tile Type: Mystery ---- */
+.path-tile.mystery {
+    background:
+        radial-gradient(circle at center, rgba(245, 158, 11, 0.18) 0%, transparent 70%),
+        linear-gradient(145deg, #2a2010 0%, #1c160a 100%);
+    border-color: rgba(245, 158, 11, 0.5);
+    box-shadow:
+        inset 0 0 10px rgba(245, 158, 11, 0.08),
+        0 0 10px rgba(245, 158, 11, 0.1),
+        0 2px 4px rgba(0, 0, 0, 0.4);
 }
 
 /* ---- Tile Type: Empty (Grass/Path) ---- */
 .path-tile.empty {
     background:
-        linear-gradient(145deg, rgba(18, 22, 14, 0.88) 0%, rgba(12, 16, 10, 0.92) 100%);
-    border-color: rgba(50, 60, 40, 0.6);
+        linear-gradient(145deg, #121608 0%, #0c100a 100%);
+    border-color: rgba(50, 60, 40, 0.7);
     opacity: 1;
 }
 
@@ -252,14 +312,14 @@
         0 0 40px rgba(163, 230, 53, 0.1),
         inset 0 0 15px rgba(163, 230, 53, 0.08) !important;
     z-index: 5;
-    transform: scale(1.04);
+    transform: scale(1.06);
 }
 
 .path-tile.current::before {
     content: '';
     position: absolute;
     inset: -3px;
-    border-radius: 8px;
+    border-radius: 10px;
     border: 1px solid rgba(163, 230, 53, 0.3);
     animation: currentPulse 2s ease-in-out infinite;
     pointer-events: none;
@@ -291,23 +351,23 @@
 
 /* ---- Tile Icon ---- */
 .tile-icon {
-    font-size: 1.15rem;
-    filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.4));
+    font-size: 1.6rem;
+    filter: drop-shadow(0 1px 3px rgba(0, 0, 0, 0.5));
     line-height: 1;
 }
 
 .path-tile.empty .tile-icon {
-    font-size: 0.6rem;
-    opacity: 0.35;
+    font-size: 0.85rem;
+    opacity: 0.4;
 }
 
 /* ---- Tile Label ---- */
 .tile-label {
-    font-size: 0.45rem;
-    color: rgba(255, 255, 255, 0.55);
+    font-size: 0.5rem;
+    color: rgba(255, 255, 255, 0.6);
     text-align: center;
     line-height: 1.1;
-    margin-top: 1px;
+    margin-top: 2px;
     text-transform: uppercase;
     letter-spacing: 0.3px;
     font-weight: 600;
@@ -795,6 +855,65 @@
     overflow: hidden;
 }
 
+/* ==================== GO REWARD CARD ==================== */
+.go-reward-card {
+    border-color: #fbbf24;
+    box-shadow:
+        0 0 50px rgba(251, 191, 36, 0.15),
+        0 16px 48px rgba(0, 0, 0, 0.8);
+}
+
+.go-reward-header {
+    text-align: center;
+    margin-bottom: 1rem;
+    padding-bottom: 0.75rem;
+    border-bottom: 1px solid rgba(251, 191, 36, 0.2);
+}
+
+.go-reward-icon {
+    font-size: 2.5rem;
+    margin-bottom: 0.4rem;
+}
+
+.go-reward-header h2 {
+    font-size: 1.3rem;
+    font-weight: 800;
+    background: linear-gradient(90deg, #fbbf24, #f59e0b);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin: 0 0 0.3rem;
+}
+
+.go-lap-badge {
+    display: inline-block;
+    font-size: 0.7rem;
+    font-weight: 700;
+    color: #fbbf24;
+    background: rgba(251, 191, 36, 0.1);
+    border: 1px solid rgba(251, 191, 36, 0.3);
+    border-radius: 12px;
+    padding: 0.2rem 0.6rem;
+}
+
+.go-refresh-notice {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.4rem;
+    font-size: 0.72rem;
+    color: rgba(163, 230, 53, 0.6);
+    margin-top: 0.5rem;
+    padding: 0.3rem 0.6rem;
+    background: rgba(163, 230, 53, 0.05);
+    border: 1px solid rgba(163, 230, 53, 0.12);
+    border-radius: 6px;
+}
+
+.go-refresh-notice svg {
+    color: rgba(163, 230, 53, 0.5);
+}
+
 .reward-card-header {
     display: flex;
     align-items: center;
@@ -972,16 +1091,16 @@
         gap: 2px;
     }
 
-    .path-tile {
-        min-width: 28px;
-    }
-
     .tile-icon {
-        font-size: 0.85rem;
+        font-size: 1.3rem;
     }
 
     .tile-label {
-        display: none;
+        font-size: 0.42rem;
+    }
+
+    .go-reward-label {
+        font-size: 0.48rem;
     }
 
     .player-token {

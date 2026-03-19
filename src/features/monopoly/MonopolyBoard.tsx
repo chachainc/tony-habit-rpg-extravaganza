@@ -1,27 +1,30 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Info, ChevronDown, ChevronUp, X, RefreshCw, Play, Square } from 'lucide-react';
-import { useMonopolyStore, BOARD, BOARD_ODDS, type BoardSpace, type MysteryRollResult } from '../../store/useMonopolyStore';
+import { useMonopolyStore, getBoard, BOARD_ODDS, type BoardSpace, type MysteryRollResult } from '../../store/useMonopolyStore';
 import { useCurrencyStore } from '../../store/useCurrencyStore';
 import { useHeroImage } from '../../hooks/useHeroImage';
 import './MonopolyBoard.css';
 
-// ── Path layout (unchanged) ─────────────────────────────────────
+// ── 24-space path on a 7×7 grid (perimeter, clockwise from top-left) ──
+// Top-left = GO (0,0). Path goes: top row L→R, right col T→B, bottom row R→L, left col B→T
 const PATH_LAYOUT = [
-    { row: 10, col: 10 }, { row: 10, col: 9 }, { row: 10, col: 8 }, { row: 10, col: 7 }, { row: 10, col: 6 },
-    { row: 10, col: 5 }, { row: 10, col: 4 }, { row: 10, col: 3 }, { row: 10, col: 2 }, { row: 10, col: 1 }, { row: 10, col: 0 },
-    { row: 9, col: 0 }, { row: 8, col: 0 }, { row: 7, col: 0 }, { row: 6, col: 0 }, { row: 5, col: 0 },
-    { row: 4, col: 0 }, { row: 3, col: 0 }, { row: 2, col: 0 }, { row: 1, col: 0 },
-    { row: 0, col: 0 }, { row: 0, col: 1 }, { row: 0, col: 2 }, { row: 0, col: 3 }, { row: 0, col: 4 },
-    { row: 0, col: 5 }, { row: 0, col: 6 }, { row: 0, col: 7 }, { row: 0, col: 8 }, { row: 0, col: 9 }, { row: 0, col: 10 },
-    { row: 1, col: 10 }, { row: 2, col: 10 }, { row: 3, col: 10 }, { row: 4, col: 10 }, { row: 5, col: 10 },
-    { row: 6, col: 10 }, { row: 7, col: 10 }, { row: 8, col: 10 }, { row: 9, col: 10 },
+    // Top row (0,0) → (0,6) = 7 tiles
+    { row: 0, col: 0 }, { row: 0, col: 1 }, { row: 0, col: 2 }, { row: 0, col: 3 },
+    { row: 0, col: 4 }, { row: 0, col: 5 }, { row: 0, col: 6 },
+    // Right column (1,6) → (5,6) = 5 tiles
+    { row: 1, col: 6 }, { row: 2, col: 6 }, { row: 3, col: 6 }, { row: 4, col: 6 }, { row: 5, col: 6 },
+    // Bottom row (6,6) → (6,0) = 7 tiles
+    { row: 6, col: 6 }, { row: 6, col: 5 }, { row: 6, col: 4 }, { row: 6, col: 3 },
+    { row: 6, col: 2 }, { row: 6, col: 1 }, { row: 6, col: 0 },
+    // Left column (5,0) → (1,0) = 5 tiles
+    { row: 5, col: 0 }, { row: 4, col: 0 }, { row: 3, col: 0 }, { row: 2, col: 0 }, { row: 1, col: 0 },
 ];
 
 const DICE_FACES = ['⚀', '⚁', '⚂', '⚃', '⚄', '⚅'];
 
 // Flow phases
-type Phase = 'idle' | 'dice-spin' | 'dice-reveal' | 'moving' | 'result' | 'mystery-spin' | 'mystery-result';
+type Phase = 'idle' | 'dice-spin' | 'dice-reveal' | 'moving' | 'result' | 'go-result' | 'mystery-spin' | 'mystery-result';
 
 // Build live odds rows from BOARD_ODDS
 const ODDS_ROWS = [
@@ -59,30 +62,27 @@ const ODDS_ROWS = [
 
 // Also show base tile rewards
 const BASE_REWARDS = [
-    { icon: '🏠', label: 'GO tile', note: '+25 Gold each lap' },
-    { icon: '🪙', label: 'Small Coin (every 6th space)', note: '+3–7 Gold' },
-    { icon: '🐌', label: 'Small Shmeckle (every 11th space)', note: '+1–5 Schmeckles' },
-    { icon: '🎁', label: 'Mystery Crop (spaces 5/15/25/35)', note: 'Opens drop table above' },
-    { icon: '🎫', label: 'Lost Ticket (space 20)', note: '+1 Roll' },
+    { icon: '🏠', label: 'GO tile', note: '+25 Gold (scales +1 per lap)' },
+    { icon: '🪙', label: 'Gold tiles', note: '+3–7 Gold' },
+    { icon: '🐌', label: 'Shmeckle tiles', note: '+1–5 Schmeckles' },
+    { icon: '🎁', label: 'Mystery Crop tiles', note: 'Opens drop table above' },
+    { icon: '🎫', label: 'Lost Ticket', note: '+1 Roll' },
 ];
 
 export const MonopolyBoard = ({ onClose }: { onClose: () => void }) => {
     const {
         dailyTickets, currentPosition, rollDice, movePlayer,
-        canRoll, rollMysteryBox, streakMultiplierActive, totalLifetimeRolls
+        canRoll, rollMysteryBox, streakMultiplierActive, totalLifetimeRolls,
+        lapCount, boardRefreshPending, regenerateBoard, getGoReward
     } = useMonopolyStore();
     const { addGold, addShmeckles, addTickets } = useCurrencyStore();
     const heroImage = useHeroImage();
-
-    // Debug: confirm which character image is being used for the token
-    console.log('[MonopolyBoard] Player token image:', heroImage);
 
     const addSigils = (n: number) => {
         try { require('../../store/useConquestStore').useConquestStore.getState().addSigils(n); } catch {}
     };
 
-    // Derive player token from characterArchetype image (same as arena/stats/character screen)
-    // Falls back to 🧙 only if no archetype is set yet
+    // Derive player token from characterArchetype image
     const playerToken = heroImage
         ? <img src={heroImage} alt="Player" style={{ width: '2rem', height: '2rem', borderRadius: '50%', objectFit: 'cover', objectPosition: 'top', border: '2px solid #6366f1' }} />
         : <span>🧙</span>;
@@ -93,6 +93,11 @@ export const MonopolyBoard = ({ onClose }: { onClose: () => void }) => {
     const [spinFace, setSpinFace] = useState<string>('🎲');
     const [landedSpace, setLandedSpace] = useState<BoardSpace | null>(null);
     const [mysteryEvent, setMysteryEvent] = useState<MysteryRollResult | null>(null);
+    const [goRewardAmount, setGoRewardAmount] = useState(0);
+
+    // Board refresh animation key
+    const [boardKey, setBoardKey] = useState(0);
+    const [isRefreshing, setIsRefreshing] = useState(false);
 
     // Auto-roll
     const [autoRollActive, setAutoRollActive] = useState(false);
@@ -102,7 +107,6 @@ export const MonopolyBoard = ({ onClose }: { onClose: () => void }) => {
     const JACKPOT_TARGET = 4;
     const JACKPOT_ODDS = 100;
     const [displayedRng, setDisplayedRng] = useState<number>(0);
-    // finalRng tracks when mystery spin is done (used via setter in roll handler)
     const [_finalRng, setFinalRng] = useState<number | null>(null);
     const rngIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
@@ -112,6 +116,18 @@ export const MonopolyBoard = ({ onClose }: { onClose: () => void }) => {
     // Prevent duplicate roll calls
     const rollingRef = useRef(false);
 
+    // Get current board (dynamic)
+    const board = getBoard();
+
+    const handleBoardRefresh = useCallback(() => {
+        setIsRefreshing(true);
+        setTimeout(() => {
+            regenerateBoard();
+            setBoardKey(k => k + 1);
+            setTimeout(() => setIsRefreshing(false), 500);
+        }, 300);
+    }, [regenerateBoard]);
+
     const handleRoll = () => {
         if (!canRoll() || phase !== 'idle' || rollingRef.current) return;
         rollingRef.current = true;
@@ -119,6 +135,7 @@ export const MonopolyBoard = ({ onClose }: { onClose: () => void }) => {
         setLandedSpace(null);
         setMysteryEvent(null);
         setFinalRng(null);
+        setGoRewardAmount(0);
 
         // Phase 1: dice spin animation
         setPhase('dice-spin');
@@ -126,9 +143,7 @@ export const MonopolyBoard = ({ onClose }: { onClose: () => void }) => {
         const roll = streakMultiplierActive ? (rollDice() + rollDice()) : rollDice();
 
         // Animate dice faces while we wait
-        let frame = 0;
         const spinInterval = setInterval(() => {
-            frame++;
             setSpinFace(DICE_FACES[Math.floor(Math.random() * 6)]);
         }, 80);
 
@@ -141,51 +156,58 @@ export const MonopolyBoard = ({ onClose }: { onClose: () => void }) => {
 
             // After 800ms more, start token movement
             setTimeout(() => {
-                const newPosition = (currentPosition + roll) % 40;
-                setAnimatingTo(newPosition);
                 setPhase('moving');
 
                 // Token movement duration
                 setTimeout(() => {
-                    const space = movePlayer(roll);
-                    setLandedSpace(space);
+                    const moveResult = movePlayer(roll);
+                    setLandedSpace(moveResult.landedSpace);
                     setAnimatingTo(null);
 
-                    // Base tile rewards
-                    if (space.baseReward.gold) addGold(space.baseReward.gold);
-                    if (space.baseReward.shmeckles) addShmeckles(space.baseReward.shmeckles);
-                    if (space.baseReward.tickets) addTickets(space.baseReward.tickets);
-                    if ((space.baseReward as any).sigils) addSigils((space.baseReward as any).sigils);
-
-                    if (space.type === 'mystery') {
-                        const mystery = rollMysteryBox();
-                        setMysteryEvent(mystery);
-                        setPhase('mystery-spin');
-
-                        let animFrame = 0;
-                        const maxFrames = 30;
-                        const actualRng = mystery.rarity === 'ultra_rare' ? JACKPOT_TARGET : Math.floor(Math.random() * JACKPOT_ODDS) + 1;
-
-                        rngIntervalRef.current = setInterval(() => {
-                            animFrame++;
-                            setDisplayedRng(Math.floor(Math.random() * JACKPOT_ODDS) + 1);
-
-                            if (animFrame >= maxFrames) {
-                                if (rngIntervalRef.current) clearInterval(rngIntervalRef.current);
-                                setDisplayedRng(actualRng);
-                                setFinalRng(actualRng);
-
-                                if (mystery.reward.gold) addGold(mystery.reward.gold);
-                                if (mystery.reward.shmeckles) addShmeckles(mystery.reward.shmeckles);
-                                if ((mystery.reward as any).sigils) addSigils((mystery.reward as any).sigils);
-
-                                setPhase('mystery-result');
-                                rollingRef.current = false;
-                            }
-                        }, 50);
-                    } else {
-                        setPhase('result');
+                    if (moveResult.passedGo) {
+                        // GO was passed — award GO gold, show GO result
+                        setGoRewardAmount(moveResult.goReward);
+                        addGold(moveResult.goReward, { exact: true });
+                        setPhase('go-result');
                         rollingRef.current = false;
+                    } else {
+                        // Normal tile landing
+                        const space = moveResult.landedSpace;
+                        if (space.baseReward.gold) addGold(space.baseReward.gold);
+                        if (space.baseReward.shmeckles) addShmeckles(space.baseReward.shmeckles);
+                        if (space.baseReward.tickets) addTickets(space.baseReward.tickets);
+                        if ((space.baseReward as any).sigils) addSigils((space.baseReward as any).sigils);
+
+                        if (space.type === 'mystery') {
+                            const mystery = rollMysteryBox();
+                            setMysteryEvent(mystery);
+                            setPhase('mystery-spin');
+
+                            let animFrame = 0;
+                            const maxFrames = 30;
+                            const actualRng = mystery.rarity === 'ultra_rare' ? JACKPOT_TARGET : Math.floor(Math.random() * JACKPOT_ODDS) + 1;
+
+                            rngIntervalRef.current = setInterval(() => {
+                                animFrame++;
+                                setDisplayedRng(Math.floor(Math.random() * JACKPOT_ODDS) + 1);
+
+                                if (animFrame >= maxFrames) {
+                                    if (rngIntervalRef.current) clearInterval(rngIntervalRef.current);
+                                    setDisplayedRng(actualRng);
+                                    setFinalRng(actualRng);
+
+                                    if (mystery.reward.gold) addGold(mystery.reward.gold);
+                                    if (mystery.reward.shmeckles) addShmeckles(mystery.reward.shmeckles);
+                                    if ((mystery.reward as any).sigils) addSigils((mystery.reward as any).sigils);
+
+                                    setPhase('mystery-result');
+                                    rollingRef.current = false;
+                                }
+                            }, 50);
+                        } else {
+                            setPhase('result');
+                            rollingRef.current = false;
+                        }
                     }
                 }, 1200);
             }, 800);
@@ -193,22 +215,37 @@ export const MonopolyBoard = ({ onClose }: { onClose: () => void }) => {
     };
 
     const handleCloseResult = useCallback(() => {
+        const needsRefresh = boardRefreshPending;
         setPhase('idle');
         setLandedSpace(null);
         setMysteryEvent(null);
         setFinalRng(null);
         setDiceResult(null);
-    }, []);
+        setGoRewardAmount(0);
+
+        // If board refresh is pending (after GO pass), trigger it now
+        if (needsRefresh) {
+            handleBoardRefresh();
+        }
+    }, [boardRefreshPending, handleBoardRefresh]);
 
     const handleRollAgain = useCallback(() => {
+        const needsRefresh = boardRefreshPending;
         setPhase('idle');
         setLandedSpace(null);
         setMysteryEvent(null);
         setFinalRng(null);
         setDiceResult(null);
-        // Small tick to let state settle, then roll
-        setTimeout(() => handleRoll(), 50);
-    }, []);
+        setGoRewardAmount(0);
+
+        if (needsRefresh) {
+            handleBoardRefresh();
+            // Wait for refresh to complete before rolling
+            setTimeout(() => handleRoll(), 900);
+        } else {
+            setTimeout(() => handleRoll(), 50);
+        }
+    }, [boardRefreshPending, handleBoardRefresh]);
 
     // Auto-roll: when active, auto-dismiss result and roll again
     useEffect(() => {
@@ -218,7 +255,6 @@ export const MonopolyBoard = ({ onClose }: { onClose: () => void }) => {
     useEffect(() => {
         if (!autoRollActive) return;
         if (phase === 'result') {
-            // Auto-dismiss non-mystery result after 1.2s and roll again
             const t = setTimeout(() => {
                 if (!autoRollRef.current) return;
                 if (canRoll()) {
@@ -230,8 +266,8 @@ export const MonopolyBoard = ({ onClose }: { onClose: () => void }) => {
             }, 1200);
             return () => clearTimeout(t);
         }
-        if (phase === 'mystery-result') {
-            // Auto-dismiss mystery result after 2s and roll again
+        if (phase === 'go-result') {
+            // Pause on GO result a bit longer so user can see
             const t = setTimeout(() => {
                 if (!autoRollRef.current) return;
                 if (canRoll()) {
@@ -243,7 +279,18 @@ export const MonopolyBoard = ({ onClose }: { onClose: () => void }) => {
             }, 2000);
             return () => clearTimeout(t);
         }
-        // If idle with tickets, start next roll
+        if (phase === 'mystery-result') {
+            const t = setTimeout(() => {
+                if (!autoRollRef.current) return;
+                if (canRoll()) {
+                    handleRollAgain();
+                } else {
+                    setAutoRollActive(false);
+                    handleCloseResult();
+                }
+            }, 2000);
+            return () => clearTimeout(t);
+        }
         if (phase === 'idle') {
             if (canRoll()) {
                 const t = setTimeout(() => {
@@ -265,6 +312,8 @@ export const MonopolyBoard = ({ onClose }: { onClose: () => void }) => {
         (landedSpace.baseReward as any).sigils
     );
 
+    const terrainIcons = ['🌿', '🪨', '🌾', '·', '🍃', '·', '🌱', '·', '·', '🌻'];
+
     return (
         <div className="modal-overlay walkable-board-overlay">
             <motion.div
@@ -284,9 +333,9 @@ export const MonopolyBoard = ({ onClose }: { onClose: () => void }) => {
                             <span className="ticket-count">{dailyTickets}</span>
                             <span className="ticket-label">ROLLS</span>
                         </div>
-                        <div className="ticket-display lifetime-rolls" title="Total Lifetime Rolls">
-                            <span className="ticket-icon">📜</span>
-                            <span className="ticket-count small">{totalLifetimeRolls || 0}</span>
+                        <div className="ticket-display lap-display" title="Completed Laps">
+                            <span className="ticket-icon">🔄</span>
+                            <span className="ticket-count small">{lapCount}</span>
                         </div>
                     </div>
                     <button className="close-btn" onClick={onClose}>
@@ -296,23 +345,33 @@ export const MonopolyBoard = ({ onClose }: { onClose: () => void }) => {
 
                 {/* Board */}
                 <div className="walkable-board-container farm-backdrop">
-                    <div className="walkable-path-grid farm-grid">
-                        {BOARD.map((space, index) => {
+                    <motion.div
+                        key={boardKey}
+                        className={`walkable-path-grid farm-grid ${isRefreshing ? 'board-refreshing' : ''}`}
+                        initial={boardKey > 0 ? { opacity: 0 } : false}
+                        animate={{ opacity: 1 }}
+                        transition={{ duration: 0.5 }}
+                    >
+                        {board.map((space, index) => {
                             const layout = PATH_LAYOUT[index];
+                            if (!layout) return null;
                             const isCurrentSpace = index === playerPosition;
-                            const terrainIcons = ['🌿', '🪨', '🌾', '·', '🍃', '·', '🌱', '·', '·', '🌻'];
+                            const isGoTile = space.type === 'go';
                             const emptyIcon = space.type === 'empty' ? terrainIcons[index % terrainIcons.length] : space.icon;
 
                             return (
                                 <motion.div
                                     key={space.id}
-                                    className={`path-tile ${space.type} ${isCurrentSpace ? 'current' : ''}`}
+                                    className={`path-tile ${space.type} ${isCurrentSpace ? 'current' : ''} ${isGoTile ? 'go-tile' : ''}`}
                                     style={{ gridRow: layout.row + 1, gridColumn: layout.col + 1 }}
                                     animate={isCurrentSpace ? { scale: [1, 1.05, 1] } : {}}
                                     transition={{ repeat: Infinity, duration: 2 }}
                                 >
-                                    <div className="tile-icon">{emptyIcon}</div>
-                                    <div className="tile-label">{space.name}</div>
+                                    <div className="tile-icon">{isGoTile ? '🏠' : emptyIcon}</div>
+                                    <div className="tile-label">{isGoTile ? 'GO' : space.name}</div>
+                                    {isGoTile && (
+                                        <div className="go-reward-label">+{getGoReward()}g</div>
+                                    )}
                                     {isCurrentSpace && (
                                         <motion.div
                                             className="player-token"
@@ -326,7 +385,7 @@ export const MonopolyBoard = ({ onClose }: { onClose: () => void }) => {
                                 </motion.div>
                             );
                         })}
-                    </div>
+                    </motion.div>
 
                     {/* ── Centered Dice Roll Overlay (on the board) ── */}
                     <AnimatePresence>
@@ -414,7 +473,6 @@ export const MonopolyBoard = ({ onClose }: { onClose: () => void }) => {
                                     setAutoRollActive(false);
                                 } else {
                                     setAutoRollActive(true);
-                                    // kick off first roll if idle
                                     if (phase === 'idle') setTimeout(() => handleRoll(), 100);
                                 }
                             }}
@@ -474,6 +532,55 @@ export const MonopolyBoard = ({ onClose }: { onClose: () => void }) => {
                                 </div>
                             ))}
                         </motion.div>
+                    )}
+                </AnimatePresence>
+
+                {/* ── GO Result Modal ── */}
+                <AnimatePresence>
+                    {phase === 'go-result' && (
+                        <div className="board-reward-overlay">
+                            <motion.div
+                                className="reward-card-premium go-reward-card"
+                                initial={{ scale: 0, opacity: 0 }}
+                                animate={{ scale: 1, opacity: 1 }}
+                                exit={{ scale: 0, opacity: 0 }}
+                            >
+                                <div className="go-reward-header">
+                                    <motion.div
+                                        className="go-reward-icon"
+                                        animate={{ rotate: [0, 10, -10, 0], scale: [1, 1.1, 1] }}
+                                        transition={{ repeat: Infinity, duration: 2 }}
+                                    >
+                                        🏠
+                                    </motion.div>
+                                    <h2>PASSED GO!</h2>
+                                    <div className="go-lap-badge">Lap {lapCount}</div>
+                                </div>
+                                <div className="reward-card-body">
+                                    <div className="reward-line gold">
+                                        <span>🪙 Gold</span>
+                                        <span className="reward-val">+{goRewardAmount}</span>
+                                    </div>
+                                    <div className="go-refresh-notice">
+                                        <RefreshCw size={14} />
+                                        <span>Board will refresh with new tiles!</span>
+                                    </div>
+                                </div>
+                                <div className="reward-action-row">
+                                    {canRoll() && !autoRollActive && (
+                                        <button className="roll-again-btn" onClick={handleRollAgain}>
+                                            <RefreshCw size={16} /> Roll Again
+                                        </button>
+                                    )}
+                                    {autoRollActive && (
+                                        <div className="rolling-status-pill">⚡ Auto Rolling...</div>
+                                    )}
+                                    <button className="luck-continue-btn" onClick={handleCloseResult}>
+                                        {canRoll() ? 'Continue' : 'Done'}
+                                    </button>
+                                </div>
+                            </motion.div>
+                        </div>
                     )}
                 </AnimatePresence>
 

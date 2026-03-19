@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useRef, useCallback } from 'react';
 import { Heart, Play, Pause } from 'lucide-react';
 import { useStormStore, STORM_ENEMY_DEFS } from '../../store/useStormStore';
 import type { StormEnemyType } from '../../store/useStormStore';
@@ -14,6 +14,7 @@ export const StormTheFort = () => {
         enemies,
         defenders,
         obstacles,
+        projectiles,
         upgrades,
         lastWaveRewards,
         hasBoughtFirstCow,
@@ -24,11 +25,16 @@ export const StormTheFort = () => {
         buyDefender,
         buyObstacle,
         buyUpgrade,
+        moveDefender,
         startNextWave,
     } = useStormStore();
 
     const { shmeckles } = useCurrencyStore();
     const [activeTab, setActiveTab] = useState<'deploy' | 'obstacles' | 'upgrades'>('deploy');
+
+    // Drag state for moving defenders
+    const [draggingId, setDraggingId] = useState<string | null>(null);
+    const battlefieldRef = useRef<HTMLDivElement>(null);
 
     // Game loop
     const requestRef = useRef<number | undefined>(undefined);
@@ -53,6 +59,25 @@ export const StormTheFort = () => {
         };
     }, [gameState]);
 
+    // --- Drag-to-move handlers ---
+    const handleDefenderPointerDown = useCallback((e: React.PointerEvent, defId: string) => {
+        e.preventDefault();
+        e.stopPropagation();
+        (e.target as HTMLElement).setPointerCapture(e.pointerId);
+        setDraggingId(defId);
+    }, []);
+
+    const handlePointerMove = useCallback((e: React.PointerEvent) => {
+        if (!draggingId || !battlefieldRef.current) return;
+        const rect = battlefieldRef.current.getBoundingClientRect();
+        const xPct = ((e.clientX - rect.left) / rect.width) * 100;
+        const yPct = ((e.clientY - rect.top) / rect.height) * 100;
+        moveDefender(draggingId, xPct, yPct);
+    }, [draggingId, moveDefender]);
+
+    const handlePointerUp = useCallback(() => {
+        setDraggingId(null);
+    }, []);
 
     // Cost configuration
     const DEFENDER_COSTS = { cow: 5, swordsman: 15, shield: 25, archer: 20 };
@@ -134,8 +159,14 @@ export const StormTheFort = () => {
                 </div>
             </div>
 
-            {/* Main Battlefield — background set via CSS */}
-            <div className="storm-battlefield">
+            {/* Main Battlefield */}
+            <div
+                className="storm-battlefield"
+                ref={battlefieldRef}
+                onPointerMove={handlePointerMove}
+                onPointerUp={handlePointerUp}
+                onPointerCancel={handlePointerUp}
+            >
                 {/* Track/path overlay image */}
                 <div className="storm-track-overlay" />
                 {/* Castle ambient bg on right */}
@@ -161,29 +192,43 @@ export const StormTheFort = () => {
                     </div>
                 ))}
 
-                {/* Render Defenders — now with cow art */}
+                {/* Render Defenders — draggable */}
                 {defenders.map(def => (
                     <div
                         key={def.id}
-                        className={`storm-entity storm-defender`}
-                        style={{ left: `${def.x}%` }}
+                        className={`storm-entity storm-defender ${draggingId === def.id ? 'dragging' : ''}`}
+                        style={{ left: `${def.x}%`, top: `${def.y}%` }}
+                        onPointerDown={(e) => handleDefenderPointerDown(e, def.id)}
                     >
                         {getDefenderIcon(def.type)}
                         <div className="storm-hp-bar"><div className="storm-hp-fill" style={{ width: `${(def.hp / def.maxHp) * 100}%` }} /></div>
                     </div>
                 ))}
 
-                {/* Render Enemies — now with varied type icons */}
+                {/* Render Enemies — multi-lane y positions */}
                 {enemies.map(en => (
                     <div
                         key={en.id}
                         className={`storm-entity storm-enemy`}
-                        style={{ left: `${en.x}%` }}
+                        style={{ left: `${en.x}%`, top: `${en.y}%` }}
                     >
                         {getEnemyIcon(en.type)}
                         <div className="storm-hp-bar"><div className="storm-hp-fill" style={{ width: `${(en.hp / en.maxHp) * 100}%` }} /></div>
                     </div>
                 ))}
+
+                {/* Render Projectiles */}
+                {projectiles.map(p => {
+                    const currentX = p.fromX + (p.toX - p.fromX) * p.progress;
+                    const currentY = p.fromY + (p.toY - p.fromY) * p.progress;
+                    return (
+                        <div
+                            key={p.id}
+                            className="storm-projectile"
+                            style={{ left: `${currentX}%`, top: `${currentY}%` }}
+                        />
+                    );
+                })}
 
                 {/* Overlays */}
                 {gameState === 'idle' && (

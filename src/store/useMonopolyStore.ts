@@ -52,7 +52,8 @@ export interface MysteryRollResult {
     isDuplicate?: boolean;
 }
 
-// ── Board Generation (40 spaces perimeter board) ───────────────
+// ── Board Generation (24 spaces perimeter board) ───────────────
+const TOTAL_SPACES = 24;
 
 const createBoard = (): BoardSpace[] => {
     const board: BoardSpace[] = [];
@@ -63,10 +64,10 @@ const createBoard = (): BoardSpace[] => {
         type: 'go',
         name: 'GO',
         icon: '🏠',
-        baseReward: { gold: 25 },
+        baseReward: {}, // GO reward is handled dynamically via lap count
     });
 
-    for (let i = 1; i < 40; i++) {
+    for (let i = 1; i < TOTAL_SPACES; i++) {
         let space: BoardSpace = {
             id: i,
             type: 'empty',
@@ -75,8 +76,8 @@ const createBoard = (): BoardSpace[] => {
             baseReward: {},
         };
 
-        // Standard Gold Tiles
-        if (i % 6 === 0) {
+        // Gold Tiles (3 tiles)
+        if (i === 4 || i === 10 || i === 16) {
             space = {
                 id: i,
                 type: 'gold',
@@ -85,9 +86,9 @@ const createBoard = (): BoardSpace[] => {
                 baseReward: { gold: Math.floor(Math.random() * 5) + 3 },
             };
         }
-        
-        // Shmeckles Tiles
-        if (i % 11 === 0) {
+
+        // Shmeckles Tiles (2 tiles)
+        if (i === 8 || i === 20) {
             space = {
                 id: i,
                 type: 'shmeckles',
@@ -97,8 +98,8 @@ const createBoard = (): BoardSpace[] => {
             };
         }
 
-        // Mystery / Chest Tiles (Triggers drop tables)
-        if (i === 5 || i === 15 || i === 25 || i === 35) {
+        // Mystery / Chest Tiles (4 tiles — triggers drop table)
+        if (i === 3 || i === 9 || i === 15 || i === 21) {
             space = {
                 id: i,
                 type: 'mystery',
@@ -108,8 +109,8 @@ const createBoard = (): BoardSpace[] => {
             };
         }
 
-        // Ticket (Rare)
-        if (i === 20) {
+        // Ticket (1 tile)
+        if (i === 12) {
             space = {
                 id: i,
                 type: 'ticket',
@@ -125,7 +126,10 @@ const createBoard = (): BoardSpace[] => {
     return board;
 };
 
-const BOARD = createBoard();
+// ── Mutable board state (re-generated on each lap) ────────────
+let currentBoard = createBoard();
+
+export const getBoard = () => currentBoard;
 
 // ── Date Helper ────────────────────────────────────────────────
 const getEasternDateString = (): string => {
@@ -140,6 +144,13 @@ const getEasternDateString = (): string => {
     return `${year}-${month}-${day}`;
 };
 
+// ── Move result type ──────────────────────────────────────────
+export interface MoveResult {
+    landedSpace: BoardSpace;
+    passedGo: boolean;
+    goReward: number; // gold awarded for passing GO (0 if didn't pass)
+}
+
 // ── Store ──────────────────────────────────────────────────────
 interface MonopolyState {
     dailyTickets: number;
@@ -149,15 +160,19 @@ interface MonopolyState {
     totalLifetimeRolls: number;
     lastLuckRoll: MysteryRollResult | null;
     streakMultiplierActive: boolean;
+    lapCount: number;
+    boardRefreshPending: boolean;
 
     // Actions
     rollDice: () => number;
-    movePlayer: (spaces: number) => BoardSpace;
+    movePlayer: (spaces: number) => MoveResult;
     addDailyTickets: (amount: number) => void;
     resetDailyTickets: () => void;
     canRoll: () => boolean;
     setStreakMultiplier: (active: boolean) => void;
     rollMysteryBox: () => MysteryRollResult;
+    regenerateBoard: () => void;
+    getGoReward: () => number;
 }
 
 export const useMonopolyStore = create<MonopolyState>()(
@@ -170,6 +185,8 @@ export const useMonopolyStore = create<MonopolyState>()(
             totalLifetimeRolls: 0,
             lastLuckRoll: null,
             streakMultiplierActive: false,
+            lapCount: 0,
+            boardRefreshPending: false,
 
             canRoll: () => {
                 const state = get();
@@ -197,26 +214,37 @@ export const useMonopolyStore = create<MonopolyState>()(
                 return roll;
             },
 
-            movePlayer: (spaces) => {
+            movePlayer: (spaces): MoveResult => {
                 const state = get();
-                const newPosition = (state.currentPosition + spaces) % 40;
+                const oldPos = state.currentPosition;
+                const rawNew = oldPos + spaces;
+                const passedGo = rawNew >= TOTAL_SPACES;
 
-                set({ currentPosition: newPosition });
-                const landedSpace = BOARD[newPosition];
+                if (passedGo) {
+                    // Stop on GO tile, award scaled reward
+                    const goReward = get().getGoReward();
+                    set({
+                        currentPosition: 0,
+                        lapCount: state.lapCount + 1,
+                        boardRefreshPending: true,
+                    });
 
-                // Check if passed GO (if position wraps around or lands exactly on 0)
-                if (state.currentPosition + spaces >= 40) {
-                    const goSpace = BOARD[0];
                     return {
-                        ...landedSpace,
-                        baseReward: {
-                            ...landedSpace.baseReward,
-                            gold: (landedSpace.baseReward.gold || 0) + (goSpace.baseReward.gold || 0),
-                        }
+                        landedSpace: currentBoard[0],
+                        passedGo: true,
+                        goReward,
                     };
                 }
 
-                return landedSpace;
+                // Normal movement — no GO pass
+                const newPosition = rawNew % TOTAL_SPACES;
+                set({ currentPosition: newPosition });
+
+                return {
+                    landedSpace: currentBoard[newPosition],
+                    passedGo: false,
+                    goReward: 0,
+                };
             },
 
             addDailyTickets: (amount) => {
@@ -227,15 +255,28 @@ export const useMonopolyStore = create<MonopolyState>()(
 
             resetDailyTickets: () => {
                 const today = getEasternDateString();
+                // Reset lap count on new day
+                currentBoard = createBoard();
                 set({
                     dailyTickets: 5,
                     lastTicketResetDate: today,
                     totalRollsToday: 0,
+                    lapCount: 0,
+                    boardRefreshPending: false,
                 });
             },
 
             setStreakMultiplier: (active) => {
                 set({ streakMultiplierActive: active });
+            },
+
+            regenerateBoard: () => {
+                currentBoard = createBoard();
+                set({ boardRefreshPending: false });
+            },
+
+            getGoReward: () => {
+                return 25 + get().lapCount;
             },
 
             // ── Themed Board Mystery Roll Logic ───────────────────
@@ -351,9 +392,10 @@ export const useMonopolyStore = create<MonopolyState>()(
             },
         }),
         {
-            name: PERSIST_REGISTRY.monopoly.persistKey, // Keep v3 to reuse current tokens if possible, or v4 if breaking
+            name: PERSIST_REGISTRY.monopoly.persistKey,
         }
     )
 );
 
-export { BOARD };
+// Legacy export for backward compat — now returns dynamic board
+export const BOARD = currentBoard;
