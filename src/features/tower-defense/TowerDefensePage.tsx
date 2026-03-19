@@ -7,10 +7,6 @@ import { TD_GRID_WIDTH, TD_GRID_HEIGHT, isPath, TD_TOWERS, TD_ENEMIES, TD_MAP_MO
 import type { TowerType, TowerDef } from '../../data/towerDefense';
 import { ArrowLeft, Play, RefreshCw, X } from 'lucide-react';
 
-// Video assets
-import tdBgVideo from '../../assets/td/td-bg.mp4';
-import flowBossVideo from '../../assets/td/Flow_202603180014.mp4';
-
 import './TowerDefensePage.css';
 
 export const TowerDefensePage = () => {
@@ -199,16 +195,6 @@ export const TowerDefensePage = () => {
 
     return (
         <div className="td-page">
-            {/* ── Looping Video Background ── */}
-            <video
-                className="td-bg-video"
-                src={tdBgVideo}
-                autoPlay
-                loop
-                muted
-                playsInline
-                aria-hidden="true"
-            />
 
             {/* ── Compact Header ── */}
             <div className="td-header-compact">
@@ -216,7 +202,7 @@ export const TowerDefensePage = () => {
                     <ArrowLeft size={18} /> Back
                 </button>
                 <span className="td-title-compact">
-                    🏰 Storm the Fort
+                    🏰 Tower Defense
                 </span>
                 <div className="td-header-chips">
                     <span className="td-chip mana">🐌 {currStore.shmeckles}</span>
@@ -315,8 +301,8 @@ export const TowerDefensePage = () => {
                             const ex = p1.x + (p2.x - p1.x) * enemy.progress;
                             const ey = p1.y + (p2.y - p1.y) * enemy.progress;
 
-                            // Flow Boss: render as looping video
-                            const isFlowBoss = def.useVideo;
+                            // Flow Boss: larger sprite
+                            const isFlowBoss = enemy.type === 'flow_boss';
                             // Necromancer: glow aura
                             const isNecro = def.healsNearby;
 
@@ -332,18 +318,7 @@ export const TowerDefensePage = () => {
                                         ...(isFlowBoss ? { width: `${200 / TD_GRID_WIDTH}%`, height: `${200 / TD_GRID_HEIGHT}%`, zIndex: 15 } : {})
                                     }}
                                 >
-                                    {isFlowBoss ? (
-                                        <video
-                                            src={flowBossVideo}
-                                            autoPlay
-                                            loop
-                                            muted
-                                            playsInline
-                                            className="enemy-video-sprite"
-                                        />
-                                    ) : (
-                                        <div className="enemy-sprite">{def.icon}</div>
-                                    )}
+                                    <div className="enemy-sprite">{def.icon}</div>
                                     <div className="enemy-hp-bar-bg">
                                         <div 
                                             className="enemy-hp-bar-fill" 

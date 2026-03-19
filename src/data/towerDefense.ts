@@ -48,7 +48,7 @@ export const TD_ENEMIES: Record<EnemyType, EnemyDef> = {
     necromancer:  { type: 'necromancer',  name: 'Necromancer',  icon: '🧙‍♂️', baseHp: 150,  speed: 0.9, reward: 20, healsNearby: true },
     golem:        { type: 'golem',        name: 'Golem',        icon: '🪨', baseHp: 400,  speed: 0.6, reward: 25 },
     boss_slime:   { type: 'boss_slime',   name: 'King Slime',   icon: '👑', baseHp: 1500, speed: 0.4, reward: 100 },
-    flow_boss:    { type: 'flow_boss',    name: 'The Flow',     icon: '🌊', baseHp: 3000, speed: 0.3, reward: 200, useVideo: true },
+    flow_boss:    { type: 'flow_boss',    name: 'The Flow',     icon: '🌊', baseHp: 3000, speed: 0.3, reward: 200 },
 };
 
 // 12x8 Grid. 

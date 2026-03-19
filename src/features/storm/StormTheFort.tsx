@@ -1,6 +1,7 @@
 import { useEffect, useState, useRef } from 'react';
 import { Heart, Play, Pause } from 'lucide-react';
-import { useStormStore } from '../../store/useStormStore';
+import { useStormStore, STORM_ENEMY_DEFS } from '../../store/useStormStore';
+import type { StormEnemyType } from '../../store/useStormStore';
 import { useCurrencyStore } from '../../store/useCurrencyStore';
 import './StormTheFort.css';
 
@@ -15,6 +16,7 @@ export const StormTheFort = () => {
         obstacles,
         upgrades,
         lastWaveRewards,
+        hasBoughtFirstCow,
         startGame,
         pauseGame,
         resumeGame,
@@ -53,17 +55,15 @@ export const StormTheFort = () => {
 
 
     // Cost configuration
-    const DEFENDER_COSTS = { swordsman: 15, shield: 25, archer: 20 };
-    const OBSTACLE_COSTS = { barbed_wire: 10, barricade: 30 };
+    const DEFENDER_COSTS = { cow: 5, swordsman: 15, shield: 25, archer: 20 };
 
     const getUpgradeCost = (key: keyof typeof upgrades) => 50 + (upgrades[key] * 50);
 
-    const handleBuyDefender = (type: 'swordsman' | 'shield' | 'archer') => {
+    const handleBuyDefender = (type: 'cow' | 'swordsman' | 'shield' | 'archer') => {
         buyDefender(type);
     };
 
     const handleBuyObstacle = (type: 'barbed_wire' | 'barricade') => {
-        // Place dynamically near the fort initially for simplicity
         const xPos = 60 + Math.random() * 20;
         buyObstacle(type, xPos);
     };
@@ -72,18 +72,35 @@ export const StormTheFort = () => {
         buyUpgrade(key);
     };
 
+    // Get enemy icon from type
+    const getEnemyIcon = (type: string): string => {
+        const def = STORM_ENEMY_DEFS[type as StormEnemyType];
+        return def?.icon ?? '👿';
+    };
+
+    // Get defender icon
+    const getDefenderIcon = (type: string): string => {
+        switch (type) {
+            case 'cow': return '🐄';
+            case 'swordsman': return '⚔️';
+            case 'shield': return '🛡️';
+            case 'archer': return '🏹';
+            default: return '⚔️';
+        }
+    };
+
     return (
         <div className="storm-page">
             {/* Header / HUD */}
             <div className="storm-hud">
                 <div className="storm-hud-left">
-                    <h2>Castle Defense</h2>
+                    <h2>🏰 Storm the Fort</h2>
                     <span className="storm-wave-badge">Wave {wave}</span>
                 </div>
 
                 <div className="storm-hud-center">
                 <div className="storm-fort-health">
-                        <Heart size={16} color="#ef4444" fill="#ef4444" />
+                        <Heart size={14} color="#ef4444" fill="#ef4444" />
                         <div className="storm-fort-health-info">
                             <span className="storm-fort-health-label">
                                 {Math.max(0, Math.ceil(fortHp))} / {maxFortHp}
@@ -117,31 +134,18 @@ export const StormTheFort = () => {
                 </div>
             </div>
 
-            {/* Main Battlefield */}
+            {/* Main Battlefield — background set via CSS */}
             <div className="storm-battlefield">
-                <video 
-                    autoPlay 
-                    loop 
-                    muted 
-                    playsInline 
-                    className="storm-bg-video"
-                >
-                    <source src="/videos/storm-battlefield.mp4" type="video/mp4" />
-                </video>
-                {/* Enemy unit animated video — small combatant overlay */}
-                <video
-                    autoPlay
-                    loop
-                    muted
-                    playsInline
-                    className="storm-enemy-unit-video"
-                >
-                    <source src="/videos/storm-enemy-unit.mp4" type="video/mp4" />
-                </video>
+                {/* Track/path overlay image */}
+                <div className="storm-track-overlay" />
+                {/* Castle ambient bg on right */}
+                <div className="storm-castle-bg" />
+
                 <div className="storm-spawn-zone">Enemy Path ➡️</div>
                 <div className="storm-fort-zone">
                     <div className="storm-fort-structure">
-                        🏰 The Fort
+                        <div className="storm-fort-icon">🏰</div>
+                        <div className="storm-fort-label">Fort</div>
                     </div>
                 </div>
 
@@ -157,26 +161,26 @@ export const StormTheFort = () => {
                     </div>
                 ))}
 
-                {/* Render Defenders */}
+                {/* Render Defenders — now with cow art */}
                 {defenders.map(def => (
                     <div
                         key={def.id}
                         className={`storm-entity storm-defender`}
                         style={{ left: `${def.x}%` }}
                     >
-                        {def.type === 'swordsman' ? '⚔️' : def.type === 'shield' ? '🛡️' : '🏹'}
+                        {getDefenderIcon(def.type)}
                         <div className="storm-hp-bar"><div className="storm-hp-fill" style={{ width: `${(def.hp / def.maxHp) * 100}%` }} /></div>
                     </div>
                 ))}
 
-                {/* Render Enemies */}
+                {/* Render Enemies — now with varied type icons */}
                 {enemies.map(en => (
                     <div
                         key={en.id}
                         className={`storm-entity storm-enemy`}
                         style={{ left: `${en.x}%` }}
                     >
-                        👿
+                        {getEnemyIcon(en.type)}
                         <div className="storm-hp-bar"><div className="storm-hp-fill" style={{ width: `${(en.hp / en.maxHp) * 100}%` }} /></div>
                     </div>
                 ))}
@@ -223,6 +227,19 @@ export const StormTheFort = () => {
                 <div className="storm-shop-content">
                     {activeTab === 'deploy' && (
                         <div className="storm-shop-grid">
+                            {/* Cow Defender — first one free! */}
+                            <button className="storm-buy-card" onClick={() => handleBuyDefender('cow')} disabled={hasBoughtFirstCow && shmeckles < DEFENDER_COSTS.cow}>
+                                <div className="icon">🐄</div>
+                                <div className="info">
+                                    <h4>Cow Defender</h4>
+                                    <span>Slow but loyal</span>
+                                </div>
+                                {!hasBoughtFirstCow ? (
+                                    <div className="free-tag">FREE</div>
+                                ) : (
+                                    <div className="cost">🐌 {DEFENDER_COSTS.cow}</div>
+                                )}
+                            </button>
                             <button className="storm-buy-card" onClick={() => handleBuyDefender('swordsman')} disabled={shmeckles < DEFENDER_COSTS.swordsman}>
                                 <div className="icon">⚔️</div>
                                 <div className="info">
@@ -252,21 +269,21 @@ export const StormTheFort = () => {
 
                     {activeTab === 'obstacles' && (
                         <div className="storm-shop-grid">
-                            <button className="storm-buy-card" onClick={() => handleBuyObstacle('barbed_wire')} disabled={shmeckles < OBSTACLE_COSTS.barbed_wire}>
+                            <button className="storm-buy-card" onClick={() => handleBuyObstacle('barbed_wire')} disabled={shmeckles < 10}>
                                 <div className="icon">〰️</div>
                                 <div className="info">
                                     <h4>Barbed Wire</h4>
                                     <span>Slows & damages</span>
                                 </div>
-                                <div className="cost">🐌 {OBSTACLE_COSTS.barbed_wire}</div>
+                                <div className="cost">🐌 10</div>
                             </button>
-                            <button className="storm-buy-card" onClick={() => handleBuyObstacle('barricade')} disabled={shmeckles < OBSTACLE_COSTS.barricade}>
+                            <button className="storm-buy-card" onClick={() => handleBuyObstacle('barricade')} disabled={shmeckles < 30}>
                                 <div className="icon">🧱</div>
                                 <div className="info">
                                     <h4>Barricade</h4>
                                     <span>Blocks enemies</span>
                                 </div>
-                                <div className="cost">🐌 {OBSTACLE_COSTS.barricade}</div>
+                                <div className="cost">🐌 30</div>
                             </button>
                         </div>
                     )}

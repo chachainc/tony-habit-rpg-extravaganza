@@ -5,6 +5,55 @@ import { useCurrencyStore } from './useCurrencyStore';
 export const BASE_MAX_HP = 100;              // starting max HP (upgrades add to this)
 export const BASE_DAMAGE_PER_ENEMY_PER_TICK = 5;  // HP lost per enemy at base per second
 
+// ── Enemy type definitions for Storm ──────────────────────────────────────
+export type StormEnemyType = 'goblin' | 'orc' | 'skeleton' | 'bat_swarm' | 'dark_knight' | 'golem' | 'boss_slime';
+
+export const STORM_ENEMY_DEFS: Record<StormEnemyType, { icon: string; name: string; hpBase: number; speedBase: number; damageBase: number; reward: number }> = {
+    goblin:       { icon: '👺', name: 'Goblin',      hpBase: 20,  speedBase: 4.0, damageBase: 5,  reward: 2 },
+    skeleton:     { icon: '💀', name: 'Skeleton',    hpBase: 30,  speedBase: 3.5, damageBase: 6,  reward: 3 },
+    bat_swarm:    { icon: '🦇', name: 'Bat Swarm',   hpBase: 15,  speedBase: 5.0, damageBase: 3,  reward: 2 },
+    orc:          { icon: '👹', name: 'Orc',         hpBase: 50,  speedBase: 2.5, damageBase: 8,  reward: 5 },
+    dark_knight:  { icon: '⚔️', name: 'Dark Knight', hpBase: 80,  speedBase: 2.0, damageBase: 12, reward: 8 },
+    golem:        { icon: '🪨', name: 'Golem',       hpBase: 150, speedBase: 1.5, damageBase: 15, reward: 12 },
+    boss_slime:   { icon: '👑', name: 'King Slime',  hpBase: 300, speedBase: 1.0, damageBase: 20, reward: 25 },
+};
+
+function getStormWaveEnemies(wave: number): StormEnemyType[] {
+    const enemies: StormEnemyType[] = [];
+    if (wave <= 1) {
+        for (let i = 0; i < 8; i++) enemies.push('goblin');
+    } else if (wave === 2) {
+        for (let i = 0; i < 10; i++) enemies.push('goblin');
+        for (let i = 0; i < 3; i++) enemies.push('skeleton');
+    } else if (wave === 3) {
+        for (let i = 0; i < 8; i++) enemies.push('goblin');
+        for (let i = 0; i < 4; i++) enemies.push('skeleton');
+        for (let i = 0; i < 3; i++) enemies.push('bat_swarm');
+        for (let i = 0; i < 2; i++) enemies.push('orc');
+    } else if (wave === 4) {
+        for (let i = 0; i < 6; i++) enemies.push('skeleton');
+        for (let i = 0; i < 4; i++) enemies.push('orc');
+        for (let i = 0; i < 4; i++) enemies.push('bat_swarm');
+        for (let i = 0; i < 2; i++) enemies.push('dark_knight');
+    } else if (wave % 5 === 0) {
+        enemies.push('boss_slime');
+        for (let i = 0; i < wave; i++) enemies.push('orc');
+        for (let i = 0; i < Math.floor(wave / 3); i++) enemies.push('dark_knight');
+    } else {
+        const count = 10 + wave * 2;
+        for (let i = 0; i < count; i++) {
+            const r = Math.random();
+            if (r < 0.20) enemies.push('goblin');
+            else if (r < 0.35) enemies.push('skeleton');
+            else if (r < 0.45) enemies.push('bat_swarm');
+            else if (r < 0.65) enemies.push('orc');
+            else if (r < 0.80) enemies.push('dark_knight');
+            else enemies.push('golem');
+        }
+    }
+    return enemies;
+}
+
 export type StormGameState = 'idle' | 'playing' | 'paused' | 'victory' | 'defeat';
 
 // Basic entity bounds for the side-view lane
@@ -23,6 +72,7 @@ export interface CombatEntity {
 
 export interface Enemy extends CombatEntity {
     reward: number; // Shmeckles dropped
+    enemyType: StormEnemyType;
 }
 
 export interface Defender extends CombatEntity {
@@ -73,10 +123,11 @@ export interface StormState {
     resumeGame: () => void;
     gameTick: (deltaMs: number) => void;
     
-    // Purchasing actions
-    buyDefender: (type: 'swordsman' | 'shield' | 'archer') => boolean;
+    // Purchasing
+    buyDefender: (type: 'cow' | 'swordsman' | 'shield' | 'archer') => boolean;
     buyObstacle: (type: 'barbed_wire' | 'barricade', xPos: number) => boolean;
     buyUpgrade: (upgradeKey: keyof StormState['upgrades']) => boolean;
+    hasBoughtFirstCow: boolean;
     
     // Wave Generation
     startNextWave: () => void;
@@ -93,6 +144,7 @@ export const useStormStore = create<StormState>()((set, get) => ({
     obstacles: [],
     enemiesToSpawn: [],
     spawnTimer: 0,
+    hasBoughtFirstCow: false,
     
     upgrades: {
         fortHealthLevel: 0,
@@ -123,25 +175,26 @@ export const useStormStore = create<StormState>()((set, get) => ({
 
     startNextWave: () => {
         const { wave } = get();
-        // Generate enemies based on wave number
-        const newEnemies: Enemy[] = [];
-        const count = 5 + wave * 2;
-        
-        for (let i = 0; i < count; i++) {
-            newEnemies.push({
+        // Generate enemies based on wave number using varied types
+        const types = getStormWaveEnemies(wave);
+        const newEnemies: Enemy[] = types.map((eType, i) => {
+            const def = STORM_ENEMY_DEFS[eType];
+            const waveScale = 1 + (wave - 1) * 0.15;
+            return {
                 id: `enemy-${wave}-${i}`,
-                type: 'basic',
-                hp: 20 + (wave * 5),
-                maxHp: 20 + (wave * 5),
+                type: eType,
+                enemyType: eType,
+                hp: Math.ceil(def.hpBase * waveScale),
+                maxHp: Math.ceil(def.hpBase * waveScale),
                 x: -10, // spawn offscreen left
-                damage: 5 + wave,
-                speed: 3 + (Math.random()), 
+                damage: Math.ceil(def.damageBase * waveScale),
+                speed: def.speedBase + (Math.random() * 0.5),
                 range: 2,
                 cooldown: 0,
                 maxCooldown: 1000,
-                reward: 2 + Math.floor(wave / 2),
-            });
-        }
+                reward: def.reward + Math.floor(wave / 3),
+            };
+        });
 
         set({
             gameState: 'playing',
@@ -152,25 +205,40 @@ export const useStormStore = create<StormState>()((set, get) => ({
     },
 
     buyDefender: (type) => {
-        // We will implement actual costs later, placeholders for now
-        const costs = { 'swordsman': 15, 'shield': 25, 'archer': 20 };
-        const cost = costs[type];
+       // Cost configuration — cow is 5 shmeckles (first one free via store)
+    const DEFENDER_COSTS = { cow: 5, swordsman: 15, shield: 25, archer: 20 };
+        const cost = DEFENDER_COSTS[type];
         const store = useCurrencyStore.getState();
+        const state = get();
+
+        // First cow is FREE
+        const isFree = type === 'cow' && !state.hasBoughtFirstCow;
         
-        if (store.shmeckles >= cost) {
-            store.spendShmeckles(cost);
-            // Spawn defender at the fort (x=90) holding the line
+        if (isFree || store.shmeckles >= cost) {
+            if (!isFree) store.spendShmeckles(cost);
+            if (type === 'cow' && !state.hasBoughtFirstCow) {
+                set({ hasBoughtFirstCow: true });
+            }
+
+            const stats: Record<string, { hp: number; dmg: number; range: number; cd: number }> = {
+                cow:       { hp: 60, dmg: 8,  range: 20, cd: 2000 },
+                swordsman: { hp: 40, dmg: 15, range: 5,  cd: 1000 },
+                shield:    { hp: 100, dmg: 5, range: 5,  cd: 1000 },
+                archer:    { hp: 40, dmg: 10, range: 40, cd: 1500 },
+            };
+            const s = stats[type];
+
             const newDefender: Defender = {
                 id: `def-${Date.now()}`,
                 type,
-                hp: type === 'shield' ? 100 : 40,
-                maxHp: type === 'shield' ? 100 : 40,
-                x: 80 - Math.random() * 20, // scatter near fort
-                damage: type === 'swordsman' ? 15 : (type === 'archer' ? 10 : 5),
-                speed: 0, 
-                range: type === 'archer' ? 40 : 5,
+                hp: s.hp,
+                maxHp: s.hp,
+                x: 80 - Math.random() * 20,
+                damage: s.dmg,
+                speed: 0,
+                range: s.range,
                 cooldown: 0,
-                maxCooldown: type === 'archer' ? 1500 : 1000,
+                maxCooldown: s.cd,
                 isStatic: true
             };
             set(state => ({ defenders: [...state.defenders, newDefender] }));
