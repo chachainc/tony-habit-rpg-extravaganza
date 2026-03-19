@@ -207,19 +207,22 @@ button:active {
   pointer-events: none;
 }
 
-/* Centered overlay inside the modal itself (not fixed to screen) */
+/* Reward overlay — portaled to body, must be fixed to viewport */
 .board-reward-overlay {
-  position: absolute;
+  position: fixed;
   inset: 0;
-  z-index: 50;
+  z-index: 9999;
   display: flex;
   align-items: center;
   justify-content: center;
   background: rgba(0, 0, 0, 0.75);
   backdrop-filter: blur(4px);
-  padding: 12px;
-  border-radius: inherit;
-  pointer-events: all;
+  padding: max(12px, env(safe-area-inset-top, 12px))
+           max(12px, env(safe-area-inset-right, 12px))
+           max(12px, env(safe-area-inset-bottom, 12px))
+           max(12px, env(safe-area-inset-left, 12px));
+  box-sizing: border-box;
+  pointer-events: auto;
 }
 
 

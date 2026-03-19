@@ -86,7 +86,7 @@ export const useCurrencyStore = create<CurrencyState>()(
                             multiplier += 0.02;
                         }
 
-                        finalAmount = Math.ceil(amount * multiplier);
+                        finalAmount = Math.floor(amount * multiplier);
                         set((state) => ({ gold: state.gold + finalAmount }));
                     }).catch(() => {
                         // Fallback if import fails
