@@ -1,5 +1,5 @@
-export type TowerType = 'archer' | 'mage' | 'frost' | 'cannon' | 'ballista';
-export type EnemyType = 'goblin' | 'orc' | 'golem' | 'boss_slime';
+export type TowerType = 'cow' | 'archer' | 'mage' | 'frost' | 'cannon' | 'ballista';
+export type EnemyType = 'goblin' | 'orc' | 'golem' | 'boss_slime' | 'skeleton' | 'dark_knight' | 'bat_swarm' | 'necromancer' | 'flow_boss';
 
 export interface GridPos {
     x: number;
@@ -25,22 +25,30 @@ export interface EnemyDef {
     icon: string;
     baseHp: number;
     speed: number;      // Grid tiles per second
-    reward: number;     // Mana rewarded on kill
+    reward: number;     // Shmeckles rewarded on kill
+    useVideo?: boolean; // if true, render as video sprite instead of emoji
+    healsNearby?: boolean; // necromancer trait
 }
 
 export const TD_TOWERS: Record<TowerType, TowerDef> = {
-    archer: { type: 'archer', name: 'Archer', icon: '🏹', color: '#16a34a', cost: 50, range: 3, damage: 15, cooldown: 600, description: 'Fast, single target.', projectileColor: '#86efac' },
-    mage: { type: 'mage', name: 'Mage', icon: '🔮', color: '#9333ea', cost: 100, range: 4, damage: 40, cooldown: 1200, description: 'High damage, slow.', projectileColor: '#d8b4fe' },
-    frost: { type: 'frost', name: 'Frost', icon: '❄️', color: '#0284c7', cost: 75, range: 2, damage: 5, cooldown: 1500, description: 'Slows enemies in range (NYI).', projectileColor: '#bae6fd' },
-    cannon: { type: 'cannon', name: 'Cannon', icon: '💣', color: '#b91c1c', cost: 150, range: 2.5, damage: 80, cooldown: 2000, description: 'Massive local damage.', projectileColor: '#fca5a5' },
-    ballista: { type: 'ballista', name: 'Ballista', icon: '🏹', color: '#ea580c', cost: 200, range: 6, damage: 120, cooldown: 3000, description: 'Long range, high damage.', projectileColor: '#fdba74' }
+    cow:      { type: 'cow',      name: 'Cow Defender', icon: '🐄', color: '#a3e635', cost: 5,   range: 2.5, damage: 10,  cooldown: 2000, description: 'Slow but loyal. First one is free!', projectileColor: '#bef264' },
+    archer:   { type: 'archer',   name: 'Archer',       icon: '🏹', color: '#16a34a', cost: 50,  range: 3,   damage: 15,  cooldown: 600,  description: 'Fast, single target.',               projectileColor: '#86efac' },
+    mage:     { type: 'mage',     name: 'Mage',         icon: '🔮', color: '#9333ea', cost: 100, range: 4,   damage: 40,  cooldown: 1200, description: 'High damage, slow.',                 projectileColor: '#d8b4fe' },
+    frost:    { type: 'frost',    name: 'Frost',        icon: '❄️', color: '#0284c7', cost: 75,  range: 2,   damage: 5,   cooldown: 1500, description: 'Slows enemies in range.',             projectileColor: '#bae6fd' },
+    cannon:   { type: 'cannon',   name: 'Cannon',       icon: '💣', color: '#b91c1c', cost: 150, range: 2.5, damage: 80,  cooldown: 2000, description: 'Massive local damage.',              projectileColor: '#fca5a5' },
+    ballista: { type: 'ballista', name: 'Ballista',     icon: '🏹', color: '#ea580c', cost: 200, range: 6,   damage: 120, cooldown: 3000, description: 'Long range, high damage.',            projectileColor: '#fdba74' }
 };
 
 export const TD_ENEMIES: Record<EnemyType, EnemyDef> = {
-    goblin: { type: 'goblin', name: 'Goblin', icon: '👺', baseHp: 40, speed: 1.5, reward: 5 },
-    orc: { type: 'orc', name: 'Orc', icon: '👹', baseHp: 120, speed: 1.0, reward: 10 },
-    golem: { type: 'golem', name: 'Golem', icon: '🪨', baseHp: 400, speed: 0.6, reward: 25 },
-    boss_slime: { type: 'boss_slime', name: 'King Slime', icon: '👑', baseHp: 1500, speed: 0.4, reward: 100 }
+    goblin:       { type: 'goblin',       name: 'Goblin',       icon: '👺', baseHp: 40,   speed: 1.5, reward: 5 },
+    skeleton:     { type: 'skeleton',     name: 'Skeleton',     icon: '💀', baseHp: 60,   speed: 1.8, reward: 6 },
+    bat_swarm:    { type: 'bat_swarm',    name: 'Bat Swarm',    icon: '🦇', baseHp: 25,   speed: 2.2, reward: 3 },
+    orc:          { type: 'orc',          name: 'Orc',          icon: '👹', baseHp: 120,  speed: 1.0, reward: 10 },
+    dark_knight:  { type: 'dark_knight',  name: 'Dark Knight',  icon: '⚔️', baseHp: 200,  speed: 0.8, reward: 15 },
+    necromancer:  { type: 'necromancer',  name: 'Necromancer',  icon: '🧙‍♂️', baseHp: 150,  speed: 0.9, reward: 20, healsNearby: true },
+    golem:        { type: 'golem',        name: 'Golem',        icon: '🪨', baseHp: 400,  speed: 0.6, reward: 25 },
+    boss_slime:   { type: 'boss_slime',   name: 'King Slime',   icon: '👑', baseHp: 1500, speed: 0.4, reward: 100 },
+    flow_boss:    { type: 'flow_boss',    name: 'The Flow',     icon: '🌊', baseHp: 3000, speed: 0.3, reward: 200, useVideo: true },
 };
 
 // 12x8 Grid. 
@@ -91,30 +99,55 @@ export const isPath = (x: number, y: number) => {
 export const getWaveComposition = (wave: number): EnemyType[] => {
     const enemies: EnemyType[] = [];
     
-    if (wave === 1) {
-        for(let i=0; i<8; i++) enemies.push('goblin');
-    } else if (wave === 2) {
-        for(let i=0; i<12; i++) enemies.push('goblin');
-        for(let i=0; i<2; i++) enemies.push('orc');
-    } else if (wave === 3) {
-        for(let i=0; i<15; i++) enemies.push('goblin');
-        for(let i=0; i<5; i++) enemies.push('orc');
-    } else if (wave === 4) {
-        for(let i=0; i<10; i++) enemies.push('goblin');
-        for(let i=0; i<8; i++) enemies.push('orc');
-        for(let i=0; i<2; i++) enemies.push('golem');
-    } else if (wave % 5 === 0) {
-        // Boss wave
+    // Flow Boss appears every 10 waves
+    if (wave >= 10 && wave % 10 === 0) {
+        enemies.push('flow_boss');
+        // Escort with dark knights
+        for (let i = 0; i < Math.floor(wave / 5); i++) enemies.push('dark_knight');
+        for (let i = 0; i < wave; i++) enemies.push('orc');
+        return enemies;
+    }
+
+    // Boss Slime waves every 5 (but not multiples of 10; Flow replaces those)
+    if (wave % 5 === 0) {
         enemies.push('boss_slime');
-        for(let i=0; i<wave; i++) enemies.push('orc');
+        for (let i = 0; i < wave; i++) enemies.push('orc');
+        // Add necromancer support from wave 10+
+        if (wave >= 10) {
+            for (let i = 0; i < Math.floor(wave / 10); i++) enemies.push('necromancer');
+        }
+        return enemies;
+    }
+
+    if (wave === 1) {
+        for (let i = 0; i < 8; i++) enemies.push('goblin');
+    } else if (wave === 2) {
+        for (let i = 0; i < 10; i++) enemies.push('goblin');
+        for (let i = 0; i < 4; i++) enemies.push('skeleton');
+        for (let i = 0; i < 2; i++) enemies.push('bat_swarm');
+    } else if (wave === 3) {
+        for (let i = 0; i < 12; i++) enemies.push('goblin');
+        for (let i = 0; i < 5; i++) enemies.push('skeleton');
+        for (let i = 0; i < 3; i++) enemies.push('orc');
+        for (let i = 0; i < 4; i++) enemies.push('bat_swarm');
+    } else if (wave === 4) {
+        for (let i = 0; i < 8; i++) enemies.push('goblin');
+        for (let i = 0; i < 6; i++) enemies.push('skeleton');
+        for (let i = 0; i < 6; i++) enemies.push('orc');
+        for (let i = 0; i < 2; i++) enemies.push('dark_knight');
+        for (let i = 0; i < 3; i++) enemies.push('golem');
     } else {
-        // Scaled wave
+        // Scaled procedural waves
         const count = 15 + wave * 2;
-        for(let i=0; i<count; i++) {
+        for (let i = 0; i < count; i++) {
             const r = Math.random();
-            if (r < 0.6) enemies.push('goblin');
-            else if (r < 0.9) enemies.push('orc');
-            else enemies.push('golem');
+            if (r < 0.25) enemies.push('goblin');
+            else if (r < 0.40) enemies.push('skeleton');
+            else if (r < 0.50) enemies.push('bat_swarm');
+            else if (r < 0.70) enemies.push('orc');
+            else if (r < 0.80) enemies.push('dark_knight');
+            else if (r < 0.90) enemies.push('golem');
+            else enemies.push(wave >= 6 ? 'necromancer' : 'orc');
         }
     }
     return enemies;

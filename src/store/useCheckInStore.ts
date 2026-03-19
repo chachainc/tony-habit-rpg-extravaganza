@@ -38,18 +38,43 @@ export interface CheckInReward {
     buffValue?: number;
     buffDuration?: number; // hours
     dailyTickets?: number;
+    gems?: number;
 }
 
-// Day 1-7 reward cycle - escalating rewards
-const DAY_REWARDS: Record<number, CheckInReward> = {
-    1: { gold: 50 },
-    2: { gold: 75 },
-    3: { gold: 100, buffType: 'xp_boost', buffValue: 0.05, buffDuration: 24 },
-    4: { gold: 125 },
-    5: { gold: 150, buffType: 'gold_boost', buffValue: 0.10, buffDuration: 24 },
-    6: { gold: 200 },
-    7: { gold: 300, dailyTickets: 5 },
-};
+// Returns the reward for a given absolute streak count (1-indexed)
+export function getStreakReward(streakCount: number): CheckInReward {
+    // Week 5+ (day 29+): 500 gold, 20 tickets, +5 gems every 7 days
+    if (streakCount >= 29) {
+        return {
+            gold: 500,
+            dailyTickets: 20,
+            gems: streakCount % 7 === 0 ? 5 : 0,
+        };
+    }
+    // Day 28 milestone
+    if (streakCount === 28) return { gold: 500, dailyTickets: 15, gems: 5 };
+    // Days 22-27
+    if (streakCount >= 22) return { gold: 200, dailyTickets: 15 };
+    // Day 21 milestone (3-week)
+    if (streakCount === 21) return { gold: 500, dailyTickets: 20, gems: 5 };
+    // Days 15-20
+    if (streakCount >= 15) return { gold: 200, dailyTickets: 15 };
+    // Day 14 milestone
+    if (streakCount === 14) return { gold: 500, dailyTickets: 10, gems: 5 };
+    // Days 8-13
+    if (streakCount >= 8) return { gold: 200, dailyTickets: 10 };
+    // Week 1 (days 1-7) — existing gold amounts preserved, new ticket counts
+    const WEEK1: Record<number, CheckInReward> = {
+        1: { gold: 50,  dailyTickets: 3 },
+        2: { gold: 75,  dailyTickets: 4 },
+        3: { gold: 100, dailyTickets: 5, buffType: 'xp_boost', buffValue: 0.05, buffDuration: 24 },
+        4: { gold: 125, dailyTickets: 6 },
+        5: { gold: 150, dailyTickets: 7, buffType: 'gold_boost', buffValue: 0.10, buffDuration: 24 },
+        6: { gold: 200, dailyTickets: 8 },
+        7: { gold: 300, dailyTickets: 9, gems: 5 },
+    };
+    return WEEK1[streakCount] ?? WEEK1[1];
+}
 
 const CONSOLATION_REWARD: CheckInReward = {
     gold: 25,
@@ -91,23 +116,26 @@ export const useCheckInStore = create<CheckInState>()(
                 let newStreakCount: number;
 
                 if (missedYesterday || state.lastCheckInDate === null) {
-                    // Streak broken or first time - reset to Day 1
-                    // But give consolation reward if they had a streak
+                    // Streak broken or first time — reset
                     if (state.streakCount > 0 && missedYesterday) {
                         reward = CONSOLATION_REWARD;
                     } else {
-                        reward = DAY_REWARDS[1];
+                        reward = getStreakReward(1);
                     }
                     newStreakDay = 1;
                     newStreakCount = 1;
                 } else {
                     // Continue streak
-                    newStreakDay = (state.streakDay % 7) + 1;
+                    const safeStreakDay = Number.isFinite(state.streakDay) ? state.streakDay : 0;
+                    newStreakDay = (safeStreakDay % 7) + 1;
                     newStreakCount = state.streakCount + 1;
-                    reward = DAY_REWARDS[newStreakDay];
+                    reward = getStreakReward(newStreakCount);
                 }
 
                 let finalReward = { ...reward };
+                // Safety: ensure gold is always a positive integer
+                if (!finalReward.gold || finalReward.gold <= 0) finalReward.gold = 50; // fallback to Day 1 gold
+
                 if (newStreakCount > 5) finalReward.habitXp = 1;
 
                 // Apply rewards immediately (direct static imports for immediate availability)
@@ -134,6 +162,20 @@ export const useCheckInStore = create<CheckInState>()(
                     useMonopolyStore.getState().addDailyTickets(finalReward.dailyTickets);
                 }
 
+                if (finalReward.gems && finalReward.gems > 0) {
+                    import('./useCurrencyStore').then(({ useCurrencyStore: cs }) => {
+                        cs.getState().addDiamonds(finalReward.gems!);
+                    });
+                    import('../components/ui/Toast').then(({ useToastStore }) => {
+                        useToastStore.getState().addToast({
+                            type: 'success',
+                            message: `💎 Week Milestone! +${finalReward.gems} Gems!`,
+                            duration: 5000,
+                        });
+                    }).catch(() => {});
+                }
+
+
                 // Sync with Calendar Store
                 import('./useCalendarStore').then(({ useCalendarStore }) => {
                     const calendarStore = useCalendarStore.getState();
@@ -150,28 +192,14 @@ export const useCheckInStore = create<CheckInState>()(
                     hasCheckedInToday: true,
                 });
 
-                // Gem milestone rewards
-                if (newStreakCount === 14) {
-                    import('./useGameStore').then(({ useGameStore }) => {
-                        useGameStore.getState().addGems(1);
-                    });
-                    import('../components/ui/Toast').then(({ useToastStore }) => {
-                        useToastStore.getState().addToast({ type: 'success', message: '💎 2-Week Streak! +1 Gem reward!', duration: 5000 });
-                    }).catch(() => { });
-                } else if (newStreakCount === 30) {
-                    import('./useGameStore').then(({ useGameStore }) => {
-                        useGameStore.getState().addGems(3);
-                    });
-                    import('../components/ui/Toast').then(({ useToastStore }) => {
-                        useToastStore.getState().addToast({ type: 'success', message: '💎💎💎 30-Day Streak! +3 Gems!', duration: 5000 });
-                    }).catch(() => { });
-                }
+                // Gem milestone — handled above via finalReward.gems
+                // (Legacy logic for day 14 and day 30 removed — now managed by getStreakReward)
 
                 return finalReward;
             },
 
             getRewardForDay: (day: number) => {
-                return DAY_REWARDS[day] || DAY_REWARDS[1];
+                return getStreakReward(day);
             },
 
             getStreakStatus: () => {

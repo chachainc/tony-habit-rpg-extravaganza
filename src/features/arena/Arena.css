@@ -2364,16 +2364,22 @@
     .arena-modal {
         overflow-y: auto;
         -webkit-overflow-scrolling: touch;
-        padding-bottom: calc(70px + env(safe-area-inset-bottom, 0px));
-        height: 100vh;
+        /* Use dvh (dynamic viewport height) which correctly excludes iPhone Safari's browser chrome */
+        height: 100dvh;
+        /* Fallback for browsers without dvh support */
+        height: -webkit-fill-available;
+        max-height: 100vh;
         display: flex;
         flex-direction: column;
+        /* Bottom padding so content never hides under nav + browser bar */
+        padding-bottom: calc(72px + env(safe-area-inset-bottom, 20px));
     }
 
     /* Active battle should lock the viewport and rely on internal flex constraints */
     .arena-modal:has(.battle-layout) {
         overflow: hidden;
         padding-bottom: 0;
+        height: 100vh;
     }
 
     /* --- CAMPAIGN MAP --- */
@@ -2469,15 +2475,13 @@
     /* --- PREP PHASE MOBILE --- */
     .arena-modal--prep {
         max-width: 100%;
-        height: auto;
-        min-height: 100vh;
-        overflow-y: visible;
+        /* Don't set height/overflow here — .arena-modal is the scroll container */
     }
 
     .battle-prep-container {
-        padding: 1rem 0.75rem 4rem; /* More padding at bottom */
+        padding: 1rem 0.75rem;
         height: auto;
-        min-height: 100vh;
+        /* Let natural height flow — parent arena-modal scrolls */
     }
 
     .prep-header {
@@ -2499,9 +2503,11 @@
     }
 
     .prep-scrollable {
-        overflow-y: visible; /* Fix nested scrolling */
+        /* Let content flow naturally; parent arena-modal handles scroll */
         height: auto;
-        padding-bottom: calc(150px + env(safe-area-inset-bottom));
+        overflow-y: visible;
+        /* Bottom padding to clear the bottom nav bar + browser chrome */
+        padding-bottom: calc(140px + env(safe-area-inset-bottom, 20px));
     }
 
     .prep-layout {

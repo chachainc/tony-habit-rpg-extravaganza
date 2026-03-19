@@ -1,6 +1,11 @@
 import type { SkillName } from '../store/useGameStore';
 import type { CurrencyCost } from '../store/useCurrencyStore';
 
+import warCowImg from '../assets/pets/war_cow.png';
+import archerCowImg from '../assets/pets/archer_cow.png';
+import wizardCowImg from '../assets/pets/wizard_cow.png';
+import cowKingImg from '../assets/pets/cow_king.png';
+
 export type ItemType = 'armor' | 'weapon' | 'pet' | 'furniture' | 'consumable' | 'cosmetic' | 'pet_accessory';
 export type ItemCategory = 'hygiene' | 'sleep' | 'general' | 'combat' | 'social';
 
@@ -357,7 +362,7 @@ const PET_ITEMS: Item[] = [
         name: 'Meditating War Cow',
         description: 'A peaceful master of brutal strength.',
         icon: '🐮⚔️',
-        image: '/src/assets/pets/war_cow.png',
+        image: warCowImg,
         type: 'pet',
         category: 'social',
         unlockRequirement: {},
@@ -369,7 +374,7 @@ const PET_ITEMS: Item[] = [
         name: 'Highland Archer Cow',
         description: 'A fluffy sniper with deadly aim.',
         icon: '🐮🏹',
-        image: '/src/assets/pets/archer_cow.png',
+        image: archerCowImg,
         type: 'pet',
         category: 'social',
         unlockRequirement: {},
@@ -381,7 +386,7 @@ const PET_ITEMS: Item[] = [
         name: 'Wizard Cow',
         description: 'A master of mystical moo-gic.',
         icon: '🐮🧙',
-        image: '/src/assets/pets/wizard_cow.png',
+        image: wizardCowImg,
         type: 'pet',
         category: 'social',
         unlockRequirement: {},
@@ -393,7 +398,7 @@ const PET_ITEMS: Item[] = [
         name: 'Cow King',
         description: 'The undisputed ruler of the battlefield herd.',
         icon: '🐮👑',
-        image: '/src/assets/pets/cow_king.png',
+        image: cowKingImg,
         type: 'pet',
         category: 'social',
         unlockRequirement: { otherItems: ['meditating_war_cow', 'highland_archer_cow', 'wizard_cow'] },

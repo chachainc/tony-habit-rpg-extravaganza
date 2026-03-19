@@ -205,7 +205,10 @@
     overflow: hidden;
 }
 
-.tiles-board { position: relative; }
+.tiles-board { 
+    position: relative; 
+    transform: translateX(20px); /* Nudges the entire board right to prevent left-edge cutoff */
+}
 
 .tiles-board-tile {
     position: absolute;

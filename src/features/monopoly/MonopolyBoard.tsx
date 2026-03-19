@@ -1,8 +1,9 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Info, ChevronDown, ChevronUp, X, RefreshCw } from 'lucide-react';
+import { Info, ChevronDown, ChevronUp, X, RefreshCw, Play, Square } from 'lucide-react';
 import { useMonopolyStore, BOARD, BOARD_ODDS, type BoardSpace, type MysteryRollResult } from '../../store/useMonopolyStore';
 import { useCurrencyStore } from '../../store/useCurrencyStore';
+import { useHeroImage } from '../../hooks/useHeroImage';
 import './MonopolyBoard.css';
 
 // ── Path layout (unchanged) ─────────────────────────────────────
@@ -71,9 +72,20 @@ export const MonopolyBoard = ({ onClose }: { onClose: () => void }) => {
         canRoll, rollMysteryBox, streakMultiplierActive, totalLifetimeRolls
     } = useMonopolyStore();
     const { addGold, addShmeckles, addTickets } = useCurrencyStore();
+    const heroImage = useHeroImage();
+
+    // Debug: confirm which character image is being used for the token
+    console.log('[MonopolyBoard] Player token image:', heroImage);
+
     const addSigils = (n: number) => {
         try { require('../../store/useConquestStore').useConquestStore.getState().addSigils(n); } catch {}
     };
+
+    // Derive player token from characterArchetype image (same as arena/stats/character screen)
+    // Falls back to 🧙 only if no archetype is set yet
+    const playerToken = heroImage
+        ? <img src={heroImage} alt="Player" style={{ width: '2rem', height: '2rem', borderRadius: '50%', objectFit: 'cover', objectPosition: 'top', border: '2px solid #6366f1' }} />
+        : <span>🧙</span>;
 
     // ── Phase state machine ─────────────────────────────────────
     const [phase, setPhase] = useState<Phase>('idle');
@@ -81,6 +93,10 @@ export const MonopolyBoard = ({ onClose }: { onClose: () => void }) => {
     const [spinFace, setSpinFace] = useState<string>('🎲');
     const [landedSpace, setLandedSpace] = useState<BoardSpace | null>(null);
     const [mysteryEvent, setMysteryEvent] = useState<MysteryRollResult | null>(null);
+
+    // Auto-roll
+    const [autoRollActive, setAutoRollActive] = useState(false);
+    const autoRollRef = useRef(false);
 
     // Mystery box rng
     const JACKPOT_TARGET = 4;
@@ -176,15 +192,15 @@ export const MonopolyBoard = ({ onClose }: { onClose: () => void }) => {
         }, 900);
     };
 
-    const handleCloseResult = () => {
+    const handleCloseResult = useCallback(() => {
         setPhase('idle');
         setLandedSpace(null);
         setMysteryEvent(null);
         setFinalRng(null);
         setDiceResult(null);
-    };
+    }, []);
 
-    const handleRollAgain = () => {
+    const handleRollAgain = useCallback(() => {
         setPhase('idle');
         setLandedSpace(null);
         setMysteryEvent(null);
@@ -192,13 +208,53 @@ export const MonopolyBoard = ({ onClose }: { onClose: () => void }) => {
         setDiceResult(null);
         // Small tick to let state settle, then roll
         setTimeout(() => handleRoll(), 50);
-    };
+    }, []);
+
+    // Auto-roll: when active, auto-dismiss result and roll again
+    useEffect(() => {
+        autoRollRef.current = autoRollActive;
+    }, [autoRollActive]);
 
     useEffect(() => {
-        return () => {
-            if (rngIntervalRef.current) clearInterval(rngIntervalRef.current);
-        };
-    }, []);
+        if (!autoRollActive) return;
+        if (phase === 'result') {
+            // Auto-dismiss non-mystery result after 1.2s and roll again
+            const t = setTimeout(() => {
+                if (!autoRollRef.current) return;
+                if (canRoll()) {
+                    handleRollAgain();
+                } else {
+                    setAutoRollActive(false);
+                    handleCloseResult();
+                }
+            }, 1200);
+            return () => clearTimeout(t);
+        }
+        if (phase === 'mystery-result') {
+            // Auto-dismiss mystery result after 2s and roll again
+            const t = setTimeout(() => {
+                if (!autoRollRef.current) return;
+                if (canRoll()) {
+                    handleRollAgain();
+                } else {
+                    setAutoRollActive(false);
+                    handleCloseResult();
+                }
+            }, 2000);
+            return () => clearTimeout(t);
+        }
+        // If idle with tickets, start next roll
+        if (phase === 'idle') {
+            if (canRoll()) {
+                const t = setTimeout(() => {
+                    if (autoRollRef.current) handleRoll();
+                }, 300);
+                return () => clearTimeout(t);
+            } else {
+                setAutoRollActive(false);
+            }
+        }
+    }, [autoRollActive, phase]);
 
     const playerPosition = animatingTo !== null ? animatingTo : currentPosition;
 
@@ -264,7 +320,7 @@ export const MonopolyBoard = ({ onClose }: { onClose: () => void }) => {
                                             animate={{ y: [0, -4, 0] }}
                                             transition={{ repeat: Infinity, duration: 1.5 }}
                                         >
-                                            🧙
+                                            {playerToken}
                                         </motion.div>
                                     )}
                                 </motion.div>
@@ -332,7 +388,7 @@ export const MonopolyBoard = ({ onClose }: { onClose: () => void }) => {
 
                 {/* Controls row */}
                 <div className="walkable-controls">
-                    {phase === 'idle' && canRoll() && (
+                    {phase === 'idle' && canRoll() && !autoRollActive && (
                         <motion.button
                             className="roll-btn"
                             onClick={handleRoll}
@@ -343,10 +399,38 @@ export const MonopolyBoard = ({ onClose }: { onClose: () => void }) => {
                         </motion.button>
                     )}
 
+                    {/* Auto Roll toggle */}
+                    {canRoll() && (
+                        <motion.button
+                            className={`roll-btn${autoRollActive ? ' auto-roll-active' : ''}`}
+                            style={{
+                                background: autoRollActive
+                                    ? 'linear-gradient(135deg, #ef4444, #dc2626)'
+                                    : 'linear-gradient(135deg, #f59e0b, #d97706)',
+                                marginLeft: autoRollActive ? 0 : '0.5rem',
+                            }}
+                            onClick={() => {
+                                if (autoRollActive) {
+                                    setAutoRollActive(false);
+                                } else {
+                                    setAutoRollActive(true);
+                                    // kick off first roll if idle
+                                    if (phase === 'idle') setTimeout(() => handleRoll(), 100);
+                                }
+                            }}
+                            whileHover={{ scale: 1.05 }}
+                            whileTap={{ scale: 0.95 }}
+                        >
+                            {autoRollActive
+                                ? <><Square size={14} /> Stop Auto</>  
+                                : <><Play size={14} /> Auto Roll</>}
+                        </motion.button>
+                    )}
+
                     {phase === 'idle' && !canRoll() && (
                         <div className="no-tickets">
                             <p>No rolls remaining!</p>
-                            <p className="comeback">Come back tomorrow for 5 more rolls</p>
+                            <p className="comeback">Earn more tickets by completing training sessions</p>
                         </div>
                     )}
 
@@ -432,10 +516,13 @@ export const MonopolyBoard = ({ onClose }: { onClose: () => void }) => {
                                     )}
                                 </div>
                                 <div className="reward-action-row">
-                                    {canRoll() && (
+                                    {canRoll() && !autoRollActive && (
                                         <button className="roll-again-btn" onClick={handleRollAgain}>
                                             <RefreshCw size={16} /> Roll Again
                                         </button>
+                                    )}
+                                    {autoRollActive && (
+                                        <div className="rolling-status-pill">⚡ Auto Rolling...</div>
                                     )}
                                     <button className="luck-continue-btn" onClick={handleCloseResult}>
                                         {canRoll() ? 'Continue' : 'Awesome!'}
@@ -505,10 +592,13 @@ export const MonopolyBoard = ({ onClose }: { onClose: () => void }) => {
                                 </div>
 
                                 <div className="reward-action-row">
-                                    {canRoll() && (
+                                    {canRoll() && !autoRollActive && (
                                         <button className="roll-again-btn" onClick={handleRollAgain}>
                                             <RefreshCw size={16} /> Roll Again
                                         </button>
+                                    )}
+                                    {autoRollActive && (
+                                        <div className="rolling-status-pill">⚡ Auto Rolling...</div>
                                     )}
                                     <button className="continue-btn" onClick={handleCloseResult}>
                                         {canRoll() ? 'Continue' : 'Done'}

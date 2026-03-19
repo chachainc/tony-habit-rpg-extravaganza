@@ -377,7 +377,7 @@ export const WakeUpModal = ({ onComplete }: { onComplete: () => void }) => {
                         <div className="wake-checkin__reward-list">
                             <div className="wake-checkin__reward-item">
                                 <span>💰 Gold:</span>
-                                <span className="wake-checkin__reward-value">+{checkInReward.gold}</span>
+                                <span className="wake-checkin__reward-value">+{checkInReward.gold ?? '?'}</span>
                             </div>
                             {checkInReward.habitXp && (
                                 <div className="wake-checkin__reward-item">

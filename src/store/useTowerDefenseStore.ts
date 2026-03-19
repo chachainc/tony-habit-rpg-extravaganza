@@ -247,6 +247,30 @@ export const useTowerDefenseStore = create<TowerDefenseState>()(
                     }
                 });
 
+                // 2b. Necromancer healing aura — heals nearby enemies 8 HP/sec
+                newEnemies.forEach(necro => {
+                    const necroDef = TD_ENEMIES[necro.type];
+                    if (!necroDef.healsNearby || necro.hp <= 0) return;
+
+                    const np1 = TD_PATH[necro.pathIndex];
+                    const np2 = TD_PATH[necro.pathIndex + 1] || np1;
+                    const nx = np1.x + (np2.x - np1.x) * necro.progress;
+                    const ny = np1.y + (np2.y - np1.y) * necro.progress;
+
+                    newEnemies.forEach(ally => {
+                        if (ally.id === necro.id || ally.hp <= 0 || ally.hp >= ally.maxHp) return;
+                        const ap1 = TD_PATH[ally.pathIndex];
+                        const ap2 = TD_PATH[ally.pathIndex + 1] || ap1;
+                        const ax = ap1.x + (ap2.x - ap1.x) * ally.progress;
+                        const ay = ap1.y + (ap2.y - ap1.y) * ally.progress;
+                        const dist = Math.sqrt(Math.pow(ax - nx, 2) + Math.pow(ay - ny, 2));
+                        if (dist <= 2) {
+                            ally.hp = Math.min(ally.maxHp, ally.hp + (8 * deltaSec));
+                        }
+                    });
+                });
+
+
                 // Filter out base-reached
                 newEnemies = newEnemies.filter(e => e.hp > 0);
 
@@ -279,6 +303,7 @@ export const useTowerDefenseStore = create<TowerDefenseState>()(
                             let synergyBuff = 0;
                             if (tower.type === 'archer' || tower.type === 'cannon') synergyBuff = playerAtk;
                             if (tower.type === 'mage' || tower.type === 'frost') synergyBuff = playerMag;
+                            // cow tower: flat damage, no stat synergy
                             
                             const dmg = Math.floor((def.damage + synergyBuff) * Math.pow(1.5, tower.level - 1));
                             target.hp -= dmg;
@@ -363,6 +388,7 @@ export const useTowerDefenseStore = create<TowerDefenseState>()(
                     enemies: [],
                     projectiles: [],
                     enemyQueue: [],
+                    towerInventory: { cow: 1 }, // Free starter cow!
                     currentMapModifier: rollMapModifier(),
                     currentWaveModifier: 'none'
                 });

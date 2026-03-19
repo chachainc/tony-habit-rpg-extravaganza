@@ -425,3 +425,56 @@
         font-size: 1rem;
     }
 }
+
+/* ── Gem badge (weekly milestone indicator) ───────────────── */
+.gem-badge {
+    background: linear-gradient(135deg, rgba(56, 189, 248, 0.2), rgba(99, 102, 241, 0.2));
+    border: 1px solid rgba(56, 189, 248, 0.4);
+    padding: 0.15rem 0.4rem;
+    border-radius: 4px;
+    font-size: 0.7rem;
+    color: #38bdf8;
+    font-weight: bold;
+}
+
+/* ── Week 5+ fire mode ────────────────────────────────────── */
+.fire-mode-box {
+    display: flex;
+    justify-content: center;
+    padding: 1rem 0;
+}
+
+.fire-day-card {
+    background: linear-gradient(135deg, rgba(255, 107, 53, 0.15), rgba(255, 167, 38, 0.1));
+    border: 2px solid rgba(255, 107, 53, 0.4);
+    border-radius: 16px;
+    padding: 1.5rem 2rem;
+    text-align: center;
+    width: 100%;
+    max-width: 320px;
+    transition: all 0.3s ease;
+}
+
+.fire-day-card.tappable {
+    border-color: #22c55e;
+    background: linear-gradient(135deg, rgba(34, 197, 94, 0.15), rgba(22, 163, 74, 0.1));
+    box-shadow: 0 0 24px rgba(34, 197, 94, 0.4);
+    animation: tappable-pulse 2s ease-in-out infinite;
+    cursor: pointer;
+}
+
+.fire-day-card.claimed {
+    opacity: 0.65;
+    border-color: rgba(76, 175, 80, 0.5);
+}
+
+.fire-day-label {
+    font-size: 1.3rem;
+    font-weight: bold;
+    background: linear-gradient(135deg, #ff6b35, #ffa726);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin-bottom: 0.75rem;
+}
+

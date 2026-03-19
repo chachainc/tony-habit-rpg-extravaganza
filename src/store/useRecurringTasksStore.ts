@@ -432,6 +432,21 @@ export const useRecurringTasksStore = create<RecurringTasksState>()(
                                     blockedMessages.forEach(msg => useToastStore.getState().addToast({ type: 'warning', message: msg }));
                                 }).catch(() => {});
                             }
+
+                            // Training session reward: +5 board tickets, +2 shmeckles (+2 balloons auto-mirrored)
+                            import('./useMonopolyStore').then(({ useMonopolyStore }) => {
+                                useMonopolyStore.getState().addDailyTickets(5);
+                            });
+                            import('./useCurrencyStore').then(({ useCurrencyStore }) => {
+                                useCurrencyStore.getState().addShmeckles(2);
+                            });
+                            import('../components/ui/Toast').then(({ useToastStore }) => {
+                                useToastStore.getState().addToast({
+                                    type: 'success',
+                                    message: '🏋️ Training Complete! +5 🎫 Tickets | +2 🐌 Shmeckles | +2 🎈 Balloons',
+                                    duration: 4000,
+                                });
+                            }).catch(() => {});
                         }
 
                         import('./useGameStore').then(({ useGameStore }) => {

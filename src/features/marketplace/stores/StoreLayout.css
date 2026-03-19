@@ -232,8 +232,10 @@
 
     .store-modal {
         width: 100vw;
+        /* Use dvh, fall back to -webkit-fill-available for older iOS Safari */
         height: 100dvh;
-        max-height: 100dvh;
+        height: -webkit-fill-available;
+        max-height: 100vh;
         border-radius: 0;
         border: none;
     }
@@ -268,27 +270,40 @@
 
     .store-content {
         padding: var(--space-3);
-        padding-bottom: calc(var(--space-md) + 240px + env(safe-area-inset-bottom, 0px));
+        /* Bottom padding: enough room for the Leave Store button + nav bar + browser chrome */
+        padding-bottom: calc(var(--space-3) + env(safe-area-inset-bottom, 16px));
+        /* Enable momentum scrolling on iOS */
+        -webkit-overflow-scrolling: touch;
     }
 
     .store-bottom-sheet {
         padding-bottom: calc(var(--space-3) + env(safe-area-inset-bottom, 0px));
     }
 
+    /* Leave Store button: in-flow at bottom of store-content, NOT absolute-positioned */
     .store-mobile-close-btn {
-        position: absolute;
-        bottom: calc(var(--space-md) + 65px + env(safe-area-inset-bottom, 0px));
-        left: var(--space-md);
-        right: var(--space-md);
-        background: #ef4444; /* bright red / recognizable exit color */
+        /* Reset absolute positioning — button is now in the content flow */
+        position: relative;
+        bottom: auto;
+        left: auto;
+        right: auto;
+        /* Full-width block within content */
+        display: block;
+        width: 100%;
+        margin-top: var(--space-md, 1rem);
+        /* Keep the same visual style */
+        background: #ef4444;
         color: white;
         border: none;
-        padding: 0.8rem 1rem;
+        padding: 0.9rem 1rem;
         border-radius: var(--radius-md);
         font-weight: 700;
         font-size: 1rem;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.5);
-        z-index: 50;
-        display: block; /* explicitly shown only on mobile query via .mobile-only cascade */
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+        cursor: pointer;
+        /* Ensure it's tappable */
+        min-height: 48px;
+        -webkit-tap-highlight-color: rgba(239, 68, 68, 0.3);
+        touch-action: manipulation;
     }
 }
