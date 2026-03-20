@@ -81,6 +81,13 @@ export const profileApi = {
         apiRequest<SaveProfileResponse>('PUT', `/profile/${code}`, { data }),
 };
 
+// ─── Auth API ──────────────────────────────
+
+export const authApi = {
+    googleLogin: (idToken: string) =>
+        apiRequest<{ code: string; profileName: string }>('POST', '/auth/google', { idToken }),
+};
+
 // ─── Reward API ──────────────────────────────
 
 export interface DailyLoginResponse {

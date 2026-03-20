@@ -4,6 +4,7 @@ import cors from 'cors';
 import { initDatabase } from './db.js';
 import { profileRouter } from './routes/profile.js';
 import { rewardsRouter } from './routes/rewards.js';
+import { authRouter } from './routes/auth.js';
 
 const app = express();
 const PORT = parseInt(process.env.PORT || '3001', 10);
@@ -52,6 +53,7 @@ app.use(express.json({ limit: '256kb' }));
 // ─── API Routes ──────────────────────────────
 app.use('/api/profile', profileRouter);
 app.use('/api/reward', rewardsRouter);
+app.use('/api/auth', authRouter);
 
 // ─── Health check ────────────────────────────
 app.get('/api/health', (_req, res) => {
