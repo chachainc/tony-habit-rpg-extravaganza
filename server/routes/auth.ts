@@ -4,9 +4,10 @@ import { dbRun, dbGet } from '../db.js';
 import { generateInitialProfile } from './profile.js';
 
 // Initialize Firebase Admin (once)
+let firebaseAdminReady = false;
+
 if (!admin.apps.length) {
     try {
-        // Try loading service account key from file
         const { default: fs } = await import('node:fs');
         const { default: path } = await import('node:path');
         const { fileURLToPath } = await import('node:url');
@@ -18,19 +19,20 @@ if (!admin.apps.length) {
             admin.initializeApp({
                 credential: admin.credential.cert(serviceAccount),
             });
-            console.log('✅ Firebase Admin initialized with service account key.');
+            console.log('✅ Firebase Admin initialized (service account)');
+            firebaseAdminReady = true;
         } else if (process.env.GOOGLE_APPLICATION_CREDENTIALS) {
             admin.initializeApp({
                 credential: admin.credential.applicationDefault(),
             });
-            console.log('✅ Firebase Admin initialized with application default credentials.');
+            console.log('✅ Firebase Admin initialized (env credentials)');
+            firebaseAdminReady = true;
         } else {
-            console.warn('⚠️ No Firebase Admin credentials found. Google auth endpoint will fail.');
-            admin.initializeApp();
+            console.error('❌ Firebase Admin NOT initialized — Google auth disabled');
+            console.error('   Place serviceAccountKey.json in server/ or set GOOGLE_APPLICATION_CREDENTIALS');
         }
     } catch (err) {
         console.error('❌ Firebase Admin init error:', err);
-        admin.initializeApp();
     }
 }
 
@@ -42,6 +44,11 @@ export const authRouter = Router();
 // POST /api/auth/google
 authRouter.post('/google', async (req, res) => {
     try {
+        if (!firebaseAdminReady) {
+            res.status(500).json({ error: 'Firebase Admin not configured' });
+            return;
+        }
+
         const { idToken } = req.body;
         if (!idToken || typeof idToken !== 'string') {
             res.status(400).json({ error: 'Missing idToken' });
