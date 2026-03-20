@@ -1,6 +1,6 @@
-import { initializeApp } from 'firebase/app';
-import { getAuth, GoogleAuthProvider } from 'firebase/auth';
-import { getFirestore } from 'firebase/firestore';
+import { initializeApp, type FirebaseApp } from 'firebase/app';
+import { getAuth, GoogleAuthProvider, type Auth } from 'firebase/auth';
+import { getFirestore, type Firestore } from 'firebase/firestore';
 
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
@@ -11,19 +11,28 @@ const firebaseConfig = {
   appId: import.meta.env.VITE_FIREBASE_APP_ID,
 };
 
-// Validate that all required config values are present
-const missingKeys = Object.entries(firebaseConfig)
-  .filter(([, v]) => !v)
-  .map(([k]) => k);
+// Only initialize Firebase if the API key is actually present
+const hasConfig = !!firebaseConfig.apiKey;
 
-if (missingKeys.length > 0) {
-  console.error(
-    `[Firebase] Missing config keys: ${missingKeys.join(', ')}. ` +
+let app: FirebaseApp | null = null;
+let auth: Auth | null = null;
+let googleProvider: GoogleAuthProvider | null = null;
+let db: Firestore | null = null;
+
+if (hasConfig) {
+  try {
+    app = initializeApp(firebaseConfig);
+    auth = getAuth(app);
+    googleProvider = new GoogleAuthProvider();
+    db = getFirestore(app);
+  } catch (err) {
+    console.error('[Firebase] Initialization failed:', err);
+  }
+} else {
+  console.warn(
+    '[Firebase] No API key found — Firebase is disabled. ' +
     'Fill in your .env file with values from the Firebase Console.'
   );
 }
 
-export const app = initializeApp(firebaseConfig);
-export const auth = getAuth(app);
-export const googleProvider = new GoogleAuthProvider();
-export const db = getFirestore(app);
+export { app, auth, googleProvider, db };

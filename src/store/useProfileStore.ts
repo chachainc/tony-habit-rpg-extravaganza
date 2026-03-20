@@ -287,6 +287,11 @@ export const useProfileStore = create<ProfileState>()(
 
             loginWithGoogle: async () => {
                 try {
+                    if (!auth || !googleProvider) {
+                        set({ lastSyncError: 'Firebase is not configured. Fill in your .env file.' });
+                        return false;
+                    }
+
                     const result = await signInWithPopup(auth, googleProvider);
                     const user = result.user;
                     const email = user.email;
