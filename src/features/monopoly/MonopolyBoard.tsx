@@ -72,7 +72,7 @@ const BASE_REWARDS = [
 export const MonopolyBoard = ({ onClose }: { onClose: () => void }) => {
     const {
         dailyTickets, currentPosition, rollDice, movePlayer,
-        canRoll, rollMysteryBox, streakMultiplierActive, totalLifetimeRolls,
+        canRoll, rollMysteryBox, streakMultiplierActive,
         lapCount, boardRefreshPending, regenerateBoard, getGoReward
     } = useMonopolyStore();
     const { addGold, addShmeckles, addTickets } = useCurrencyStore();
