@@ -59,6 +59,15 @@
     border-color: rgba(5, 150, 105, 0.3);
 }
 
+/* Pet image – hard-bound asset rendering (no emoji fallback) */
+.pet-img {
+    width: 64px;
+    height: 64px;
+    object-fit: contain;
+    display: block;
+    margin: 0 auto;
+}
+
 @media (max-width: 768px) {
     .items-grid {
         grid-template-columns: 1fr;

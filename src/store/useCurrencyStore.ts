@@ -23,7 +23,7 @@ export interface CurrencyState {
     tokens: Record<SkillName, number>;
 
     // Actions
-    addGold: (amount: number) => void;
+    addGold: (amount: number, options?: { exact?: boolean }) => void;
     addTickets: (amount: number) => void;
     addDiamonds: (amount: number) => void;
     addShmeckles: (amount: number) => void;
@@ -73,28 +73,29 @@ export const useCurrencyStore = create<CurrencyState>()(
                 'Intelligence': 0,
             },
 
-            addGold: (amount) => {
-                // Apply Housemaid Economy Bonus
-                let finalAmount = amount;
-                if (amount > 0) {
-                    import('./useGameStore').then(({ useGameStore }) => {
-                        const housemaidLevel = useGameStore.getState().skills['Housemaid']?.level ?? 1;
-                        let multiplier = 1 + (housemaidLevel * 0.01); // 1% per level
-                        
-                        // Level 5 Upgrade: Cleaning Supplies (+2% gold)
-                        if (housemaidLevel >= 5) {
-                            multiplier += 0.02;
-                        }
-
-                        finalAmount = Math.ceil(amount * multiplier);
-                        set((state) => ({ gold: state.gold + finalAmount }));
-                    }).catch(() => {
-                        // Fallback if import fails
-                        set((state) => ({ gold: state.gold + amount }));
-                    });
-                } else {
+            addGold: (amount, options) => {
+                // Fixed/exact rewards bypass Housemaid bonus
+                if (options?.exact || amount <= 0) {
                     set((state) => ({ gold: state.gold + amount }));
+                    return;
                 }
+
+                // Apply Housemaid Economy Bonus to gameplay-earned gold
+                import('./useGameStore').then(({ useGameStore }) => {
+                    const housemaidLevel = useGameStore.getState().skills['Housemaid']?.level ?? 1;
+                    let multiplier = 1 + (housemaidLevel * 0.01); // 1% per level
+                    
+                    // Level 5 Upgrade: Cleaning Supplies (+2% gold)
+                    if (housemaidLevel >= 5) {
+                        multiplier += 0.02;
+                    }
+
+                    const finalAmount = Math.floor(amount * multiplier);
+                    set((state) => ({ gold: state.gold + finalAmount }));
+                }).catch(() => {
+                    // Fallback if import fails
+                    set((state) => ({ gold: state.gold + amount }));
+                });
             },
             addTickets: (amount) => set((state) => ({ tickets: state.tickets + amount })),
             addDiamonds: (amount) => set((state) => ({ diamonds: state.diamonds + amount })),

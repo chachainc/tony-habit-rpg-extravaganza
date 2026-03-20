@@ -22,6 +22,7 @@
     background: linear-gradient(180deg, rgba(8, 11, 22, 0.4) 0%, rgba(8, 11, 22, 0.95) 100%);
     backdrop-filter: blur(3px);
     z-index: 0;
+    pointer-events: none;
 }
 
 /* ─── Top HUD ──────────────────────── */
@@ -844,5 +845,44 @@
 @keyframes pulse {
     from { opacity: 0.8; }
     to { opacity: 1; box-shadow: 0 0 12px rgba(245,158,11,0.4); }
+}
+
+/* ─── Battle Background Layer ──────────────────────── */
+.cq-bg-layer {
+    position: absolute;
+    inset: 0;
+    background-size: cover;
+    background-position: center top;
+    filter: blur(8px);
+    transform: scale(1.05); /* prevent blur edge artifacts */
+    z-index: 0;
+    pointer-events: none;
+}
+
+/* ─── Large Enemy Rendering ──────────────────────── */
+.cq-enemy-large {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: clamp(160px, 60vh, 420px);
+    width: 100%;
+    position: relative;
+}
+
+.cq-enemy-large-img {
+    height: 100%;
+    width: auto;
+    max-width: 100%;
+    object-fit: contain;
+    filter: drop-shadow(0 8px 32px rgba(239, 68, 68, 0.5));
+    border-radius: 0;
+}
+
+.cq-enemy-emoji {
+    font-size: clamp(6rem, 20vw, 12rem);
+    line-height: 1;
+    filter: drop-shadow(0 4px 24px rgba(239, 68, 68, 0.5));
+    display: block;
+    text-align: center;
 }
 

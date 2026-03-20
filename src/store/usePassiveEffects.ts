@@ -1,4 +1,5 @@
 import { useInventoryStore, ITEM_DB, type ItemStatBonuses } from './useInventoryStore';
+import { ITEM_DATABASE } from '../data/items';
 import { PET_DB } from './useGachaStore';
 import { useRiskStore } from './useRiskStore';
 import { useTraitStore } from './useTraitStore';
@@ -12,6 +13,9 @@ export interface PassiveBonuses {
     sigil_bonus: number;
     intelligence_bonus: number;
     strategy_bonus: number;
+    magic_attack_bonus: number;
+    magic_defense_bonus: number;
+    max_mana_bonus: number;
     xp_multiplier: number;   // Percentage, e.g. 10 = +10%
     gold_multiplier: number; // Percentage, e.g. 8 = +8%
 }
@@ -61,6 +65,9 @@ export const getPassiveBonuses = (): PassiveBonuses => {
         sigil_bonus: 0,
         intelligence_bonus: 0,
         strategy_bonus: 0,
+        magic_attack_bonus: 0,
+        magic_defense_bonus: 0,
+        max_mana_bonus: 0,
         xp_multiplier: 0,
         gold_multiplier: 0,
     };
@@ -94,16 +101,26 @@ export const getPassiveBonuses = (): PassiveBonuses => {
     processGear(equipped.book);     // New: book slot
     processGear(equipped.jewelry);  // New: jewelry slot
 
-    // Process Pet (via PET_DB)
+    // Process Pet (via PET_DB or ITEM_DATABASE)
     if (equipped.pet) {
-        const pet = PET_DB[equipped.pet];
-        if (pet) {
-            if (pet.passiveBonus.type === 'attack') bonuses.attack_bonus += (pet.passiveBonus.value * 10);
-            if (pet.passiveBonus.type === 'defense') bonuses.defense_bonus += (pet.passiveBonus.value * 10);
-            if (pet.passiveBonus.type === 'skill_xp') {
-                if (pet.passiveBonus.skillName === 'intelligence') bonuses.intelligence_bonus += 5;
-                if (pet.passiveBonus.skillName === 'strategy') bonuses.strategy_bonus += 5;
+        const gachaPet = PET_DB[equipped.pet];
+        if (gachaPet) {
+            if (gachaPet.passiveBonus.type === 'attack') bonuses.attack_bonus += (gachaPet.passiveBonus.value * 10);
+            if (gachaPet.passiveBonus.type === 'defense') bonuses.defense_bonus += (gachaPet.passiveBonus.value * 10);
+            if (gachaPet.passiveBonus.type === 'skill_xp') {
+                if (gachaPet.passiveBonus.skillName === 'intelligence') bonuses.intelligence_bonus += 5;
+                if (gachaPet.passiveBonus.skillName === 'strategy') bonuses.strategy_bonus += 5;
             }
+        }
+        
+        const marketPet = ITEM_DATABASE[equipped.pet];
+        if (marketPet && marketPet.stats) {
+            if (marketPet.stats.attack) bonuses.attack_bonus += marketPet.stats.attack;
+            if (marketPet.stats.defense) bonuses.defense_bonus += marketPet.stats.defense;
+            if (marketPet.stats.magicAttack) bonuses.magic_attack_bonus += marketPet.stats.magicAttack;
+            if (marketPet.stats.magicDefense) bonuses.magic_defense_bonus += marketPet.stats.magicDefense;
+            if (marketPet.stats.maxMana) bonuses.max_mana_bonus += marketPet.stats.maxMana;
+            // Note: bonusXp for skill is generally handled via getMarketplaceXpBonuses, but we capture the raw stats here.
         }
     }
 

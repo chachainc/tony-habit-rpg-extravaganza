@@ -137,7 +137,7 @@ export const useCalendarStore = create<CalendarState>()(
                 if (allChecked) {
                     // Award Bonus!
                     import('./useCurrencyStore').then(({ useCurrencyStore }) => {
-                        useCurrencyStore.getState().addGold(100);
+                        useCurrencyStore.getState().addGold(100, { exact: true });
                     });
 
                     import('./useGameStore').then(({ useGameStore }) => {
@@ -199,7 +199,7 @@ export const useCalendarStore = create<CalendarState>()(
 
                 // Award Logic (simplified duplication of checkMonthlyBonus)
                 import('./useCurrencyStore').then(({ useCurrencyStore }) => {
-                    useCurrencyStore.getState().addGold(500);
+                    useCurrencyStore.getState().addGold(500, { exact: true });
                     useCurrencyStore.getState().addDiamonds(5);
                 });
 

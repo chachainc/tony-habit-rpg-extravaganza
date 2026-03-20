@@ -44,15 +44,12 @@ export const ArmorStore = ({ onClose }: Props) => {
     const [activeCategory, setActiveCategory] = useState<'all' | 'unowned'>('all');
     const [showMobileFilters, setShowMobileFilters] = useState(false);
 
-    // Calculate player's defense stat from skills
-    const calculateDefense = () => {
-        const hygiene = skills.Hygiene?.level || 1;
-        const sleep = skills.Sleep?.level || 1;
-        const flexibility = skills.Flexibility?.level || 1;
-        return Math.floor((hygiene + sleep + flexibility) / 3 * 0.5);
-    };
-
-    const playerDefense = calculateDefense();
+    // Calculate player's base defense stat (ignore buffs by just using the base stat calculation from the store)
+    // Looking at useGameStore, getDefense() calculates the base. But we need to ensure it's exported or we 
+    // can just use the store's getter. The user prompt says: "use only the player's true base defense stat / level".
+    // I will use `useGameStore().getDefense()` to get the true value.
+    const getDefense = useGameStore(state => state.getDefense);
+    const playerDefense = getDefense();
 
     const handlePurchaseClick = (itemId: string) => {
         const item = ITEM_DATABASE[itemId];

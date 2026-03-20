@@ -33,14 +33,14 @@
 .login-card {
     position: relative;
     z-index: 1;
-    background: rgba(15, 23, 42, 0.95);
-    border: 1px solid rgba(148, 163, 184, 0.15);
+    background: rgba(15, 20, 30, 0.75);
+    border: 1px solid rgba(255, 255, 255, 0.1);
     border-radius: 1.25rem;
     padding: 2.5rem 2rem;
     max-width: 460px;
     width: 100%;
-    backdrop-filter: blur(20px);
-    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(8px);
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.8);
 }
 
 .login-header {

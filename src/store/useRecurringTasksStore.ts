@@ -143,7 +143,10 @@ export const DAILY_TASKS_TEMPLATE: Omit<RecurringTask, 'completed'>[] = [
         title: 'Make your bed',
         bundle: 'morning',
         type: 'daily',
-        rewards: [{ skillId: 'Housemaid', xp: 2 }],
+        rewards: [
+            { skillId: 'Housemaid', xp: 2 },
+            { skillId: 'Habit', xp: 1 }
+        ],
     },
 
     // ══ AFTERNOON PERFORMANCE ══════════════════════════════════════════════
@@ -165,18 +168,11 @@ export const DAILY_TASKS_TEMPLATE: Omit<RecurringTask, 'completed'>[] = [
     {
         id: 'no_coffee',
         title: 'No Coffee After 12pm',
-        bundle: 'night',
-        type: 'daily',
-        rewards: [
-            { skillId: 'Habit', xp: 2 }
-        ],
-    },
-    {
-        id: 'night_routine_hygiene',
-        title: 'Brush / Floss / Face Wash',
         bundle: 'afternoon',
         type: 'daily',
-        rewards: [{ skillId: 'Hygiene', xp: 2 }],
+        rewards: [
+            { skillId: 'Habit', xp: 1 }
+        ],
     },
     {
         id: 'charge_devices',
@@ -186,20 +182,6 @@ export const DAILY_TASKS_TEMPLATE: Omit<RecurringTask, 'completed'>[] = [
         rewards: [{ skillId: 'Habit', xp: 1 }],
     },
     {
-        id: 'inbox_zero',
-        title: 'Inbox Zero (Emails + Texts)',
-        bundle: 'afternoon',
-        type: 'daily',
-        rewards: [{ skillId: 'Work', xp: 2 }],
-    },
-    {
-        id: 'tidy_desk',
-        title: 'Tidy Desk',
-        bundle: 'afternoon',
-        type: 'daily',
-        rewards: [{ skillId: 'Housemaid', xp: 2 }],
-    },
-    {
         id: 'after_work_calls',
         title: 'After-Work Calls or Appointments (if any)',
         bundle: 'afternoon',
@@ -207,11 +189,15 @@ export const DAILY_TASKS_TEMPLATE: Omit<RecurringTask, 'completed'>[] = [
         rewards: [{ skillId: 'Work', xp: 2 }],
     },
     {
-        id: 'reach_out_social',
-        title: 'Reach out to friends and family and spread positivity',
+        id: 'tongue_exercises',
+        title: 'Tongue Exercises',
         bundle: 'afternoon',
         type: 'daily',
-        rewards: [{ skillId: 'Social', xp: 5 }],
+        rewards: [
+            { skillId: 'Health', xp: 2 },
+            { skillId: 'Habit', xp: 1 },
+            { skillId: 'Flexibility', xp: 2 }
+        ],
     },
 
     // ══ NIGHT SHUTDOWN ═════════════════════════════════════════════════════
@@ -238,20 +224,38 @@ export const DAILY_TASKS_TEMPLATE: Omit<RecurringTask, 'completed'>[] = [
     },
     {
         id: 'clean_bottles',
-        title: 'Clean Water Bottles / Tidy Desk',
+        title: 'Clean Water Bottles',
         bundle: 'night',
         type: 'daily',
         rewards: [{ skillId: 'Housemaid', xp: 2 }],
     },
     {
-        id: 'tongue_exercises',
-        title: 'Tongue Exercises',
+        id: 'night_routine_hygiene',
+        title: 'Brush / Floss / Face Wash',
         bundle: 'night',
         type: 'daily',
-        rewards: [
-            { skillId: 'Health', xp: 2 },
-            { skillId: 'Habit', xp: 1 }
-        ],
+        rewards: [{ skillId: 'Hygiene', xp: 2 }],
+    },
+    {
+        id: 'reach_out_social',
+        title: 'Reach out to friends and family and spread positivity',
+        bundle: 'night',
+        type: 'daily',
+        rewards: [{ skillId: 'Social', xp: 5 }],
+    },
+    {
+        id: 'inbox_zero',
+        title: 'Inbox Zero (Emails + Texts)',
+        bundle: 'night',
+        type: 'daily',
+        rewards: [{ skillId: 'Work', xp: 2 }],
+    },
+    {
+        id: 'tidy_desk',
+        title: 'Tidy Desk',
+        bundle: 'night',
+        type: 'daily',
+        rewards: [{ skillId: 'Housemaid', xp: 2 }],
     },
     {
         id: 'check_finances',
@@ -263,50 +267,11 @@ export const DAILY_TASKS_TEMPLATE: Omit<RecurringTask, 'completed'>[] = [
         ],
     },
     {
-        id: 'charge_wear_oura',
-        title: 'Charge Phone + Wear Oura Ring',
-        bundle: 'night',
-        type: 'daily',
-        rewards: [
-            { skillId: 'Habit', xp: 1 }
-        ],
-    },
-    {
-        id: 'read_10_min',
-        title: 'Read 10 Minutes',
-        bundle: 'night',
-        type: 'daily',
-        rewards: [{ skillId: 'Intelligence', xp: 4 }],
-    },
-    {
-        id: 'stretch_10_min',
-        title: 'Stretch 10 Minutes',
-        bundle: 'night',
-        type: 'daily',
-        rewards: [{ skillId: 'Flexibility', xp: 2 }],
-    },
-    {
         id: 'hip_stretches',
         title: 'Hip Stretches',
         bundle: 'night',
         type: 'daily',
         rewards: [{ skillId: 'Flexibility', xp: 2 }],
-    },
-    {
-        id: 'clean_pillow_cpap',
-        title: 'Clean Pillowcase + Use CPAP',
-        bundle: 'night',
-        type: 'daily',
-        rewards: [
-            { skillId: 'Sleep', xp: 3 }
-        ],
-    },
-    {
-        id: 'take_magnesium',
-        title: 'Take Magnesium',
-        bundle: 'night',
-        type: 'daily',
-        rewards: [{ skillId: 'Sleep', xp: 1 }],
     },
     {
         id: 'ate_protein_160g',
@@ -324,6 +289,38 @@ export const DAILY_TASKS_TEMPLATE: Omit<RecurringTask, 'completed'>[] = [
             { skillId: 'Health', xp: 1 },
             { skillId: 'Cardio', xp: 1 },
             { skillId: 'Sleep', xp: 1 }
+        ],
+    },
+    {
+        id: 'take_magnesium',
+        title: 'Take Magnesium',
+        bundle: 'night',
+        type: 'daily',
+        rewards: [{ skillId: 'Sleep', xp: 1 }],
+    },
+    {
+        id: 'read_10_min',
+        title: 'Read 10 Minutes',
+        bundle: 'night',
+        type: 'daily',
+        rewards: [{ skillId: 'Intelligence', xp: 4 }],
+    },
+    {
+        id: 'charge_wear_oura',
+        title: 'Charge Phone + Wear Oura Ring',
+        bundle: 'night',
+        type: 'daily',
+        rewards: [
+            { skillId: 'Habit', xp: 1 }
+        ],
+    },
+    {
+        id: 'clean_pillow_cpap',
+        title: 'Use CPAP',
+        bundle: 'night',
+        type: 'daily',
+        rewards: [
+            { skillId: 'Sleep', xp: 3 }
         ],
     },
 ];
@@ -435,6 +432,21 @@ export const useRecurringTasksStore = create<RecurringTasksState>()(
                                     blockedMessages.forEach(msg => useToastStore.getState().addToast({ type: 'warning', message: msg }));
                                 }).catch(() => {});
                             }
+
+                            // Training session reward: +5 board tickets, +2 shmeckles (+2 balloons auto-mirrored)
+                            import('./useMonopolyStore').then(({ useMonopolyStore }) => {
+                                useMonopolyStore.getState().addDailyTickets(5);
+                            });
+                            import('./useCurrencyStore').then(({ useCurrencyStore }) => {
+                                useCurrencyStore.getState().addShmeckles(2);
+                            });
+                            import('../components/ui/Toast').then(({ useToastStore }) => {
+                                useToastStore.getState().addToast({
+                                    type: 'success',
+                                    message: '🏋️ Training Complete! +5 🎫 Tickets | +2 🐌 Shmeckles | +2 🎈 Balloons',
+                                    duration: 4000,
+                                });
+                            }).catch(() => {});
                         }
 
                         import('./useGameStore').then(({ useGameStore }) => {
@@ -640,7 +652,7 @@ export const useRecurringTasksStore = create<RecurringTasksState>()(
 
                 if (status.isComplete && !status.isClaimed) {
                     import('./useCurrencyStore').then(({ useCurrencyStore }) => {
-                        useCurrencyStore.getState().addGold(25);
+                        useCurrencyStore.getState().addGold(25, { exact: true });
                     });
 
                     if (bundle === 'morning') set({ morningBundleClaimed: true });
@@ -657,7 +669,7 @@ export const useRecurringTasksStore = create<RecurringTasksState>()(
 
                 if (m.isComplete && a.isComplete && n.isComplete && !state.perfectDayClaimed) {
                     import('./useCurrencyStore').then(({ useCurrencyStore }) => {
-                        useCurrencyStore.getState().addGold(75);
+                        useCurrencyStore.getState().addGold(75, { exact: true });
                     });
                     set({ perfectDayClaimed: true });
                 }
@@ -674,7 +686,7 @@ export const useRecurringTasksStore = create<RecurringTasksState>()(
                 if (isComplete && !state.weeklyBonusClaimed) {
                     import('./useCurrencyStore').then(({ useCurrencyStore }) => {
                         const currency = useCurrencyStore.getState();
-                        currency.addGold(200);
+                        currency.addGold(200, { exact: true });
                         currency.addShmeckles(3);
                         currency.addDiamonds(1);
                     });

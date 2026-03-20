@@ -114,6 +114,9 @@ export const ConquestBattle = () => {
         );
     }
 
+    // Determine background: use enemy image if it exists, otherwise use static bgMap
+    const battleBg = (enemy as any).image || bgMap;
+
     const playerHpPct = Math.max(0, (player.hp / Math.max(1, player.maxHp)) * 100);
     const enemyHpPct = Math.max(0, (enemy.hp / Math.max(1, enemy.maxHp)) * 100);
     const energyPct = player.energy;
@@ -121,7 +124,13 @@ export const ConquestBattle = () => {
     const isExecuting = battle.phase === 'executing' || battle.phase === 'enemy_turn';
 
     return (
-        <div className="cq-battle-container" style={{ backgroundImage: `url(${bgMap})` }}>
+        <div className="cq-battle-container">
+            {/* Layer 0: Blurred battlefield background */}
+            <div
+                className="cq-bg-layer"
+                style={{ backgroundImage: `url(${battleBg})` }}
+            />
+            {/* Layer 1: Darkening overlay */}
             <div className="bg-overlay" />
 
             {/* Header */}
@@ -142,7 +151,22 @@ export const ConquestBattle = () => {
                 {/* Enemy Section */}
                 <div className="cq-combatant enemy-side">
                     <div className="cq-combatant-name">{enemy.name}</div>
-                    <div className="cq-enemy-icon">{enemy.icon}</div>
+                    {/* Large centered enemy display */}
+                    <motion.div
+                        className="cq-enemy-large"
+                        animate={{ scale: [1, 1.02, 1] }}
+                        transition={{ duration: 2.5, repeat: Infinity, ease: 'easeInOut' }}
+                    >
+                        {(enemy as any).image ? (
+                            <img
+                                src={(enemy as any).image}
+                                alt={enemy.name}
+                                className="cq-enemy-large-img"
+                            />
+                        ) : (
+                            <span className="cq-enemy-emoji">{enemy.icon}</span>
+                        )}
+                    </motion.div>
                     {/* Boss / Vault indicators */}
                     {isBossNode && (
                         <div className="cq-boss-warning">

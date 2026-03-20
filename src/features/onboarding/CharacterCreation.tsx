@@ -43,11 +43,22 @@ export const CharacterCreation: React.FC = () => {
     return (
         <div className={`char-create-container ${step === 2 ? 'sleep-prompt-mode' : ''}`}>
             {step === 1 && <Particles count={40} color="rgba(255, 200, 100, 0.5)" speed={0.5} />}
-            {step === 2 && (
-                 <video autoPlay loop muted playsInline className="sleep-bg-video" ref={(el) => { if (el) el.defaultMuted = true; }}>
-                     <source src={cowsSleepingVid} type="video/mp4" />
-                 </video>
-            )}
+            
+            <video 
+                autoPlay 
+                loop 
+                muted 
+                playsInline 
+                preload="auto"
+                className="sleep-bg-video" 
+                style={{ 
+                    visibility: step === 2 ? 'visible' : 'hidden',
+                    backgroundColor: '#0a1428'
+                }}
+                ref={(el) => { if (el) el.defaultMuted = true; }}
+            >
+                <source src={cowsSleepingVid} type="video/mp4" />
+            </video>
 
             <div className="char-create-content">
                 {step === 1 && <h1 className="cc-title text-gold">Awaken, Hero</h1>}

@@ -1,6 +1,7 @@
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useRef, useCallback } from 'react';
 import { Heart, Play, Pause } from 'lucide-react';
-import { useStormStore } from '../../store/useStormStore';
+import { useStormStore, STORM_ENEMY_DEFS } from '../../store/useStormStore';
+import type { StormEnemyType } from '../../store/useStormStore';
 import { useCurrencyStore } from '../../store/useCurrencyStore';
 import './StormTheFort.css';
 
@@ -13,8 +14,10 @@ export const StormTheFort = () => {
         enemies,
         defenders,
         obstacles,
+        projectiles,
         upgrades,
         lastWaveRewards,
+        hasBoughtFirstCow,
         startGame,
         pauseGame,
         resumeGame,
@@ -22,11 +25,16 @@ export const StormTheFort = () => {
         buyDefender,
         buyObstacle,
         buyUpgrade,
+        moveDefender,
         startNextWave,
     } = useStormStore();
 
     const { shmeckles } = useCurrencyStore();
     const [activeTab, setActiveTab] = useState<'deploy' | 'obstacles' | 'upgrades'>('deploy');
+
+    // Drag state for moving defenders
+    const [draggingId, setDraggingId] = useState<string | null>(null);
+    const battlefieldRef = useRef<HTMLDivElement>(null);
 
     // Game loop
     const requestRef = useRef<number | undefined>(undefined);
@@ -51,19 +59,36 @@ export const StormTheFort = () => {
         };
     }, [gameState]);
 
+    // --- Drag-to-move handlers ---
+    const handleDefenderPointerDown = useCallback((e: React.PointerEvent, defId: string) => {
+        e.preventDefault();
+        e.stopPropagation();
+        (e.target as HTMLElement).setPointerCapture(e.pointerId);
+        setDraggingId(defId);
+    }, []);
+
+    const handlePointerMove = useCallback((e: React.PointerEvent) => {
+        if (!draggingId || !battlefieldRef.current) return;
+        const rect = battlefieldRef.current.getBoundingClientRect();
+        const xPct = ((e.clientX - rect.left) / rect.width) * 100;
+        const yPct = ((e.clientY - rect.top) / rect.height) * 100;
+        moveDefender(draggingId, xPct, yPct);
+    }, [draggingId, moveDefender]);
+
+    const handlePointerUp = useCallback(() => {
+        setDraggingId(null);
+    }, []);
 
     // Cost configuration
-    const DEFENDER_COSTS = { swordsman: 15, shield: 25, archer: 20 };
-    const OBSTACLE_COSTS = { barbed_wire: 10, barricade: 30 };
+    const DEFENDER_COSTS = { cow: 5, swordsman: 15, shield: 25, archer: 20 };
 
     const getUpgradeCost = (key: keyof typeof upgrades) => 50 + (upgrades[key] * 50);
 
-    const handleBuyDefender = (type: 'swordsman' | 'shield' | 'archer') => {
+    const handleBuyDefender = (type: 'cow' | 'swordsman' | 'shield' | 'archer') => {
         buyDefender(type);
     };
 
     const handleBuyObstacle = (type: 'barbed_wire' | 'barricade') => {
-        // Place dynamically near the fort initially for simplicity
         const xPos = 60 + Math.random() * 20;
         buyObstacle(type, xPos);
     };
@@ -72,19 +97,53 @@ export const StormTheFort = () => {
         buyUpgrade(key);
     };
 
+    // Get enemy icon from type
+    const getEnemyIcon = (type: string): string => {
+        const def = STORM_ENEMY_DEFS[type as StormEnemyType];
+        return def?.icon ?? '👿';
+    };
+
+    // Get defender icon
+    const getDefenderIcon = (type: string): string => {
+        switch (type) {
+            case 'cow': return '🐄';
+            case 'swordsman': return '⚔️';
+            case 'shield': return '🛡️';
+            case 'archer': return '🏹';
+            default: return '⚔️';
+        }
+    };
+
     return (
         <div className="storm-page">
             {/* Header / HUD */}
             <div className="storm-hud">
                 <div className="storm-hud-left">
-                    <h2>Castle Defense</h2>
+                    <h2>🏰 Storm the Fort</h2>
                     <span className="storm-wave-badge">Wave {wave}</span>
                 </div>
 
                 <div className="storm-hud-center">
-                    <div className="storm-fort-health">
-                        <Heart size={16} color="#ef4444" fill="#ef4444" />
-                        <span>{Math.max(0, Math.floor(fortHp))} / {maxFortHp}</span>
+                <div className="storm-fort-health">
+                        <Heart size={14} color="#ef4444" fill="#ef4444" />
+                        <div className="storm-fort-health-info">
+                            <span className="storm-fort-health-label">
+                                {Math.max(0, Math.ceil(fortHp))} / {maxFortHp}
+                            </span>
+                            <div className="storm-fort-health-bar-track">
+                                <div
+                                    className="storm-fort-health-bar-fill"
+                                    style={{
+                                        width: `${Math.max(0, (fortHp / maxFortHp) * 100)}%`,
+                                        background: fortHp / maxFortHp > 0.5
+                                            ? '#22c55e'
+                                            : fortHp / maxFortHp > 0.25
+                                                ? '#f59e0b'
+                                                : '#ef4444',
+                                    }}
+                                />
+                            </div>
+                        </div>
                     </div>
                 </div>
 
@@ -101,20 +160,23 @@ export const StormTheFort = () => {
             </div>
 
             {/* Main Battlefield */}
-            <div className="storm-battlefield">
-                <video 
-                    autoPlay 
-                    loop 
-                    muted 
-                    playsInline 
-                    className="storm-bg-video"
-                >
-                    <source src="/bg/magic-storm.mp4" type="video/mp4" />
-                </video>
+            <div
+                className="storm-battlefield"
+                ref={battlefieldRef}
+                onPointerMove={handlePointerMove}
+                onPointerUp={handlePointerUp}
+                onPointerCancel={handlePointerUp}
+            >
+                {/* Track/path overlay image */}
+                <div className="storm-track-overlay" />
+                {/* Castle ambient bg on right */}
+                <div className="storm-castle-bg" />
+
                 <div className="storm-spawn-zone">Enemy Path ➡️</div>
                 <div className="storm-fort-zone">
                     <div className="storm-fort-structure">
-                        🏰 The Fort
+                        <div className="storm-fort-icon">🏰</div>
+                        <div className="storm-fort-label">Fort</div>
                     </div>
                 </div>
 
@@ -130,29 +192,43 @@ export const StormTheFort = () => {
                     </div>
                 ))}
 
-                {/* Render Defenders */}
+                {/* Render Defenders — draggable */}
                 {defenders.map(def => (
                     <div
                         key={def.id}
-                        className={`storm-entity storm-defender`}
-                        style={{ left: `${def.x}%` }}
+                        className={`storm-entity storm-defender ${draggingId === def.id ? 'dragging' : ''}`}
+                        style={{ left: `${def.x}%`, top: `${def.y}%` }}
+                        onPointerDown={(e) => handleDefenderPointerDown(e, def.id)}
                     >
-                        {def.type === 'swordsman' ? '⚔️' : def.type === 'shield' ? '🛡️' : '🏹'}
+                        {getDefenderIcon(def.type)}
                         <div className="storm-hp-bar"><div className="storm-hp-fill" style={{ width: `${(def.hp / def.maxHp) * 100}%` }} /></div>
                     </div>
                 ))}
 
-                {/* Render Enemies */}
+                {/* Render Enemies — multi-lane y positions */}
                 {enemies.map(en => (
                     <div
                         key={en.id}
                         className={`storm-entity storm-enemy`}
-                        style={{ left: `${en.x}%` }}
+                        style={{ left: `${en.x}%`, top: `${en.y}%` }}
                     >
-                        👿
+                        {getEnemyIcon(en.type)}
                         <div className="storm-hp-bar"><div className="storm-hp-fill" style={{ width: `${(en.hp / en.maxHp) * 100}%` }} /></div>
                     </div>
                 ))}
+
+                {/* Render Projectiles */}
+                {projectiles.map(p => {
+                    const currentX = p.fromX + (p.toX - p.fromX) * p.progress;
+                    const currentY = p.fromY + (p.toY - p.fromY) * p.progress;
+                    return (
+                        <div
+                            key={p.id}
+                            className="storm-projectile"
+                            style={{ left: `${currentX}%`, top: `${currentY}%` }}
+                        />
+                    );
+                })}
 
                 {/* Overlays */}
                 {gameState === 'idle' && (
@@ -196,6 +272,19 @@ export const StormTheFort = () => {
                 <div className="storm-shop-content">
                     {activeTab === 'deploy' && (
                         <div className="storm-shop-grid">
+                            {/* Cow Defender — first one free! */}
+                            <button className="storm-buy-card" onClick={() => handleBuyDefender('cow')} disabled={hasBoughtFirstCow && shmeckles < DEFENDER_COSTS.cow}>
+                                <div className="icon">🐄</div>
+                                <div className="info">
+                                    <h4>Cow Defender</h4>
+                                    <span>Slow but loyal</span>
+                                </div>
+                                {!hasBoughtFirstCow ? (
+                                    <div className="free-tag">FREE</div>
+                                ) : (
+                                    <div className="cost">🐌 {DEFENDER_COSTS.cow}</div>
+                                )}
+                            </button>
                             <button className="storm-buy-card" onClick={() => handleBuyDefender('swordsman')} disabled={shmeckles < DEFENDER_COSTS.swordsman}>
                                 <div className="icon">⚔️</div>
                                 <div className="info">
@@ -225,21 +314,21 @@ export const StormTheFort = () => {
 
                     {activeTab === 'obstacles' && (
                         <div className="storm-shop-grid">
-                            <button className="storm-buy-card" onClick={() => handleBuyObstacle('barbed_wire')} disabled={shmeckles < OBSTACLE_COSTS.barbed_wire}>
+                            <button className="storm-buy-card" onClick={() => handleBuyObstacle('barbed_wire')} disabled={shmeckles < 10}>
                                 <div className="icon">〰️</div>
                                 <div className="info">
                                     <h4>Barbed Wire</h4>
                                     <span>Slows & damages</span>
                                 </div>
-                                <div className="cost">🐌 {OBSTACLE_COSTS.barbed_wire}</div>
+                                <div className="cost">🐌 10</div>
                             </button>
-                            <button className="storm-buy-card" onClick={() => handleBuyObstacle('barricade')} disabled={shmeckles < OBSTACLE_COSTS.barricade}>
+                            <button className="storm-buy-card" onClick={() => handleBuyObstacle('barricade')} disabled={shmeckles < 30}>
                                 <div className="icon">🧱</div>
                                 <div className="info">
                                     <h4>Barricade</h4>
                                     <span>Blocks enemies</span>
                                 </div>
-                                <div className="cost">🐌 {OBSTACLE_COSTS.barricade}</div>
+                                <div className="cost">🐌 30</div>
                             </button>
                         </div>
                     )}

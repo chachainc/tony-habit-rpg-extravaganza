@@ -104,56 +104,85 @@ const NODE_DEFS: Omit<TerritoryNode, 'owner' | 'neighbors' | 'soldierCount'>[] =
     { id: 'vp1',     name: 'Start Hold',       defenseValue: 0,   nodeType: 'combat',  trait: 'none',      region: 'verdant_plains', mapX: 45, mapY: 80 },
     { id: 'vp2',     name: 'Greenveil',         defenseValue: 8,   nodeType: 'combat',  trait: 'resource',  region: 'verdant_plains', mapX: 60, mapY: 74 },
     { id: 'vp3',     name: 'Windswept Fields',  defenseValue: 12,  nodeType: 'combat',  trait: 'none',      region: 'verdant_plains', mapX: 30, mapY: 72 },
+    { id: 'vp4',     name: 'Thornhaven',        defenseValue: 10,  nodeType: 'combat',  trait: 'resource',  region: 'verdant_plains', mapX: 50, mapY: 65 },
 
     // Ashlands — mid-left
     { id: 'al1',     name: 'Valley of Ash',     defenseValue: 15,  nodeType: 'combat',  trait: 'none',      region: 'ashlands',       mapX: 22, mapY: 58 },
     { id: 'al2',     name: 'Cinder Ruins',      defenseValue: 20,  nodeType: 'elite',   trait: 'mystic',    region: 'ashlands',       mapX: 12, mapY: 47 },
-    { id: 'al3',     name: 'Black Dunes',        defenseValue: 25,  nodeType: 'elite',   trait: 'fortified', region: 'ashlands',       mapX: 28, mapY: 37 },
+    { id: 'al3',     name: 'Black Dunes',       defenseValue: 25,  nodeType: 'elite',   trait: 'fortified', region: 'ashlands',       mapX: 28, mapY: 37 },
+    { id: 'al4',     name: 'Embervast',         defenseValue: 32,  nodeType: 'elite',   trait: 'none',      region: 'ashlands',       mapX: 8,  mapY: 32 },
+    { id: 'al5',     name: 'Scorchwall',        defenseValue: 45,  nodeType: 'elite',   trait: 'fortified', region: 'ashlands',       mapX: 18, mapY: 22 },
 
     // Iron Highlands — center
-    { id: 'ih1',     name: 'Iron Ridge',         defenseValue: 18,  nodeType: 'combat',  trait: 'fortified', region: 'iron_highlands', mapX: 50, mapY: 58 },
-    { id: 'ih2',     name: 'Rust Canyon',        defenseValue: 28,  nodeType: 'elite',   trait: 'resource',  region: 'iron_highlands', mapX: 65, mapY: 48 },
-    { id: 'ih3',     name: 'Granite Peaks',      defenseValue: 35,  nodeType: 'elite',   trait: 'none',      region: 'iron_highlands', mapX: 48, mapY: 40 },
-    { id: 'ih_boss', name: 'Iron Citadel',       defenseValue: 50,  nodeType: 'boss',    trait: 'fortified', region: 'iron_highlands', mapX: 55, mapY: 32 },
+    { id: 'ih1',     name: 'Iron Ridge',        defenseValue: 18,  nodeType: 'combat',  trait: 'fortified', region: 'iron_highlands', mapX: 50, mapY: 58 },
+    { id: 'ih2',     name: 'Rust Canyon',       defenseValue: 28,  nodeType: 'elite',   trait: 'resource',  region: 'iron_highlands', mapX: 65, mapY: 48 },
+    { id: 'ih3',     name: 'Granite Peaks',     defenseValue: 35,  nodeType: 'elite',   trait: 'none',      region: 'iron_highlands', mapX: 48, mapY: 40 },
+    { id: 'ih4',     name: 'Irongate Watch',    defenseValue: 40,  nodeType: 'elite',   trait: 'fortified', region: 'iron_highlands', mapX: 62, mapY: 35 },
+    { id: 'ih_boss', name: 'Iron Citadel',      defenseValue: 55,  nodeType: 'boss',    trait: 'fortified', region: 'iron_highlands', mapX: 55, mapY: 27 },
 
     // Crystal Coast — right
-    { id: 'cc1',     name: 'Storm Coast',        defenseValue: 22,  nodeType: 'combat',  trait: 'none',      region: 'crystal_coast',  mapX: 78, mapY: 68 },
-    { id: 'cc2',     name: 'Lighthouse Watch',   defenseValue: 30,  nodeType: 'elite',   trait: 'mystic',    region: 'crystal_coast',  mapX: 88, mapY: 55 },
-    { id: 'cc3',     name: 'Siren Break',        defenseValue: 38,  nodeType: 'elite',   trait: 'fortified', region: 'crystal_coast',  mapX: 82, mapY: 38 },
+    { id: 'cc1',     name: 'Storm Coast',       defenseValue: 22,  nodeType: 'combat',  trait: 'none',      region: 'crystal_coast',  mapX: 78, mapY: 68 },
+    { id: 'cc2',     name: 'Lighthouse Watch',  defenseValue: 30,  nodeType: 'elite',   trait: 'mystic',    region: 'crystal_coast',  mapX: 88, mapY: 55 },
+    { id: 'cc3',     name: 'Siren Break',       defenseValue: 38,  nodeType: 'elite',   trait: 'fortified', region: 'crystal_coast',  mapX: 82, mapY: 42 },
+    { id: 'cc4',     name: 'Tidewall Keep',     defenseValue: 50,  nodeType: 'elite',   trait: 'resource',  region: 'crystal_coast',  mapX: 92, mapY: 30 },
+    { id: 'cc_boss', name: 'Abyssal Gate',      defenseValue: 72,  nodeType: 'boss',    trait: 'mystic',    region: 'crystal_coast',  mapX: 88, mapY: 18 },
 
     // Frozen North — upper
-    { id: 'fn1',     name: 'Frostmarch',         defenseValue: 35,  nodeType: 'elite',   trait: 'none',      region: 'frozen_north',   mapX: 38, mapY: 22 },
-    { id: 'fn2',     name: 'Glacier Peak',       defenseValue: 42,  nodeType: 'elite',   trait: 'mystic',    region: 'frozen_north',   mapX: 55, mapY: 15 },
-    { id: 'fn3',     name: 'Howling Pass',       defenseValue: 45,  nodeType: 'elite',   trait: 'fortified', region: 'frozen_north',   mapX: 22, mapY: 17 },
-    { id: 'fn_boss', name: 'Frost Throne',       defenseValue: 80,  nodeType: 'boss',    trait: 'fortified', region: 'frozen_north',   mapX: 40, mapY: 8  },
+    { id: 'fn1',     name: 'Frostmarch',        defenseValue: 35,  nodeType: 'elite',   trait: 'none',      region: 'frozen_north',   mapX: 38, mapY: 22 },
+    { id: 'fn2',     name: 'Glacier Peak',      defenseValue: 42,  nodeType: 'elite',   trait: 'mystic',    region: 'frozen_north',   mapX: 55, mapY: 15 },
+    { id: 'fn3',     name: 'Howling Pass',      defenseValue: 45,  nodeType: 'elite',   trait: 'fortified', region: 'frozen_north',   mapX: 22, mapY: 17 },
+    { id: 'fn4',     name: 'Rimspire',          defenseValue: 58,  nodeType: 'elite',   trait: 'none',      region: 'frozen_north',   mapX: 10, mapY: 10 },
+    { id: 'fn_boss', name: 'Frost Throne',      defenseValue: 85,  nodeType: 'boss',    trait: 'fortified', region: 'frozen_north',   mapX: 32, mapY: 8  },
 
-    // Sunken Expanse — top-right, hardest
-    { id: 'se1',     name: 'Sunken Delta',       defenseValue: 48,  nodeType: 'elite',   trait: 'resource',  region: 'sunken_expanse', mapX: 72, mapY: 22 },
-    { id: 'se2',     name: 'Abyssal Trench',     defenseValue: 55,  nodeType: 'elite',   trait: 'fortified', region: 'sunken_expanse', mapX: 88, mapY: 18 },
-    { id: 'se_boss', name: 'Void Sovereign',     defenseValue: 100, nodeType: 'boss',    trait: 'mystic',    region: 'sunken_expanse', mapX: 80, mapY: 8  },
+    // Sunken Expanse — far upper-right, hardest zone
+    { id: 'se1',     name: 'Sunken Delta',      defenseValue: 52,  nodeType: 'elite',   trait: 'resource',  region: 'sunken_expanse', mapX: 72, mapY: 22 },
+    { id: 'se2',     name: 'Abyssal Trench',    defenseValue: 62,  nodeType: 'elite',   trait: 'fortified', region: 'sunken_expanse', mapX: 82, mapY: 10 },
+    { id: 'se3',     name: 'Drowned Vault',     defenseValue: 75,  nodeType: 'elite',   trait: 'mystic',    region: 'sunken_expanse', mapX: 65, mapY: 8  },
+    { id: 'se4',     name: 'Maelstrom Reef',    defenseValue: 90,  nodeType: 'elite',   trait: 'fortified', region: 'sunken_expanse', mapX: 78, mapY: 4  },
+    { id: 'se_boss', name: 'Void Sovereign',    defenseValue: 120, nodeType: 'boss',    trait: 'mystic',    region: 'sunken_expanse', mapX: 90, mapY: 6  },
 ];
 
 const ADJACENCY_MAP: Record<string, string[]> = {
-    vp1:     ['vp2', 'vp3', 'ih1'],
-    vp2:     ['vp1', 'ih1', 'cc1'],
-    vp3:     ['vp1', 'al1', 'ih1'],
+    // Verdant Plains hub
+    vp1:     ['vp2', 'vp3', 'vp4', 'ih1'],
+    vp2:     ['vp1', 'vp4', 'ih1', 'cc1'],
+    vp3:     ['vp1', 'vp4', 'al1', 'ih1'],
+    vp4:     ['vp1', 'vp2', 'vp3', 'ih1', 'ih2'],
+
+    // Ashlands chain
     al1:     ['vp3', 'al2', 'al3', 'ih1'],
-    al2:     ['al1', 'al3'],
-    al3:     ['al1', 'al2', 'ih3', 'fn3'],
-    ih1:     ['vp1', 'vp2', 'vp3', 'al1', 'ih2', 'ih3'],
-    ih2:     ['ih1', 'ih3', 'cc1', 'cc2'],
-    ih3:     ['ih1', 'ih2', 'al3', 'fn1', 'ih_boss'],
-    ih_boss: ['ih3', 'fn1'],
+    al2:     ['al1', 'al3', 'al4'],
+    al3:     ['al1', 'al2', 'al4', 'ih3', 'fn3'],
+    al4:     ['al2', 'al3', 'al5'],
+    al5:     ['al4', 'fn3', 'fn4'],
+
+    // Iron Highlands chain
+    ih1:     ['vp1', 'vp2', 'vp3', 'vp4', 'al1', 'ih2', 'ih3'],
+    ih2:     ['vp4', 'ih1', 'ih3', 'ih4', 'cc1', 'cc2'],
+    ih3:     ['ih1', 'ih2', 'ih4', 'al3', 'fn1', 'ih_boss'],
+    ih4:     ['ih2', 'ih3', 'ih_boss', 'cc3', 'fn2'],
+    ih_boss: ['ih3', 'ih4', 'fn1', 'fn2'],
+
+    // Crystal Coast chain
     cc1:     ['vp2', 'ih2', 'cc2'],
     cc2:     ['cc1', 'ih2', 'cc3'],
-    cc3:     ['cc2', 'se1', 'se2'],
-    fn1:     ['ih3', 'fn2', 'fn3', 'se1', 'fn_boss'],
-    fn2:     ['fn1', 'fn3', 'se1', 'fn_boss'],
-    fn3:     ['al3', 'fn1', 'fn2'],
-    fn_boss: ['fn1', 'fn2'],
-    se1:     ['fn1', 'fn2', 'cc3', 'se2', 'se_boss'],
-    se2:     ['se1', 'cc3', 'se_boss'],
-    se_boss: ['se1', 'se2'],
+    cc3:     ['cc2', 'ih4', 'cc4', 'se1'],
+    cc4:     ['cc3', 'cc_boss', 'se2'],
+    cc_boss: ['cc4', 'se2', 'se_boss'],
+
+    // Frozen North chain
+    fn1:     ['ih3', 'fn2', 'fn3', 'se1', 'fn_boss', 'ih_boss'],
+    fn2:     ['fn1', 'fn3', 'ih4', 'ih_boss', 'se1', 'se3', 'fn_boss'],
+    fn3:     ['al3', 'al5', 'fn1', 'fn2', 'fn4'],
+    fn4:     ['al5', 'fn3', 'fn_boss'],
+    fn_boss: ['fn1', 'fn2', 'fn4', 'se3'],
+
+    // Sunken Expanse (farthest)
+    se1:     ['fn1', 'fn2', 'cc3', 'se2', 'se3', 'se_boss'],
+    se2:     ['se1', 'cc4', 'cc_boss', 'se4', 'se_boss'],
+    se3:     ['fn2', 'fn_boss', 'se1', 'se4'],
+    se4:     ['se2', 'se3', 'se_boss'],
+    se_boss: ['se1', 'se2', 'se4', 'cc_boss'],
 };
 
 function generateMap(ascensionLevel: number): Record<string, TerritoryNode> {
@@ -184,7 +213,9 @@ export const useRiskStore = create<RiskState>()(
 
             initializeMap: () => {
                 const { mapNodes, ascensionLevel } = get();
-                if (Object.keys(mapNodes).length === 0 || mapNodes['t1'] || !Object.values(mapNodes)[0]?.nodeType) {
+                const nodeCount = Object.keys(mapNodes).length;
+                // Re-init if: empty, legacy format (t1), missing type, or stale node count (< current NODE_DEFS size)
+                if (nodeCount === 0 || mapNodes['t1'] || !Object.values(mapNodes)[0]?.nodeType || nodeCount < NODE_DEFS.length) {
                     set({ mapNodes: generateMap(ascensionLevel || 0) });
                 }
             },

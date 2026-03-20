@@ -41,7 +41,7 @@ export interface TowerDefenseState {
     // Entities
     towers: PlacedTower[];
     enemies: ActiveEnemy[];
-    projectiles: { id: string, x: number, y: number, targetId: string, color: string }[];
+    projectiles: { id: string, fromX: number, fromY: number, toX: number, toY: number, progress: number, damage: number, targetId: string, color: string }[];
     
     // Tower Inventory (owned but not placed)
     towerInventory: Partial<Record<TowerType, number>>;
@@ -188,9 +188,8 @@ export const useTowerDefenseStore = create<TowerDefenseState>()(
                 let { enemies, towers, enemyQueue, lastSpawnTime, baseHealth } = state;
                 let newEnemies = [...enemies];
                 let newTowers = [...towers];
-                let newProjectiles: any[] = [];
+                let newProjectiles = [...state.projectiles]; // carry over in-flight projectiles
                 let damageTaken = 0;
-                let shmecklesGained = 0;
 
                 // 1. Spawning
                 if (enemyQueue.length > 0 && now - lastSpawnTime > 1200) { // spawn every 1.2s
@@ -247,6 +246,30 @@ export const useTowerDefenseStore = create<TowerDefenseState>()(
                     }
                 });
 
+                // 2b. Necromancer healing aura — heals nearby enemies 8 HP/sec
+                newEnemies.forEach(necro => {
+                    const necroDef = TD_ENEMIES[necro.type];
+                    if (!necroDef.healsNearby || necro.hp <= 0) return;
+
+                    const np1 = TD_PATH[necro.pathIndex];
+                    const np2 = TD_PATH[necro.pathIndex + 1] || np1;
+                    const nx = np1.x + (np2.x - np1.x) * necro.progress;
+                    const ny = np1.y + (np2.y - np1.y) * necro.progress;
+
+                    newEnemies.forEach(ally => {
+                        if (ally.id === necro.id || ally.hp <= 0 || ally.hp >= ally.maxHp) return;
+                        const ap1 = TD_PATH[ally.pathIndex];
+                        const ap2 = TD_PATH[ally.pathIndex + 1] || ap1;
+                        const ax = ap1.x + (ap2.x - ap1.x) * ally.progress;
+                        const ay = ap1.y + (ap2.y - ap1.y) * ally.progress;
+                        const dist = Math.sqrt(Math.pow(ax - nx, 2) + Math.pow(ay - ny, 2));
+                        if (dist <= 2) {
+                            ally.hp = Math.min(ally.maxHp, ally.hp + (8 * deltaSec));
+                        }
+                    });
+                });
+
+
                 // Filter out base-reached
                 newEnemies = newEnemies.filter(e => e.hp > 0);
 
@@ -279,19 +302,27 @@ export const useTowerDefenseStore = create<TowerDefenseState>()(
                             let synergyBuff = 0;
                             if (tower.type === 'archer' || tower.type === 'cannon') synergyBuff = playerAtk;
                             if (tower.type === 'mage' || tower.type === 'frost') synergyBuff = playerMag;
+                            // cow tower: flat damage, no stat synergy
                             
                             const dmg = Math.floor((def.damage + synergyBuff) * Math.pow(1.5, tower.level - 1));
-                            target.hp -= dmg;
-                            
-                            if (tower.type === 'frost') {
-                                // Synergy: Magic boosts slow duration
-                                target.slowedUntil = now + 2000 + (playerMag * 20);
-                            }
 
-                            if (tower.type !== 'frost') {
+                            // Frost: apply slow + damage instantly (no projectile)
+                            if (tower.type === 'frost') {
+                                target.hp -= dmg;
+                                target.slowedUntil = now + 2000 + (playerMag * 20);
+                            } else {
+                                // All other towers: spawn a traveling projectile carrying the damage
+                                const tp1 = TD_PATH[target.pathIndex];
+                                const tp2 = TD_PATH[target.pathIndex + 1] || tp1;
+                                const tx = tp1.x + (tp2.x - tp1.x) * target.progress;
+                                const ty = tp1.y + (tp2.y - tp1.y) * target.progress;
+
                                 newProjectiles.push({
                                     id: `proj_${now}_${tower.id}`,
-                                    x: tower.x, y: tower.y,
+                                    fromX: tower.x + 0.5, fromY: tower.y + 0.5,
+                                    toX: tx, toY: ty,
+                                    progress: 0,
+                                    damage: dmg,
                                     targetId: target.id,
                                     color: def.projectileColor
                                 });
@@ -300,18 +331,26 @@ export const useTowerDefenseStore = create<TowerDefenseState>()(
                     }
                 });
 
-                // Process deaths
-                const killed = newEnemies.filter(e => e.hp <= 0);
-                killed.forEach(k => {
-                    let rwd = TD_ENEMIES[k.type].reward;
-                    if (state.currentMapModifier === 'drought') rwd = Math.max(1, Math.floor(rwd * 0.9));
-                    shmecklesGained += rwd;
-                });
-                newEnemies = newEnemies.filter(e => e.hp > 0);
-                
-                if (shmecklesGained > 0) {
-                    useCurrencyStore.getState().addShmeckles(shmecklesGained);
+                // 3b. Advance projectiles and apply damage on impact
+                const PROJ_SPEED = 4.0; // progress per second (~0.25s travel)
+                const activeProjectiles: typeof newProjectiles = [];
+                for (const p of newProjectiles) {
+                    p.progress += PROJ_SPEED * deltaSec;
+                    if (p.progress >= 1) {
+                        // Impact — apply damage to target
+                        const hitTarget = newEnemies.find(e => e.id === p.targetId && e.hp > 0);
+                        if (hitTarget) {
+                            hitTarget.hp -= p.damage;
+                        }
+                        // projectile consumed
+                    } else {
+                        activeProjectiles.push(p);
+                    }
                 }
+                newProjectiles = activeProjectiles;
+
+                // Process deaths — NO per-kill rewards in Tower Defense
+                newEnemies = newEnemies.filter(e => e.hp > 0);
 
                 // Apply Base Damage
                 let newBaseHealth = baseHealth - damageTaken;
@@ -363,6 +402,7 @@ export const useTowerDefenseStore = create<TowerDefenseState>()(
                     enemies: [],
                     projectiles: [],
                     enemyQueue: [],
+                    towerInventory: { cow: 1 }, // Free starter cow!
                     currentMapModifier: rollMapModifier(),
                     currentWaveModifier: 'none'
                 });

@@ -1,5 +1,6 @@
 import { Lock, Check } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { useState } from 'react';
 import type { Item } from '../../../data/items';
 import { useGameStore } from '../../../store/useGameStore';
 import { getPassiveBonuses } from '../../../store/usePassiveEffects';
@@ -37,6 +38,7 @@ export const ItemCard = ({
     // Wait, we need to display it correctly here.
 
     const canPurchase = isUnlocked && canAfford && !isOwned;
+    const [imageError, setImageError] = useState(false);
 
     return (
         <motion.div
@@ -44,7 +46,21 @@ export const ItemCard = ({
             whileHover={canPurchase ? { scale: 1.02 } : {}}
         >
             {/* Item Icon */}
-            <div className="item-card-icon">{item.icon}</div>
+            <div className="item-card-icon">
+                {item.image && !imageError ? (
+                    <img 
+                        src={item.image} 
+                        alt={item.name}
+                        className={`item-card-image${item.type === 'pet' ? ' pet-img' : ''}`}
+                        onError={() => {
+                            console.error(`Failed to load image for ${item.name}: ${item.image}`);
+                            setImageError(true);
+                        }}
+                    />
+                ) : (
+                    item.icon || '📦'
+                )}
+            </div>
 
             {/* Item Info */}
             <div className="item-card-info">
@@ -52,10 +68,13 @@ export const ItemCard = ({
                 <p className="item-description">{item.description}</p>
 
                 {/* Stats */}
-                {(item.stats?.attack || item.stats?.defense || item.stats?.bonusXp) && (
+                {(item.stats?.attack || item.stats?.defense || item.stats?.magicAttack || item.stats?.magicDefense || item.stats?.maxMana || item.stats?.bonusXp) && (
                     <div className="item-stats">
                         {item.stats.attack && <span className="stat stat--attack">⚔️ +{item.stats.attack} Attack</span>}
                         {item.stats.defense && <span className="stat stat--defense">🛡️ +{item.stats.defense} Defense</span>}
+                        {item.stats.magicAttack && <span className="stat stat--attack">🔮 +{item.stats.magicAttack} M.Attack</span>}
+                        {item.stats.magicDefense && <span className="stat stat--defense">✨ +{item.stats.magicDefense} M.Defense</span>}
+                        {item.stats.maxMana && <span className="stat stat--xp">💧 +{item.stats.maxMana} Max MP</span>}
                         {item.stats.bonusXp && Object.entries(item.stats.bonusXp).map(([skill, bonus]) => (
                             <span key={skill} className="stat stat--xp">✨ +{bonus}% {skill} XP</span>
                         ))}

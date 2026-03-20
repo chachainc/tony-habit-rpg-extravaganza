@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Sparkles, Shield, Crosshair, BookOpen, ChevronRight, Check, Sword } from 'lucide-react';
+import { Sparkles, Shield, Crosshair, BookOpen, ChevronRight, Check } from 'lucide-react';
 import { useProfileStore } from '../../store/useProfileStore';
 import './WelcomeTutorialModal.css';
 
@@ -31,21 +31,12 @@ const SCREENS: TutorialScreen[] = [
         id: 'build_guidance',
         title: 'Fantasy Builds',
         text: <>Focus on real-world habits that fit your desired fantasy class!<br/><br/>
-        • <strong>Warriors:</strong> Focus on Strength for Physical Attack (ATK = 1 + level) and Health for Max HP (50 base + 5/level).<br/>
-        • <strong>Mages:</strong> Focus on Intelligence for Magic Attack (MAG = 1 + level) and Sleep for Mana pool (20 base + 5/level).<br/>
-        • <strong>Rogues:</strong> Focus on Cardio for Speed and Dodge (Level%) and Habit for Crit Chance (Level%).<br/>
-        • <strong>Economy:</strong> Housemaid ensures earning efficiency while Work ensures spending efficiency.</>,
+        • <strong>Strength builds</strong> &rarr; leveled by Strength<br/>
+        • <strong>Magic builds</strong> &rarr; leveled by Intelligence<br/>
+        • <strong>Speed builds</strong> &rarr; leveled by Cardio<br/>
+        • <strong>Tank builds</strong> &rarr; leveled by Health / Hygiene</>,
         icon: <Crosshair size={48} />,
         color: '#ef4444',
-    },
-    {
-        id: 'combat',
-        title: 'Combat Mechanics',
-        text: <>Engage in battles in the Arena and Conquest mode:<br/><br/>
-        • <strong>Light Attack:</strong> Deals random damage from 1 to your ATK.<br/>
-        • <strong>Heavy Attack:</strong> 50% chance for a low hit, 50% chance for a big hit. <strong>Heavy Attacks have a 1-turn cooldown!</strong></>,
-        icon: <Sword size={48} />,
-        color: '#10b981',
     },
     {
         id: 'arcane',

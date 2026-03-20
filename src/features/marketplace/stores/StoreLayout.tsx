@@ -103,9 +103,21 @@ export const StoreLayout = ({
                     </div>
                 )}
 
-                {/* Content */}
+                {/* Content — single scroll container */}
                 <div className="store-content">
                     {children}
+
+                    {/* Leave Store button: at the natural bottom of the content scroll */}
+                    <button
+                        className="mobile-only store-mobile-close-btn"
+                        onClick={(e) => { e.stopPropagation(); onClose(); }}
+                        onPointerDown={(e) => { e.stopPropagation(); onClose(); }}
+                    >
+                        Leave Store
+                    </button>
+
+                    {/* Bottom spacer to clear nav bar + browser chrome on iOS */}
+                    <div className="mobile-only" style={{ height: 'calc(72px + env(safe-area-inset-bottom, 20px))' }} />
                 </div>
 
                 {/* Optional Bottom Sheet Container */}
@@ -114,15 +126,6 @@ export const StoreLayout = ({
                         {bottomSheet}
                     </div>
                 )}
-
-                {/* Mobile Explicit Close Button */}
-                <button 
-                    className="mobile-only store-mobile-close-btn"
-                    onClick={(e) => { e.stopPropagation(); onClose(); }}
-                    onPointerDown={(e) => { e.stopPropagation(); onClose(); }}
-                >
-                    Leave Store
-                </button>
             </motion.div>
         </div>
     );

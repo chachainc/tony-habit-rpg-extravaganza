@@ -1,6 +1,11 @@
 import type { SkillName } from '../store/useGameStore';
 import type { CurrencyCost } from '../store/useCurrencyStore';
 
+import warCowImg from '../assets/pets/war_cow.png';
+import archerCowImg from '../assets/pets/archer_cow.png';
+import wizardCowImg from '../assets/pets/wizard_cow.png';
+import cowKingImg from '../assets/pets/cow_king.png';
+
 export type ItemType = 'armor' | 'weapon' | 'pet' | 'furniture' | 'consumable' | 'cosmetic' | 'pet_accessory';
 export type ItemCategory = 'hygiene' | 'sleep' | 'general' | 'combat' | 'social';
 
@@ -14,6 +19,9 @@ export interface UnlockRequirement {
 export interface ItemStats {
     attack?: number;
     defense?: number;
+    magicAttack?: number;
+    magicDefense?: number;
+    maxMana?: number;
     bonusXp?: Partial<Record<SkillName, number>>; // Percentage bonus
 }
 
@@ -22,6 +30,7 @@ export interface Item {
     name: string;
     description: string;
     icon: string;
+    image?: string;
     type: ItemType;
     category?: ItemCategory;
 
@@ -42,11 +51,10 @@ const ARMOR_ITEMS: Item[] = [
         icon: '👕',
         type: 'armor',
         category: 'combat',
-        unlockRequirement: { defense: 5 },
+        unlockRequirement: {}, // was defense,
         cost: { gold: 500 },
         stats: { defense: 2 },
-        rarity: 'common',
-    },
+        rarity: 'common' },
     {
         id: 'leather_armor',
         name: 'Leather Armor',
@@ -54,11 +62,10 @@ const ARMOR_ITEMS: Item[] = [
         icon: '🧥',
         type: 'armor',
         category: 'combat',
-        unlockRequirement: { defense: 10 },
-        cost: { gold: 2500, tickets: 10 },
+        unlockRequirement: {}, // was defense,
+        cost: { gold: 2500 },
         stats: { defense: 5 },
-        rarity: 'common',
-    },
+        rarity: 'common' },
     {
         id: 'studded_leather',
         name: 'Studded Leather',
@@ -66,11 +73,10 @@ const ARMOR_ITEMS: Item[] = [
         icon: '🦺',
         type: 'armor',
         category: 'combat',
-        unlockRequirement: { defense: 15 },
-        cost: { gold: 6000, tickets: 20 },
+        unlockRequirement: {}, // was defense,
+        cost: { gold: 6000 },
         stats: { defense: 8 },
-        rarity: 'uncommon',
-    },
+        rarity: 'uncommon' },
     {
         id: 'chainmail',
         name: 'Chainmail',
@@ -78,11 +84,10 @@ const ARMOR_ITEMS: Item[] = [
         icon: '⛓️',
         type: 'armor',
         category: 'combat',
-        unlockRequirement: { defense: 22 },
-        cost: { gold: 12000, tickets: 30, diamonds: 10 },
+        unlockRequirement: {}, // was defense,
+        cost: { gold: 12000, diamonds: 10 },
         stats: { defense: 12 },
-        rarity: 'uncommon',
-    },
+        rarity: 'uncommon' },
     {
         id: 'iron_platebody',
         name: 'Iron Platebody',
@@ -90,11 +95,10 @@ const ARMOR_ITEMS: Item[] = [
         icon: '🛡️',
         type: 'armor',
         category: 'combat',
-        unlockRequirement: { defense: 30 },
-        cost: { gold: 25000, tickets: 50, diamonds: 25 },
+        unlockRequirement: {}, // was defense,
+        cost: { gold: 25000, diamonds: 25 },
         stats: { defense: 18 },
-        rarity: 'rare',
-    },
+        rarity: 'rare' },
     {
         id: 'steel_plate',
         name: 'Steel Plate',
@@ -102,11 +106,10 @@ const ARMOR_ITEMS: Item[] = [
         icon: '🦾',
         type: 'armor',
         category: 'combat',
-        unlockRequirement: { defense: 40 },
-        cost: { gold: 45000, tickets: 80, diamonds: 40 },
+        unlockRequirement: { defense: 12 },
+        cost: { gold: 45000, diamonds: 40 },
         stats: { defense: 25, attack: 3 },
-        rarity: 'epic',
-    },
+        rarity: 'epic' },
     {
         id: 'mythric_plate',
         name: 'Mythric Plate',
@@ -114,11 +117,10 @@ const ARMOR_ITEMS: Item[] = [
         icon: '🏆',
         type: 'armor',
         category: 'combat',
-        unlockRequirement: { defense: 55 },
-        cost: { gold: 75000, tickets: 120, diamonds: 75 },
+        unlockRequirement: { defense: 15 },
+        cost: { gold: 75000, diamonds: 75 },
         stats: { defense: 35 },
-        rarity: 'legendary',
-    },
+        rarity: 'legendary' },
     {
         id: 'bronze_platebody',
         name: 'Bronze Platebody',
@@ -127,10 +129,9 @@ const ARMOR_ITEMS: Item[] = [
         type: 'armor',
         category: 'combat',
         unlockRequirement: { defense: 18 },
-        cost: { gold: 8000, tickets: 25 },
+        cost: { gold: 8000 },
         stats: { defense: 10 },
-        rarity: 'uncommon',
-    },
+        rarity: 'uncommon' },
     {
         id: 'mithril_armor',
         name: 'Mithril Armor',
@@ -139,10 +140,9 @@ const ARMOR_ITEMS: Item[] = [
         type: 'armor',
         category: 'combat',
         unlockRequirement: { defense: 35 },
-        cost: { gold: 35000, tickets: 60, diamonds: 30 },
+        cost: { gold: 35000, diamonds: 30 },
         stats: { defense: 22 },
-        rarity: 'rare',
-    },
+        rarity: 'rare' },
     {
         id: 'dragonhide_vest',
         name: 'Dragonhide Vest',
@@ -151,10 +151,9 @@ const ARMOR_ITEMS: Item[] = [
         type: 'armor',
         category: 'combat',
         unlockRequirement: { defense: 45 },
-        cost: { gold: 60000, tickets: 100, diamonds: 50 },
+        cost: { gold: 60000, diamonds: 50 },
         stats: { defense: 30, attack: 5 },
-        rarity: 'epic',
-    },
+        rarity: 'epic' },
     {
         id: 'arcane_robe',
         name: 'Arcane Robe',
@@ -163,10 +162,9 @@ const ARMOR_ITEMS: Item[] = [
         type: 'armor',
         category: 'combat',
         unlockRequirement: { defense: 50, skills: [{ skill: 'Intelligence', level: 15 }] },
-        cost: { gold: 75000, tickets: 100, diamonds: 60 },
+        cost: { gold: 75000, diamonds: 60 },
         stats: { defense: 20 },
-        rarity: 'epic',
-    },
+        rarity: 'epic' },
 ];
 
 // ==================== WEAPON ITEMS ====================
@@ -181,8 +179,7 @@ const WEAPON_ITEMS: Item[] = [
         unlockRequirement: {},
         cost: {},
         stats: { attack: 1 },
-        rarity: 'common',
-    },
+        rarity: 'common' },
     {
         id: 'iron_sword',
         name: 'Iron Sword',
@@ -193,8 +190,7 @@ const WEAPON_ITEMS: Item[] = [
         unlockRequirement: { attack: 5 },
         cost: { gold: 2500, tokens: { Strength: 5 } },
         stats: { attack: 5 },
-        rarity: 'common',
-    },
+        rarity: 'common' },
     {
         id: 'steel_blade',
         name: 'Steel Blade',
@@ -205,8 +201,7 @@ const WEAPON_ITEMS: Item[] = [
         unlockRequirement: { attack: 15 },
         cost: { gold: 15000, tokens: { Strength: 20 } },
         stats: { attack: 12 },
-        rarity: 'uncommon',
-    },
+        rarity: 'uncommon' },
     {
         id: 'enchanted_axe',
         name: 'Enchanted Axe',
@@ -217,8 +212,7 @@ const WEAPON_ITEMS: Item[] = [
         unlockRequirement: { attack: 30 },
         cost: { gold: 40000, diamonds: 50, tokens: { Strength: 40 } },
         stats: { attack: 25 },
-        rarity: 'rare',
-    },
+        rarity: 'rare' },
     {
         id: 'legendary_hammer',
         name: 'Legendary Hammer',
@@ -229,8 +223,7 @@ const WEAPON_ITEMS: Item[] = [
         unlockRequirement: { attack: 50 },
         cost: { gold: 150000, diamonds: 200, tokens: { Strength: 100 } },
         stats: { attack: 50 },
-        rarity: 'legendary',
-    },
+        rarity: 'legendary' },
     {
         id: 'battle_axe',
         name: 'Battle Axe',
@@ -241,8 +234,7 @@ const WEAPON_ITEMS: Item[] = [
         unlockRequirement: { attack: 10 },
         cost: { gold: 7500, tokens: { Strength: 15 } },
         stats: { attack: 8 },
-        rarity: 'uncommon',
-    },
+        rarity: 'uncommon' },
     {
         id: 'war_mace',
         name: 'War Mace',
@@ -253,8 +245,7 @@ const WEAPON_ITEMS: Item[] = [
         unlockRequirement: { attack: 20 },
         cost: { gold: 20000, tokens: { Strength: 30 } },
         stats: { attack: 16 },
-        rarity: 'uncommon',
-    },
+        rarity: 'uncommon' },
     {
         id: 'shadow_dagger',
         name: 'Shadow Dagger',
@@ -265,8 +256,7 @@ const WEAPON_ITEMS: Item[] = [
         unlockRequirement: { attack: 25, skills: [{ skill: 'Flexibility', level: 10 }] },
         cost: { gold: 30000, diamonds: 30, tokens: { Strength: 40 } },
         stats: { attack: 20 },
-        rarity: 'rare',
-    },
+        rarity: 'rare' },
     {
         id: 'runic_staff',
         name: 'Runic Staff',
@@ -277,8 +267,7 @@ const WEAPON_ITEMS: Item[] = [
         unlockRequirement: { attack: 35, skills: [{ skill: 'Intelligence', level: 10 }] },
         cost: { gold: 60000, diamonds: 75, tokens: { Strength: 80 } },
         stats: { attack: 30 },
-        rarity: 'epic',
-    },
+        rarity: 'epic' },
     {
         id: 'dragonslayer_sword',
         name: 'Dragonslayer Sword',
@@ -289,8 +278,7 @@ const WEAPON_ITEMS: Item[] = [
         unlockRequirement: { attack: 60 },
         cost: { gold: 200000, diamonds: 500, tokens: { Strength: 200 } },
         stats: { attack: 65 },
-        rarity: 'legendary',
-    },
+        rarity: 'legendary' },
 ];
 
 // ==================== PET ITEMS ====================
@@ -304,19 +292,18 @@ const PET_ITEMS: Item[] = [
         category: 'social',
         unlockRequirement: {},
         cost: {},
-        rarity: 'common',
-    },
+        rarity: 'common' },
     {
         id: 'pet_porcupine',
         name: 'Porcupine',
-        description: 'A spiky friend for social butterflies',
+        description: 'Spiky legend',
         icon: '🦔',
         type: 'pet',
         category: 'social',
         unlockRequirement: { skills: [{ skill: 'Social', level: 8 }] },
-        cost: { gold: 10000 },
-        rarity: 'uncommon',
-    },
+        cost: { gold: 5000 },
+        stats: { attack: 3 },
+        rarity: 'uncommon' },
     {
         id: 'pet_dog',
         name: 'Dog',
@@ -326,8 +313,8 @@ const PET_ITEMS: Item[] = [
         category: 'social',
         unlockRequirement: { skills: [{ skill: 'Social', level: 12 }] },
         cost: { gold: 10000 },
-        rarity: 'uncommon',
-    }, // Cyber Dog handles the dog role in battle
+        stats: { defense: 5 },
+        rarity: 'uncommon' }, // Cyber Dog handles the dog role in battle
     {
         id: 'cyber_dog', // Added to shop
         name: 'Cyber Dog',
@@ -337,8 +324,7 @@ const PET_ITEMS: Item[] = [
         category: 'social',
         unlockRequirement: { skills: [{ skill: 'Social', level: 12 }] },
         cost: { gold: 12000 },
-        rarity: 'uncommon',
-    },
+        rarity: 'uncommon' },
     {
         id: 'pixel_cat', // Was pet_cat
         name: 'Pixel Cat',
@@ -348,8 +334,7 @@ const PET_ITEMS: Item[] = [
         category: 'social',
         unlockRequirement: { skills: [{ skill: 'Social', level: 15 }] },
         cost: { gold: 25000 },
-        rarity: 'rare',
-    },
+        rarity: 'rare' },
     {
         id: 'ethereal_cow',
         name: 'Ethereal Cow',
@@ -360,8 +345,7 @@ const PET_ITEMS: Item[] = [
         unlockRequirement: {}, // Unlocked via jackpot only
         cost: {}, // Cannot be purchased, only won
         stats: { bonusXp: { Social: 20 } },
-        rarity: 'legendary',
-    },
+        rarity: 'legendary' },
     {
         id: 'golden_goldfish',
         name: 'Golden Goldfish',
@@ -372,8 +356,55 @@ const PET_ITEMS: Item[] = [
         unlockRequirement: {}, // Unlocked via luck roll only
         cost: {}, // Cannot be purchased, only won
         stats: { bonusXp: { Hygiene: 5 } },
-        rarity: 'legendary',
-    },
+        rarity: 'legendary' },
+    {
+        id: 'meditating_war_cow',
+        name: 'Meditating War Cow',
+        description: 'A peaceful master of brutal strength.',
+        icon: '🐮⚔️',
+        image: warCowImg,
+        type: 'pet',
+        category: 'social',
+        unlockRequirement: {},
+        cost: { gold: 25000, diamonds: 25 },
+        stats: { attack: 15, defense: 10 },
+        rarity: 'legendary' },
+    {
+        id: 'highland_archer_cow',
+        name: 'Highland Archer Cow',
+        description: 'A fluffy sniper with deadly aim.',
+        icon: '🐮🏹',
+        image: archerCowImg,
+        type: 'pet',
+        category: 'social',
+        unlockRequirement: {},
+        cost: { gold: 25000, diamonds: 25 },
+        stats: { attack: 20, defense: 5 },
+        rarity: 'legendary' },
+    {
+        id: 'wizard_cow',
+        name: 'Wizard Cow',
+        description: 'A master of mystical moo-gic.',
+        icon: '🐮🧙',
+        image: wizardCowImg,
+        type: 'pet',
+        category: 'social',
+        unlockRequirement: {},
+        cost: { gold: 25000, diamonds: 25 },
+        stats: { magicAttack: 15, magicDefense: 5, maxMana: 10 },
+        rarity: 'legendary' },
+    {
+        id: 'cow_king',
+        name: 'Cow King',
+        description: 'The undisputed ruler of the battlefield herd.',
+        icon: '🐮👑',
+        image: cowKingImg,
+        type: 'pet',
+        category: 'social',
+        unlockRequirement: { otherItems: ['meditating_war_cow', 'highland_archer_cow', 'wizard_cow'] },
+        cost: { gold: 0 },
+        stats: { attack: 20, defense: 20 },
+        rarity: 'legendary' },
     {
         id: 'spirit_fox', // Was pet_fox
         name: 'Spirit Fox',
@@ -384,8 +415,7 @@ const PET_ITEMS: Item[] = [
         unlockRequirement: { skills: [{ skill: 'Flexibility', level: 10 }] },
         cost: { gold: 15000 },
         stats: { bonusXp: { Flexibility: 5 } },
-        rarity: 'uncommon',
-    },
+        rarity: 'uncommon' },
     {
         id: 'ancient_owl', // Was pet_owl
         name: 'Ancient Owl',
@@ -396,8 +426,7 @@ const PET_ITEMS: Item[] = [
         unlockRequirement: { skills: [{ skill: 'Intelligence', level: 8 }] },
         cost: { gold: 18000 },
         stats: { bonusXp: { Intelligence: 5 } },
-        rarity: 'uncommon',
-    },
+        rarity: 'uncommon' },
     {
         id: 'pet_wolf',
         name: 'Wolf',
@@ -408,8 +437,7 @@ const PET_ITEMS: Item[] = [
         unlockRequirement: { skills: [{ skill: 'Strength', level: 15 }] },
         cost: { gold: 35000 },
         stats: { bonusXp: { Strength: 8 } },
-        rarity: 'rare',
-    },
+        rarity: 'rare' },
     {
         id: 'phoenix_chick', // Was pet_phoenix
         name: 'Phoenix Chick',
@@ -420,8 +448,7 @@ const PET_ITEMS: Item[] = [
         unlockRequirement: { skills: [{ skill: 'Cardio', level: 20 }] },
         cost: { gold: 75000, diamonds: 50 },
         stats: { bonusXp: { Cardio: 10 } },
-        rarity: 'epic',
-    },
+        rarity: 'epic' },
     {
         id: 'dragon_hatchling', // Was pet_dragon
         name: 'Dragon Hatchling',
@@ -432,8 +459,7 @@ const PET_ITEMS: Item[] = [
         unlockRequirement: { skills: [{ skill: 'Strength', level: 25 }, { skill: 'Intelligence', level: 15 }] },
         cost: { gold: 150000, diamonds: 150 },
         stats: { bonusXp: { Strength: 5, Intelligence: 5 } },
-        rarity: 'legendary',
-    },
+        rarity: 'legendary' },
     {
         id: 'cosmic_turtle',
         name: 'Cosmic Turtle',
@@ -444,8 +470,7 @@ const PET_ITEMS: Item[] = [
         unlockRequirement: { skills: [{ skill: 'Hygiene', level: 20 }] },
         cost: { gold: 50000 },
         stats: { bonusXp: { Hygiene: 8 } },
-        rarity: 'epic',
-    },
+        rarity: 'epic' },
 ];
 
 // ==================== PET ACCESSORIES ====================
@@ -459,8 +484,7 @@ const PET_ACCESSORY_ITEMS: Item[] = [
         category: 'social',
         unlockRequirement: { skills: [{ skill: 'Social', level: 5 }] },
         cost: { gold: 2000, tokens: { Social: 5 } },
-        rarity: 'common',
-    },
+        rarity: 'common' },
     {
         id: 'pet_hat',
         name: 'Pet Hat',
@@ -470,8 +494,7 @@ const PET_ACCESSORY_ITEMS: Item[] = [
         category: 'social',
         unlockRequirement: { skills: [{ skill: 'Social', level: 6 }] },
         cost: { gold: 2500, tokens: { Social: 5 } },
-        rarity: 'common',
-    },
+        rarity: 'common' },
     {
         id: 'pet_shirt',
         name: 'Pet Shirt',
@@ -481,8 +504,7 @@ const PET_ACCESSORY_ITEMS: Item[] = [
         category: 'social',
         unlockRequirement: { skills: [{ skill: 'Social', level: 10 }] },
         cost: { gold: 4000, tokens: { Social: 10 } },
-        rarity: 'uncommon',
-    },
+        rarity: 'uncommon' },
     {
         id: 'pet_bandana',
         name: 'Pet Bandana',
@@ -492,8 +514,7 @@ const PET_ACCESSORY_ITEMS: Item[] = [
         category: 'social',
         unlockRequirement: { skills: [{ skill: 'Social', level: 8 }] },
         cost: { gold: 3500, tokens: { Social: 10 } },
-        rarity: 'uncommon',
-    },
+        rarity: 'uncommon' },
     {
         id: 'pet_cape',
         name: 'Pet Cape',
@@ -503,8 +524,7 @@ const PET_ACCESSORY_ITEMS: Item[] = [
         category: 'social',
         unlockRequirement: { skills: [{ skill: 'Social', level: 15 }] },
         cost: { gold: 10000, tokens: { Social: 15 } },
-        rarity: 'rare',
-    },
+        rarity: 'rare' },
     {
         id: 'pet_crown',
         name: 'Pet Crown',
@@ -514,8 +534,7 @@ const PET_ACCESSORY_ITEMS: Item[] = [
         category: 'social',
         unlockRequirement: { skills: [{ skill: 'Social', level: 20 }] },
         cost: { gold: 25000, diamonds: 25, tokens: { Social: 25 } },
-        rarity: 'epic',
-    },
+        rarity: 'epic' },
 ];
 
 // ==================== FURNITURE ITEMS ====================
@@ -530,8 +549,7 @@ const FURNITURE_ITEMS: Item[] = [
         category: 'hygiene',
         unlockRequirement: {},
         cost: { gold: 500 },
-        rarity: 'common',
-    },
+        rarity: 'common' },
     {
         id: 'premium_sink',
         name: 'Premium Sink',
@@ -542,8 +560,7 @@ const FURNITURE_ITEMS: Item[] = [
         unlockRequirement: { skills: [{ skill: 'Hygiene', level: 5 }] },
         cost: { gold: 5000, tokens: { Hygiene: 5 } },
         stats: { bonusXp: { Hygiene: 1 } },
-        rarity: 'common',
-    },
+        rarity: 'common' },
     {
         id: 'gold_toilet',
         name: 'Gold Toilet',
@@ -554,8 +571,7 @@ const FURNITURE_ITEMS: Item[] = [
         unlockRequirement: { skills: [{ skill: 'Hygiene', level: 10 }] },
         cost: { gold: 12000, tokens: { Hygiene: 15 } },
         stats: { bonusXp: { Hygiene: 2 } },
-        rarity: 'uncommon',
-    },
+        rarity: 'uncommon' },
     {
         id: 'luxury_shower',
         name: 'Luxury Shower',
@@ -566,8 +582,7 @@ const FURNITURE_ITEMS: Item[] = [
         unlockRequirement: { skills: [{ skill: 'Hygiene', level: 20 }] },
         cost: { gold: 50000, diamonds: 50, tokens: { Hygiene: 25 } },
         stats: { bonusXp: { Hygiene: 5 } },
-        rarity: 'rare',
-    },
+        rarity: 'rare' },
 
     // Sleep Furniture
     {
@@ -579,8 +594,7 @@ const FURNITURE_ITEMS: Item[] = [
         category: 'sleep',
         unlockRequirement: {},
         cost: { gold: 500 },
-        rarity: 'common',
-    },
+        rarity: 'common' },
     {
         id: 'comfy_bed',
         name: 'Comfy Bed',
@@ -591,8 +605,7 @@ const FURNITURE_ITEMS: Item[] = [
         unlockRequirement: { skills: [{ skill: 'Sleep', level: 8 }] },
         cost: { gold: 8000, tokens: { Sleep: 10 } },
         stats: { bonusXp: { Sleep: 1 } },
-        rarity: 'uncommon',
-    },
+        rarity: 'uncommon' },
     {
         id: 'premium_bed',
         name: 'Premium Bed',
@@ -603,8 +616,7 @@ const FURNITURE_ITEMS: Item[] = [
         unlockRequirement: { skills: [{ skill: 'Sleep', level: 15 }] },
         cost: { gold: 20000, tokens: { Sleep: 25 } },
         stats: { bonusXp: { Sleep: 3 } },
-        rarity: 'rare',
-    },
+        rarity: 'rare' },
 
     // ========== HOUSEMAID FURNITURE ==========
     // Level 1-5: Basic items
@@ -618,8 +630,7 @@ const FURNITURE_ITEMS: Item[] = [
         unlockRequirement: { skills: [{ skill: 'Sleep', level: 3 }] },
         cost: { gold: 1000 },
         stats: { bonusXp: { Sleep: 1 } },
-        rarity: 'common',
-    },
+        rarity: 'common' },
     {
         id: 'wooden_chair',
         name: 'Wooden Chair',
@@ -630,8 +641,7 @@ const FURNITURE_ITEMS: Item[] = [
         unlockRequirement: { skills: [{ skill: 'Sleep', level: 5 }] },
         cost: { gold: 1500, tokens: { Sleep: 5 } },
         stats: { bonusXp: { Sleep: 1 } },
-        rarity: 'common',
-    },
+        rarity: 'common' },
     // Level 6-10: Better items
     {
         id: 'ornate_lamp',
@@ -643,8 +653,7 @@ const FURNITURE_ITEMS: Item[] = [
         unlockRequirement: { skills: [{ skill: 'Sleep', level: 7 }] },
         cost: { gold: 3000, tokens: { Sleep: 10 } },
         stats: { bonusXp: { Sleep: 2 } },
-        rarity: 'uncommon',
-    },
+        rarity: 'uncommon' },
     {
         id: 'writing_desk',
         name: 'Writing Desk',
@@ -655,8 +664,7 @@ const FURNITURE_ITEMS: Item[] = [
         unlockRequirement: { skills: [{ skill: 'Sleep', level: 10 }] },
         cost: { gold: 5000, tokens: { Sleep: 15 } },
         stats: { bonusXp: { Sleep: 2, Intelligence: 1 } },
-        rarity: 'uncommon',
-    },
+        rarity: 'uncommon' },
     // Level 11-15: Fancy items
     {
         id: 'grandfather_clock',
@@ -668,8 +676,7 @@ const FURNITURE_ITEMS: Item[] = [
         unlockRequirement: { skills: [{ skill: 'Sleep', level: 12 }] },
         cost: { gold: 12000, diamonds: 10, tokens: { Sleep: 20 } },
         stats: { bonusXp: { Sleep: 3 } },
-        rarity: 'rare',
-    },
+        rarity: 'rare' },
     {
         id: 'ornate_bed',
         name: 'Ornate Bed',
@@ -680,8 +687,7 @@ const FURNITURE_ITEMS: Item[] = [
         unlockRequirement: { skills: [{ skill: 'Sleep', level: 15 }] },
         cost: { gold: 20000, diamonds: 25, tokens: { Sleep: 25 } },
         stats: { bonusXp: { Sleep: 5 } },
-        rarity: 'rare',
-    },
+        rarity: 'rare' },
     // Level 16-20: Premium items
     {
         id: 'magic_hearth',
@@ -693,8 +699,7 @@ const FURNITURE_ITEMS: Item[] = [
         unlockRequirement: { skills: [{ skill: 'Sleep', level: 18 }] },
         cost: { gold: 35000, diamonds: 40, tokens: { Sleep: 30 } },
         stats: { bonusXp: { Sleep: 4 } },
-        rarity: 'epic',
-    },
+        rarity: 'epic' },
     {
         id: 'enchanted_mirror',
         name: 'Enchanted Mirror',
@@ -705,8 +710,7 @@ const FURNITURE_ITEMS: Item[] = [
         unlockRequirement: { skills: [{ skill: 'Sleep', level: 20 }] },
         cost: { gold: 45000, diamonds: 50, tokens: { Sleep: 35 } },
         stats: { bonusXp: { Sleep: 4, Hygiene: 2 } },
-        rarity: 'epic',
-    },
+        rarity: 'epic' },
     // Level 21-25: Royal items
     {
         id: 'royal_canopy',
@@ -718,8 +722,7 @@ const FURNITURE_ITEMS: Item[] = [
         unlockRequirement: { skills: [{ skill: 'Sleep', level: 23 }] },
         cost: { gold: 60000, diamonds: 75, tokens: { Sleep: 40 } },
         stats: { bonusXp: { Sleep: 8 } },
-        rarity: 'epic',
-    },
+        rarity: 'epic' },
     {
         id: 'arcane_bookshelf',
         name: 'Arcane Bookshelf',
@@ -730,8 +733,7 @@ const FURNITURE_ITEMS: Item[] = [
         unlockRequirement: { skills: [{ skill: 'Sleep', level: 25 }] },
         cost: { gold: 80000, diamonds: 100, tokens: { Sleep: 50 } },
         stats: { bonusXp: { Sleep: 5, Intelligence: 3 } },
-        rarity: 'legendary',
-    },
+        rarity: 'legendary' },
     // Level 30+: Legendary with Cleanliness Aura
     {
         id: 'celestial_chandelier',
@@ -743,8 +745,7 @@ const FURNITURE_ITEMS: Item[] = [
         unlockRequirement: { skills: [{ skill: 'Sleep', level: 30 }] },
         cost: { gold: 150000, diamonds: 250, tokens: { Sleep: 75 } },
         stats: { bonusXp: { Sleep: 15, Hygiene: 5 } },
-        rarity: 'legendary',
-    },
+        rarity: 'legendary' },
     // ========== PRESTIGE COMBAT FURNITURE ==========
     {
         id: 'enchanted_mirror_prestige',
@@ -756,8 +757,7 @@ const FURNITURE_ITEMS: Item[] = [
         unlockRequirement: { skills: [{ skill: 'Sleep', level: 40 }] },
         cost: { gold: 45000, diamonds: 50, tokens: { Sleep: 40 } },
         stats: { bonusXp: { Sleep: 5 } },
-        rarity: 'epic',
-    },
+        rarity: 'epic' },
     {
         id: 'heavy_weapon_rack',
         name: 'Heavy Weapon Rack',
@@ -768,8 +768,7 @@ const FURNITURE_ITEMS: Item[] = [
         unlockRequirement: { skills: [{ skill: 'Sleep', level: 60 }] },
         cost: { gold: 100000, diamonds: 125, tokens: { Sleep: 60 } },
         stats: { attack: 10, bonusXp: { Sleep: 7, Strength: 3 } },
-        rarity: 'epic',
-    },
+        rarity: 'epic' },
     {
         id: 'gilded_bathtub',
         name: 'Gilded Bathtub',
@@ -780,8 +779,7 @@ const FURNITURE_ITEMS: Item[] = [
         unlockRequirement: { skills: [{ skill: 'Sleep', level: 80 }] },
         cost: { gold: 250000, diamonds: 375, tokens: { Sleep: 90 } },
         stats: { bonusXp: { Sleep: 13, Hygiene: 5 } },
-        rarity: 'legendary',
-    },
+        rarity: 'legendary' },
     {
         id: 'archmage_desk',
         name: 'Archmage Desk',
@@ -792,8 +790,7 @@ const FURNITURE_ITEMS: Item[] = [
         unlockRequirement: { skills: [{ skill: 'Sleep', level: 100 }] },
         cost: { gold: 1000000, diamonds: 1000, tokens: { Sleep: 150 } },
         stats: { bonusXp: { Sleep: 15, Intelligence: 10 } },
-        rarity: 'legendary',
-    },
+        rarity: 'legendary' },
 ];
 
 // ==================== CONSUMABLE ITEMS ====================
@@ -807,8 +804,7 @@ const CONSUMABLE_ITEMS: Item[] = [
         category: 'general',
         unlockRequirement: {},
         cost: { gold: 150 },
-        rarity: 'common',
-    },
+        rarity: 'common' },
     {
         id: 'consumable_defense_stabilizer',
         name: 'Defense Stabilizer',
@@ -817,9 +813,8 @@ const CONSUMABLE_ITEMS: Item[] = [
         type: 'consumable',
         category: 'general',
         unlockRequirement: {},
-        cost: { tickets: 15 },
-        rarity: 'uncommon',
-    },
+        cost: {},
+        rarity: 'uncommon' },
     {
         id: 'consumable_streak_shield',
         name: 'Streak Shield',
@@ -829,8 +824,7 @@ const CONSUMABLE_ITEMS: Item[] = [
         category: 'general',
         unlockRequirement: {},
         cost: { gold: 500 },
-        rarity: 'rare',
-    },
+        rarity: 'rare' },
     {
         id: 'consumable_monopoly_refresh',
         name: 'Monopoly Refresh',
@@ -840,8 +834,7 @@ const CONSUMABLE_ITEMS: Item[] = [
         category: 'general',
         unlockRequirement: {},
         cost: { gold: 100 },
-        rarity: 'rare',
-    },
+        rarity: 'rare' },
     {
         id: 'consumable_xp_boost',
         name: 'XP Boost (24h)',
@@ -851,8 +844,7 @@ const CONSUMABLE_ITEMS: Item[] = [
         category: 'general',
         unlockRequirement: {},
         cost: { gold: 500 },
-        rarity: 'epic',
-    },
+        rarity: 'epic' },
     {
         id: 'consumable_mana_potion',
         name: 'Mana Potion',
@@ -862,8 +854,7 @@ const CONSUMABLE_ITEMS: Item[] = [
         category: 'general',
         unlockRequirement: {},
         cost: { gold: 200 },
-        rarity: 'common',
-    },
+        rarity: 'common' },
     {
         id: 'consumable_greater_health',
         name: 'Greater Health Potion',
@@ -872,9 +863,8 @@ const CONSUMABLE_ITEMS: Item[] = [
         type: 'consumable',
         category: 'general',
         unlockRequirement: {},
-        cost: { gold: 500, tickets: 5 },
-        rarity: 'uncommon',
-    },
+        cost: { gold: 500 },
+        rarity: 'uncommon' },
     {
         id: 'consumable_elixir_vitality',
         name: 'Elixir of Vitality',
@@ -883,9 +873,8 @@ const CONSUMABLE_ITEMS: Item[] = [
         type: 'consumable',
         category: 'general',
         unlockRequirement: {},
-        cost: { gold: 750, tickets: 10 },
-        rarity: 'uncommon',
-    },
+        cost: { gold: 750 },
+        rarity: 'uncommon' },
     {
         id: 'consumable_resurrection_scroll',
         name: 'Resurrection Scroll',
@@ -895,8 +884,7 @@ const CONSUMABLE_ITEMS: Item[] = [
         category: 'general',
         unlockRequirement: {},
         cost: { diamonds: 25 },
-        rarity: 'rare',
-    },
+        rarity: 'rare' },
     {
         id: 'consumable_lucky_charm',
         name: 'Lucky Charm',
@@ -905,9 +893,8 @@ const CONSUMABLE_ITEMS: Item[] = [
         type: 'consumable',
         category: 'general',
         unlockRequirement: {},
-        cost: { tickets: 25 },
-        rarity: 'rare',
-    },
+        cost: {},
+        rarity: 'rare' },
 ];
 
 // ==================== COMBINED DATABASE ====================

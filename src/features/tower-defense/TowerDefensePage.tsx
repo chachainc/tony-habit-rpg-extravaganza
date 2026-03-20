@@ -5,7 +5,8 @@ import { useCurrencyStore } from '../../store/useCurrencyStore';
 import type { PlacedTower } from '../../store/useTowerDefenseStore';
 import { TD_GRID_WIDTH, TD_GRID_HEIGHT, isPath, TD_TOWERS, TD_ENEMIES, TD_MAP_MODIFIERS, TD_WAVE_MODIFIERS, TD_PATH } from '../../data/towerDefense';
 import type { TowerType, TowerDef } from '../../data/towerDefense';
-import { Castle, ArrowLeft, Play, RefreshCw, X } from 'lucide-react';
+import { ArrowLeft, Play, RefreshCw, X } from 'lucide-react';
+
 import './TowerDefensePage.css';
 
 export const TowerDefensePage = () => {
@@ -67,8 +68,12 @@ export const TowerDefensePage = () => {
             if (!dragState.isDragging || !dragState.towerType) return;
             
             setDragState(prev => {
-                if (prev.isValid && prev.gridX >= 0 && prev.gridY >= 0 && currStore.shmeckles >= TD_TOWERS[prev.towerType!].cost) {
-                    td.buildTower(prev.towerType!, prev.gridX, prev.gridY);
+                if (prev.isValid && prev.gridX >= 0 && prev.gridY >= 0) {
+                    const cost = TD_TOWERS[prev.towerType!].cost;
+                    const owned = td.towerInventory[prev.towerType!] ?? 0;
+                    if (owned > 0 || currStore.shmeckles >= cost) {
+                        td.buildTower(prev.towerType!, prev.gridX, prev.gridY);
+                    }
                 }
                 return { ...prev, isDragging: false, towerType: null };
             });
@@ -100,7 +105,6 @@ export const TowerDefensePage = () => {
         
         const cost = TD_TOWERS[type].cost;
         const ownedCount = td.towerInventory[type] ?? 0;
-        // Allow drag if: has owned inventory OR has enough Schmeckles to buy
         if (ownedCount === 0 && currStore.shmeckles < cost) return;
 
         setDragState({
@@ -123,7 +127,7 @@ export const TowerDefensePage = () => {
     const handleUpgrade = () => {
         if (!selectedTower) return;
         if (td.upgradeTower(selectedTower.id)) {
-            setSelectedTower(null); // Close modal on success
+            setSelectedTower(null);
         }
     };
 
@@ -144,6 +148,9 @@ export const TowerDefensePage = () => {
                     ghostClass = dragState.isValid ? 'drag-valid' : 'drag-invalid';
                 }
                 
+                const isBase = x === 11 && y === 7;
+                const isSpawn = x === 0 && y === 2;
+
                 cells.push(
                     <div
                         key={`${x}-${y}`}
@@ -154,12 +161,22 @@ export const TowerDefensePage = () => {
                             gridRow: y + 1
                         }}
                     >
-                        {path && x === 11 && y === 7 && (
-                            <div className="base-icon">
-                                <Castle size={32} color={td.baseHealth > 0 ? "var(--accent-primary)" : "var(--danger-color)"} />
+                        {/* Fort visual at the base */}
+                        {path && isBase && (
+                            <div className="fort-visual">
+                                <div className="fort-icon">🏰</div>
+                                <div className="fort-hp-bar">
+                                    <div 
+                                        className="fort-hp-fill"
+                                        style={{ 
+                                            width: `${(td.baseHealth / td.maxBaseHealth) * 100}%`,
+                                            backgroundColor: td.baseHealth > 50 ? '#22c55e' : td.baseHealth > 25 ? '#f59e0b' : '#ef4444'
+                                        }}
+                                    />
+                                </div>
                             </div>
                         )}
-                        {path && x === 0 && y === 2 && (
+                        {path && isSpawn && (
                             <div className="spawn-icon">🚪</div>
                         )}
                     </div>
@@ -169,15 +186,23 @@ export const TowerDefensePage = () => {
         return cells;
     };
 
+    // Determine if a given tower type shows "FREE" or a cost
+    const getTowerCostLabel = (type: TowerType): string => {
+        const owned = td.towerInventory[type] ?? 0;
+        if (owned > 0) return `Owned: ${owned}`;
+        return `🐌 ${TD_TOWERS[type].cost}`;
+    };
+
     return (
         <div className="td-page">
+
             {/* ── Compact Header ── */}
             <div className="td-header-compact">
                 <button className="td-back" onClick={() => navigate('/combat')}>
                     <ArrowLeft size={18} /> Back
                 </button>
                 <span className="td-title-compact">
-                    <Castle size={15} /> Tower Defense
+                    🏰 Tower Defense
                 </span>
                 <div className="td-header-chips">
                     <span className="td-chip mana">🐌 {currStore.shmeckles}</span>
@@ -276,15 +301,21 @@ export const TowerDefensePage = () => {
                             const ex = p1.x + (p2.x - p1.x) * enemy.progress;
                             const ey = p1.y + (p2.y - p1.y) * enemy.progress;
 
+                            // Flow Boss: larger sprite
+                            const isFlowBoss = enemy.type === 'flow_boss';
+                            // Necromancer: glow aura
+                            const isNecro = def.healsNearby;
+
                             return (
                                 <div
                                     key={enemy.id}
-                                    className={`td-entity enemy ${Date.now() < enemy.slowedUntil ? 'slowed' : ''}`}
+                                    className={`td-entity enemy ${Date.now() < enemy.slowedUntil ? 'slowed' : ''} ${isNecro ? 'necro-aura' : ''}`}
                                     style={{
                                         left: `${(ex / TD_GRID_WIDTH) * 100}%`,
                                         top: `${(ey / TD_GRID_HEIGHT) * 100}%`,
                                         width: `${100 / TD_GRID_WIDTH}%`,
-                                        height: `${100 / TD_GRID_HEIGHT}%`
+                                        height: `${100 / TD_GRID_HEIGHT}%`,
+                                        ...(isFlowBoss ? { width: `${200 / TD_GRID_WIDTH}%`, height: `${200 / TD_GRID_HEIGHT}%`, zIndex: 15 } : {})
                                     }}
                                 >
                                     <div className="enemy-sprite">{def.icon}</div>
@@ -300,34 +331,22 @@ export const TowerDefensePage = () => {
 
                         {/* 4. Projectiles Layer */}
                         {td.projectiles.map(proj => {
-                            const target = td.enemies.find(e => e.id === proj.targetId);
-                            if (!target) return null; // Very short lived anyway
-
-                            const p1 = TD_PATH[target.pathIndex];
-                            const p2 = TD_PATH[target.pathIndex + 1] || p1;
-                            const tx = p1.x + (p2.x - p1.x) * target.progress;
-                            const ty = p1.y + (p2.y - p1.y) * target.progress;
-
-                            // Draw a simple line using transform
-                            const dx = tx - proj.x;
-                            const dy = ty - proj.y;
-                            const angle = Math.atan2(dy, dx) * 180 / Math.PI;
-                            const dist = Math.sqrt(dx*dx + dy*dy);
+                            const currentX = proj.fromX + (proj.toX - proj.fromX) * proj.progress;
+                            const currentY = proj.fromY + (proj.toY - proj.fromY) * proj.progress;
 
                             return (
                                 <div 
                                     key={proj.id}
                                     className="td-projectile"
                                     style={{
-                                        left: `${(proj.x / TD_GRID_WIDTH) * 100 + (50 / TD_GRID_WIDTH)}%`,
-                                        top: `${(proj.y / TD_GRID_HEIGHT) * 100 + (50 / TD_GRID_HEIGHT)}%`,
-                                        width: `${(dist / TD_GRID_WIDTH) * 100}%`,
-                                        transform: `rotate(${angle}deg)`,
+                                        left: `${(currentX / TD_GRID_WIDTH) * 100}%`,
+                                        top: `${(currentY / TD_GRID_HEIGHT) * 100}%`,
                                         backgroundColor: proj.color
                                     }}
                                 />
                             );
                         })}
+
                         {/* 5. Drag Ghost Preview */}
                         {dragState.isDragging && dragState.towerType && dragState.gridX >= 0 && dragState.gridY >= 0 && (
                             <div 
@@ -373,11 +392,8 @@ export const TowerDefensePage = () => {
                                     </div>
                                     <div className="shop-item-details">
                                         <div className="shop-item-name">{def.name}</div>
-                                        {ownedCount > 0 ? (
-                                            <div className="shop-item-owned">Owned: {ownedCount}</div>
-                                        ) : (
-                                            <div className="shop-item-cost">🐌 {def.cost}</div>
-                                        )}
+                                        <div className="shop-item-cost">{getTowerCostLabel(def.type)}</div>
+                                        <div className="shop-item-desc">{def.description}</div>
                                     </div>
                                 </div>
                             );
@@ -385,7 +401,7 @@ export const TowerDefensePage = () => {
                     </div>
                 </div>
 
-                {/* Absolute Drag Visualizer (Follows Mouse out-of-bounds) */}
+                {/* Absolute Drag Visualizer */}
                 {dragState.isDragging && dragState.towerType && (
                     <div className="td-floating-ghost" style={{ left: dragState.mouseX, top: dragState.mouseY }}>
                         <div className="tower-icon" style={{ backgroundColor: TD_TOWERS[dragState.towerType].color, transform: 'scale(1.5)' }}>
@@ -394,8 +410,7 @@ export const TowerDefensePage = () => {
                     </div>
                 )}
 
-                {/* Modals Float over everything */}
-
+                {/* Tower Upgrade/Sell Modal */}
                 {selectedTower && (() => {
                     const def = TD_TOWERS[selectedTower.type];
                     const upgCost = Math.floor(def.cost * Math.pow(1.5, selectedTower.level));
@@ -405,7 +420,7 @@ export const TowerDefensePage = () => {
                     return (
                         <div className="td-shop-panel upgrade-panel">
                             <div className="panel-header">
-                                <h3>{def.icon} {def.name} Tower (Lv {selectedTower.level})</h3>
+                                <h3>{def.icon} {def.name} (Lv {selectedTower.level})</h3>
                                 <button className="close-btn" onClick={() => setSelectedTower(null)}><X size={16}/></button>
                             </div>
                             <div className="tower-stats-preview">
