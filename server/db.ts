@@ -42,6 +42,20 @@ export async function initDatabase(): Promise<void> {
     // Create index if not exists
     db.run('CREATE INDEX IF NOT EXISTS idx_profiles_code ON profiles (code);');
 
+    // Migration: add google_email column (safe to re-run)
+    try {
+        db.run('ALTER TABLE profiles ADD COLUMN google_email TEXT;');
+        console.log('✅ Migration: google_email column added.');
+    } catch {
+        // Column already exists — expected on subsequent runs
+    }
+
+    try {
+        db.run('CREATE UNIQUE INDEX IF NOT EXISTS idx_profiles_google_email ON profiles (google_email);');
+    } catch {
+        // Index already exists
+    }
+
     const result = db.exec('SELECT COUNT(*) as cnt FROM profiles');
     const count = result[0]?.values[0]?.[0] ?? 0;
     console.log(`✅ Database connected — profiles table ready (${count} profiles).`);

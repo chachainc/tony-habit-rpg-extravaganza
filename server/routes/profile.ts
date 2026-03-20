@@ -4,9 +4,20 @@ import { generateShareCode } from '../utils/crypto.js';
 import { ipRateLimit, codeRateLimit, checkLockout, recordFailedLookup, clearLockout } from '../middleware/rateLimit.js';
 import { validateAndSanitize, validateProfileData, validateStateTransition } from '../middleware/validate.js';
 
-function getIp(req: Request): string {
+export function getIp(req: Request): string {
     const raw = req.ip ?? req.socket.remoteAddress ?? 'unknown';
     return typeof raw === 'string' ? raw : (raw[0] ?? 'unknown');
+}
+
+export function generateInitialProfile(nameRaw: unknown) {
+    const code = generateShareCode();
+    const profileName = (typeof nameRaw === 'string' ? nameRaw.slice(0, 50) : 'Hero') || 'Hero';
+    const initialData = {
+        profileName,
+        createdAt: new Date().toISOString(),
+        stores: {},
+    };
+    return { code, profileName, initialData };
 }
 
 export const profileRouter = Router();
@@ -18,14 +29,7 @@ profileRouter.use(ipRateLimit);
 // POST /api/profile
 profileRouter.post('/', validateAndSanitize, async (req, res) => {
     try {
-        const code = generateShareCode();
-        const profileName = (typeof req.body.name === 'string' ? req.body.name.slice(0, 50) : 'Hero') || 'Hero';
-
-        const initialData = {
-            profileName,
-            createdAt: new Date().toISOString(),
-            stores: {},
-        };
+        const { code, profileName, initialData } = generateInitialProfile(req.body.name);
 
         dbRun(
             'INSERT INTO profiles (id, code, data, version) VALUES (lower(hex(randomblob(16))), ?, ?, 1)',
@@ -47,7 +51,7 @@ profileRouter.get('/:code', checkLockout, codeRateLimit, async (req, res) => {
         const { code } = req.params;
 
         // Basic code format validation
-        if (!code || code.length !== 64 || !/^[a-f0-9]+$/.test(code)) {
+        if (!code || code.length !== 64 || !/^[a-f0-9]+$/.test(code as string)) {
             recordFailedLookup(getIp(req));
             res.status(404).json({ error: 'Profile not found' });
             return;
@@ -81,7 +85,7 @@ profileRouter.put('/:code', checkLockout, codeRateLimit, validateAndSanitize, as
         const { code } = req.params;
 
         // Basic code format validation
-        if (!code || code.length !== 64 || !/^[a-f0-9]+$/.test(code)) {
+        if (!code || code.length !== 64 || !/^[a-f0-9]+$/.test(code as string)) {
             recordFailedLookup(getIp(req));
             res.status(404).json({ error: 'Profile not found' });
             return;

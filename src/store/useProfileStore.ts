@@ -1,6 +1,8 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import { profileApi } from '../api/profileApi';
+import { signInWithPopup } from 'firebase/auth';
+import { auth, googleProvider } from '../lib/firebase';
+import { profileApi, authApi } from '../api/profileApi';
 import { PERSIST_REGISTRY } from '../data/persistRegistry';
 
 interface ProfileState {
@@ -35,6 +37,7 @@ interface ProfileState {
     syncToServer: () => Promise<void>;
     exportSave: () => void;
     importSave: (json: string) => Promise<boolean>;
+    loginWithGoogle: () => Promise<boolean>;
 
     // Tutorial Actions
     completeWelcomeTutorial: () => void;
@@ -278,6 +281,45 @@ export const useProfileStore = create<ProfileState>()(
                     return true;
                 } catch {
                     set({ lastSyncError: 'Failed to parse save file' });
+                    return false;
+                }
+            },
+
+            loginWithGoogle: async () => {
+                try {
+                    if (!auth || !googleProvider) {
+                        set({ lastSyncError: 'Firebase is not configured. Fill in your .env file.' });
+                        return false;
+                    }
+
+                    const result = await signInWithPopup(auth, googleProvider);
+                    const user = result.user;
+                    const email = user.email;
+
+                    if (!email || email.toLowerCase() !== 'aduca375@gmail.com') {
+                        // Sign out the unauthorized user from Firebase
+                        await auth.signOut();
+                        set({ lastSyncError: 'Unauthorized email. Only aduca375@gmail.com is allowed.' });
+                        return false;
+                    }
+
+                    const idToken = await user.getIdToken();
+
+                    const { data, error } = await authApi.googleLogin(idToken);
+
+                    if (error || !data) {
+                        set({ lastSyncError: error || 'Google login failed' });
+                        return false;
+                    }
+
+                    // Delegate the rest of the login logic perfectly to the existing login flow!
+                    return await get().login(data.code);
+                } catch (err: unknown) {
+                    // User closed popup or other Firebase error
+                    const msg = err instanceof Error ? err.message : 'Google sign-in failed';
+                    if (!msg.includes('popup-closed-by-user')) {
+                        set({ lastSyncError: msg });
+                    }
                     return false;
                 }
             },

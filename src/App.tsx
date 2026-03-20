@@ -45,7 +45,6 @@ import { useGameStore } from './store/useGameStore';
 import { useProfileStore, triggerAutoSync } from './store/useProfileStore';
 import { useBudgetStore } from './store/useBudgetStore';
 import { WelcomeTutorialModal } from './features/onboarding/WelcomeTutorialModal';
-
 // Town Hub wrapper to handle navigation
 const TownHubPage = () => {
   const navigate = useNavigate();
@@ -93,7 +92,6 @@ function App() {
   const { pendingLevelUp, clearLevelUp } = useGameStore();
   const { isLoggedIn, characterArchetype } = useProfileStore();
   const [showWakeUp, setShowWakeUp] = useState(false);
-
   useEffect(() => {
     console.log('[BOOT] App mounted');
     useBudgetStore.getState().processDailyLogin();

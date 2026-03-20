@@ -167,6 +167,15 @@ export const StormTheFort = () => {
                 onPointerUp={handlePointerUp}
                 onPointerCancel={handlePointerUp}
             >
+                {/* Background video */}
+                <video
+                    className="storm-bg-video"
+                    autoPlay
+                    loop
+                    muted
+                    playsInline
+                    src="/assets/storm-fort/Cows_fighting_goblins_202603180014.mp4"
+                />
                 {/* Track/path overlay image */}
                 <div className="storm-track-overlay" />
                 {/* Castle ambient bg on right */}

@@ -113,6 +113,20 @@
     border-color: rgba(148, 163, 184, 0.3);
 }
 
+.login-btn--google {
+    background: rgba(255, 255, 255, 0.95);
+    color: #1f2937;
+    border-color: rgba(148, 163, 184, 0.3);
+    font-weight: 600;
+}
+
+.login-btn--google:hover:not(:disabled) {
+    background: #ffffff;
+    border-color: rgba(96, 165, 250, 0.5);
+    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.15);
+    transform: translateY(-1px);
+}
+
 .login-btn--back {
     background: transparent;
     color: #94a3b8;
