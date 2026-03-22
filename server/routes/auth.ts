@@ -14,6 +14,11 @@ if (!admin.apps.length) {
         const __dirname = path.dirname(fileURLToPath(import.meta.url));
         const keyPath = path.join(__dirname, '..', 'serviceAccountKey.json');
 
+        console.log('🔍 Firebase Admin init — checking credential sources...');
+        console.log('   Local file exists?', fs.existsSync(keyPath), `(${keyPath})`);
+        console.log('   GOOGLE_APPLICATION_CREDENTIALS_JSON set?', !!process.env.GOOGLE_APPLICATION_CREDENTIALS_JSON);
+        console.log('   GOOGLE_APPLICATION_CREDENTIALS set?', !!process.env.GOOGLE_APPLICATION_CREDENTIALS, process.env.GOOGLE_APPLICATION_CREDENTIALS ? `(${process.env.GOOGLE_APPLICATION_CREDENTIALS})` : '');
+
         if (fs.existsSync(keyPath)) {
             const serviceAccount = JSON.parse(fs.readFileSync(keyPath, 'utf-8'));
             admin.initializeApp({

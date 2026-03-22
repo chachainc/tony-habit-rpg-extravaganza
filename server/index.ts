@@ -43,7 +43,12 @@ app.use(helmet({
 
 // ─── CORS (allow Vite dev server) ────────────
 app.use(cors({
-    origin: ['http://localhost:5173', 'http://localhost:4173'],
+    origin: [
+        'http://localhost:5173',
+        'http://localhost:4173',
+        'https://tony-habit-rpg.onrender.com',
+        'https://tony-habit-rpg-extravaganza.onrender.com',
+    ],
     credentials: true,
 }));
 
