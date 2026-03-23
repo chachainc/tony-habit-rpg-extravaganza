@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import { signInWithRedirect, getRedirectResult } from 'firebase/auth';
+import { signInWithPopup } from 'firebase/auth';
 import { auth, googleProvider } from '../lib/firebase';
 import { profileApi, authApi } from '../api/profileApi';
 import { PERSIST_REGISTRY } from '../data/persistRegistry';
@@ -294,16 +294,42 @@ export const useProfileStore = create<ProfileState>()(
                         return false;
                     }
 
-                    // Use redirect instead of popup — popups fail on deployed sites
-                    // due to cross-origin communication issues with firebaseapp.com
-                    console.log('[GoogleAuth] Starting redirect to Google...');
-                    await signInWithRedirect(auth, googleProvider);
-                    // Page will redirect away — this code won't continue.
-                    // When user comes back, handleGoogleRedirectResult() runs.
-                    return false;
+                    // Use popup — signInWithRedirect is broken in most modern browsers
+                    // due to third-party cookie restrictions causing getRedirectResult
+                    // to always return null.
+                    console.log('[GoogleAuth] Opening Google sign-in popup...');
+                    const result = await signInWithPopup(auth, googleProvider);
+
+                    const user = result.user;
+                    const email = user.email;
+                    console.log('[GoogleAuth] Popup completed, email:', email);
+
+                    if (!email || email.toLowerCase() !== 'aduca375@gmail.com') {
+                        console.error('[GoogleAuth] ❌ Unauthorized email:', email);
+                        await auth.signOut();
+                        set({ lastSyncError: 'Unauthorized email. Only aduca375@gmail.com is allowed.' });
+                        return false;
+                    }
+
+                    console.log('[GoogleAuth] Getting ID token...');
+                    const idToken = await user.getIdToken();
+
+                    console.log('[GoogleAuth] Calling backend /api/auth/google...');
+                    const { data, error } = await authApi.googleLogin(idToken);
+                    console.log('[GoogleAuth] Backend response — data:', data, 'error:', error);
+
+                    if (error || !data) {
+                        console.error('[GoogleAuth] ❌ Backend error:', error);
+                        set({ lastSyncError: error || 'Google login failed' });
+                        return false;
+                    }
+
+                    console.log('[GoogleAuth] ✅ Backend returned code, calling login()...');
+                    await get().login(data.code);
+                    return true;
                 } catch (err: unknown) {
                     const msg = err instanceof Error ? err.message : 'Google sign-in failed';
-                    console.error('[GoogleAuth] ❌ Redirect error:', msg, err);
+                    console.error('[GoogleAuth] ❌ Popup error:', msg, err);
                     set({ lastSyncError: msg });
                     return false;
                 }
@@ -372,51 +398,9 @@ export function triggerAutoSync(): void {
     }, 5000); // 5 second debounce
 }
 
-/**
- * Call once on app startup to handle Google sign-in redirect result.
- * After signInWithRedirect, user returns here and we complete the login.
- */
+// handleGoogleRedirectResult is no longer needed — popup flow handles
+// everything inline inside loginWithGoogle().  Keep a no-op export so
+// existing call-sites don't break.
 export async function handleGoogleRedirectResult(): Promise<void> {
-    if (!auth) return;
-
-    try {
-        console.log('[GoogleAuth] Checking for redirect result...');
-        const result = await getRedirectResult(auth);
-
-        if (!result) {
-            console.log('[GoogleAuth] No redirect result (normal page load)');
-            return;
-        }
-
-        const user = result.user;
-        const email = user.email;
-        console.log('[GoogleAuth] Redirect result found, email:', email);
-
-        if (!email || email.toLowerCase() !== 'aduca375@gmail.com') {
-            console.error('[GoogleAuth] ❌ Unauthorized email:', email);
-            await auth.signOut();
-            useProfileStore.setState({ lastSyncError: 'Unauthorized email. Only aduca375@gmail.com is allowed.' });
-            return;
-        }
-
-        console.log('[GoogleAuth] Getting ID token...');
-        const idToken = await user.getIdToken();
-
-        console.log('[GoogleAuth] Calling backend /api/auth/google...');
-        const { data, error } = await authApi.googleLogin(idToken);
-        console.log('[GoogleAuth] Backend response — data:', data, 'error:', error);
-
-        if (error || !data) {
-            console.error('[GoogleAuth] ❌ Backend error:', error);
-            useProfileStore.setState({ lastSyncError: error || 'Google login failed' });
-            return;
-        }
-
-        console.log('[GoogleAuth] Backend returned code, calling login()...');
-        await useProfileStore.getState().login(data.code);
-    } catch (err) {
-        const msg = err instanceof Error ? err.message : 'Google redirect failed';
-        console.error('[GoogleAuth] ❌ Redirect handler error:', msg, err);
-        useProfileStore.setState({ lastSyncError: msg });
-    }
+    // No-op: popup-based auth handles everything in loginWithGoogle()
 }
