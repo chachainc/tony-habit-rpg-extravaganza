@@ -5,7 +5,7 @@ import { useProfileStore } from '../../store/useProfileStore';
 import './LoginScreen.css';
 
 export const LoginScreen = () => {
-    const { createProfile, login, loginWithGoogle, lastSyncError } = useProfileStore();
+    const { createProfile, login, lastSyncError } = useProfileStore();
     const [mode, setMode] = useState<'choose' | 'create' | 'login' | 'created'>('choose');
     const [name, setName] = useState('');
     const [codeInput, setCodeInput] = useState('');
@@ -14,12 +14,6 @@ export const LoginScreen = () => {
     const [error, setError] = useState('');
     const [copied, setCopied] = useState(false);
     const inputRef = useRef<HTMLInputElement>(null);
-    const [debugLog, setDebugLog] = useState<string[]>([]);
-
-    const addLog = (msg: string) => {
-        console.log('[GoogleAuth UI]', msg);
-        setDebugLog(prev => [...prev, `${new Date().toLocaleTimeString()}: ${msg}`]);
-    };
 
     const handleCreate = async () => {
         setLoading(true);
@@ -119,37 +113,6 @@ export const LoginScreen = () => {
                         >
                             <LogIn size={20} />
                             <span>Enter Share Code</span>
-                        </button>
-                        <button
-                            className="login-btn login-btn--google"
-                            disabled={loading}
-                            onClick={async () => {
-                                setLoading(true);
-                                setError('');
-                                setDebugLog([]);
-                                addLog('Starting Google Sign-In...');
-                                try {
-                                    addLog('Calling loginWithGoogle()...');
-                                    const ok = await loginWithGoogle();
-                                    addLog(`loginWithGoogle returned: ${ok}`);
-                                    const syncErr = useProfileStore.getState().lastSyncError;
-                                    addLog(`lastSyncError: ${syncErr || '(none)'}`);
-                                    addLog(`isLoggedIn: ${useProfileStore.getState().isLoggedIn}`);
-                                    addLog(`shareCode: ${useProfileStore.getState().shareCode ? 'SET' : 'NOT SET'}`);
-                                    setLoading(false);
-                                    if (!ok || syncErr) {
-                                        setError(syncErr || 'Google sign-in returned false with no error message');
-                                    }
-                                } catch (err: unknown) {
-                                    const msg = err instanceof Error ? err.message : String(err);
-                                    addLog(`CAUGHT ERROR: ${msg}`);
-                                    setError(msg);
-                                    setLoading(false);
-                                }
-                            }}
-                        >
-                            <span>🔵</span>
-                            <span>{loading ? 'Signing in...' : 'Sign in with Google (Beta)'}</span>
                         </button>
                     </motion.div>
                 )}
@@ -261,36 +224,6 @@ export const LoginScreen = () => {
                     </motion.div>
                 )}
             </motion.div>
-
-            {/* Debug log panel — reads from localStorage to survive page reloads */}
-            {(() => {
-                let persistedLogs: string[] = [];
-                try {
-                    persistedLogs = JSON.parse(localStorage.getItem('__google_auth_debug') || '[]');
-                } catch { /* ignore */ }
-                const allLogs = [...persistedLogs, ...debugLog];
-                const storeError = useProfileStore.getState().lastSyncError;
-                if (allLogs.length === 0 && !storeError) return null;
-                return (
-                    <div style={{
-                        position: 'fixed', bottom: 0, left: 0, right: 0,
-                        background: 'rgba(0,0,0,0.95)', color: '#0f0',
-                        fontFamily: 'monospace', fontSize: '11px',
-                        padding: '8px 12px', maxHeight: '250px', overflowY: 'auto',
-                        zIndex: 99999, whiteSpace: 'pre-wrap'
-                    }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
-                            <strong style={{ color: '#ff0' }}>🔧 Google Auth Debug Log:</strong>
-                            <button
-                                onClick={() => { localStorage.removeItem('__google_auth_debug'); setDebugLog([]); }}
-                                style={{ background: '#333', color: '#fff', border: 'none', padding: '2px 8px', cursor: 'pointer', fontSize: '10px' }}
-                            >Clear</button>
-                        </div>
-                        {storeError && <div style={{ color: '#f55' }}>⚠ Store error: {storeError}</div>}
-                        {allLogs.map((line, i) => <div key={i}>{line}</div>)}
-                    </div>
-                );
-            })()}
         </div>
     );
 };

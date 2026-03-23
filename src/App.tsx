@@ -42,7 +42,7 @@ import { CurrencyPopVFX } from './components/vfx/CurrencyPopVFX';
 import { PlayerRoom } from './features/room/PlayerRoom';
 import { useDayStore } from './store/useDayStore';
 import { useGameStore } from './store/useGameStore';
-import { useProfileStore, triggerAutoSync, handleGoogleRedirectResult } from './store/useProfileStore';
+import { useProfileStore, triggerAutoSync } from './store/useProfileStore';
 import { useBudgetStore } from './store/useBudgetStore';
 import { WelcomeTutorialModal } from './features/onboarding/WelcomeTutorialModal';
 // Town Hub wrapper to handle navigation
@@ -98,8 +98,6 @@ function App() {
     if (isNewDay()) {
       setShowWakeUp(true);
     }
-    // Handle Google sign-in redirect result (if user just returned from Google)
-    handleGoogleRedirectResult();
   }, [isNewDay]);
 
   // Auto-sync: listen to localStorage changes and trigger server sync
