@@ -294,17 +294,14 @@ export const useProfileStore = create<ProfileState>()(
                         return false;
                     }
 
-                    // Strategy: try popup first.  If the browser blocks it
-                    // (cross-origin cookie issues on deployed sites), fall
-                    // back to redirect.  Either way, onAuthStateChanged
-                    // (set up in initGoogleAuthListener) will catch the
-                    // result and finish the login.
+                    // Full inline flow: popup → get token → call backend → login
+                    // This avoids the race condition where signInWithPopup
+                    // resolved but onAuthStateChanged hadn't finished.
+                    let user;
                     try {
                         console.log('[GoogleAuth] Trying popup...');
-                        await signInWithPopup(auth, googleProvider);
-                        // If popup succeeds, onAuthStateChanged will
-                        // handle the rest automatically.
-                        return true;
+                        const result = await signInWithPopup(auth, googleProvider);
+                        user = result.user;
                     } catch (popupErr: unknown) {
                         const code = (popupErr as { code?: string })?.code;
                         console.warn('[GoogleAuth] Popup failed:', code, popupErr);
@@ -323,6 +320,35 @@ export const useProfileStore = create<ProfileState>()(
                         }
                         throw popupErr; // re-throw unexpected errors
                     }
+
+                    // Verify email client-side first
+                    const email = user.email;
+                    if (!email || email.toLowerCase() !== 'aduca375@gmail.com') {
+                        console.error('[GoogleAuth] ❌ Unauthorized email:', email);
+                        await auth!.signOut();
+                        set({ lastSyncError: 'Unauthorized email. Only aduca375@gmail.com is allowed.' });
+                        return false;
+                    }
+
+                    // Get ID token and send to backend
+                    console.log('[GoogleAuth] Getting ID token...');
+                    const idToken = await user.getIdToken();
+
+                    console.log('[GoogleAuth] Calling backend /api/auth/google...');
+                    const { data, error } = await authApi.googleLogin(idToken);
+                    console.log('[GoogleAuth] Backend response — data:', data, 'error:', error);
+
+                    if (error || !data) {
+                        console.error('[GoogleAuth] ❌ Backend error:', error);
+                        set({ lastSyncError: error || 'Google login failed' });
+                        return false;
+                    }
+
+                    // Complete the login (this calls window.location.reload())
+                    console.log('[GoogleAuth] ✅ Success! Logging in with code...');
+                    _googleAuthProcessing = true; // prevent onAuthStateChanged from double-processing
+                    await get().login(data.code);
+                    return true;
                 } catch (err: unknown) {
                     const msg = err instanceof Error ? err.message : 'Google sign-in failed';
                     console.error('[GoogleAuth] ❌ Error:', msg, err);
