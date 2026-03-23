@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import { signInWithPopup, getRedirectResult, onAuthStateChanged } from 'firebase/auth';
+import { signInWithRedirect, getRedirectResult, onAuthStateChanged } from 'firebase/auth';
 import { auth, googleProvider } from '../lib/firebase';
 import { profileApi, authApi } from '../api/profileApi';
 import { PERSIST_REGISTRY } from '../data/persistRegistry';
@@ -294,56 +294,19 @@ export const useProfileStore = create<ProfileState>()(
                         return false;
                     }
 
-                    // Full inline flow: popup → get user → token → backend → login
-                    let user;
-                    try {
-                        persistLog('Opening popup...');
-                        const result = await signInWithPopup(auth, googleProvider);
-                        user = result.user;
-                        persistLog(`Popup success! user=${user.email}`);
-                    } catch (popupErr: unknown) {
-                        const code = (popupErr as { code?: string })?.code;
-                        const msg = (popupErr as { message?: string })?.message || '';
-                        persistLog(`Popup error: code=${code} msg=${msg}`);
-                        set({ lastSyncError: `Google popup failed: ${code || msg}` });
-                        return false;
-                    }
-
-                    // Verify email
-                    const email = user.email;
-                    persistLog(`Verifying email: ${email}`);
-                    if (!email || email.toLowerCase() !== 'aduca375@gmail.com') {
-                        persistLog(`❌ Unauthorized email: ${email}`);
-                        await auth!.signOut();
-                        set({ lastSyncError: 'Unauthorized email. Only aduca375@gmail.com is allowed.' });
-                        return false;
-                    }
-
-                    // Get token
-                    persistLog('Getting ID token...');
-                    const idToken = await user.getIdToken();
-                    persistLog(`Got token (${idToken.length} chars)`);
-
-                    // Call backend
-                    persistLog('Calling backend /api/auth/google...');
-                    const { data, error } = await authApi.googleLogin(idToken);
-                    persistLog(`Backend response: data=${JSON.stringify(data)} error=${error || 'none'}`);
-
-                    if (error || !data) {
-                        persistLog(`❌ Backend error: ${error}`);
-                        set({ lastSyncError: error || 'Google login failed' });
-                        return false;
-                    }
-
-                    // Login with the code (sets isLoggedIn=true, calls reload)
-                    persistLog(`Calling login() with code=${data.code.substring(0, 8)}...`);
-                    _googleAuthProcessing = true;
-                    const loginOk = await get().login(data.code);
-                    persistLog(`login() returned: ${loginOk}`);
-                    return loginOk;
+                    // Use redirect flow: navigates the full page to Google
+                    // then back. getRedirectResult() in handleGoogleRedirectResult
+                    // will pick up the result on page reload.
+                    // (Popup doesn't work on Render due to cross-origin
+                    // auth/popup-closed-by-user errors.)
+                    persistLog('Starting redirect to Google...');
+                    set({ lastSyncError: null });
+                    await signInWithRedirect(auth, googleProvider);
+                    // Page navigates away; this line rarely reached
+                    return false;
                 } catch (err: unknown) {
                     const msg = err instanceof Error ? err.message : 'Google sign-in failed';
-                    persistLog(`❌ Outer error: ${msg}`);
+                    persistLog(`❌ Redirect error: ${msg}`);
                     set({ lastSyncError: msg });
                     return false;
                 }
