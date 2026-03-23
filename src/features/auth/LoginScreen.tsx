@@ -14,6 +14,12 @@ export const LoginScreen = () => {
     const [error, setError] = useState('');
     const [copied, setCopied] = useState(false);
     const inputRef = useRef<HTMLInputElement>(null);
+    const [debugLog, setDebugLog] = useState<string[]>([]);
+
+    const addLog = (msg: string) => {
+        console.log('[GoogleAuth UI]', msg);
+        setDebugLog(prev => [...prev, `${new Date().toLocaleTimeString()}: ${msg}`]);
+    };
 
     const handleCreate = async () => {
         setLoading(true);
@@ -120,11 +126,25 @@ export const LoginScreen = () => {
                             onClick={async () => {
                                 setLoading(true);
                                 setError('');
-                                const ok = await loginWithGoogle();
-                                setLoading(false);
-                                if (!ok) {
-                                    const err = useProfileStore.getState().lastSyncError;
-                                    if (err) setError(err);
+                                setDebugLog([]);
+                                addLog('Starting Google Sign-In...');
+                                try {
+                                    addLog('Calling loginWithGoogle()...');
+                                    const ok = await loginWithGoogle();
+                                    addLog(`loginWithGoogle returned: ${ok}`);
+                                    const syncErr = useProfileStore.getState().lastSyncError;
+                                    addLog(`lastSyncError: ${syncErr || '(none)'}`);
+                                    addLog(`isLoggedIn: ${useProfileStore.getState().isLoggedIn}`);
+                                    addLog(`shareCode: ${useProfileStore.getState().shareCode ? 'SET' : 'NOT SET'}`);
+                                    setLoading(false);
+                                    if (!ok || syncErr) {
+                                        setError(syncErr || 'Google sign-in returned false with no error message');
+                                    }
+                                } catch (err: unknown) {
+                                    const msg = err instanceof Error ? err.message : String(err);
+                                    addLog(`CAUGHT ERROR: ${msg}`);
+                                    setError(msg);
+                                    setLoading(false);
                                 }
                             }}
                         >
@@ -241,6 +261,20 @@ export const LoginScreen = () => {
                     </motion.div>
                 )}
             </motion.div>
+
+            {/* Debug log panel — temporary for diagnosing Google Sign-In */}
+            {debugLog.length > 0 && (
+                <div style={{
+                    position: 'fixed', bottom: 0, left: 0, right: 0,
+                    background: 'rgba(0,0,0,0.9)', color: '#0f0',
+                    fontFamily: 'monospace', fontSize: '11px',
+                    padding: '8px 12px', maxHeight: '200px', overflowY: 'auto',
+                    zIndex: 99999, whiteSpace: 'pre-wrap'
+                }}>
+                    <strong style={{ color: '#ff0' }}>🔧 Google Auth Debug Log:</strong>
+                    {debugLog.map((line, i) => <div key={i}>{line}</div>)}
+                </div>
+            )}
         </div>
     );
 };
