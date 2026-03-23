@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import { signInWithPopup, signInWithRedirect, onAuthStateChanged } from 'firebase/auth';
+import { signInWithPopup, getRedirectResult, onAuthStateChanged } from 'firebase/auth';
 import { auth, googleProvider } from '../lib/firebase';
 import { profileApi, authApi } from '../api/profileApi';
 import { PERSIST_REGISTRY } from '../data/persistRegistry';
@@ -287,71 +287,63 @@ export const useProfileStore = create<ProfileState>()(
 
             loginWithGoogle: async () => {
                 try {
-                    console.log('[GoogleAuth] Checking Firebase config...');
+                    persistLog('Checking Firebase config...');
                     if (!auth || !googleProvider) {
-                        console.error('[GoogleAuth] ❌ Firebase not configured');
+                        persistLog('❌ Firebase not configured');
                         set({ lastSyncError: 'Firebase is not configured. Fill in your .env file.' });
                         return false;
                     }
 
-                    // Full inline flow: popup → get token → call backend → login
-                    // This avoids the race condition where signInWithPopup
-                    // resolved but onAuthStateChanged hadn't finished.
+                    // Full inline flow: popup → get user → token → backend → login
                     let user;
                     try {
-                        console.log('[GoogleAuth] Trying popup...');
+                        persistLog('Opening popup...');
                         const result = await signInWithPopup(auth, googleProvider);
                         user = result.user;
+                        persistLog(`Popup success! user=${user.email}`);
                     } catch (popupErr: unknown) {
                         const code = (popupErr as { code?: string })?.code;
-                        console.warn('[GoogleAuth] Popup failed:', code, popupErr);
-
-                        if (
-                            code === 'auth/popup-closed-by-user' ||
-                            code === 'auth/popup-blocked' ||
-                            code === 'auth/cancelled-popup-request'
-                        ) {
-                            // Fallback: redirect (onAuthStateChanged will
-                            // catch the result when the page reloads).
-                            console.log('[GoogleAuth] Falling back to redirect...');
-                            set({ lastSyncError: 'Redirecting to Google sign-in...' });
-                            await signInWithRedirect(auth, googleProvider);
-                            return false; // page will redirect away
-                        }
-                        throw popupErr; // re-throw unexpected errors
+                        const msg = (popupErr as { message?: string })?.message || '';
+                        persistLog(`Popup error: code=${code} msg=${msg}`);
+                        set({ lastSyncError: `Google popup failed: ${code || msg}` });
+                        return false;
                     }
 
-                    // Verify email client-side first
+                    // Verify email
                     const email = user.email;
+                    persistLog(`Verifying email: ${email}`);
                     if (!email || email.toLowerCase() !== 'aduca375@gmail.com') {
-                        console.error('[GoogleAuth] ❌ Unauthorized email:', email);
+                        persistLog(`❌ Unauthorized email: ${email}`);
                         await auth!.signOut();
                         set({ lastSyncError: 'Unauthorized email. Only aduca375@gmail.com is allowed.' });
                         return false;
                     }
 
-                    // Get ID token and send to backend
-                    console.log('[GoogleAuth] Getting ID token...');
+                    // Get token
+                    persistLog('Getting ID token...');
                     const idToken = await user.getIdToken();
+                    persistLog(`Got token (${idToken.length} chars)`);
 
-                    console.log('[GoogleAuth] Calling backend /api/auth/google...');
+                    // Call backend
+                    persistLog('Calling backend /api/auth/google...');
                     const { data, error } = await authApi.googleLogin(idToken);
-                    console.log('[GoogleAuth] Backend response — data:', data, 'error:', error);
+                    persistLog(`Backend response: data=${JSON.stringify(data)} error=${error || 'none'}`);
 
                     if (error || !data) {
-                        console.error('[GoogleAuth] ❌ Backend error:', error);
+                        persistLog(`❌ Backend error: ${error}`);
                         set({ lastSyncError: error || 'Google login failed' });
                         return false;
                     }
 
-                    // Complete the login (this calls window.location.reload())
-                    console.log('[GoogleAuth] ✅ Success! Logging in with code...');
-                    _googleAuthProcessing = true; // prevent onAuthStateChanged from double-processing
-                    await get().login(data.code);
-                    return true;
+                    // Login with the code (sets isLoggedIn=true, calls reload)
+                    persistLog(`Calling login() with code=${data.code.substring(0, 8)}...`);
+                    _googleAuthProcessing = true;
+                    const loginOk = await get().login(data.code);
+                    persistLog(`login() returned: ${loginOk}`);
+                    return loginOk;
                 } catch (err: unknown) {
                     const msg = err instanceof Error ? err.message : 'Google sign-in failed';
-                    console.error('[GoogleAuth] ❌ Error:', msg, err);
+                    persistLog(`❌ Outer error: ${msg}`);
                     set({ lastSyncError: msg });
                     return false;
                 }
@@ -424,54 +416,97 @@ export function triggerAutoSync(): void {
 let _googleAuthProcessing = false;
 
 /**
- * Call once on app startup.  Uses onAuthStateChanged as the single
- * reliable mechanism that works for BOTH popup and redirect flows,
- * even across cross-origin cookie restrictions.
+ * Persistent debug log — survives page reloads so we can trace
+ * what happens during redirect flows.
+ */
+function persistLog(msg: string): void {
+    const ts = new Date().toLocaleTimeString();
+    const line = `${ts}: ${msg}`;
+    console.log('[GoogleAuth]', msg);
+    try {
+        const existing = JSON.parse(localStorage.getItem('__google_auth_debug') || '[]');
+        existing.push(line);
+        // Keep last 50 entries
+        if (existing.length > 50) existing.splice(0, existing.length - 50);
+        localStorage.setItem('__google_auth_debug', JSON.stringify(existing));
+    } catch { /* ignore */ }
+}
+
+/**
+ * Call once on app startup.  Handles two cases:
+ * 1. getRedirectResult — processes any pending redirect sign-in
+ * 2. onAuthStateChanged — catches auth state from cached sessions
  */
 export async function handleGoogleRedirectResult(): Promise<void> {
     if (!auth) return;
 
-    onAuthStateChanged(auth, async (user) => {
-        // Ignore sign-outs or if already processing
-        if (!user || _googleAuthProcessing) return;
+    persistLog('handleGoogleRedirectResult called');
 
-        // Ignore if the profile store is already logged in
+    // 1. Check for redirect result first (this is the proper Firebase v9 way)
+    try {
+        persistLog('Calling getRedirectResult...');
+        const result = await getRedirectResult(auth);
+        if (result && result.user) {
+            persistLog(`getRedirectResult got user: ${result.user.email}`);
+            await processFirebaseUser(result.user);
+            return; // handled
+        }
+        persistLog('getRedirectResult: no pending result');
+    } catch (err) {
+        const msg = err instanceof Error ? err.message : String(err);
+        persistLog(`getRedirectResult error: ${msg}`);
+    }
+
+    // 2. Also listen for auth state changes (cached sessions)
+    onAuthStateChanged(auth, async (user) => {
+        if (!user || _googleAuthProcessing) return;
         const { isLoggedIn } = useProfileStore.getState();
         if (isLoggedIn) return;
 
-        _googleAuthProcessing = true;
-        console.log('[GoogleAuth] onAuthStateChanged fired — user:', user.email);
-
-        try {
-            const email = user.email;
-            if (!email || email.toLowerCase() !== 'aduca375@gmail.com') {
-                console.error('[GoogleAuth] ❌ Unauthorized email:', email);
-                await auth!.signOut();
-                useProfileStore.setState({ lastSyncError: 'Unauthorized email. Only aduca375@gmail.com is allowed.' });
-                return;
-            }
-
-            console.log('[GoogleAuth] Getting ID token...');
-            const idToken = await user.getIdToken();
-
-            console.log('[GoogleAuth] Calling backend /api/auth/google...');
-            const { data, error } = await authApi.googleLogin(idToken);
-            console.log('[GoogleAuth] Backend response — data:', data, 'error:', error);
-
-            if (error || !data) {
-                console.error('[GoogleAuth] ❌ Backend error:', error);
-                useProfileStore.setState({ lastSyncError: error || 'Google login failed' });
-                return;
-            }
-
-            console.log('[GoogleAuth] ✅ Success! Logging in with code...');
-            await useProfileStore.getState().login(data.code);
-        } catch (err) {
-            const msg = err instanceof Error ? err.message : 'Google auth failed';
-            console.error('[GoogleAuth] ❌ Auth handler error:', msg, err);
-            useProfileStore.setState({ lastSyncError: msg });
-        } finally {
-            _googleAuthProcessing = false;
-        }
+        persistLog(`onAuthStateChanged fired — user: ${user.email}`);
+        await processFirebaseUser(user);
     });
+}
+
+/**
+ * Shared logic: given a Firebase user, verify email, get token,
+ * call backend, and complete login.
+ */
+async function processFirebaseUser(user: import('firebase/auth').User): Promise<void> {
+    _googleAuthProcessing = true;
+    try {
+        const email = user.email;
+        persistLog(`Processing user: ${email}`);
+
+        if (!email || email.toLowerCase() !== 'aduca375@gmail.com') {
+            persistLog(`❌ Unauthorized email: ${email}`);
+            await auth!.signOut();
+            useProfileStore.setState({ lastSyncError: 'Unauthorized email.' });
+            return;
+        }
+
+        persistLog('Getting ID token...');
+        const idToken = await user.getIdToken();
+        persistLog(`Got token (${idToken.length} chars)`);
+
+        persistLog('Calling backend /api/auth/google...');
+        const { data, error } = await authApi.googleLogin(idToken);
+        persistLog(`Backend: data=${JSON.stringify(data)} error=${error || 'none'}`);
+
+        if (error || !data) {
+            persistLog(`❌ Backend error: ${error}`);
+            useProfileStore.setState({ lastSyncError: error || 'Google login failed' });
+            return;
+        }
+
+        persistLog(`✅ Logging in with code=${data.code.substring(0, 8)}...`);
+        await useProfileStore.getState().login(data.code);
+        persistLog('login() complete — page should reload');
+    } catch (err) {
+        const msg = err instanceof Error ? err.message : 'Google auth failed';
+        persistLog(`❌ processFirebaseUser error: ${msg}`);
+        useProfileStore.setState({ lastSyncError: msg });
+    } finally {
+        _googleAuthProcessing = false;
+    }
 }

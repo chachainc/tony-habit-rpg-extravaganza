@@ -262,19 +262,35 @@ export const LoginScreen = () => {
                 )}
             </motion.div>
 
-            {/* Debug log panel — temporary for diagnosing Google Sign-In */}
-            {debugLog.length > 0 && (
-                <div style={{
-                    position: 'fixed', bottom: 0, left: 0, right: 0,
-                    background: 'rgba(0,0,0,0.9)', color: '#0f0',
-                    fontFamily: 'monospace', fontSize: '11px',
-                    padding: '8px 12px', maxHeight: '200px', overflowY: 'auto',
-                    zIndex: 99999, whiteSpace: 'pre-wrap'
-                }}>
-                    <strong style={{ color: '#ff0' }}>🔧 Google Auth Debug Log:</strong>
-                    {debugLog.map((line, i) => <div key={i}>{line}</div>)}
-                </div>
-            )}
+            {/* Debug log panel — reads from localStorage to survive page reloads */}
+            {(() => {
+                let persistedLogs: string[] = [];
+                try {
+                    persistedLogs = JSON.parse(localStorage.getItem('__google_auth_debug') || '[]');
+                } catch { /* ignore */ }
+                const allLogs = [...persistedLogs, ...debugLog];
+                const storeError = useProfileStore.getState().lastSyncError;
+                if (allLogs.length === 0 && !storeError) return null;
+                return (
+                    <div style={{
+                        position: 'fixed', bottom: 0, left: 0, right: 0,
+                        background: 'rgba(0,0,0,0.95)', color: '#0f0',
+                        fontFamily: 'monospace', fontSize: '11px',
+                        padding: '8px 12px', maxHeight: '250px', overflowY: 'auto',
+                        zIndex: 99999, whiteSpace: 'pre-wrap'
+                    }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
+                            <strong style={{ color: '#ff0' }}>🔧 Google Auth Debug Log:</strong>
+                            <button
+                                onClick={() => { localStorage.removeItem('__google_auth_debug'); setDebugLog([]); }}
+                                style={{ background: '#333', color: '#fff', border: 'none', padding: '2px 8px', cursor: 'pointer', fontSize: '10px' }}
+                            >Clear</button>
+                        </div>
+                        {storeError && <div style={{ color: '#f55' }}>⚠ Store error: {storeError}</div>}
+                        {allLogs.map((line, i) => <div key={i}>{line}</div>)}
+                    </div>
+                );
+            })()}
         </div>
     );
 };
