@@ -19,7 +19,6 @@ export const BudgetPage: React.FC = () => {
         quickPresets,
         usePreset,
         addPreset,
-        removePreset,
         weeklyStreak,
         getStreakMultiplier,
         weekHistory,
