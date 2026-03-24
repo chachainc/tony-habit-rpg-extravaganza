@@ -230,6 +230,9 @@ interface RoomState {
     // Getters
     getRoomCombatBonuses: () => AggregatedRoomBonuses;
     getPlacedBonusSummary: () => { label: string; value: string }[];
+
+    // Comfort Score
+    getComfortScore: () => { score: number; tier: string; xpMultiplier: number; goldMultiplier: number };
 }
 
 export const useRoomStore = create<RoomState>()(
@@ -407,6 +410,36 @@ export const useRoomStore = create<RoomState>()(
                 }).catch(() => {});
 
                 return lines;
+            },
+
+            getComfortScore: () => {
+                const placed = get().placedRoomFurniture;
+                const RARITY_WEIGHTS: Record<string, number> = {
+                    common: 5, uncommon: 10, rare: 20, epic: 40, legendary: 80,
+                };
+                let score = 0;
+                const themes = new Set<string>();
+                for (const p of placed) {
+                    const def = ROOM_FURNITURE_CATALOG.find(d => d.id === p.furnitureId);
+                    if (def) {
+                        score += RARITY_WEIGHTS[def.rarity] ?? 5;
+                        themes.add(def.rarity); // track variety
+                    }
+                }
+                // Set bonus: 3+ placed of same rarity = +25% comfort
+                if (placed.length >= 3) score = Math.floor(score * 1.25);
+                // Variety bonus: 3+ different rarities placed = +15%
+                if (themes.size >= 3) score = Math.floor(score * 1.15);
+
+                // tier mapping
+                let tier: string, xpMultiplier: number, goldMultiplier: number;
+                if (score >= 300) { tier = 'Legendary'; xpMultiplier = 1.15; goldMultiplier = 1.15; }
+                else if (score >= 200) { tier = 'Luxurious'; xpMultiplier = 1.10; goldMultiplier = 1.10; }
+                else if (score >= 100) { tier = 'Cozy'; xpMultiplier = 1.05; goldMultiplier = 1.05; }
+                else if (score >= 30) { tier = 'Basic'; xpMultiplier = 1.02; goldMultiplier = 1.02; }
+                else { tier = 'Bare'; xpMultiplier = 1.0; goldMultiplier = 1.0; }
+
+                return { score, tier, xpMultiplier, goldMultiplier };
             },
         }),
         {

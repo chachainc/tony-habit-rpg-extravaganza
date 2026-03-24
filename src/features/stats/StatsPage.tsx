@@ -1,11 +1,14 @@
 import { useGameStore, type SkillName } from '../../store/useGameStore';
 import { getMilestoneForSkill, SKILL_COMBAT_ROLES } from '../../store/useCombatFormulas';
-import { BarChart2, Shield, Sword, Trophy } from 'lucide-react';
+import { BarChart2, Shield, Sword, Trophy, Sparkles, RotateCcw } from 'lucide-react';
 import { Card } from '../../components/ui/Card';
 import { ProgressBar } from '../../components/ui/ProgressBar';
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { TrophyPanel } from '../room/TrophyPanel';
+import { DonationShrine } from '../shrine/DonationShrine';
+import { useEconomyBalanceStore, PRESTIGE_REQUIRED_LEVEL, PRESTIGE_COST } from '../../store/useEconomyBalanceStore';
+import { useCurrencyStore } from '../../store/useCurrencyStore';
 import './StatsPage.css';
 
 const SKILL_ICONS: Record<SkillName, string> = {
@@ -41,6 +44,10 @@ function getRankIndex(level: number): number {
 
 export const StatsPage = () => {
     const [showTrophyPanel, setShowTrophyPanel] = useState(false);
+    const [showShrine, setShowShrine] = useState(false);
+    const economy = useEconomyBalanceStore();
+    const { gold } = useCurrencyStore();
+    const { spendGold } = useCurrencyStore();
     const {
         skills,
         globalXp,
@@ -162,16 +169,23 @@ export const StatsPage = () => {
                             <Sword size={20} className="icon-red" />
                             <div className="combat-stat-info">
                                 <span className="combat-stat-label">Attack</span>
-                                <span className="combat-stat-value">{attack}</span>
+                                <span className="combat-stat-value">{attack}{economy.shrineBonusStats > 0 ? ` (+${economy.shrineBonusStats})` : ''}</span>
                             </div>
                         </Card>
                         <Card className="combat-stat-card">
                             <Shield size={20} className="icon-blue" />
                             <div className="combat-stat-info">
                                 <span className="combat-stat-label">Defense</span>
-                                <span className="combat-stat-value">{defense}</span>
+                                <span className="combat-stat-value">{defense}{economy.shrineBonusStats > 0 ? ` (+${economy.shrineBonusStats})` : ''}</span>
                             </div>
                         </Card>
+                        <div className="combat-stat-card card card--default" style={{ cursor: 'pointer' }} onClick={() => setShowShrine(true)}>
+                            <Sparkles size={20} style={{ color: '#c084fc' }} />
+                            <div className="combat-stat-info">
+                                <span className="combat-stat-label">Shrine</span>
+                                <span className="combat-stat-value" style={{ color: '#c084fc' }}>⛩️</span>
+                            </div>
+                        </div>
                     </div>
 
                     {/* Skills Grid */}
@@ -244,6 +258,36 @@ export const StatsPage = () => {
                                         {milestoneInfo.nextTier?.reward && (
                                             <div className="skill-reward-tag">✨ {milestoneInfo.nextTier.reward}</div>
                                         )}
+
+                                        {/* Prestige Section */}
+                                        {(() => {
+                                            const rank = economy.getPrestigeRank(skillName);
+                                            const canPrestige = skill.level >= PRESTIGE_REQUIRED_LEVEL;
+                                            const canAfford = gold >= PRESTIGE_COST;
+                                            return (
+                                                <>
+                                                    {rank > 0 && (
+                                                        <div className="skill-prestige-badge">
+                                                            {'⭐'.repeat(rank)} Prestige {rank} (+{rank * 10}% XP)
+                                                        </div>
+                                                    )}
+                                                    {canPrestige && (
+                                                        <button
+                                                            className={`skill-prestige-btn ${!canAfford ? 'skill-prestige-btn--locked' : ''}`}
+                                                            disabled={!canAfford}
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                if (canAfford && spendGold(PRESTIGE_COST)) {
+                                                                    economy.prestigeSkill(skillName);
+                                                                }
+                                                            }}
+                                                        >
+                                                            <RotateCcw size={12} /> Prestige ({PRESTIGE_COST.toLocaleString()} 🪙)
+                                                        </button>
+                                                    )}
+                                                </>
+                                            );
+                                        })()}
                                     </Card>
                                 );
                             })}
@@ -251,6 +295,10 @@ export const StatsPage = () => {
                     </div>
                 </div>
             </div>
+            {/* Donation Shrine Modal */}
+            <AnimatePresence>
+                {showShrine && <DonationShrine onClose={() => setShowShrine(false)} />}
+            </AnimatePresence>
         </div>
     );
 };

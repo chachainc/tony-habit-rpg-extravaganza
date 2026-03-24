@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Info, ChevronDown, ChevronUp, X, RefreshCw, Play, Square } from 'lucide-react';
-import { useMonopolyStore, getBoard, BOARD_ODDS, type BoardSpace, type MysteryRollResult } from '../../store/useMonopolyStore';
+import { useMonopolyStore, getBoard, BOARD_ODDS, OWNERSHIP_TIERS, type BoardSpace, type MysteryRollResult, type MoveResult } from '../../store/useMonopolyStore';
 import { useCurrencyStore } from '../../store/useCurrencyStore';
 import { useHeroImage } from '../../hooks/useHeroImage';
 import './MonopolyBoard.css';
@@ -24,7 +24,7 @@ const PATH_LAYOUT = [
 const DICE_FACES = ['⚀', '⚁', '⚂', '⚃', '⚄', '⚅'];
 
 // Flow phases
-type Phase = 'idle' | 'dice-spin' | 'dice-reveal' | 'moving' | 'result' | 'go-result' | 'mystery-spin' | 'mystery-result';
+type Phase = 'idle' | 'dice-spin' | 'dice-reveal' | 'moving' | 'result' | 'go-result' | 'mystery-spin' | 'mystery-result' | 'hazard-result' | 'storm-skip';
 
 // Build live odds rows from BOARD_ODDS
 const ODDS_ROWS = [
@@ -67,15 +67,20 @@ const BASE_REWARDS = [
     { icon: '🐌', label: 'Shmeckle tiles', note: '+1–5 Schmeckles' },
     { icon: '🎁', label: 'Mystery Crop tiles', note: 'Opens drop table above' },
     { icon: '🎫', label: 'Lost Ticket', note: '+1 Roll' },
+    { icon: '💰', label: 'Tax Collector', note: 'Lose 5–15 Gold' },
+    { icon: '⛈️', label: 'Storm', note: 'Skip next turn' },
+    { icon: '🗡️', label: 'Thief', note: 'Lose 1–3 Shmeckles' },
 ];
 
 export const MonopolyBoard = ({ onClose }: { onClose: () => void }) => {
     const {
         dailyTickets, currentPosition, rollDice, movePlayer,
         canRoll, rollMysteryBox, streakMultiplierActive,
-        lapCount, boardRefreshPending, regenerateBoard, getGoReward
+        lapCount, boardRefreshPending, regenerateBoard, getGoReward,
+        ownedTiles, skipNextTurn, buyTile, upgradeTile,
+        canBuyTile, canUpgradeTile, getBuyCost, getUpgradeCost, getTileMultiplier,
     } = useMonopolyStore();
-    const { addGold, addShmeckles, addTickets } = useCurrencyStore();
+    const { addGold, addShmeckles, addTickets, gold, shmeckles, spendGold, spendShmeckles } = useCurrencyStore();
     const heroImage = useHeroImage();
 
     const addSigils = (n: number) => {
@@ -94,6 +99,7 @@ export const MonopolyBoard = ({ onClose }: { onClose: () => void }) => {
     const [landedSpace, setLandedSpace] = useState<BoardSpace | null>(null);
     const [mysteryEvent, setMysteryEvent] = useState<MysteryRollResult | null>(null);
     const [goRewardAmount, setGoRewardAmount] = useState(0);
+    const [moveResultData, setMoveResultData] = useState<MoveResult | null>(null);
 
     // Board refresh animation key
     const [boardKey, setBoardKey] = useState(0);
@@ -130,12 +136,24 @@ export const MonopolyBoard = ({ onClose }: { onClose: () => void }) => {
 
     const handleRoll = () => {
         if (!canRoll() || phase !== 'idle' || rollingRef.current) return;
+
+        // Handle storm skip
+        if (skipNextTurn) {
+            setPhase('storm-skip');
+            useMonopolyStore.setState({ skipNextTurn: false });
+            setTimeout(() => {
+                setPhase('idle');
+            }, 2000);
+            return;
+        }
+
         rollingRef.current = true;
 
         setLandedSpace(null);
         setMysteryEvent(null);
         setFinalRng(null);
         setGoRewardAmount(0);
+        setMoveResultData(null);
 
         // Phase 1: dice spin animation
         setPhase('dice-spin');
@@ -162,7 +180,13 @@ export const MonopolyBoard = ({ onClose }: { onClose: () => void }) => {
                 setTimeout(() => {
                     const moveResult = movePlayer(roll);
                     setLandedSpace(moveResult.landedSpace);
+                    setMoveResultData(moveResult);
                     setAnimatingTo(null);
+
+                    // Collect rent from owned tiles
+                    if (moveResult.rentCollected > 0) {
+                        addGold(moveResult.rentCollected, { exact: true });
+                    }
 
                     if (moveResult.passedGo) {
                         // GO was passed — award GO gold, show GO result
@@ -170,11 +194,23 @@ export const MonopolyBoard = ({ onClose }: { onClose: () => void }) => {
                         addGold(moveResult.goReward, { exact: true });
                         setPhase('go-result');
                         rollingRef.current = false;
+                    } else if (moveResult.hazardResult) {
+                        // Hazard tile — apply penalty
+                        const hr = moveResult.hazardResult;
+                        if (hr.type === 'tax' && hr.penalty > 0) {
+                            spendGold(hr.penalty);
+                        } else if (hr.type === 'thief' && hr.penalty > 0) {
+                            spendShmeckles(hr.penalty);
+                        }
+                        setPhase('hazard-result');
+                        rollingRef.current = false;
                     } else {
                         // Normal tile landing
                         const space = moveResult.landedSpace;
-                        if (space.baseReward.gold) addGold(space.baseReward.gold);
-                        if (space.baseReward.shmeckles) addShmeckles(space.baseReward.shmeckles);
+                        const multiplier = getTileMultiplier(space.id);
+
+                        if (space.baseReward.gold) addGold(Math.floor(space.baseReward.gold * multiplier));
+                        if (space.baseReward.shmeckles) addShmeckles(Math.floor(space.baseReward.shmeckles * multiplier));
                         if (space.baseReward.tickets) addTickets(space.baseReward.tickets);
                         if ((space.baseReward as any).sigils) addSigils((space.baseReward as any).sigils);
 
@@ -222,6 +258,7 @@ export const MonopolyBoard = ({ onClose }: { onClose: () => void }) => {
         setFinalRng(null);
         setDiceResult(null);
         setGoRewardAmount(0);
+        setMoveResultData(null);
 
         // If board refresh is pending (after GO pass), trigger it now
         if (needsRefresh) {
@@ -237,6 +274,7 @@ export const MonopolyBoard = ({ onClose }: { onClose: () => void }) => {
         setFinalRng(null);
         setDiceResult(null);
         setGoRewardAmount(0);
+        setMoveResultData(null);
 
         if (needsRefresh) {
             handleBoardRefresh();
@@ -254,7 +292,7 @@ export const MonopolyBoard = ({ onClose }: { onClose: () => void }) => {
 
     useEffect(() => {
         if (!autoRollActive) return;
-        if (phase === 'result') {
+        if (phase === 'result' || phase === 'hazard-result') {
             const t = setTimeout(() => {
                 if (!autoRollRef.current) return;
                 if (canRoll()) {
@@ -267,7 +305,6 @@ export const MonopolyBoard = ({ onClose }: { onClose: () => void }) => {
             return () => clearTimeout(t);
         }
         if (phase === 'go-result') {
-            // Pause on GO result a bit longer so user can see
             const t = setTimeout(() => {
                 if (!autoRollRef.current) return;
                 if (canRoll()) {
@@ -314,6 +351,13 @@ export const MonopolyBoard = ({ onClose }: { onClose: () => void }) => {
 
     const terrainIcons = ['🌿', '🪨', '🌾', '·', '🍃', '·', '🌱', '·', '·', '🌻'];
 
+    // Get ownership visual info for a tile
+    const getOwnershipInfo = (tileId: number) => {
+        const owned = ownedTiles[tileId];
+        if (!owned) return null;
+        return OWNERSHIP_TIERS.find(t => t.level === owned.level);
+    };
+
     return (
         <div className="modal-overlay walkable-board-overlay">
             <motion.div
@@ -357,18 +401,27 @@ export const MonopolyBoard = ({ onClose }: { onClose: () => void }) => {
                             if (!layout) return null;
                             const isCurrentSpace = index === playerPosition;
                             const isGoTile = space.type === 'go';
+                            const isHazard = space.type === 'tax' || space.type === 'storm' || space.type === 'thief';
+                            const ownerInfo = getOwnershipInfo(index);
                             const emptyIcon = space.type === 'empty' ? terrainIcons[index % terrainIcons.length] : space.icon;
+
+                            const ownerClass = ownerInfo ? `owned-${ownerInfo.level}` : '';
+                            const hazardClass = isHazard ? 'hazard' : '';
 
                             return (
                                 <motion.div
                                     key={space.id}
-                                    className={`path-tile ${space.type} ${isCurrentSpace ? 'current' : ''} ${isGoTile ? 'go-tile' : ''}`}
+                                    className={`path-tile ${space.type} ${isCurrentSpace ? 'current' : ''} ${isGoTile ? 'go-tile' : ''} ${ownerClass} ${hazardClass}`}
                                     style={{ gridRow: layout.row + 1, gridColumn: layout.col + 1 }}
                                     animate={isCurrentSpace ? { scale: [1, 1.05, 1] } : {}}
                                     transition={{ repeat: Infinity, duration: 2 }}
                                 >
-                                    <div className="tile-icon">{isGoTile ? '🏠' : emptyIcon}</div>
-                                    <div className="tile-label">{isGoTile ? 'GO' : space.name}</div>
+                                    <div className="tile-icon">
+                                        {ownerInfo ? ownerInfo.icon : (isGoTile ? '🏠' : emptyIcon)}
+                                    </div>
+                                    <div className="tile-label">
+                                        {ownerInfo ? ownerInfo.name : (isGoTile ? 'GO' : space.name)}
+                                    </div>
                                     {isGoTile && (
                                         <div className="go-reward-label">+{getGoReward()}g</div>
                                     )}
@@ -443,6 +496,24 @@ export const MonopolyBoard = ({ onClose }: { onClose: () => void }) => {
                             </motion.div>
                         )}
                     </AnimatePresence>
+
+                    {/* Storm skip overlay */}
+                    <AnimatePresence>
+                        {phase === 'storm-skip' && (
+                            <motion.div
+                                className="dice-center-overlay"
+                                initial={{ opacity: 0 }}
+                                animate={{ opacity: 1 }}
+                                exit={{ opacity: 0 }}
+                            >
+                                <div className="storm-skip-banner">
+                                    <span className="storm-skip-icon">⛈️</span>
+                                    <h3>Storm! Turn Skipped</h3>
+                                    <p>The storm passes... you can roll next turn.</p>
+                                </div>
+                            </motion.div>
+                        )}
+                    </AnimatePresence>
                 </div>
 
                 {/* Controls row */}
@@ -456,6 +527,11 @@ export const MonopolyBoard = ({ onClose }: { onClose: () => void }) => {
                         >
                             🎲 {streakMultiplierActive ? 'Double Roll!' : 'Roll Dice'}
                         </motion.button>
+                    )}
+
+                    {/* Skip turn indicator */}
+                    {phase === 'idle' && skipNextTurn && (
+                        <div className="storm-pending-pill">⛈️ Storm — next roll is skipped</div>
                     )}
 
                     {/* Auto Roll toggle */}
@@ -485,7 +561,7 @@ export const MonopolyBoard = ({ onClose }: { onClose: () => void }) => {
                         </motion.button>
                     )}
 
-                    {phase === 'idle' && !canRoll() && (
+                    {phase === 'idle' && !canRoll() && !skipNextTurn && (
                         <div className="no-tickets">
                             <p>No rolls remaining!</p>
                             <p className="comeback">Earn more tickets by completing training sessions</p>
@@ -561,10 +637,69 @@ export const MonopolyBoard = ({ onClose }: { onClose: () => void }) => {
                                         <span>🪙 Gold</span>
                                         <span className="reward-val">+{goRewardAmount}</span>
                                     </div>
+                                    {moveResultData && moveResultData.rentCollected > 0 && (
+                                        <div className="reward-line gold" style={{ color: '#a3e635' }}>
+                                            <span>🏡 Rent Collected</span>
+                                            <span className="reward-val">+{moveResultData.rentCollected}</span>
+                                        </div>
+                                    )}
                                     <div className="go-refresh-notice">
                                         <RefreshCw size={14} />
                                         <span>Board will refresh with new tiles!</span>
                                     </div>
+                                </div>
+                                <div className="reward-action-row">
+                                    {canRoll() && !autoRollActive && (
+                                        <button className="roll-again-btn" onClick={handleRollAgain}>
+                                            <RefreshCw size={16} /> Roll Again
+                                        </button>
+                                    )}
+                                    {autoRollActive && (
+                                        <div className="rolling-status-pill">⚡ Auto Rolling...</div>
+                                    )}
+                                    <button className="luck-continue-btn" onClick={handleCloseResult}>
+                                        {canRoll() ? 'Continue' : 'Done'}
+                                    </button>
+                                </div>
+                            </motion.div>
+                        </div>
+                    )}
+                </AnimatePresence>
+
+                {/* ── Hazard Result Modal ── */}
+                <AnimatePresence>
+                    {phase === 'hazard-result' && moveResultData?.hazardResult && (
+                        <div className="board-reward-overlay">
+                            <motion.div
+                                className="reward-card-premium hazard-reward-card"
+                                initial={{ scale: 0, opacity: 0 }}
+                                animate={{ scale: 1, opacity: 1 }}
+                                exit={{ scale: 0, opacity: 0 }}
+                            >
+                                <div className="hazard-header">
+                                    <motion.div
+                                        className="hazard-icon"
+                                        animate={{ scale: [1, 1.2, 1], rotate: [0, -5, 5, 0] }}
+                                        transition={{ repeat: Infinity, duration: 1.5 }}
+                                    >
+                                        {landedSpace?.icon}
+                                    </motion.div>
+                                    <h2 style={{ color: '#ef4444' }}>{landedSpace?.name}!</h2>
+                                </div>
+                                <div className="reward-card-body">
+                                    <p className="hazard-message">{moveResultData.hazardResult.message}</p>
+                                    {moveResultData.hazardResult.penalty > 0 && (
+                                        <div className="reward-line" style={{ color: '#ef4444' }}>
+                                            <span>{moveResultData.hazardResult.type === 'thief' ? '🐌' : '🪙'} Lost</span>
+                                            <span className="reward-val">-{moveResultData.hazardResult.penalty}</span>
+                                        </div>
+                                    )}
+                                    {moveResultData.rentCollected > 0 && (
+                                        <div className="reward-line gold" style={{ color: '#a3e635' }}>
+                                            <span>🏡 Rent Collected</span>
+                                            <span className="reward-val">+{moveResultData.rentCollected}</span>
+                                        </div>
+                                    )}
                                 </div>
                                 <div className="reward-action-row">
                                     {canRoll() && !autoRollActive && (
@@ -640,7 +775,7 @@ export const MonopolyBoard = ({ onClose }: { onClose: () => void }) => {
                     )}
                 </AnimatePresence>
 
-                {/* ── Base Tile Result Modal ── */}
+                {/* ── Base Tile Result Modal (with Buy/Upgrade buttons) ── */}
                 <AnimatePresence>
                     {phase === 'result' && landedSpace && (
                         <div className="board-reward-overlay">
@@ -667,13 +802,13 @@ export const MonopolyBoard = ({ onClose }: { onClose: () => void }) => {
                                             {landedSpace.baseReward.gold && (
                                                 <div className="reward-line gold">
                                                     <span>🪙 Gold</span>
-                                                    <span className="reward-val">+{landedSpace.baseReward.gold}</span>
+                                                    <span className="reward-val">+{Math.floor(landedSpace.baseReward.gold * getTileMultiplier(landedSpace.id))}</span>
                                                 </div>
                                             )}
                                             {landedSpace.baseReward.shmeckles && (
                                                 <div className="reward-line shmeckles">
                                                     <span>🐌 Schmeckles</span>
-                                                    <span className="reward-val">+{landedSpace.baseReward.shmeckles}</span>
+                                                    <span className="reward-val">+{Math.floor(landedSpace.baseReward.shmeckles * getTileMultiplier(landedSpace.id))}</span>
                                                 </div>
                                             )}
                                             {landedSpace.baseReward.tickets && (
@@ -688,6 +823,11 @@ export const MonopolyBoard = ({ onClose }: { onClose: () => void }) => {
                                                     <span className="reward-val">+{(landedSpace.baseReward as any).sigils}</span>
                                                 </div>
                                             )}
+                                            {ownedTiles[landedSpace.id] && (
+                                                <div className="reward-line" style={{ color: '#a3e635', fontSize: '0.7rem', marginTop: '0.25rem' }}>
+                                                    <span>🏡 Owned (×{getTileMultiplier(landedSpace.id)} payout)</span>
+                                                </div>
+                                            )}
                                         </>
                                     ) : (
                                         <div className="reward-empty">
@@ -695,6 +835,46 @@ export const MonopolyBoard = ({ onClose }: { onClose: () => void }) => {
                                             <span className="reward-empty-text">Nothing here…</span>
                                             <span className="reward-empty-sub">Keep moving, something better awaits!</span>
                                         </div>
+                                    )}
+
+                                    {/* Rent collected from passing over owned tiles */}
+                                    {moveResultData && moveResultData.rentCollected > 0 && (
+                                        <div className="reward-line gold" style={{ color: '#a3e635', borderTop: '1px solid rgba(255,255,255,0.1)', paddingTop: '0.4rem', marginTop: '0.3rem' }}>
+                                            <span>🏡 Rent Collected</span>
+                                            <span className="reward-val">+{moveResultData.rentCollected}</span>
+                                        </div>
+                                    )}
+
+                                    {/* Buy tile button */}
+                                    {canBuyTile(landedSpace.id) && (
+                                        <button
+                                            className="property-action-btn buy-btn"
+                                            disabled={gold < getBuyCost(landedSpace.id)}
+                                            onClick={() => {
+                                                const cost = getBuyCost(landedSpace.id);
+                                                if (spendGold(cost)) {
+                                                    buyTile(landedSpace.id);
+                                                }
+                                            }}
+                                        >
+                                            🏡 Buy Property ({getBuyCost(landedSpace.id)} Gold)
+                                        </button>
+                                    )}
+
+                                    {/* Upgrade tile button */}
+                                    {canUpgradeTile(landedSpace.id) && (
+                                        <button
+                                            className="property-action-btn upgrade-btn"
+                                            disabled={shmeckles < getUpgradeCost(landedSpace.id)}
+                                            onClick={() => {
+                                                const cost = getUpgradeCost(landedSpace.id);
+                                                if (spendShmeckles(cost)) {
+                                                    upgradeTile(landedSpace.id);
+                                                }
+                                            }}
+                                        >
+                                            ⬆️ Upgrade ({getUpgradeCost(landedSpace.id)} Shmeckles)
+                                        </button>
                                     )}
                                 </div>
 

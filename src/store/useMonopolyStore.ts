@@ -10,7 +10,10 @@ export type BoardSpaceType =
     | 'shmeckles'
     | 'mystery'
     | 'ticket'
-    | 'empty';
+    | 'empty'
+    | 'tax'
+    | 'storm'
+    | 'thief';
 
 export type BoardRarity = 'common' | 'uncommon' | 'rare' | 'epic' | 'ultra_rare';
 
@@ -34,6 +37,26 @@ export interface BoardSpace {
     baseReward: BoardReward;
 }
 
+// ── Ownership Tiers ────────────────────────────────────────────
+export interface OwnedTile {
+    level: number; // 1 = Homestead, 2 = Village, 3 = Fortress
+}
+
+export const OWNERSHIP_TIERS = [
+    { level: 1, icon: '🏡', name: 'Homestead', multiplier: 1.5 },
+    { level: 2, icon: '🏘️', name: 'Village', multiplier: 2.0, shmeckleCost: 3 },
+    { level: 3, icon: '🏰', name: 'Fortress', multiplier: 3.0, shmeckleCost: 5 },
+];
+
+// Buy costs by tile type (gold)
+export const BUY_COSTS: Partial<Record<BoardSpaceType, number>> = {
+    gold: 20,
+    shmeckles: 30,
+    mystery: 40,
+    ticket: 50,
+    empty: 15,
+};
+
 // ── Drop Tables & Odds ─────────────────────────────────────────
 
 export const BOARD_ODDS = {
@@ -51,6 +74,20 @@ export interface MysteryRollResult {
     message: string;
     isDuplicate?: boolean;
 }
+
+// ── Hazard helpers ─────────────────────────────────────────────
+export type HazardType = 'tax' | 'storm' | 'thief';
+
+const HAZARD_CONFIGS: Record<HazardType, { name: string; icon: string }> = {
+    tax:   { name: 'Tax Collector', icon: '💰' },
+    storm: { name: 'Storm',         icon: '⛈️' },
+    thief: { name: 'Thief',         icon: '🗡️' },
+};
+
+const pickRandomHazard = (): HazardType => {
+    const types: HazardType[] = ['tax', 'storm', 'thief'];
+    return types[Math.floor(Math.random() * types.length)];
+};
 
 // ── Board Generation (24 spaces perimeter board) ───────────────
 const TOTAL_SPACES = 24;
@@ -120,6 +157,19 @@ const createBoard = (): BoardSpace[] => {
             };
         }
 
+        // Hazard Tiles (2 tiles — random hazard type each board gen)
+        if (i === 6 || i === 18) {
+            const hazard = pickRandomHazard();
+            const cfg = HAZARD_CONFIGS[hazard];
+            space = {
+                id: i,
+                type: hazard,
+                name: cfg.name,
+                icon: cfg.icon,
+                baseReward: {},
+            };
+        }
+
         board.push(space);
     }
 
@@ -149,6 +199,12 @@ export interface MoveResult {
     landedSpace: BoardSpace;
     passedGo: boolean;
     goReward: number; // gold awarded for passing GO (0 if didn't pass)
+    rentCollected: number; // gold collected from owned tiles passed over
+    hazardResult?: {
+        type: HazardType;
+        penalty: number; // gold/shmeckles lost
+        message: string;
+    };
 }
 
 // ── Store ──────────────────────────────────────────────────────
@@ -163,6 +219,10 @@ interface MonopolyState {
     lapCount: number;
     boardRefreshPending: boolean;
 
+    // Property Ownership
+    ownedTiles: Record<number, OwnedTile>;
+    skipNextTurn: boolean;
+
     // Actions
     rollDice: () => number;
     movePlayer: (spaces: number) => MoveResult;
@@ -173,6 +233,15 @@ interface MonopolyState {
     rollMysteryBox: () => MysteryRollResult;
     regenerateBoard: () => void;
     getGoReward: () => number;
+
+    // Property actions
+    buyTile: (tileId: number) => boolean;
+    upgradeTile: (tileId: number) => boolean;
+    getBuyCost: (tileId: number) => number;
+    getUpgradeCost: (tileId: number) => number;
+    canBuyTile: (tileId: number) => boolean;
+    canUpgradeTile: (tileId: number) => boolean;
+    getTileMultiplier: (tileId: number) => number;
 }
 
 export const useMonopolyStore = create<MonopolyState>()(
@@ -187,6 +256,8 @@ export const useMonopolyStore = create<MonopolyState>()(
             streakMultiplierActive: false,
             lapCount: 0,
             boardRefreshPending: false,
+            ownedTiles: {},
+            skipNextTurn: false,
 
             canRoll: () => {
                 const state = get();
@@ -196,11 +267,20 @@ export const useMonopolyStore = create<MonopolyState>()(
                     get().resetDailyTickets();
                 }
 
+                if (state.skipNextTurn) return false;
+
                 return state.dailyTickets > 0;
             },
 
             rollDice: () => {
                 const state = get();
+
+                // If skip turn is active, consume it and return 0
+                if (state.skipNextTurn) {
+                    set({ skipNextTurn: false });
+                    return 0;
+                }
+
                 if (!state.canRoll()) return 0;
 
                 const roll = Math.floor(Math.random() * 6) + 1;
@@ -220,6 +300,19 @@ export const useMonopolyStore = create<MonopolyState>()(
                 const rawNew = oldPos + spaces;
                 const passedGo = rawNew >= TOTAL_SPACES;
 
+                // Calculate rent from owned tiles passed over
+                let rentCollected = 0;
+                for (let step = 1; step <= spaces; step++) {
+                    const pos = (oldPos + step) % TOTAL_SPACES;
+                    const tileOwnership = state.ownedTiles[pos];
+                    if (tileOwnership) {
+                        const tile = currentBoard[pos];
+                        const baseGold = tile.baseReward.gold || 2;
+                        const tier = OWNERSHIP_TIERS.find(t => t.level === tileOwnership.level);
+                        rentCollected += Math.floor(baseGold * (tier?.multiplier || 1));
+                    }
+                }
+
                 if (passedGo) {
                     // Stop on GO tile, award scaled reward
                     const goReward = get().getGoReward();
@@ -233,6 +326,7 @@ export const useMonopolyStore = create<MonopolyState>()(
                         landedSpace: currentBoard[0],
                         passedGo: true,
                         goReward,
+                        rentCollected,
                     };
                 }
 
@@ -240,10 +334,39 @@ export const useMonopolyStore = create<MonopolyState>()(
                 const newPosition = rawNew % TOTAL_SPACES;
                 set({ currentPosition: newPosition });
 
+                const landedSpace = currentBoard[newPosition];
+
+                // Handle hazard tiles
+                let hazardResult: MoveResult['hazardResult'];
+                if (landedSpace.type === 'tax') {
+                    const penalty = Math.floor(Math.random() * 11) + 5; // 5–15 gold
+                    hazardResult = {
+                        type: 'tax',
+                        penalty,
+                        message: `The Tax Collector takes ${penalty} gold!`,
+                    };
+                } else if (landedSpace.type === 'storm') {
+                    hazardResult = {
+                        type: 'storm',
+                        penalty: 0,
+                        message: 'A storm brews! You must skip your next turn.',
+                    };
+                    set({ skipNextTurn: true });
+                } else if (landedSpace.type === 'thief') {
+                    const penalty = Math.floor(Math.random() * 3) + 1; // 1–3 shmeckles
+                    hazardResult = {
+                        type: 'thief',
+                        penalty,
+                        message: `A thief steals ${penalty} shmeckle${penalty > 1 ? 's' : ''}!`,
+                    };
+                }
+
                 return {
-                    landedSpace: currentBoard[newPosition],
+                    landedSpace,
                     passedGo: false,
                     goReward: 0,
+                    rentCollected,
+                    hazardResult,
                 };
             },
 
@@ -263,6 +386,7 @@ export const useMonopolyStore = create<MonopolyState>()(
                     totalRollsToday: 0,
                     lapCount: 0,
                     boardRefreshPending: false,
+                    skipNextTurn: false,
                 });
             },
 
@@ -277,6 +401,62 @@ export const useMonopolyStore = create<MonopolyState>()(
 
             getGoReward: () => {
                 return 25 + get().lapCount;
+            },
+
+            // ── Property Ownership ────────────────────────────────
+            getBuyCost: (tileId) => {
+                const tile = currentBoard[tileId];
+                return BUY_COSTS[tile?.type] || 20;
+            },
+
+            getUpgradeCost: (tileId) => {
+                const owned = get().ownedTiles[tileId];
+                if (!owned || owned.level >= 3) return Infinity;
+                const nextTier = OWNERSHIP_TIERS.find(t => t.level === owned.level + 1);
+                return nextTier?.shmeckleCost || Infinity;
+            },
+
+            canBuyTile: (tileId) => {
+                const state = get();
+                if (state.ownedTiles[tileId]) return false;
+                const tile = currentBoard[tileId];
+                if (!tile || tile.type === 'go' || tile.type === 'tax' || tile.type === 'storm' || tile.type === 'thief') return false;
+                return true;
+            },
+
+            canUpgradeTile: (tileId) => {
+                const owned = get().ownedTiles[tileId];
+                return !!owned && owned.level < 3;
+            },
+
+            getTileMultiplier: (tileId) => {
+                const owned = get().ownedTiles[tileId];
+                if (!owned) return 1;
+                const tier = OWNERSHIP_TIERS.find(t => t.level === owned.level);
+                return tier?.multiplier || 1;
+            },
+
+            buyTile: (tileId) => {
+                const state = get();
+                if (!state.canBuyTile(tileId)) return false;
+                // Actual gold deduction handled by caller (MonopolyBoard.tsx via useCurrencyStore)
+                set(s => ({
+                    ownedTiles: { ...s.ownedTiles, [tileId]: { level: 1 } },
+                }));
+                return true;
+            },
+
+            upgradeTile: (tileId) => {
+                const state = get();
+                if (!state.canUpgradeTile(tileId)) return false;
+                // Actual shmeckle deduction handled by caller
+                set(s => ({
+                    ownedTiles: {
+                        ...s.ownedTiles,
+                        [tileId]: { level: (s.ownedTiles[tileId]?.level || 1) + 1 },
+                    },
+                }));
+                return true;
             },
 
             // ── Themed Board Mystery Roll Logic ───────────────────

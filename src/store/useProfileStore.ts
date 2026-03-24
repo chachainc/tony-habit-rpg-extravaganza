@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import { signInWithPopup } from 'firebase/auth';
+import { signInWithRedirect, getRedirectResult, onAuthStateChanged } from 'firebase/auth';
 import { auth, googleProvider } from '../lib/firebase';
 import { profileApi, authApi } from '../api/profileApi';
 import { PERSIST_REGISTRY } from '../data/persistRegistry';
@@ -287,39 +287,27 @@ export const useProfileStore = create<ProfileState>()(
 
             loginWithGoogle: async () => {
                 try {
+                    persistLog('Checking Firebase config...');
                     if (!auth || !googleProvider) {
+                        persistLog('❌ Firebase not configured');
                         set({ lastSyncError: 'Firebase is not configured. Fill in your .env file.' });
                         return false;
                     }
 
-                    const result = await signInWithPopup(auth, googleProvider);
-                    const user = result.user;
-                    const email = user.email;
-
-                    if (!email || email.toLowerCase() !== 'aduca375@gmail.com') {
-                        // Sign out the unauthorized user from Firebase
-                        await auth.signOut();
-                        set({ lastSyncError: 'Unauthorized email. Only aduca375@gmail.com is allowed.' });
-                        return false;
-                    }
-
-                    const idToken = await user.getIdToken();
-
-                    const { data, error } = await authApi.googleLogin(idToken);
-
-                    if (error || !data) {
-                        set({ lastSyncError: error || 'Google login failed' });
-                        return false;
-                    }
-
-                    // Delegate the rest of the login logic perfectly to the existing login flow!
-                    return await get().login(data.code);
+                    // Use redirect flow: navigates the full page to Google
+                    // then back. getRedirectResult() in handleGoogleRedirectResult
+                    // will pick up the result on page reload.
+                    // (Popup doesn't work on Render due to cross-origin
+                    // auth/popup-closed-by-user errors.)
+                    persistLog('Starting redirect to Google...');
+                    set({ lastSyncError: null });
+                    await signInWithRedirect(auth, googleProvider);
+                    // Page navigates away; this line rarely reached
+                    return false;
                 } catch (err: unknown) {
-                    // User closed popup or other Firebase error
                     const msg = err instanceof Error ? err.message : 'Google sign-in failed';
-                    if (!msg.includes('popup-closed-by-user')) {
-                        set({ lastSyncError: msg });
-                    }
+                    persistLog(`❌ Redirect error: ${msg}`);
+                    set({ lastSyncError: msg });
                     return false;
                 }
             },
@@ -385,4 +373,103 @@ export function triggerAutoSync(): void {
     syncDebounceTimer = setTimeout(() => {
         useProfileStore.getState().syncToServer();
     }, 5000); // 5 second debounce
+}
+
+// Flag to prevent double-processing in onAuthStateChanged
+let _googleAuthProcessing = false;
+
+/**
+ * Persistent debug log — survives page reloads so we can trace
+ * what happens during redirect flows.
+ */
+function persistLog(msg: string): void {
+    const ts = new Date().toLocaleTimeString();
+    const line = `${ts}: ${msg}`;
+    console.log('[GoogleAuth]', msg);
+    try {
+        const existing = JSON.parse(localStorage.getItem('__google_auth_debug') || '[]');
+        existing.push(line);
+        // Keep last 50 entries
+        if (existing.length > 50) existing.splice(0, existing.length - 50);
+        localStorage.setItem('__google_auth_debug', JSON.stringify(existing));
+    } catch { /* ignore */ }
+}
+
+/**
+ * Call once on app startup.  Handles two cases:
+ * 1. getRedirectResult — processes any pending redirect sign-in
+ * 2. onAuthStateChanged — catches auth state from cached sessions
+ */
+export async function handleGoogleRedirectResult(): Promise<void> {
+    if (!auth) return;
+
+    persistLog('handleGoogleRedirectResult called');
+
+    // 1. Check for redirect result first (this is the proper Firebase v9 way)
+    try {
+        persistLog('Calling getRedirectResult...');
+        const result = await getRedirectResult(auth);
+        if (result && result.user) {
+            persistLog(`getRedirectResult got user: ${result.user.email}`);
+            await processFirebaseUser(result.user);
+            return; // handled
+        }
+        persistLog('getRedirectResult: no pending result');
+    } catch (err) {
+        const msg = err instanceof Error ? err.message : String(err);
+        persistLog(`getRedirectResult error: ${msg}`);
+    }
+
+    // 2. Also listen for auth state changes (cached sessions)
+    onAuthStateChanged(auth, async (user) => {
+        if (!user || _googleAuthProcessing) return;
+        const { isLoggedIn } = useProfileStore.getState();
+        if (isLoggedIn) return;
+
+        persistLog(`onAuthStateChanged fired — user: ${user.email}`);
+        await processFirebaseUser(user);
+    });
+}
+
+/**
+ * Shared logic: given a Firebase user, verify email, get token,
+ * call backend, and complete login.
+ */
+async function processFirebaseUser(user: import('firebase/auth').User): Promise<void> {
+    _googleAuthProcessing = true;
+    try {
+        const email = user.email;
+        persistLog(`Processing user: ${email}`);
+
+        if (!email || email.toLowerCase() !== 'aduca375@gmail.com') {
+            persistLog(`❌ Unauthorized email: ${email}`);
+            await auth!.signOut();
+            useProfileStore.setState({ lastSyncError: 'Unauthorized email.' });
+            return;
+        }
+
+        persistLog('Getting ID token...');
+        const idToken = await user.getIdToken();
+        persistLog(`Got token (${idToken.length} chars)`);
+
+        persistLog('Calling backend /api/auth/google...');
+        const { data, error } = await authApi.googleLogin(idToken);
+        persistLog(`Backend: data=${JSON.stringify(data)} error=${error || 'none'}`);
+
+        if (error || !data) {
+            persistLog(`❌ Backend error: ${error}`);
+            useProfileStore.setState({ lastSyncError: error || 'Google login failed' });
+            return;
+        }
+
+        persistLog(`✅ Logging in with code=${data.code.substring(0, 8)}...`);
+        await useProfileStore.getState().login(data.code);
+        persistLog('login() complete — page should reload');
+    } catch (err) {
+        const msg = err instanceof Error ? err.message : 'Google auth failed';
+        persistLog(`❌ processFirebaseUser error: ${msg}`);
+        useProfileStore.setState({ lastSyncError: msg });
+    } finally {
+        _googleAuthProcessing = false;
+    }
 }

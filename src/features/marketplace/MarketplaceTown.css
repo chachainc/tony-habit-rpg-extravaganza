@@ -493,3 +493,252 @@
     filter: blur(15px);
     pointer-events: none;
 }
+
+/* ═══════════ QUICK-ACCESS BAR ═══════════ */
+.mp-quick-access {
+    display: flex;
+    gap: 0.4rem;
+    overflow-x: auto;
+    padding: 0 0 0.75rem;
+    margin-bottom: 0.5rem;
+    scrollbar-width: none;
+}
+
+.mp-quick-access::-webkit-scrollbar {
+    display: none;
+}
+
+.mp-qa-btn {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.1rem;
+    padding: 0.4rem 0.5rem;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 10px;
+    cursor: pointer;
+    flex-shrink: 0;
+    min-width: 52px;
+    transition: all 0.15s;
+}
+
+.mp-qa-btn:hover,
+.mp-qa-btn:active {
+    background: color-mix(in srgb, var(--qa-color, #fbbf24) 15%, transparent);
+    border-color: var(--qa-color, #fbbf24);
+}
+
+.mp-qa-emoji {
+    font-size: 1.3rem;
+}
+
+.mp-qa-name {
+    font-size: 0.55rem;
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.5);
+    white-space: nowrap;
+}
+
+.mp-qa-merchant {
+    background: linear-gradient(135deg, rgba(251, 191, 36, 0.1), rgba(239, 68, 68, 0.05));
+    border-color: rgba(251, 191, 36, 0.3);
+}
+
+/* ═══════════ LOYALTY STARS ═══════════ */
+.mp-loyalty-stars {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.2rem;
+    margin-top: 0.25rem;
+    font-size: 0.6rem;
+}
+
+.mp-loyalty-name {
+    color: rgba(255, 255, 255, 0.5);
+    font-weight: 600;
+    font-size: 0.55rem;
+}
+
+.mp-loyalty-discount {
+    color: #34d399;
+    font-weight: 800;
+    font-size: 0.55rem;
+    margin-left: 0.15rem;
+}
+
+/* ═══════════ MERCHANT CARD ═══════════ */
+.mp-merchant-card {
+    border-color: rgba(251, 191, 36, 0.4) !important;
+    background: linear-gradient(135deg, rgba(60, 40, 20, 0.95), rgba(40, 25, 15, 0.95)) !important;
+    grid-column: 1 / -1;
+    flex-direction: row !important;
+    padding: 0.75rem 1rem !important;
+    gap: 0.75rem;
+}
+
+.mp-merchant-badge {
+    display: inline-block;
+    padding: 0.1rem 0.35rem;
+    background: rgba(251, 191, 36, 0.2);
+    border: 1px solid rgba(251, 191, 36, 0.5);
+    border-radius: 4px;
+    font-size: 0.5rem;
+    color: #fbbf24;
+    font-weight: 800;
+    letter-spacing: 0.5px;
+    margin-left: 0.3rem;
+    vertical-align: middle;
+}
+
+/* ═══════════ MERCHANT MODAL ═══════════ */
+.mp-merchant-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.75);
+    backdrop-filter: blur(4px);
+    z-index: 2000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem;
+}
+
+.mp-merchant-modal {
+    background: linear-gradient(135deg, #1e1a14, #2a2218);
+    border: 2px solid rgba(251, 191, 36, 0.3);
+    border-radius: 16px;
+    max-width: 420px;
+    width: 100%;
+    max-height: 80vh;
+    overflow-y: auto;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6), 0 0 40px rgba(251, 191, 36, 0.1);
+}
+
+.mp-merchant-header {
+    position: relative;
+    padding: 1.25rem 1rem 0.75rem;
+    text-align: center;
+    border-bottom: 1px solid rgba(251, 191, 36, 0.15);
+}
+
+.mp-merchant-header h2 {
+    font-size: 1.2rem;
+    font-weight: 800;
+    color: #fbbf24;
+    margin: 0 0 0.25rem;
+}
+
+.mp-merchant-header p {
+    font-size: 0.7rem;
+    color: rgba(255, 255, 255, 0.4);
+    margin: 0;
+}
+
+.mp-merchant-close {
+    position: absolute;
+    top: 0.75rem;
+    right: 0.75rem;
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    color: rgba(255, 255, 255, 0.5);
+    cursor: pointer;
+    padding: 4px 6px;
+    display: flex;
+}
+
+.mp-merchant-balance {
+    text-align: center;
+    padding: 0.5rem;
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: #fbbf24;
+}
+
+.mp-merchant-items {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    padding: 0.5rem 0.75rem 1rem;
+}
+
+.mp-merchant-item {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    padding: 0.65rem 0.75rem;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 10px;
+    transition: all 0.15s;
+}
+
+.mp-merchant-item.rarity-rare {
+    border-color: rgba(96, 165, 250, 0.3);
+}
+
+.mp-merchant-item.rarity-epic {
+    border-color: rgba(168, 85, 247, 0.3);
+}
+
+.mp-merchant-item.rarity-legendary {
+    border-color: rgba(251, 191, 36, 0.3);
+    background: rgba(251, 191, 36, 0.04);
+}
+
+.mp-merchant-sold {
+    opacity: 0.4;
+}
+
+.mp-mi-icon {
+    font-size: 1.6rem;
+    flex-shrink: 0;
+}
+
+.mp-mi-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.mp-mi-name {
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: #e2e8f0;
+}
+
+.mp-mi-desc {
+    font-size: 0.65rem;
+    color: rgba(255, 255, 255, 0.4);
+    line-height: 1.3;
+}
+
+.mp-mi-effect {
+    font-size: 0.6rem;
+    font-weight: 700;
+    color: #34d399;
+    margin-top: 0.15rem;
+}
+
+.mp-mi-buy {
+    padding: 0.35rem 0.6rem;
+    background: rgba(251, 191, 36, 0.1);
+    border: 1px solid rgba(251, 191, 36, 0.35);
+    border-radius: 8px;
+    color: #fbbf24;
+    font-size: 0.7rem;
+    font-weight: 800;
+    cursor: pointer;
+    flex-shrink: 0;
+    white-space: nowrap;
+    transition: all 0.15s;
+}
+
+.mp-mi-buy:hover:not(:disabled) {
+    background: rgba(251, 191, 36, 0.2);
+}
+
+.mp-mi-buy:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}

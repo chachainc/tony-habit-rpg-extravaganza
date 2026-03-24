@@ -325,11 +325,16 @@ export const useGameStore = create<GameState>()(
                 }
 
                 // 4. Housemaid Lv. 15 "Organized Workspace" Global XP Buff (+5% to all task XP)
-                // Note: since this is Task XP processing, we apply this multiplier uniformly if the player is level 15+
                 const housemaidLevel = state.skills['Housemaid']?.level ?? 1;
                 if (housemaidLevel >= 15) {
                     finalAmount *= 1.05;
                 }
+
+                // 5. Prestige XP Multiplier (+10% per prestige rank)
+                try {
+                    const prestigeMult = require('./useEconomyBalanceStore').useEconomyBalanceStore.getState().getPrestigeMultiplier(skillName);
+                    finalAmount *= prestigeMult;
+                } catch {}
 
                 const currentDailyXp = state.dailyXpGained[skillName] || 0;
                 const softCap = 1500;
@@ -439,13 +444,19 @@ export const useGameStore = create<GameState>()(
             getAttack: () => {
                 const { skills } = get();
                 const strengthLevel = skills['Strength']?.level ?? 1;
-                return 1 + strengthLevel;
+                // Shrine bonus stats
+                let bonus = 0;
+                try { bonus = require('./useEconomyBalanceStore').useEconomyBalanceStore.getState().shrineBonusStats; } catch {}
+                return 1 + strengthLevel + bonus;
             },
 
             getDefense: () => {
                 const { skills } = get();
                 const hygieneLevel = skills['Hygiene']?.level ?? 1;
-                return 1 + hygieneLevel;
+                // Shrine bonus stats
+                let bonus = 0;
+                try { bonus = require('./useEconomyBalanceStore').useEconomyBalanceStore.getState().shrineBonusStats; } catch {}
+                return 1 + hygieneLevel + bonus;
             },
 
             getMagicAttack: () => {

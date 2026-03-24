@@ -52,6 +52,9 @@ export const PERSIST_REGISTRY: Record<string, PersistConfig> = {
     tasks: { storeName: "useTaskStore", persistKey: "gl-tasks-storage-v4", syncEnabled: true, restoreEnabled: true },
     titles: { storeName: "useTitleStore", persistKey: "gl-titles-v1", syncEnabled: true, restoreEnabled: true },
     towerDefense: { storeName: "useTowerDefenseStore", persistKey: "gl-td-storage", syncEnabled: true, restoreEnabled: true },
+    arenaStats: { storeName: "useArenaStatsStore", persistKey: "gl-arena-stats-v1", syncEnabled: true, restoreEnabled: true },
+    marketLoyalty: { storeName: "useMarketLoyaltyStore", persistKey: "gl-market-loyalty-v1", syncEnabled: true, restoreEnabled: true },
+    economyBalance: { storeName: "useEconomyBalanceStore", persistKey: "gl-economy-balance-v1", syncEnabled: true, restoreEnabled: true },
     xpWeapons: { storeName: "useXpWeaponStore", persistKey: "gl-xp-weapons-v1", syncEnabled: true, restoreEnabled: true },
 
     // Special store: Profile itself is persisted, but does NOT participate in the nested sync payload (it is the root schema itself).

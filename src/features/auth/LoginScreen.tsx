@@ -5,7 +5,7 @@ import { useProfileStore } from '../../store/useProfileStore';
 import './LoginScreen.css';
 
 export const LoginScreen = () => {
-    const { createProfile, login, loginWithGoogle, lastSyncError } = useProfileStore();
+    const { createProfile, login, lastSyncError } = useProfileStore();
     const [mode, setMode] = useState<'choose' | 'create' | 'login' | 'created'>('choose');
     const [name, setName] = useState('');
     const [codeInput, setCodeInput] = useState('');
@@ -113,23 +113,6 @@ export const LoginScreen = () => {
                         >
                             <LogIn size={20} />
                             <span>Enter Share Code</span>
-                        </button>
-                        <button
-                            className="login-btn login-btn--google"
-                            disabled={loading}
-                            onClick={async () => {
-                                setLoading(true);
-                                setError('');
-                                const ok = await loginWithGoogle();
-                                setLoading(false);
-                                if (!ok) {
-                                    const err = useProfileStore.getState().lastSyncError;
-                                    if (err) setError(err);
-                                }
-                            }}
-                        >
-                            <span>🔵</span>
-                            <span>{loading ? 'Signing in...' : 'Sign in with Google (Beta)'}</span>
                         </button>
                     </motion.div>
                 )}

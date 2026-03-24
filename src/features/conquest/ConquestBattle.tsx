@@ -1,12 +1,13 @@
 import { useNavigate } from 'react-router-dom';
 import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Heart, Swords, ChevronLeft, Sparkles } from 'lucide-react';
+import { Heart, Swords, ChevronLeft, Sparkles, Shield, LogOut } from 'lucide-react';
 import { useBattleStore } from '../../store/useBattleStore';
 import { useConquestStore } from '../../store/useConquestStore';
 import { useMagicStore } from '../../store/useMagicStore';
 import { useGameStore } from '../../store/useGameStore';
 import { useHeroImage } from '../../hooks/useHeroImage';
+import { CONQUEST_ENEMIES, CONQUEST_ELEMENT_ICONS, type ConquestElement } from '../../data/conquest';
 import bgMap from '../../assets/backgrounds/infernal_citadel.png';
 import './Conquest.css';
 
@@ -24,6 +25,12 @@ export const ConquestBattle = () => {
     const [isRolling, setIsRolling] = useState(false);
     const [rollValue, setRollValue] = useState<number | null>(null);
     const initialPlayerHpRef = useRef<number | null>(null);
+    const [enemySpecialText, setEnemySpecialText] = useState<string | null>(null);
+
+    // Get active conquest enemy definition
+    const conquestEnemyDef = conquest.activeConquestEnemyId
+        ? CONQUEST_ENEMIES.find(e => e.id === conquest.activeConquestEnemyId) ?? null
+        : null;
 
     // Persistent HP: override the battle player hp to be the conquest runHP
     useEffect(() => {
@@ -48,6 +55,17 @@ export const ConquestBattle = () => {
             setBlessingApplied(true);
         }
 
+        // Apply run buff ATK bonuses from meta/relics
+        const totalAtkBonus = conquest.runBuffs
+            .filter(b => b.type === 'strength')
+            .reduce((sum, b) => sum + b.amount, 0);
+        if (totalAtkBonus > 0 && !blessingApplied) {
+            useBattleStore.setState(state => {
+                if (!state.player) return state;
+                return { player: { ...state.player, atk: Math.floor(state.player.atk * (1 + totalAtkBonus / 100)) } };
+            });
+        }
+
         // Override player HP with persistent Conquest runHP
         const conquestHP = conquest.runHP;
         useBattleStore.setState(state => {
@@ -61,6 +79,36 @@ export const ConquestBattle = () => {
             };
         });
         initialPlayerHpRef.current = conquestHP;
+
+        // Apply enemy stat modifiers from conquest enemy def
+        if (conquestEnemyDef) {
+            useBattleStore.setState(state => {
+                if (!state.enemy) return state;
+                return {
+                    enemy: {
+                        ...state.enemy,
+                        atk: Math.floor(state.enemy.atk * conquestEnemyDef.atkMod),
+                        def: Math.floor(state.enemy.def * conquestEnemyDef.defMod),
+                        maxHp: Math.floor(state.enemy.maxHp * conquestEnemyDef.hpMod),
+                        hp: Math.floor(state.enemy.hp * conquestEnemyDef.hpMod),
+                    }
+                };
+            });
+
+            // Set enemy special text
+            if (conquestEnemyDef.special) {
+                const specialLabels: Record<string, string> = {
+                    attacks_twice: '⚡ Attacks Twice',
+                    steals_sigils: '🩸 Steals Sigils',
+                    very_high_def: '🛡️ Fortified',
+                    drops_balloons: '🎈 Drops Balloons',
+                    drops_gem: '💎 Drops Gem',
+                    mirrors_atk: '🪞 Mirrors ATK',
+                    atk_increases: '📈 ATK Grows',
+                };
+                setEnemySpecialText(specialLabels[conquestEnemyDef.special] ?? conquestEnemyDef.special);
+            }
+        }
 
         // Apply vault-scaled boss multiplier to enemy stats
         if (battle.conquestContext === 'conquest_boss') {
@@ -84,24 +132,57 @@ export const ConquestBattle = () => {
     // Watch for battle phase changes
     useEffect(() => {
         if (battle.phase === 'victory') {
-            // Calculate HP lost during this battle and apply it to Conquest run HP
+            // Track damage stats
             if (battle.player && initialPlayerHpRef.current !== null) {
                 const hpLost = Math.max(0, initialPlayerHpRef.current - battle.player.hp);
-                if (hpLost > 0) conquest.takeDamage(hpLost);
+                if (hpLost > 0) {
+                    conquest.takeDamage(hpLost);
+                    conquest.trackDamageTaken(hpLost);
+                }
             }
+            conquest.incrementEnemiesDefeated();
+
+            // Handle enemy specials on defeat
+            if (conquestEnemyDef?.special === 'drops_balloons') {
+                const balloonDrop = 2 + Math.floor(Math.random() * 3);
+                conquest.addBalloons(balloonDrop);
+            }
+            if (conquestEnemyDef?.special === 'drops_gem') {
+                import('../../store/useGameStore').then(({ useGameStore }) => {
+                    useGameStore.getState().addGems(1);
+                }).catch(() => { });
+            }
+
             setShowVictoryModal(true);
         }
         if (battle.phase === 'defeat' || battle.phase === 'escaped') {
-            // Defeat: end the run with today's date locked
             conquest.completeRun(false);
             setShowDefeatModal(true);
         }
     }, [battle.phase]);
+
+    const handleFlee = () => {
+        const fleeCost = Math.floor(conquest.runMaxHP * 0.15);
+        conquest.takeDamage(fleeCost);
+
+        if (conquest.runHP - fleeCost <= 0) {
+            conquest.completeRun(false);
+            setShowDefeatModal(true);
+        } else {
+            battle.resetBattle();
+            navigate('/conquest');
+        }
+    };
+
     const isBossNode = battle.conquestContext === 'conquest_boss';
     const isVaultNode = battle.conquestContext === 'conquest_vault';
 
     const player = battle.player;
     const enemy = battle.enemy;
+
+    // Element info
+    const enemyElement: ConquestElement = conquestEnemyDef?.element ?? 'neutral';
+    const elementIcon = CONQUEST_ELEMENT_ICONS[enemyElement];
 
     if (!player || !enemy) {
         return (
@@ -114,9 +195,7 @@ export const ConquestBattle = () => {
         );
     }
 
-    // Determine background: use enemy image if it exists, otherwise use static bgMap
     const battleBg = (enemy as any).image || bgMap;
-
     const playerHpPct = Math.max(0, (player.hp / Math.max(1, player.maxHp)) * 100);
     const enemyHpPct = Math.max(0, (enemy.hp / Math.max(1, enemy.maxHp)) * 100);
     const energyPct = player.energy;
@@ -125,12 +204,7 @@ export const ConquestBattle = () => {
 
     return (
         <div className="cq-battle-container">
-            {/* Layer 0: Blurred battlefield background */}
-            <div
-                className="cq-bg-layer"
-                style={{ backgroundImage: `url(${battleBg})` }}
-            />
-            {/* Layer 1: Darkening overlay */}
+            <div className="cq-bg-layer" style={{ backgroundImage: `url(${battleBg})` }} />
             <div className="bg-overlay" />
 
             {/* Header */}
@@ -147,30 +221,28 @@ export const ConquestBattle = () => {
             </div>
 
             <div className="cq-battle-arena">
-
                 {/* Enemy Section */}
                 <div className="cq-combatant enemy-side">
-                    <div className="cq-combatant-name">{enemy.name}</div>
-                    {/* Large centered enemy display */}
+                    <div className="cq-combatant-name">
+                        {elementIcon} {enemy.name}
+                        {enemySpecialText && (
+                            <span className="cq-enemy-special-badge">{enemySpecialText}</span>
+                        )}
+                    </div>
                     <motion.div
                         className="cq-enemy-large"
                         animate={{ scale: [1, 1.02, 1] }}
                         transition={{ duration: 2.5, repeat: Infinity, ease: 'easeInOut' }}
                     >
                         {(enemy as any).image ? (
-                            <img
-                                src={(enemy as any).image}
-                                alt={enemy.name}
-                                className="cq-enemy-large-img"
-                            />
+                            <img src={(enemy as any).image} alt={enemy.name} className="cq-enemy-large-img" />
                         ) : (
                             <span className="cq-enemy-emoji">{enemy.icon}</span>
                         )}
                     </motion.div>
-                    {/* Boss / Vault indicators */}
                     {isBossNode && (
                         <div className="cq-boss-warning">
-                            ⚠️ The Pathkeeper — scales with vaults completed ({conquest.treasureVaultsCompleted}×)
+                            ⚠️ {enemy.name} — scales with vaults completed ({conquest.treasureVaultsCompleted}×)
                         </div>
                     )}
                     {isVaultNode && (
@@ -195,12 +267,10 @@ export const ConquestBattle = () => {
                         }} />
                         <span className="cq-hp-label">{Math.max(0, player.hp)} / {player.maxHp}</span>
                     </div>
-                    {/* Energy bar */}
                     <div className="cq-energy-bar-wrap">
                         <div className="cq-energy-bar" style={{ width: `${energyPct}%` }} />
                         <span style={{ fontSize: '0.7rem', color: '#fbbf24', position: 'absolute', right: '4px', top: '50%', transform: 'translateY(-50%)' }}>⚡{Math.floor(energyPct)}</span>
                     </div>
-                    {/* Run buffs */}
                     {conquest.runBuffs.length > 0 && (
                         <div className="cq-run-buffs">
                             {conquest.runBuffs.slice(0, 4).map(b => (
@@ -239,22 +309,14 @@ export const ConquestBattle = () => {
                                 const modifiedAtk = Math.max(1, player.atk * battle.playerDamageModifier);
                                 const lowHit = Math.max(1, Math.ceil(modifiedAtk * 0.5));
                                 const bigHit = Math.max(1, Math.floor(modifiedAtk * 1.5));
-                                
                                 const isSuccess = Math.random() > 0.5;
                                 const finalDamage = isSuccess ? bigHit : lowHit;
-                                
-                                // Buffer cooldown to 2
                                 useBattleStore.setState({ heavyAttackCooldown: 2 });
-                                battle.selectAbility({ 
-                                    id: 'heavy_strike', 
-                                    name: 'Heavy Strike', 
-                                    type: 'attack', 
-                                    description: '', 
-                                    icon: '⚔️', 
-                                    element: 'neutral', 
-                                    damageMultiplier: 1.0, 
-                                    cooldown: 0, 
-                                    energyCost: 0,
+                                conquest.trackDamageDealt(finalDamage);
+                                battle.selectAbility({
+                                    id: 'heavy_strike', name: 'Heavy Strike', type: 'attack',
+                                    description: '', icon: '⚔️', element: 'neutral',
+                                    damageMultiplier: 1.0, cooldown: 0, energyCost: 0,
                                     customDamageConfig: { type: 'heavy', rollValue: finalDamage }
                                 });
                                 battle.executePlayerAction();
@@ -276,7 +338,6 @@ export const ConquestBattle = () => {
                             onClick={() => {
                                 setIsRolling(true);
                                 const modifiedAtk = Math.max(1, Math.floor(player.atk * battle.playerDamageModifier));
-                                
                                 let rolls = 0;
                                 const maxRolls = 10;
                                 const interval = setInterval(() => {
@@ -286,17 +347,12 @@ export const ConquestBattle = () => {
                                         clearInterval(interval);
                                         const finalRoll = Math.floor(Math.random() * modifiedAtk) + 1;
                                         setRollValue(finalRoll);
+                                        conquest.trackDamageDealt(finalRoll);
                                         setTimeout(() => {
-                                            battle.selectAbility({ 
-                                                id: 'light_strike', 
-                                                name: 'Light Strike', 
-                                                type: 'attack', 
-                                                description: '', 
-                                                icon: '🗡️', 
-                                                element: 'neutral', 
-                                                damageMultiplier: 1.0, 
-                                                cooldown: 0, 
-                                                energyCost: 0,
+                                            battle.selectAbility({
+                                                id: 'light_strike', name: 'Light Strike', type: 'attack',
+                                                description: '', icon: '🗡️', element: 'neutral',
+                                                damageMultiplier: 1.0, cooldown: 0, energyCost: 0,
                                                 customDamageConfig: { type: 'light', rollValue: finalRoll }
                                             });
                                             battle.executePlayerAction();
@@ -319,18 +375,53 @@ export const ConquestBattle = () => {
                             </div>
                         </button>
 
-                        {/* 3. Cast Spell */}
+                        {/* 3. Defend */}
+                        <button
+                            className="cq-action-btn defend"
+                            disabled={!isPlayerTurn || isExecuting}
+                            onClick={() => {
+                                if (!isPlayerTurn) return;
+                                useBattleStore.setState(state => {
+                                    if (!state.player) return state;
+                                    return {
+                                        player: { ...state.player, isDefending: true },
+                                        combatLog: [...state.combatLog, { message: '🛡️ Hero braces for impact! (50% damage reduction)', type: 'buff' as const }],
+                                    };
+                                });
+                                setTimeout(() => battle.endTurn(), 600);
+                            }}
+                        >
+                            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                                <div><Shield size={18} style={{ display: 'inline', verticalAlign: 'middle', marginRight: '4px' }} /> Defend</div>
+                                <div style={{ fontSize: '0.7rem', opacity: 0.8 }}>50% damage reduction</div>
+                            </div>
+                        </button>
+
+                        {/* 4. Flee (not available vs boss) */}
+                        {!isBossNode && (
+                            <button
+                                className="cq-action-btn flee"
+                                disabled={!isPlayerTurn || isExecuting}
+                                onClick={handleFlee}
+                            >
+                                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                                    <div><LogOut size={18} style={{ display: 'inline', verticalAlign: 'middle', marginRight: '4px' }} /> Flee</div>
+                                    <div style={{ fontSize: '0.7rem', opacity: 0.8 }}>Costs 15% max HP</div>
+                                </div>
+                            </button>
+                        )}
+
+                        {/* 5. Cast Spell */}
                         {(() => {
                             const equippedSpellId = battle.equippedSpells[0];
                             const spell = equippedSpellId ? getOwnedSpells().find(s => s.id === equippedSpellId) : null;
                             const spellCooldownTurns = battle.spellCooldownTurns;
                             const onCooldown = spellCooldownTurns > 0;
-                            const expectedDamage = spell && spell.effect.type === 'damage' 
+                            const expectedDamage = spell && spell.effect.type === 'damage'
                                 ? (spell.baseDamage !== undefined && spell.tier !== 'old'
                                     ? Math.round(spell.baseDamage * (1 + (useGameStore.getState().skills['Intelligence']?.level ?? 1) * 0.03) * battle.playerDamageModifier)
                                     : Math.round(spell.effect.value * getMagicAttack() * battle.playerDamageModifier))
                                 : null;
-                            
                             const canCast = spell && battle.currentMP >= spell.mpCost && !onCooldown;
 
                             return (
@@ -338,11 +429,8 @@ export const ConquestBattle = () => {
                                     className={`cq-action-btn spells ${!spell ? 'disabled-spell' : ''}`}
                                     disabled={!isPlayerTurn || isExecuting || !spell || !canCast}
                                     style={{
-                                        position: 'relative',
-                                        display: 'flex',
-                                        flexDirection: 'column',
-                                        alignItems: 'center',
-                                        gap: '4px',
+                                        position: 'relative', display: 'flex', flexDirection: 'column',
+                                        alignItems: 'center', gap: '4px',
                                         background: !spell ? '#334155' : 'linear-gradient(135deg, rgba(88, 28, 135, 0.4) 0%, rgba(126, 34, 206, 0.4) 100%)',
                                         borderColor: !spell ? '#475569' : '#a855f7',
                                         color: !spell ? '#94a3b8' : '#e9d5ff',
@@ -355,9 +443,9 @@ export const ConquestBattle = () => {
                                     }}
                                 >
                                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                        <Sparkles size={18} /> 
-                                        {!spell 
-                                            ? 'No Spell Equipped' 
+                                        <Sparkles size={18} />
+                                        {!spell
+                                            ? 'No Spell Equipped'
                                             : onCooldown
                                                 ? `${spell.name} on Cooldown`
                                                 : `Cast ${spell.name} ${expectedDamage ? `(${expectedDamage} dmg)` : ''}`}
@@ -399,12 +487,16 @@ export const ConquestBattle = () => {
                                 Run HP Remaining: <strong style={{ color: '#22c55e' }}>{Math.floor(conquest.runHP)}</strong>
                                 <br />
                                 <small style={{ color: '#475569', fontSize: '0.75rem' }}>⚠️ HP does not restore between battles — visit a Campfire</small>
+                                {conquestEnemyDef?.special === 'drops_balloons' && (
+                                    <div style={{ color: '#22c55e', marginTop: '0.5rem' }}>🎈 Bonus: Balloons dropped!</div>
+                                )}
+                                {conquestEnemyDef?.special === 'drops_gem' && (
+                                    <div style={{ color: '#22c55e', marginTop: '0.5rem' }}>💎 Bonus: +1 Gem!</div>
+                                )}
                             </div>
                             <button className="continue-btn" onClick={() => {
                                 setShowVictoryModal(false);
-                                setTimeout(() => {
-                                    battle.resetBattle();
-                                }, 100);
+                                setTimeout(() => { battle.resetBattle(); }, 100);
                                 navigate('/conquest');
                             }}>
                                 Continue Run
@@ -423,13 +515,15 @@ export const ConquestBattle = () => {
                             <p style={{ color: '#94a3b8', marginBottom: '1rem' }}>
                                 You fell to <strong style={{ color: '#f1f5f9' }}>{enemy.name}</strong> on Floor {conquest.runFloor}.
                             </p>
+                            <div style={{ fontSize: '0.85rem', color: '#94a3b8', background: 'rgba(100,100,120,0.15)', borderRadius: 8, padding: '0.75rem', marginBottom: '1rem' }}>
+                                <div>⚔️ Enemies Defeated: {conquest.runStats.enemiesDefeated}</div>
+                                <div>🗺️ Nodes Visited: {conquest.runStats.nodesVisited}</div>
+                            </div>
                             <div style={{ fontSize: '0.85rem', color: '#94a3b8', background: 'rgba(239,68,68,0.1)', borderRadius: 8, padding: '0.75rem', marginBottom: '1.5rem' }}>
                                 ☠️ Daily run consumed. A new run opens tomorrow.
                             </div>
                             <button className="continue-btn" style={{ background: '#7f1d1d' }} onClick={() => {
-                                setTimeout(() => {
-                                    battle.resetBattle();
-                                }, 100);
+                                setTimeout(() => { battle.resetBattle(); }, 100);
                                 navigate('/conquest');
                             }}>
                                 Return to Map

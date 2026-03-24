@@ -74,13 +74,19 @@ export const useCurrencyStore = create<CurrencyState>()(
             },
 
             addGold: (amount, options) => {
-                // Fixed/exact rewards bypass Housemaid bonus
+                // Fixed/exact rewards bypass Housemaid bonus and inflation guard
                 if (options?.exact || amount <= 0) {
                     set((state) => ({ gold: state.gold + amount }));
+                    // Still track lifetime spending if negative
+                    if (amount < 0) {
+                        import('./useEconomyBalanceStore').then(({ useEconomyBalanceStore }) => {
+                            useEconomyBalanceStore.getState().trackGoldSpent(Math.abs(amount));
+                        }).catch(() => {});
+                    }
                     return;
                 }
 
-                // Apply Housemaid Economy Bonus to gameplay-earned gold
+                // Apply Housemaid Economy Bonus + Inflation Guard to gameplay-earned gold
                 import('./useGameStore').then(({ useGameStore }) => {
                     const housemaidLevel = useGameStore.getState().skills['Housemaid']?.level ?? 1;
                     let multiplier = 1 + (housemaidLevel * 0.01); // 1% per level
@@ -90,8 +96,17 @@ export const useCurrencyStore = create<CurrencyState>()(
                         multiplier += 0.02;
                     }
 
-                    const finalAmount = Math.floor(amount * multiplier);
-                    set((state) => ({ gold: state.gold + finalAmount }));
+                    // Apply inflation guard penalty
+                    import('./useEconomyBalanceStore').then(({ useEconomyBalanceStore }) => {
+                        const econ = useEconomyBalanceStore.getState();
+                        const inflationMult = econ.getInflationMultiplier();
+                        const finalAmount = Math.max(1, Math.floor(amount * multiplier * inflationMult));
+                        set((state) => ({ gold: state.gold + finalAmount }));
+                        econ.trackGoldEarned(finalAmount);
+                    }).catch(() => {
+                        const finalAmount = Math.floor(amount * multiplier);
+                        set((state) => ({ gold: state.gold + finalAmount }));
+                    });
                 }).catch(() => {
                     // Fallback if import fails
                     set((state) => ({ gold: state.gold + amount }));

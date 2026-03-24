@@ -1,7 +1,7 @@
 import { useEffect, useState, useRef, useCallback } from 'react';
-import { Heart, Play, Pause } from 'lucide-react';
-import { useStormStore, STORM_ENEMY_DEFS } from '../../store/useStormStore';
-import type { StormEnemyType } from '../../store/useStormStore';
+import { Heart, Play, Pause, Save, FolderOpen } from 'lucide-react';
+import { useStormStore, STORM_ENEMY_DEFS, DEFENDER_ABILITIES, getStormWavePreview } from '../../store/useStormStore';
+import type { StormEnemyType, DefenderType } from '../../store/useStormStore';
 import { useCurrencyStore } from '../../store/useCurrencyStore';
 import './StormTheFort.css';
 
@@ -18,6 +18,12 @@ export const StormTheFort = () => {
         upgrades,
         lastWaveRewards,
         hasBoughtFirstCow,
+        bestWave,
+        comboPopups,
+        damagePopups,
+        bossWarningActive,
+        rallyUntil,
+        savedFormation,
         startGame,
         pauseGame,
         resumeGame,
@@ -26,11 +32,15 @@ export const StormTheFort = () => {
         buyObstacle,
         buyUpgrade,
         moveDefender,
+        activateAbility,
+        saveFormation,
+        loadFormation,
         startNextWave,
     } = useStormStore();
 
     const { shmeckles } = useCurrencyStore();
     const [activeTab, setActiveTab] = useState<'deploy' | 'obstacles' | 'upgrades'>('deploy');
+    const [showWavePreview, setShowWavePreview] = useState(false);
 
     // Drag state for moving defenders
     const [draggingId, setDraggingId] = useState<string | null>(null);
@@ -79,12 +89,21 @@ export const StormTheFort = () => {
         setDraggingId(null);
     }, []);
 
+    // Ability tap handler (only when not dragging)
+    const handleDefenderTap = useCallback((defId: string) => {
+        if (draggingId) return;
+        const defender = defenders.find(d => d.id === defId);
+        if (defender?.abilityReady) {
+            activateAbility(defId);
+        }
+    }, [draggingId, defenders, activateAbility]);
+
     // Cost configuration
-    const DEFENDER_COSTS = { cow: 5, swordsman: 15, shield: 25, archer: 20 };
+    const DEFENDER_COSTS: Record<DefenderType, number> = { cow: 5, swordsman: 15, shield: 25, archer: 20, medic: 20 };
 
     const getUpgradeCost = (key: keyof typeof upgrades) => 50 + (upgrades[key] * 50);
 
-    const handleBuyDefender = (type: 'cow' | 'swordsman' | 'shield' | 'archer') => {
+    const handleBuyDefender = (type: DefenderType) => {
         buyDefender(type);
     };
 
@@ -98,8 +117,11 @@ export const StormTheFort = () => {
     };
 
     // Get enemy icon from type
-    const getEnemyIcon = (type: string): string => {
+    const getEnemyIcon = (type: string): React.ReactNode => {
         const def = STORM_ENEMY_DEFS[type as StormEnemyType];
+        if (def?.image) {
+            return <img src={def.image} alt={def.name} style={{width: '100%', height: '100%', objectFit: 'contain', pointerEvents: 'none'}} />;
+        }
         return def?.icon ?? '👿';
     };
 
@@ -110,9 +132,25 @@ export const StormTheFort = () => {
             case 'swordsman': return '⚔️';
             case 'shield': return '🛡️';
             case 'archer': return '🏹';
+            case 'medic': return '🩺';
             default: return '⚔️';
         }
     };
+
+    // Rank stars
+    const getRankStars = (rank: number): string => {
+        if (rank <= 0) return '';
+        return '⭐'.repeat(Math.min(rank, 3));
+    };
+
+    // Wave preview data
+    const wavePreview = showWavePreview ? getStormWavePreview(wave) : null;
+
+    // Boss enemy in current wave
+    const bossEnemy = enemies.find(e => STORM_ENEMY_DEFS[e.enemyType]?.isBoss);
+
+    // Rally active check
+    const isRallyActive = Date.now() < rallyUntil;
 
     return (
         <div className="storm-page">
@@ -121,6 +159,9 @@ export const StormTheFort = () => {
                 <div className="storm-hud-left">
                     <h2>🏰 Storm the Fort</h2>
                     <span className="storm-wave-badge">Wave {wave}</span>
+                    {bestWave > 0 && (
+                        <span className="storm-best-wave">🏆 Best: {bestWave}</span>
+                    )}
                 </div>
 
                 <div className="storm-hud-center">
@@ -159,6 +200,23 @@ export const StormTheFort = () => {
                 </div>
             </div>
 
+            {/* ── Boss Health Bar ── */}
+            {bossEnemy && (
+                <div className="storm-boss-bar">
+                    <span className="storm-boss-icon">{getEnemyIcon(bossEnemy.type)}</span>
+                    <span className="storm-boss-name">{STORM_ENEMY_DEFS[bossEnemy.enemyType]?.name}</span>
+                    <div className="storm-boss-bar-track">
+                        <div className="storm-boss-bar-fill" style={{ width: `${Math.max(0, (bossEnemy.hp / bossEnemy.maxHp) * 100)}%` }} />
+                    </div>
+                    <span className="storm-boss-hp">{Math.ceil(bossEnemy.hp)}/{bossEnemy.maxHp}</span>
+                </div>
+            )}
+
+            {/* Rally Active Indicator */}
+            {isRallyActive && (
+                <div className="storm-rally-banner">📯 RALLY! +50% Damage!</div>
+            )}
+
             {/* Main Battlefield */}
             <div
                 className="storm-battlefield"
@@ -189,6 +247,31 @@ export const StormTheFort = () => {
                     </div>
                 </div>
 
+                {/* Boss Warning Banner */}
+                {bossWarningActive && (
+                    <div className="storm-boss-warning">
+                        <span className="storm-boss-warning-icon">⚠️</span>
+                        <span className="storm-boss-warning-text">BOSS INCOMING!</span>
+                    </div>
+                )}
+
+                {/* Kill Combo Popups */}
+                {comboPopups.map(popup => (
+                    <div
+                        key={popup.id}
+                        className="storm-combo-popup"
+                        style={{
+                            left: `${popup.x}%`,
+                            top: `${popup.y}%`,
+                            opacity: Math.max(0, 1 - popup.age / 1500),
+                            transform: `translateY(${-popup.age * 0.03}px)`,
+                        }}
+                    >
+                        <span className="combo-count">x{popup.count} COMBO!</span>
+                        <span className="combo-bonus">+{popup.bonus}🐌</span>
+                    </div>
+                ))}
+
                 {/* Render Obstacles */}
                 {obstacles.map(obs => (
                     <div
@@ -201,16 +284,31 @@ export const StormTheFort = () => {
                     </div>
                 ))}
 
-                {/* Render Defenders — draggable */}
+                {/* Render Defenders — draggable + ability tap */}
                 {defenders.map(def => (
                     <div
                         key={def.id}
-                        className={`storm-entity storm-defender ${draggingId === def.id ? 'dragging' : ''}`}
+                        className={`storm-entity storm-defender ${draggingId === def.id ? 'dragging' : ''} ${def.fortifyUntil > Date.now() ? 'fortified' : ''}`}
                         style={{ left: `${def.x}%`, top: `${def.y}%` }}
                         onPointerDown={(e) => handleDefenderPointerDown(e, def.id)}
+                        onClick={() => handleDefenderTap(def.id)}
                     >
                         {getDefenderIcon(def.type)}
+                        {def.rank > 0 && (
+                            <div className="storm-rank-badge">{getRankStars(def.rank)}</div>
+                        )}
                         <div className="storm-hp-bar"><div className="storm-hp-fill" style={{ width: `${(def.hp / def.maxHp) * 100}%` }} /></div>
+                        {/* Ability indicator */}
+                        {def.abilityReady && (
+                            <div className="storm-ability-ready" title={DEFENDER_ABILITIES[def.defenderType]?.name}>
+                                {DEFENDER_ABILITIES[def.defenderType]?.icon}
+                            </div>
+                        )}
+                        {!def.abilityReady && def.abilityCooldownTimer > 0 && (
+                            <div className="storm-ability-cd">
+                                {Math.ceil(def.abilityCooldownTimer / 1000)}s
+                            </div>
+                        )}
                     </div>
                 ))}
 
@@ -218,10 +316,11 @@ export const StormTheFort = () => {
                 {enemies.map(en => (
                     <div
                         key={en.id}
-                        className={`storm-entity storm-enemy`}
+                        className={`storm-entity storm-enemy ${en.isElite ? 'elite' : ''}`}
                         style={{ left: `${en.x}%`, top: `${en.y}%` }}
                     >
                         {getEnemyIcon(en.type)}
+                        {en.isElite && <div className="storm-elite-badge">⚡</div>}
                         <div className="storm-hp-bar"><div className="storm-hp-fill" style={{ width: `${(en.hp / en.maxHp) * 100}%` }} /></div>
                     </div>
                 ))}
@@ -233,17 +332,51 @@ export const StormTheFort = () => {
                     return (
                         <div
                             key={p.id}
-                            className="storm-projectile"
+                            className={`storm-projectile ${p.isHeal ? 'heal' : ''}`}
                             style={{ left: `${currentX}%`, top: `${currentY}%` }}
                         />
                     );
                 })}
+
+                {/* Damage Popups */}
+                {damagePopups.map(popup => (
+                    <div
+                        key={popup.id}
+                        className={`storm-damage-popup ${popup.isCrit ? 'crit' : ''}`}
+                        style={{
+                            left: `${popup.x}%`,
+                            top: `${popup.y}%`,
+                            opacity: Math.max(0, 1 - popup.age / 1200),
+                            transform: `translate(-50%, ${-popup.age * 0.03}px)`,
+                        }}
+                    >
+                        +{popup.value}🐌
+                    </div>
+                ))}
 
                 {/* Overlays */}
                 {gameState === 'idle' && (
                     <div className="storm-overlay">
                         <h3>Prepare Your Defenses</h3>
                         <p>Buy units and traps using Shmeckles before the wave starts.</p>
+                        {/* Wave Preview Toggle */}
+                        <button className="storm-btn secondary" onClick={() => setShowWavePreview(v => !v)}>
+                            {showWavePreview ? 'Hide Preview' : '👁️ Preview Wave'}
+                        </button>
+                        {showWavePreview && wavePreview && (
+                            <div className="storm-wave-preview">
+                                <h4>Wave {wave} Composition:</h4>
+                                <div className="storm-wave-preview-grid">
+                                    {Object.entries(wavePreview).map(([type, count]) => (
+                                        <div key={type} className="storm-wave-preview-item">
+                                            <span className="preview-icon">{STORM_ENEMY_DEFS[type as StormEnemyType]?.icon}</span>
+                                            <span className="preview-name">{STORM_ENEMY_DEFS[type as StormEnemyType]?.name}</span>
+                                            <span className="preview-count">×{count}</span>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
                         <button className="storm-btn primary" onClick={() => startNextWave()}>Start Wave {wave}</button>
                     </div>
                 )}
@@ -257,13 +390,23 @@ export const StormTheFort = () => {
                                 <span>+{lastWaveRewards.gold} 🪙</span>
                             </div>
                         )}
+                        {/* Show defender XP gains */}
+                        {defenders.some(d => d.rank > 0) && (
+                            <div className="storm-vet-summary">
+                                {defenders.filter(d => d.rank > 0).map(d => (
+                                    <span key={d.id} className="storm-vet-chip">
+                                        {getDefenderIcon(d.type)} {getRankStars(d.rank)} Rank {d.rank}
+                                    </span>
+                                ))}
+                            </div>
+                        )}
                         <button className="storm-btn primary" onClick={() => startNextWave()}>Next Wave</button>
                     </div>
                 )}
                 {gameState === 'defeat' && (
                     <div className="storm-overlay danger">
                         <h3>Fort Destroyed!</h3>
-                        <p>You survived until Wave {wave}. Start over!</p>
+                        <p>You survived until Wave {wave}. {wave > bestWave ? '🏆 New Record!' : `Best: Wave ${bestWave}`}</p>
                         <button className="storm-btn danger" onClick={() => startGame()}>Restart</button>
                     </div>
                 )}
@@ -318,6 +461,24 @@ export const StormTheFort = () => {
                                 </div>
                                 <div className="cost">🐌 {DEFENDER_COSTS.archer}</div>
                             </button>
+                            <button className="storm-buy-card" onClick={() => handleBuyDefender('medic')} disabled={shmeckles < DEFENDER_COSTS.medic}>
+                                <div className="icon">🩺</div>
+                                <div className="info">
+                                    <h4>Medic</h4>
+                                    <span>Heals allies</span>
+                                </div>
+                                <div className="cost">🐌 {DEFENDER_COSTS.medic}</div>
+                            </button>
+
+                            {/* Formation buttons */}
+                            <div className="storm-formation-btns">
+                                <button className="storm-btn secondary small" onClick={saveFormation} disabled={defenders.length === 0}>
+                                    <Save size={14} /> Save
+                                </button>
+                                <button className="storm-btn secondary small" onClick={loadFormation} disabled={savedFormation.length === 0}>
+                                    <FolderOpen size={14} /> Load
+                                </button>
+                            </div>
                         </div>
                     )}
 

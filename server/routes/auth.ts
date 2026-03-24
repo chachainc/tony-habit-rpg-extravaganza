@@ -14,22 +14,37 @@ if (!admin.apps.length) {
         const __dirname = path.dirname(fileURLToPath(import.meta.url));
         const keyPath = path.join(__dirname, '..', 'serviceAccountKey.json');
 
+        console.log('🔍 Firebase Admin init — checking credential sources...');
+        console.log('   Local file exists?', fs.existsSync(keyPath), `(${keyPath})`);
+        console.log('   GOOGLE_APPLICATION_CREDENTIALS_JSON set?', !!process.env.GOOGLE_APPLICATION_CREDENTIALS_JSON);
+        console.log('   GOOGLE_APPLICATION_CREDENTIALS set?', !!process.env.GOOGLE_APPLICATION_CREDENTIALS, process.env.GOOGLE_APPLICATION_CREDENTIALS ? `(${process.env.GOOGLE_APPLICATION_CREDENTIALS})` : '');
+
         if (fs.existsSync(keyPath)) {
             const serviceAccount = JSON.parse(fs.readFileSync(keyPath, 'utf-8'));
             admin.initializeApp({
                 credential: admin.credential.cert(serviceAccount),
             });
-            console.log('✅ Firebase Admin initialized (service account)');
+            console.log('✅ Firebase Admin initialized (service account file)');
             firebaseAdminReady = true;
-        } else if (process.env.GOOGLE_APPLICATION_CREDENTIALS) {
+        } else if (process.env.GOOGLE_APPLICATION_CREDENTIALS_JSON) {
+            // PaaS deploy (Render, Railway, etc.): service account JSON in env var
+            const serviceAccount = JSON.parse(process.env.GOOGLE_APPLICATION_CREDENTIALS_JSON);
             admin.initializeApp({
-                credential: admin.credential.applicationDefault(),
+                credential: admin.credential.cert(serviceAccount),
             });
-            console.log('✅ Firebase Admin initialized (env credentials)');
+            console.log('✅ Firebase Admin initialized (env JSON)');
+            firebaseAdminReady = true;
+        } else if (process.env.GOOGLE_APPLICATION_CREDENTIALS && fs.existsSync(process.env.GOOGLE_APPLICATION_CREDENTIALS)) {
+            // Render secret file mount or any explicit file path
+            const serviceAccount = JSON.parse(fs.readFileSync(process.env.GOOGLE_APPLICATION_CREDENTIALS, 'utf-8'));
+            admin.initializeApp({
+                credential: admin.credential.cert(serviceAccount),
+            });
+            console.log('✅ Firebase Admin initialized (env file path:', process.env.GOOGLE_APPLICATION_CREDENTIALS, ')');
             firebaseAdminReady = true;
         } else {
             console.error('❌ Firebase Admin NOT initialized — Google auth disabled');
-            console.error('   Place serviceAccountKey.json in server/ or set GOOGLE_APPLICATION_CREDENTIALS');
+            console.error('   Place serviceAccountKey.json in server/ or set GOOGLE_APPLICATION_CREDENTIALS_JSON');
         }
     } catch (err) {
         console.error('❌ Firebase Admin init error:', err);

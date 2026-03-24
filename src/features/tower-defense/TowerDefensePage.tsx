@@ -3,9 +3,9 @@ import { useEffect, useState, useRef } from 'react';
 import { useTowerDefenseStore } from '../../store/useTowerDefenseStore';
 import { useCurrencyStore } from '../../store/useCurrencyStore';
 import type { PlacedTower } from '../../store/useTowerDefenseStore';
-import { TD_GRID_WIDTH, TD_GRID_HEIGHT, isPath, TD_TOWERS, TD_ENEMIES, TD_MAP_MODIFIERS, TD_WAVE_MODIFIERS, TD_PATH } from '../../data/towerDefense';
+import { TD_GRID_WIDTH, TD_GRID_HEIGHT, isPath, TD_TOWERS, TD_ENEMIES, TD_MAP_MODIFIERS, TD_WAVE_MODIFIERS, TD_SPECIALIZATIONS, TD_PATH } from '../../data/towerDefense';
 import type { TowerType, TowerDef } from '../../data/towerDefense';
-import { ArrowLeft, Play, RefreshCw, X } from 'lucide-react';
+import { ArrowLeft, Play, RefreshCw, X, Zap, FastForward, Trophy, Skull, Swords } from 'lucide-react';
 
 import './TowerDefensePage.css';
 
@@ -137,6 +137,26 @@ export const TowerDefensePage = () => {
         setSelectedTower(null);
     };
 
+    const handleSpecialize = (branch: string) => {
+        if (!selectedTower) return;
+        if (td.specializeTower(selectedTower.id, branch)) {
+            setSelectedTower(null);
+        }
+    };
+
+    const cycleSpeed = () => {
+        const next = td.gameSpeed === 1 ? 2 : td.gameSpeed === 2 ? 3 : 1;
+        td.setGameSpeed(next as 1 | 2 | 3);
+    };
+
+    // Find boss enemies for boss HP bar
+    const bossEnemy = td.enemies.find(e => TD_ENEMIES[e.type]?.isBoss);
+
+    // Wave progress
+    const totalEnemies = td.totalWaveEnemies;
+    const remainingEnemies = td.enemies.length + td.enemyQueue.length;
+    const progressPct = totalEnemies > 0 ? ((totalEnemies - remainingEnemies) / totalEnemies) * 100 : 0;
+
     const renderGrid = () => {
         const cells = [];
         for (let y = 0; y < TD_GRID_HEIGHT; y++) {
@@ -208,6 +228,10 @@ export const TowerDefensePage = () => {
                     <span className="td-chip mana">🐌 {currStore.shmeckles}</span>
                     <span className="td-chip wave">Wave {td.currentWave}</span>
                     <span className="td-chip hp">❤️ {td.baseHealth}</span>
+                    {/* Speed toggle */}
+                    <button className={`td-chip td-speed-btn speed-${td.gameSpeed}x`} onClick={cycleSpeed}>
+                        <FastForward size={12} /> {td.gameSpeed}x
+                    </button>
                     {td.currentMapModifier !== 'none' && (
                         <span className="td-chip mod" title={TD_MAP_MODIFIERS[td.currentMapModifier].description}>
                             {TD_MAP_MODIFIERS[td.currentMapModifier].icon}
@@ -216,9 +240,36 @@ export const TowerDefensePage = () => {
                 </div>
             </div>
 
+            {/* ── Wave Progress Bar ── */}
+            {td.isWaveActive && totalEnemies > 0 && (
+                <div className="td-wave-progress">
+                    <div className="td-wave-progress-bar" style={{ width: `${progressPct}%` }} />
+                    <span className="td-wave-progress-label">
+                        {totalEnemies - remainingEnemies}/{totalEnemies} defeated
+                    </span>
+                </div>
+            )}
+
+            {/* ── Boss Health Bar ── */}
+            {bossEnemy && (
+                <div className="td-boss-bar">
+                    <div className="td-boss-bar-info">
+                        <span className="td-boss-icon">{TD_ENEMIES[bossEnemy.type].image ? <img src={TD_ENEMIES[bossEnemy.type].image} alt="boss" style={{height: '100%', objectFit: 'contain', pointerEvents: 'none'}} /> : TD_ENEMIES[bossEnemy.type].icon}</span>
+                        <span className="td-boss-name">{TD_ENEMIES[bossEnemy.type].name}</span>
+                    </div>
+                    <div className="td-boss-bar-track">
+                        <div 
+                            className="td-boss-bar-fill"
+                            style={{ width: `${Math.max(0, (bossEnemy.hp / bossEnemy.maxHp) * 100)}%` }}
+                        />
+                    </div>
+                    <span className="td-boss-hp">{Math.ceil(bossEnemy.hp)} / {bossEnemy.maxHp}</span>
+                </div>
+            )}
+
             <div className="td-content">
                 <div className="td-controls">
-                    {td.baseHealth > 0 ? (
+                    {td.baseHealth > 0 && !td.showStats ? (
                         <>
                             <button
                                 className="td-start-btn"
@@ -237,7 +288,7 @@ export const TowerDefensePage = () => {
                                 </div>
                             )}
                         </>
-                    ) : (
+                    ) : td.baseHealth <= 0 && !td.showStats ? (
                         <div className="td-game-over">
                             <h2>Game Over</h2>
                             <div>Wave Reached: {td.currentWave}</div>
@@ -245,10 +296,10 @@ export const TowerDefensePage = () => {
                                 <RefreshCw size={16} /> Restart
                             </button>
                         </div>
-                    )}
+                    ) : null}
                 </div>
 
-                <div className="td-battlefield-wrapper">
+                <div className={`td-battlefield-wrapper ${td.screenShake ? 'screen-shake' : ''}`}>
                     <div 
                         className="td-grid-container"
                         ref={gridRef}
@@ -264,10 +315,14 @@ export const TowerDefensePage = () => {
                         {td.towers.map(tower => {
                             const def = TD_TOWERS[tower.type];
                             const isSelected = selectedTower?.id === tower.id;
+                            const specBranch = tower.specializationBranch;
+                            const specDef = specBranch && TD_SPECIALIZATIONS[tower.type]
+                                ? TD_SPECIALIZATIONS[tower.type]![specBranch]
+                                : null;
                             return (
                                 <div 
                                     key={tower.id}
-                                    className={`td-entity tower ${isSelected ? 'selected' : ''}`}
+                                    className={`td-entity tower ${isSelected ? 'selected' : ''} ${specDef ? 'specialized' : ''}`}
                                     onClick={(e) => { e.stopPropagation(); handleTileClick(tower.x, tower.y); }}
                                     style={{
                                         left: `${(tower.x / TD_GRID_WIDTH) * 100}%`,
@@ -278,16 +333,19 @@ export const TowerDefensePage = () => {
                                 >
                                     {isSelected && (
                                         <div className="td-range-indicator-grid" style={{
-                                            width: `${def.range * 200}%`,
-                                            height: `${def.range * 200}%`,
-                                            marginLeft: `calc(50% - ${def.range * 100}%)`,
-                                            marginTop: `calc(50% - ${def.range * 100}%)`
+                                            width: `${def.range * (specDef?.rangeMod ?? 1) * 200}%`,
+                                            height: `${def.range * (specDef?.rangeMod ?? 1) * 200}%`,
+                                            marginLeft: `calc(50% - ${def.range * (specDef?.rangeMod ?? 1) * 100}%)`,
+                                            marginTop: `calc(50% - ${def.range * (specDef?.rangeMod ?? 1) * 100}%)`
                                         }} />
                                     )}
                                     <div className="tower-icon" style={{ backgroundColor: def.color }}>
-                                        {def.icon}
+                                        {specDef ? specDef.icon : def.icon}
                                         <div className="tower-level">{tower.level}</div>
                                     </div>
+                                    {specDef && (
+                                        <div className="tower-spec-badge">{specDef.name.substring(0, 3)}</div>
+                                    )}
                                 </div>
                             );
                         })}
@@ -305,11 +363,13 @@ export const TowerDefensePage = () => {
                             const isFlowBoss = enemy.type === 'flow_boss';
                             // Necromancer: glow aura
                             const isNecro = def.healsNearby;
+                            // Burning
+                            const isBurning = enemy.dotDps && enemy.dotUntil && Date.now() < enemy.dotUntil;
 
                             return (
                                 <div
                                     key={enemy.id}
-                                    className={`td-entity enemy ${Date.now() < enemy.slowedUntil ? 'slowed' : ''} ${isNecro ? 'necro-aura' : ''}`}
+                                    className={`td-entity enemy ${Date.now() < enemy.slowedUntil ? 'slowed' : ''} ${isNecro ? 'necro-aura' : ''} ${isBurning ? 'burning' : ''} ${enemy.isElite ? 'elite' : ''}`}
                                     style={{
                                         left: `${(ex / TD_GRID_WIDTH) * 100}%`,
                                         top: `${(ey / TD_GRID_HEIGHT) * 100}%`,
@@ -318,7 +378,8 @@ export const TowerDefensePage = () => {
                                         ...(isFlowBoss ? { width: `${200 / TD_GRID_WIDTH}%`, height: `${200 / TD_GRID_HEIGHT}%`, zIndex: 15 } : {})
                                     }}
                                 >
-                                    <div className="enemy-sprite">{def.icon}</div>
+                                    <div className="enemy-sprite">{def.image ? <img src={def.image} alt={def.name} style={{width: '100%', height: '100%', objectFit: 'contain', pointerEvents: 'none'}} /> : def.icon}</div>
+                                    {enemy.isElite && <div className="elite-badge">⚡</div>}
                                     <div className="enemy-hp-bar-bg">
                                         <div 
                                             className="enemy-hp-bar-fill" 
@@ -337,7 +398,7 @@ export const TowerDefensePage = () => {
                             return (
                                 <div 
                                     key={proj.id}
-                                    className="td-projectile"
+                                    className={`td-projectile ${proj.splashRadius ? 'splash' : ''}`}
                                     style={{
                                         left: `${(currentX / TD_GRID_WIDTH) * 100}%`,
                                         top: `${(currentY / TD_GRID_HEIGHT) * 100}%`,
@@ -347,7 +408,23 @@ export const TowerDefensePage = () => {
                             );
                         })}
 
-                        {/* 5. Drag Ghost Preview */}
+                        {/* 5. Damage Popups Layer */}
+                        {td.damagePopups.map(popup => (
+                            <div
+                                key={popup.id}
+                                className={`td-damage-popup ${popup.isCrit ? 'crit' : ''}`}
+                                style={{
+                                    left: `${(popup.x / TD_GRID_WIDTH) * 100}%`,
+                                    top: `${(popup.y / TD_GRID_HEIGHT) * 100}%`,
+                                    opacity: Math.max(0, 1 - popup.age / 1200),
+                                    transform: `translate(-50%, ${-popup.age * 0.04}px)`,
+                                }}
+                            >
+                                +{popup.value}🐌
+                            </div>
+                        ))}
+
+                        {/* 5. Drag Ghost Preview with range */}
                         {dragState.isDragging && dragState.towerType && dragState.gridX >= 0 && dragState.gridY >= 0 && (
                             <div 
                                 className="td-entity tower ghost"
@@ -410,23 +487,50 @@ export const TowerDefensePage = () => {
                     </div>
                 )}
 
-                {/* Tower Upgrade/Sell Modal */}
+                {/* Tower Upgrade/Sell/Specialize Modal */}
                 {selectedTower && (() => {
                     const def = TD_TOWERS[selectedTower.type];
                     const upgCost = Math.floor(def.cost * Math.pow(1.5, selectedTower.level));
                     const refund = Math.floor((def.cost * Math.pow(1.5, selectedTower.level - 1)) * 0.5);
                     const canUpgrade = selectedTower.level < 3 && currStore.shmeckles >= upgCost;
+                    const specs = TD_SPECIALIZATIONS[selectedTower.type];
+                    const canSpecialize = selectedTower.level >= 2 && !selectedTower.specializationBranch && specs;
+                    const currentSpec = selectedTower.specializationBranch && specs
+                        ? specs[selectedTower.specializationBranch]
+                        : null;
 
                     return (
                         <div className="td-shop-panel upgrade-panel">
                             <div className="panel-header">
-                                <h3>{def.icon} {def.name} (Lv {selectedTower.level})</h3>
+                                <h3>{currentSpec ? currentSpec.icon : def.icon} {currentSpec ? currentSpec.name : def.name} (Lv {selectedTower.level})</h3>
                                 <button className="close-btn" onClick={() => setSelectedTower(null)}><X size={16}/></button>
                             </div>
                             <div className="tower-stats-preview">
-                                <span>Damage: {Math.floor(def.damage * Math.pow(1.5, selectedTower.level - 1))} {selectedTower.level < 3 ? `→ ${Math.floor(def.damage * Math.pow(1.5, selectedTower.level))}` : ''}</span>
-                                <span>Range: {def.range}</span>
+                                <span>Damage: {Math.floor(def.damage * Math.pow(1.5, selectedTower.level - 1) * (currentSpec?.dmgMod ?? 1))} {selectedTower.level < 3 ? `→ ${Math.floor(def.damage * Math.pow(1.5, selectedTower.level) * (currentSpec?.dmgMod ?? 1))}` : ''}</span>
+                                <span>Range: {(def.range * (currentSpec?.rangeMod ?? 1)).toFixed(1)}</span>
+                                {currentSpec && <span className="spec-badge-inline">⭐ {currentSpec.name}</span>}
                             </div>
+
+                            {/* Specialization branches */}
+                            {canSpecialize && (
+                                <div className="td-spec-branches">
+                                    <div className="td-spec-title">Choose Specialization:</div>
+                                    <div className="td-spec-row">
+                                        {Object.entries(specs!).map(([branch, spec]) => (
+                                            <button
+                                                key={branch}
+                                                className="td-spec-btn"
+                                                onClick={() => handleSpecialize(branch)}
+                                            >
+                                                <span className="td-spec-icon">{spec.icon}</span>
+                                                <span className="td-spec-name">{spec.name}</span>
+                                                <span className="td-spec-desc">{spec.description}</span>
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+
                             <div className="panel-actions">
                                 {selectedTower.level < 3 ? (
                                     <button 
@@ -446,6 +550,70 @@ export const TowerDefensePage = () => {
                         </div>
                     );
                 })()}
+
+                {/* ── Victory / Defeat Stats Modal ── */}
+                {td.showStats && (
+                    <div className="td-stats-overlay">
+                        <div className={`td-stats-modal ${td.baseHealth <= 0 ? 'defeat' : 'victory'}`}>
+                            <div className="td-stats-header">
+                                {td.baseHealth <= 0 ? (
+                                    <>
+                                        <Skull size={32} />
+                                        <h2>Fort Destroyed!</h2>
+                                    </>
+                                ) : (
+                                    <>
+                                        <Trophy size={32} />
+                                        <h2>Wave {td.currentWave} Complete!</h2>
+                                    </>
+                                )}
+                            </div>
+                            <div className="td-stats-grid">
+                                <div className="td-stat-item">
+                                    <span className="td-stat-icon"><Swords size={18} /></span>
+                                    <span className="td-stat-val">{td.waveStats.kills}</span>
+                                    <span className="td-stat-label">Kills</span>
+                                </div>
+                                <div className="td-stat-item">
+                                    <span className="td-stat-icon"><Zap size={18} /></span>
+                                    <span className="td-stat-val">{Math.floor(td.waveStats.damageDealt)}</span>
+                                    <span className="td-stat-label">Damage</span>
+                                </div>
+                                <div className="td-stat-item">
+                                    <span className="td-stat-icon">🏰</span>
+                                    <span className="td-stat-val">{td.waveStats.towersPlaced}</span>
+                                    <span className="td-stat-label">Towers</span>
+                                </div>
+                                <div className="td-stat-item">
+                                    <span className="td-stat-icon">🪙</span>
+                                    <span className="td-stat-val">+{td.waveStats.goldEarned}</span>
+                                    <span className="td-stat-label">Gold</span>
+                                </div>
+                                <div className="td-stat-item">
+                                    <span className="td-stat-icon">🐌</span>
+                                    <span className="td-stat-val">+{td.waveStats.shmecklesEarned}</span>
+                                    <span className="td-stat-label">Shmeckles</span>
+                                </div>
+                                <div className="td-stat-item">
+                                    <span className="td-stat-icon">🌊</span>
+                                    <span className="td-stat-val">{td.currentWave}</span>
+                                    <span className="td-stat-label">Wave</span>
+                                </div>
+                            </div>
+                            <div className="td-stats-actions">
+                                {td.baseHealth > 0 ? (
+                                    <button className="td-stats-btn primary" onClick={td.dismissStats}>
+                                        <Play size={16} /> Continue
+                                    </button>
+                                ) : (
+                                    <button className="td-stats-btn danger" onClick={() => { td.dismissStats(); td.resetGame(); }}>
+                                        <RefreshCw size={16} /> Restart
+                                    </button>
+                                )}
+                            </div>
+                        </div>
+                    </div>
+                )}
 
             </div>
         </div>

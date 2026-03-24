@@ -885,4 +885,98 @@
     display: block;
     text-align: center;
 }
+
+/* Flee Button */
+.cq-action-btn.flee {
+    background: linear-gradient(135deg, #713f12, #451a03);
+    border-color: #f59e0b;
+    color: #fde68a;
+}
+
+/* Enemy Special Badge */
+.cq-enemy-special-badge {
+    display: inline-block;
+    font-size: 0.65rem;
+    font-weight: 700;
+    padding: 0.15rem 0.5rem;
+    margin-left: 0.5rem;
+    border-radius: 10px;
+    background: rgba(245, 158, 11, 0.15);
+    border: 1px solid rgba(245, 158, 11, 0.4);
+    color: #fde68a;
+    vertical-align: middle;
+    white-space: nowrap;
+}
+
+/* New Procedural Map Node Types */
+.map-node.resource {
+    border-color: #16a34a;
+    color: #86efac;
+}
+
+.map-node.treasure_vault {
+    border-color: #d97706;
+    color: #fde68a;
+    box-shadow: 0 0 15px rgba(217, 119, 6, 0.4);
+}
+
+.map-node.artifact {
+    border-color: #8b5cf6;
+    color: #c4b5fd;
+    box-shadow: 0 0 12px rgba(139, 92, 246, 0.3);
+}
+
+.map-node.mystery {
+    border-color: #6366f1;
+    color: #a5b4fc;
+}
+
+/* Grid: expand panel to fit 3 columns when we have many actions */
+@media (min-width: 400px) {
+    .cq-action-panel {
+        grid-template-columns: repeat(3, 1fr);
+    }
+}
+
+/* ─── Meta Forge UI ──────────────────────── */
+.meta-upgrade-card {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.75rem;
+    background: rgba(15, 23, 42, 0.6);
+    border: 1px solid rgba(148, 163, 184, 0.15);
+    border-radius: 10px;
+    transition: border-color 0.2s ease;
+}
+
+.meta-upgrade-card:hover {
+    border-color: rgba(167, 139, 250, 0.4);
+}
+
+.meta-buy-btn {
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+    padding: 0.4rem 0.75rem;
+    background: linear-gradient(135deg, rgba(139, 92, 246, 0.3), rgba(88, 28, 135, 0.3));
+    border: 1px solid rgba(167, 139, 250, 0.4);
+    border-radius: 8px;
+    color: #c4b5fd;
+    font-weight: 700;
+    font-size: 0.8rem;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    white-space: nowrap;
+}
+
+.meta-buy-btn:hover:not(:disabled) {
+    background: linear-gradient(135deg, rgba(139, 92, 246, 0.5), rgba(88, 28, 135, 0.5));
+    border-color: #a78bfa;
+}
+
+.meta-buy-btn:disabled {
+    opacity: 0.35;
+    cursor: not-allowed;
+}
 

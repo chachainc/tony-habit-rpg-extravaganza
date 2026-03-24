@@ -1182,3 +1182,167 @@
         max-width: calc(100vw - 2rem);
     }
 }
+
+/* ==================== HAZARD TILES ==================== */
+.path-tile.tax,
+.path-tile.hazard[class*="tax"] {
+    background:
+        radial-gradient(circle at center, rgba(239, 68, 68, 0.2) 0%, transparent 70%),
+        linear-gradient(145deg, #2a1010 0%, #1c0808 100%);
+    border-color: rgba(239, 68, 68, 0.55);
+    box-shadow:
+        inset 0 0 12px rgba(239, 68, 68, 0.1),
+        0 0 10px rgba(239, 68, 68, 0.12),
+        0 2px 6px rgba(0, 0, 0, 0.4);
+}
+
+.path-tile.storm,
+.path-tile.hazard[class*="storm"] {
+    background:
+        radial-gradient(circle at center, rgba(100, 116, 139, 0.25) 0%, transparent 70%),
+        linear-gradient(145deg, #1a1e26 0%, #101318 100%);
+    border-color: rgba(100, 116, 139, 0.55);
+    box-shadow:
+        inset 0 0 12px rgba(100, 116, 139, 0.1),
+        0 0 10px rgba(100, 116, 139, 0.12),
+        0 2px 6px rgba(0, 0, 0, 0.4);
+}
+
+.path-tile.thief {
+    background:
+        radial-gradient(circle at center, rgba(168, 85, 247, 0.2) 0%, transparent 70%),
+        linear-gradient(145deg, #1e1228 0%, #14091e 100%);
+    border-color: rgba(168, 85, 247, 0.55);
+    box-shadow:
+        inset 0 0 12px rgba(168, 85, 247, 0.1),
+        0 0 10px rgba(168, 85, 247, 0.12),
+        0 2px 6px rgba(0, 0, 0, 0.4);
+}
+
+/* ==================== OWNED TILE TIERS ==================== */
+.path-tile.owned-1 {
+    border-color: #22c55e !important;
+    box-shadow:
+        0 0 8px rgba(34, 197, 94, 0.2),
+        inset 0 0 6px rgba(34, 197, 94, 0.06) !important;
+}
+
+.path-tile.owned-2 {
+    border-color: #3b82f6 !important;
+    box-shadow:
+        0 0 12px rgba(59, 130, 246, 0.25),
+        inset 0 0 8px rgba(59, 130, 246, 0.08) !important;
+}
+
+.path-tile.owned-3 {
+    border-color: #fbbf24 !important;
+    box-shadow:
+        0 0 16px rgba(251, 191, 36, 0.3),
+        0 0 30px rgba(251, 191, 36, 0.1),
+        inset 0 0 10px rgba(251, 191, 36, 0.08) !important;
+}
+
+/* ==================== PROPERTY BUY/UPGRADE BUTTONS ==================== */
+.property-action-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.3rem;
+    width: 100%;
+    padding: 0.5rem 0.75rem;
+    border-radius: 8px;
+    font-weight: 700;
+    font-size: 0.8rem;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    border: 2px solid;
+    margin-top: 0.5rem;
+}
+
+.property-action-btn:disabled {
+    opacity: 0.35;
+    cursor: not-allowed;
+}
+
+.property-action-btn.buy-btn {
+    background: linear-gradient(135deg, rgba(34, 197, 94, 0.2), rgba(22, 163, 74, 0.15));
+    border-color: rgba(34, 197, 94, 0.5);
+    color: #a3e635;
+}
+
+.property-action-btn.buy-btn:hover:not(:disabled) {
+    background: linear-gradient(135deg, rgba(34, 197, 94, 0.35), rgba(22, 163, 74, 0.25));
+    border-color: #22c55e;
+}
+
+.property-action-btn.upgrade-btn {
+    background: linear-gradient(135deg, rgba(59, 130, 246, 0.2), rgba(37, 99, 235, 0.15));
+    border-color: rgba(59, 130, 246, 0.5);
+    color: #93c5fd;
+}
+
+.property-action-btn.upgrade-btn:hover:not(:disabled) {
+    background: linear-gradient(135deg, rgba(59, 130, 246, 0.35), rgba(37, 99, 235, 0.25));
+    border-color: #3b82f6;
+}
+
+/* ==================== HAZARD RESULT MODAL ==================== */
+.hazard-reward-card {
+    border-color: #ef4444 !important;
+    box-shadow: 0 0 40px rgba(239, 68, 68, 0.3) !important;
+}
+
+.hazard-header {
+    text-align: center;
+    margin-bottom: 0.75rem;
+}
+
+.hazard-icon {
+    font-size: 2.5rem;
+    display: inline-block;
+    margin-bottom: 0.5rem;
+}
+
+.hazard-message {
+    color: rgba(255, 255, 255, 0.7);
+    font-size: 0.85rem;
+    text-align: center;
+    margin: 0 0 0.75rem;
+}
+
+/* ==================== STORM SKIP BANNER ==================== */
+.storm-skip-banner {
+    text-align: center;
+    background: rgba(0, 0, 0, 0.7);
+    border: 1px solid rgba(100, 116, 139, 0.4);
+    border-radius: 12px;
+    padding: 1.5rem;
+}
+
+.storm-skip-banner .storm-skip-icon {
+    font-size: 3rem;
+    display: block;
+    margin-bottom: 0.5rem;
+}
+
+.storm-skip-banner h3 {
+    color: #94a3b8;
+    font-size: 1.2rem;
+    margin: 0 0 0.4rem;
+}
+
+.storm-skip-banner p {
+    color: rgba(255, 255, 255, 0.5);
+    font-size: 0.8rem;
+    margin: 0;
+}
+
+.storm-pending-pill {
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: #94a3b8;
+    padding: 0.3rem 0.8rem;
+    background: rgba(100, 116, 139, 0.15);
+    border: 1px solid rgba(100, 116, 139, 0.3);
+    border-radius: 20px;
+}

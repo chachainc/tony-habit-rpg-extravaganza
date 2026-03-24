@@ -677,3 +677,95 @@
         background-position: 80px 80px;
     }
 }
+
+/* ═══ QUICK MENU FAB ═══ */
+.quick-menu-fab {
+    position: fixed;
+    bottom: calc(1.5rem + env(safe-area-inset-bottom, 0px));
+    right: 1.5rem;
+    z-index: 200;
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, rgba(59, 130, 246, 0.9), rgba(99, 102, 241, 0.9));
+    border: 2px solid rgba(147, 197, 253, 0.5);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    box-shadow:
+        0 4px 20px rgba(59, 130, 246, 0.4),
+        0 0 0 4px rgba(59, 130, 246, 0.15);
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+    transition: all 0.2s;
+}
+
+.quick-menu-fab:active {
+    transform: scale(0.92);
+}
+
+/* ═══ QUICK MENU OVERLAY ═══ */
+.quick-menu-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 1200;
+    background: rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(4px);
+}
+
+.quick-menu-sheet {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: linear-gradient(180deg, rgba(30, 30, 60, 0.98), rgba(15, 15, 35, 0.99));
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 20px 20px 0 0;
+    padding: 0.75rem 1rem calc(1.5rem + env(safe-area-inset-bottom, 0px));
+    max-height: 75vh;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    /* Scroll fade indicator */
+    mask-image: linear-gradient(to bottom, black 85%, transparent 100%);
+    -webkit-mask-image: linear-gradient(to bottom, black 85%, transparent 100%);
+}
+
+.quick-menu-handle {
+    width: 40px;
+    height: 4px;
+    border-radius: 2px;
+    background: rgba(255, 255, 255, 0.2);
+    margin: 0 auto 0.75rem;
+}
+
+.quick-menu-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0.6rem;
+}
+
+.quick-menu-grid .room-feature-btn {
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: 0.2rem;
+    padding: 0.6rem 0.4rem;
+    min-height: 68px;
+    justify-content: center;
+    transition: transform 0.15s, background 0.2s;
+}
+.quick-menu-grid .room-feature-btn:active {
+    transform: scale(0.95);
+}
+
+.quick-menu-grid .room-feature-btn small {
+    text-align: center;
+}
+
+/* Budget button variant */
+.room-feature-btn--budget {
+    background: linear-gradient(135deg, rgba(16, 185, 129, 0.3), rgba(5, 150, 105, 0.15));
+    border-color: rgba(16, 185, 129, 0.4);
+}

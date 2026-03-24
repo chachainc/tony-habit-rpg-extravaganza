@@ -197,6 +197,9 @@ interface InventoryState {
 
     discoveredItems: string[];
 
+    // Cellar stash (locked items can't be sold)
+    stashedItems: string[];
+
     addItem: (itemId: string, amount?: number) => void;
     removeItem: (itemId: string, amount?: number) => void;
     equipItem: (itemId: string, slot: EquipmentSlot) => void;
@@ -214,6 +217,9 @@ interface InventoryState {
     getMarketplaceAttackBonus: () => number;
     getMarketplaceDefenseBonus: () => number;
     getMarketplaceXpBonuses: () => Partial<Record<SkillName, number>>;
+
+    // Cellar stash
+    toggleStash: (itemId: string) => void;
 }
 
 export const useInventoryStore = create<InventoryState>()(
@@ -237,6 +243,7 @@ export const useInventoryStore = create<InventoryState>()(
             marketplaceEquippedWeapon: 'wooden_stick',
 
             discoveredItems: [],
+            stashedItems: [],
 
             addItem: (itemId, amount = 1) =>
                 set((state) => ({
@@ -431,6 +438,14 @@ export const useInventoryStore = create<InventoryState>()(
                 }
 
                 return bonuses;
+            },
+
+            toggleStash: (itemId) => {
+                set(s => ({
+                    stashedItems: s.stashedItems.includes(itemId)
+                        ? s.stashedItems.filter(id => id !== itemId)
+                        : [...s.stashedItems, itemId],
+                }));
             },
         }),
         {

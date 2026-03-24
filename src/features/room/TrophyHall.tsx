@@ -26,8 +26,17 @@ interface TrophyDisplayProps {
     isSpecial?: boolean;
 }
 
+const getRarityClass = (id: string) => {
+    if (id.includes('_5') || id.includes('_4') || id === 'grand_library_crown') return 'legendary';
+    if (id.includes('_3') || id === 'arcane_nebula_scroll' || id === 'eternal_encyclopedia') return 'epic';
+    if (id.includes('_2') || id === 'golden_tome') return 'rare';
+    if (id.includes('_1') || id === 'silver_quill') return 'uncommon';
+    return 'common';
+};
+
 const TrophyDisplay = ({
     title,
+    trophies,
     currentTrophy,
     currentValue,
     valueLabel,
@@ -37,17 +46,19 @@ const TrophyDisplay = ({
     secondaryBonusValue,
     isSpecial,
 }: TrophyDisplayProps) => {
-    // Determine rarity class
-    const getRarityClass = (id: string) => {
-        if (id.includes('_5') || id.includes('_4') || id === 'grand_library_crown') return 'legendary';
-        if (id.includes('_3') || id === 'arcane_nebula_scroll' || id === 'eternal_encyclopedia') return 'epic';
-        if (id.includes('_2') || id === 'golden_tome') return 'rare';
-        if (id.includes('_1') || id === 'silver_quill') return 'uncommon';
-        return 'common';
-    };
+    // Find current & next tier for progress bar
+    const currentIdx = trophies.findIndex(t => t.id === currentTrophy.id);
+    const nextTier = currentIdx < trophies.length - 1 ? trophies[currentIdx + 1] : null;
+    const prevThreshold = currentTrophy.threshold;
+    const nextThreshold = nextTier?.threshold ?? prevThreshold;
+    const progressPct = nextTier
+        ? Math.min(100, Math.round(((currentValue - prevThreshold) / (nextThreshold - prevThreshold)) * 100))
+        : 100;
+
+    const rarity = getRarityClass(currentTrophy.id);
 
     return (
-        <div className={`trophy-card ${getRarityClass(currentTrophy.id)} ${isSpecial ? 'special' : ''}`}>
+        <div className={`trophy-card ${rarity} ${isSpecial ? 'special' : ''}`}>
             <div className="trophy-header">
                 <h4>{title}</h4>
                 <span className="trophy-value">{valueLabel}: {currentValue}</span>
@@ -55,10 +66,7 @@ const TrophyDisplay = ({
 
             <motion.div
                 className="trophy-icon-container"
-                animate={{
-                    scale: [1, 1.05, 1],
-                    rotate: [0, 2, 0, -2, 0],
-                }}
+                animate={{ scale: [1, 1.05, 1], rotate: [0, 2, 0, -2, 0] }}
                 transition={{ duration: 3, repeat: Infinity }}
             >
                 <div className="trophy-glow" />
@@ -69,6 +77,21 @@ const TrophyDisplay = ({
                 <h5 className="trophy-name">{currentTrophy.name}</h5>
                 <p className="trophy-description">{currentTrophy.description}</p>
             </div>
+
+            {/* ── Progress to next tier ── */}
+            {nextTier ? (
+                <div className="trophy-progress-section">
+                    <div className="trophy-progress-bar">
+                        <div className="trophy-progress-fill" style={{ width: `${progressPct}%` }} />
+                    </div>
+                    <div className="trophy-progress-labels">
+                        <span className="trophy-progress-current">{currentValue}/{nextThreshold}</span>
+                        <span className="trophy-next-hint">Next: {nextTier.icon} {nextTier.name}</span>
+                    </div>
+                </div>
+            ) : (
+                <div className="trophy-maxed-badge">✨ MAX TIER</div>
+            )}
 
             {bonusValue > 0 && (
                 <div className="trophy-bonuses">
@@ -161,7 +184,7 @@ export const TrophyHall = () => {
                 <p className="trophy-hall-desc">Your achievements grant permanent stat bonuses</p>
             </div>
 
-            {/* Ultra Rare Cow Special Display */}
+            {/* Ultra Rare Cow */}
             {skillTrophyStore.hasUltraRareCow && (
                 <motion.div
                     className="ultra-rare-cow-banner"
@@ -195,38 +218,14 @@ export const TrophyHall = () => {
             <div className="total-bonuses">
                 <h3>📊 Total Trophy Bonuses</h3>
                 <div className="bonuses-grid">
-                    <div className="bonus-stat">
-                        <span className="stat-label">⚔️ ATK</span>
-                        <span className="stat-value">+{skillTrophyStore.getStrengthATKBonus()}</span>
-                    </div>
-                    <div className="bonus-stat">
-                        <span className="stat-label">🛡️ DEF</span>
-                        <span className="stat-value">+{skillTrophyStore.getSleepDEFBonus()}</span>
-                    </div>
-                    <div className="bonus-stat">
-                        <span className="stat-label">💨 SPD</span>
-                        <span className="stat-value">+{skillTrophyStore.getCardioSPDBonus()}</span>
-                    </div>
-                    <div className="bonus-stat">
-                        <span className="stat-label">🧠 INT</span>
-                        <span className="stat-value">+{bookTrophyStore.getIntelligenceBonus()}</span>
-                    </div>
-                    <div className="bonus-stat">
-                        <span className="stat-label">❤️ HP</span>
-                        <span className="stat-value">+{skillTrophyStore.getSleepHPBonus()}</span>
-                    </div>
-                    <div className="bonus-stat">
-                        <span className="stat-label">💧 MP</span>
-                        <span className="stat-value">+{bookTrophyStore.getMaxMPBonus()}</span>
-                    </div>
-                    <div className="bonus-stat">
-                        <span className="stat-label">🍀 Luck</span>
-                        <span className="stat-value">+{skillTrophyStore.getHousemaidLuckBonus()}</span>
-                    </div>
-                    <div className="bonus-stat">
-                        <span className="stat-label">💥 Crit%</span>
-                        <span className="stat-value">+{skillTrophyStore.getLuckCritBonus()}</span>
-                    </div>
+                    <div className="bonus-stat"><span className="stat-label">⚔️ ATK</span><span className="stat-value">+{skillTrophyStore.getStrengthATKBonus()}</span></div>
+                    <div className="bonus-stat"><span className="stat-label">🛡️ DEF</span><span className="stat-value">+{skillTrophyStore.getSleepDEFBonus()}</span></div>
+                    <div className="bonus-stat"><span className="stat-label">💨 SPD</span><span className="stat-value">+{skillTrophyStore.getCardioSPDBonus()}</span></div>
+                    <div className="bonus-stat"><span className="stat-label">🧠 INT</span><span className="stat-value">+{bookTrophyStore.getIntelligenceBonus()}</span></div>
+                    <div className="bonus-stat"><span className="stat-label">❤️ HP</span><span className="stat-value">+{skillTrophyStore.getSleepHPBonus()}</span></div>
+                    <div className="bonus-stat"><span className="stat-label">💧 MP</span><span className="stat-value">+{bookTrophyStore.getMaxMPBonus()}</span></div>
+                    <div className="bonus-stat"><span className="stat-label">🍀 Luck</span><span className="stat-value">+{skillTrophyStore.getHousemaidLuckBonus()}</span></div>
+                    <div className="bonus-stat"><span className="stat-label">💥 Crit%</span><span className="stat-value">+{skillTrophyStore.getLuckCritBonus()}</span></div>
                 </div>
             </div>
         </div>
