@@ -1,12 +1,12 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import dayjs from 'dayjs';
-import { motion } from 'framer-motion';
-import { Plus, Gift, CheckCircle, Circle, Sun, Sunset, Moon, Star, MinusCircle, Trash2, Pencil, Dices, CalendarDays } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Plus, Gift, CheckCircle, Circle, Sun, Sunset, Moon, Star, MinusCircle, Trash2, Pencil, Dices, CalendarDays, ChevronDown, ChevronUp, GripVertical } from 'lucide-react';
 import { Card } from '../../components/ui';
 import { useGameStore, type SkillName } from '../../store/useGameStore';
 import { safeUUID } from '../../utils/safeUUID';
 
-import { useRecurringTasksStore, type BundleType, DAILY_TASKS_TEMPLATE } from '../../store/useRecurringTasksStore';
+import { useRecurringTasksStore, type BundleType, type TaskCategory, DAILY_TASKS_TEMPLATE } from '../../store/useRecurringTasksStore';
 import { useCalendarStore } from '../../store/useCalendarStore';
 import { WeightInput } from '../../components/WeightInput/WeightInput';
 import { TrainingInput } from './TrainingInput';
@@ -47,15 +47,89 @@ const SKILL_COLORS: Record<SkillName, string> = {
     'Intelligence': '#8b5cf6', // purple
 };
 
+const CATEGORY_CONFIG: Record<TaskCategory, { label: string; color: string; icon: string }> = {
+    health: { label: 'Health', color: '#ef4444', icon: '❤️' },
+    hygiene: { label: 'Hygiene', color: '#06b6d4', icon: '🚿' },
+    fitness: { label: 'Fitness', color: '#22c55e', icon: '💪' },
+    work: { label: 'Work', color: '#64748b', icon: '💼' },
+    lifestyle: { label: 'Lifestyle', color: '#f59e0b', icon: '🏠' },
+};
+
 const BUNDLE_CONFIG: Record<BundleType, { title: string; icon: React.ReactNode; color: string }> = {
     morning: { title: 'Morning Foundation', icon: <Sun size={24} />, color: '#f59e0b' },
     afternoon: { title: 'Afternoon Performance', icon: <Sunset size={24} />, color: '#f97316' },
     night: { title: 'Night Shutdown', icon: <Moon size={24} />, color: '#8b5cf6' },
 };
 
+// ── Radar chart helper: draws a polygon from skill levels ──
+const RADAR_SKILLS: SkillName[] = ['Strength', 'Cardio', 'Health', 'Intelligence', 'Flexibility', 'Habit'];
+const RADAR_COLORS: Record<SkillName, string> = {
+    'Strength': '#ef4444', 'Cardio': '#f59e0b', 'Health': '#f43f5e',
+    'Intelligence': '#8b5cf6', 'Flexibility': '#ec4899', 'Habit': '#f97316',
+    'Sleep': '#8b5cf6', 'Hygiene': '#06b6d4', 'Work': '#64748b',
+    'Social': '#ec4899', 'Luck': '#eab308', 'Housemaid': '#a8a29e',
+};
+
+const RadarChart = ({ skills }: { skills: Record<SkillName, { level: number }> }) => {
+    const size = 160;
+    const center = size / 2;
+    const maxRadius = 60;
+    const levels = RADAR_SKILLS.map(s => skills[s]?.level || 1);
+    const maxLevel = Math.max(...Object.values(skills).map(s => s.level), 5);
+
+    const getPoint = (index: number, value: number) => {
+        const angle = (Math.PI * 2 * index) / RADAR_SKILLS.length - Math.PI / 2;
+        const radius = (value / maxLevel) * maxRadius;
+        return { x: center + radius * Math.cos(angle), y: center + radius * Math.sin(angle) };
+    };
+
+    const polygonPoints = levels.map((lvl, i) => {
+        const pt = getPoint(i, lvl);
+        return `${pt.x},${pt.y}`;
+    }).join(' ');
+
+    return (
+        <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} className="radar-chart-svg">
+            {/* Grid rings */}
+            {[0.25, 0.5, 0.75, 1].map(pct => (
+                <polygon
+                    key={pct}
+                    points={RADAR_SKILLS.map((_, i) => {
+                        const pt = getPoint(i, maxLevel * pct);
+                        return `${pt.x},${pt.y}`;
+                    }).join(' ')}
+                    fill="none"
+                    stroke="rgba(255,255,255,0.08)"
+                    strokeWidth="1"
+                />
+            ))}
+            {/* Axis lines */}
+            {RADAR_SKILLS.map((_, i) => {
+                const pt = getPoint(i, maxLevel);
+                return <line key={i} x1={center} y1={center} x2={pt.x} y2={pt.y} stroke="rgba(255,255,255,0.06)" strokeWidth="1" />;
+            })}
+            {/* Data polygon */}
+            <polygon points={polygonPoints} fill="rgba(163, 230, 53, 0.15)" stroke="#a3e635" strokeWidth="2" />
+            {/* Data dots + labels */}
+            {RADAR_SKILLS.map((skill, i) => {
+                const pt = getPoint(i, levels[i]);
+                const labelPt = getPoint(i, maxLevel + 3);
+                return (
+                    <g key={skill}>
+                        <circle cx={pt.x} cy={pt.y} r="3" fill={RADAR_COLORS[skill]} />
+                        <text x={labelPt.x} y={labelPt.y} textAnchor="middle" dominantBaseline="central" fill="rgba(255,255,255,0.5)" fontSize="8" fontWeight="600">
+                            {SKILL_ICONS[skill]}
+                        </text>
+                    </g>
+                );
+            })}
+        </svg>
+    );
+};
+
 export const TasksPage = () => {
     const navigate = useNavigate();
-    const { skills } = useGameStore();
+    const { skills, getXpProgress } = useGameStore();
 
     const {
         dailyTasks,
@@ -72,6 +146,7 @@ export const TasksPage = () => {
         addCustomRecurringTask,
         removeDailyTask,
         editDailyTask,
+        reorderDailyTasks,
         getTodayWeight,
     } = useRecurringTasksStore();
 
@@ -87,19 +162,25 @@ export const TasksPage = () => {
     const [showWeightInput, setShowWeightInput] = useState(false);
     const [showTrainingInput, setShowTrainingInput] = useState(false);
 
+    // Category filter
+    const [activeCategoryFilter, setActiveCategoryFilter] = useState<TaskCategory | 'all'>('all');
+
+    // Stats dashboard
+    const [showStats, setShowStats] = useState(true);
 
     // Scroll Highlight State
     const [highlightAddTask, setHighlightAddTask] = useState(false);
 
+    // Drag state
+    const dragItem = useRef<{ bundle: BundleType; index: number } | null>(null);
+    const dragOverItem = useRef<{ bundle: BundleType; index: number } | null>(null);
+
     const scrollToAdd = () => {
         const element = document.getElementById('add-task-section');
         if (element) {
-            // Use window scroll if element scroll fails, or ensure container is scrollable
             element.scrollIntoView({ behavior: 'smooth', block: 'center' });
             setHighlightAddTask(true);
             setTimeout(() => setHighlightAddTask(false), 2000);
-        } else {
-            console.error("Target element 'add-task-section' not found");
         }
     };
 
@@ -111,13 +192,12 @@ export const TasksPage = () => {
     // Timer state for re-rendering
     const [, setTick] = useState(0);
     useEffect(() => {
-        const timer = setInterval(() => setTick(t => t + 1), 60000); // Update every minute
+        const timer = setInterval(() => setTick(t => t + 1), 60000);
         return () => clearInterval(timer);
     }, []);
 
     // Calendar Store
     const { addTask: addCalendarTask, tasks: calendarTasks, toggleTask: toggleCalendarTask, deleteTask: deleteCalendarTask } = useCalendarStore();
-    // Use dayjs for correct local date (ISO string is UTC and can be tomorrow)
     const [selectedDate, setSelectedDate] = useState(dayjs().format('YYYY-MM-DD'));
 
     const handleAdd = (e: React.FormEvent) => {
@@ -139,7 +219,6 @@ export const TasksPage = () => {
             };
             addCalendarTask(dayjs().format('YYYY-MM-DD'), newTask);
         } else {
-            // Calendar Day
             const newTask = {
                 id: safeUUID(),
                 text: taskTitle,
@@ -153,14 +232,68 @@ export const TasksPage = () => {
         setTaskTitle('');
     };
 
-
-
-    // Filter Luck out — it cannot be assigned to tasks
+    // Filter Luck out
     const skillNames = (Object.keys(skills) as SkillName[]).filter(s => s !== 'Luck');
+
+    // ── Daily Score ──────────────────────────────────────
+    const dailyScore = useMemo(() => {
+        if (dailyTasks.length === 0) return { pct: 0, grade: 'F', color: '#64748b' };
+        const completed = dailyTasks.filter(t => t.completed).length;
+        const pct = Math.round((completed / dailyTasks.length) * 100);
+        let grade: string;
+        let color: string;
+        if (pct === 100) { grade = 'S'; color = '#fbbf24'; }
+        else if (pct >= 90) { grade = 'A'; color = '#22c55e'; }
+        else if (pct >= 75) { grade = 'B'; color = '#3b82f6'; }
+        else if (pct >= 50) { grade = 'C'; color = '#f59e0b'; }
+        else if (pct >= 25) { grade = 'D'; color = '#f97316'; }
+        else { grade = 'F'; color = '#ef4444'; }
+        return { pct, grade, color };
+    }, [dailyTasks]);
+
+    // ── Active skills with XP progress ───────────────────
+    const activeSkillProgress = useMemo(() => {
+        const skillSet = new Set<SkillName>();
+        dailyTasks.forEach(t => t.rewards.forEach(r => skillSet.add(r.skillId)));
+        return Array.from(skillSet).map(skillName => ({
+            name: skillName,
+            ...getXpProgress(skillName),
+            level: skills[skillName]?.level || 1,
+        }));
+    }, [dailyTasks, skills, getXpProgress]);
+
+    // ── Weekly heatmap (Mon - Sun, 7 days) ───────────────
+    const weeklyHeatmap = useMemo(() => {
+        const today = dayjs();
+        const dayOfWeek = today.day(); // 0=Sun
+        const monday = today.subtract(dayOfWeek === 0 ? 6 : dayOfWeek - 1, 'day');
+        const days = [];
+        for (let i = 0; i < 7; i++) {
+            const date = monday.add(i, 'day');
+            const isToday = date.isSame(today, 'day');
+            const isFuture = date.isAfter(today, 'day');
+            // Use today's live data for current day
+            let pct = 0;
+            if (isToday && dailyTasks.length > 0) {
+                pct = Math.round((dailyTasks.filter(t => t.completed).length / dailyTasks.length) * 100);
+            } else if (!isFuture) {
+                // Past days — no historical data in this store, show as unknown
+                pct = -1; // -1 = no data
+            }
+            days.push({
+                label: date.format('dd')[0], // M, T, W, T, F, S, S
+                date: date.format('MMM D'),
+                pct,
+                isToday,
+                isFuture,
+            });
+        }
+        return days;
+    }, [dailyTasks]);
 
     const getTimeUntilWeeklyReset = () => {
         const now = new Date();
-        const day = now.getDay(); // 0 = Sunday
+        const day = now.getDay();
         const daysUntilSunday = day === 0 ? 0 : 7 - day;
         const target = new Date(now);
         target.setDate(now.getDate() + (daysUntilSunday === 0 ? 7 : daysUntilSunday));
@@ -174,12 +307,33 @@ export const TasksPage = () => {
         return `${days}d ${hours}h ${minutes}m`;
     };
 
+    // ── Drag handlers ────────────────────────────────────
+    const handleDragStart = (bundle: BundleType, index: number) => {
+        dragItem.current = { bundle, index };
+    };
+
+    const handleDragOver = (e: React.DragEvent, bundle: BundleType, index: number) => {
+        e.preventDefault();
+        dragOverItem.current = { bundle, index };
+    };
+
+    const handleDrop = (bundle: BundleType) => {
+        if (dragItem.current && dragOverItem.current && dragItem.current.bundle === bundle) {
+            reorderDailyTasks(bundle, dragItem.current.index, dragOverItem.current.index);
+        }
+        dragItem.current = null;
+        dragOverItem.current = null;
+    };
+
     const renderBundle = (bundleType: BundleType) => {
         const templateIds = new Set(DAILY_TASKS_TEMPLATE.map(t => t.id));
-        const bundleTasksRaw = dailyTasks.filter(t => t.bundle === bundleType);
-        
-        // Hide anything removed from template unless it's a custom task
-        const bundleTasks = bundleTasksRaw.filter(t => templateIds.has(t.id) || t.id.startsWith('custom-'));
+        let bundleTasks = dailyTasks.filter(t => t.bundle === bundleType)
+            .filter(t => templateIds.has(t.id) || t.id.startsWith('custom-'));
+
+        // Apply category filter
+        if (activeCategoryFilter !== 'all') {
+            bundleTasks = bundleTasks.filter(t => t.category === activeCategoryFilter);
+        }
 
         if (bundleTasks.length === 0) return null;
 
@@ -218,76 +372,91 @@ export const TasksPage = () => {
                         )}
                     </div>
 
-                    <div className="recurring-tasks-list">
-                        {bundleTasks.map((task) => (
-                            <div
-                                key={task.id}
-                                className={`recurring-task ${task.completed ? 'completed' : ''}`}
-                                onClick={() => {
-                                    if (!task.completed) {
-                                        if (task.requiresInput === 'weight') {
-                                            // Only open modal if no weight logged today yet
-                                            setShowWeightInput(true);
-                                        } else if (task.requiresInput === 'training') {
-                                            setShowTrainingInput(true);
-                                        } else {
-                                            completeTask(task.id);
+                    <div className="recurring-tasks-list" onDrop={() => handleDrop(bundleType)} onDragOver={(e) => e.preventDefault()}>
+                        {bundleTasks.map((task, idx) => {
+                            const catConfig = task.category ? CATEGORY_CONFIG[task.category] : null;
+                            return (
+                                <div
+                                    key={task.id}
+                                    className={`recurring-task ${task.completed ? 'completed' : ''}`}
+                                    draggable
+                                    onDragStart={() => handleDragStart(bundleType, idx)}
+                                    onDragOver={(e) => handleDragOver(e, bundleType, idx)}
+                                    onClick={() => {
+                                        if (!task.completed) {
+                                            if (task.requiresInput === 'training') {
+                                                setShowTrainingInput(true);
+                                            } else {
+                                                completeTask(task.id);
+                                            }
                                         }
-                                    }
-                                }}
-                            >
-                                <div className="recurring-task__check">
-                                    {task.completed ? (
-                                        <CheckCircle size={24} className="check-done" />
-                                    ) : (
-                                        <Circle size={24} className="check-todo" />
-                                    )}
-                                </div>
-                                <div className="recurring-task__info">
-                                    <span className="recurring-task__title">{task.title}</span>
-                                    {/* Show logged weight inline for Weigh Self when completed */}
-                                    {task.requiresInput === 'weight' && task.completed && todayWeight != null && (
-                                        <span className="weight-logged-badge">⚖️ {todayWeight} lbs</span>
-                                    )}
-                                    <div className="recurring-task__meta">
-                                        {task.rewards.map((reward, idx) => (
-                                            <span
-                                                key={idx}
-                                                className="skill-badge"
-                                                style={{ background: SKILL_COLORS[reward.skillId] }}
-                                            >
-                                                {SKILL_ICONS[reward.skillId]} {reward.skillId} +{reward.xp}
-                                            </span>
-                                        ))}
+                                    }}
+                                >
+                                    <div className="drag-handle" onMouseDown={(e) => e.stopPropagation()}>
+                                        <GripVertical size={16} />
+                                    </div>
+                                    <div className="recurring-task__check">
+                                        {task.completed ? (
+                                            <CheckCircle size={24} className="check-done" />
+                                        ) : (
+                                            <Circle size={24} className="check-todo" />
+                                        )}
+                                    </div>
+                                    <div className="recurring-task__info">
+                                        <div className="recurring-task__title-row">
+                                            <span className="recurring-task__title">{task.title}</span>
+                                            {catConfig && (
+                                                <span
+                                                    className="category-dot"
+                                                    style={{ background: catConfig.color }}
+                                                    title={catConfig.label}
+                                                />
+                                            )}
+                                        </div>
+                                        {/* Show logged weight inline for Weigh Self when completed */}
+                                        {task.requiresInput === 'weight' && task.completed && todayWeight != null && (
+                                            <span className="weight-logged-badge">⚖️ {todayWeight} lbs</span>
+                                        )}
+                                        <div className="recurring-task__meta">
+                                            {task.rewards.map((reward, ridx) => (
+                                                <span
+                                                    key={ridx}
+                                                    className="skill-badge"
+                                                    style={{ background: SKILL_COLORS[reward.skillId] }}
+                                                >
+                                                    {SKILL_ICONS[reward.skillId]} {reward.skillId} +{reward.xp}
+                                                </span>
+                                            ))}
+                                        </div>
+                                    </div>
+                                    <div className="task-action-btns">
+                                        <button
+                                            className="task-edit-btn"
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                const newTitle = prompt('Edit task title:', task.title);
+                                                if (newTitle && newTitle.trim()) {
+                                                    editDailyTask(task.id, newTitle.trim());
+                                                }
+                                            }}
+                                        >
+                                            <Pencil size={16} />
+                                        </button>
+                                        <button
+                                            className="task-delete-btn"
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                if (confirm(`Remove "${task.title}"?`)) {
+                                                    removeDailyTask(task.id);
+                                                }
+                                            }}
+                                        >
+                                            <MinusCircle size={18} />
+                                        </button>
                                     </div>
                                 </div>
-                                <div className="task-action-btns">
-                                    <button
-                                        className="task-edit-btn"
-                                        onClick={(e) => {
-                                            e.stopPropagation();
-                                            const newTitle = prompt('Edit task title:', task.title);
-                                            if (newTitle && newTitle.trim()) {
-                                                editDailyTask(task.id, newTitle.trim());
-                                            }
-                                        }}
-                                    >
-                                        <Pencil size={16} />
-                                    </button>
-                                    <button
-                                        className="task-delete-btn"
-                                        onClick={(e) => {
-                                            e.stopPropagation();
-                                            if (confirm(`Remove "${task.title}"?`)) {
-                                                removeDailyTask(task.id);
-                                            }
-                                        }}
-                                    >
-                                        <MinusCircle size={18} />
-                                    </button>
-                                </div>
-                            </div>
-                        ))}
+                            );
+                        })}
                     </div>
                 </Card>
             </motion.div>
@@ -331,6 +500,114 @@ export const TasksPage = () => {
                         Calendar
                     </button>
                 </motion.div>
+
+                {/* ── Stats Dashboard ── */}
+                <motion.div
+                    className="stats-dashboard"
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                >
+                    <button className="stats-toggle" onClick={() => setShowStats(!showStats)}>
+                        📊 Today's Stats
+                        {showStats ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+                    </button>
+
+                    <AnimatePresence>
+                        {showStats && (
+                            <motion.div
+                                className="stats-widget-grid"
+                                initial={{ height: 0, opacity: 0 }}
+                                animate={{ height: 'auto', opacity: 1 }}
+                                exit={{ height: 0, opacity: 0 }}
+                                transition={{ duration: 0.25 }}
+                            >
+                                {/* Daily Score */}
+                                <div className="stat-widget daily-score-widget">
+                                    <div className="grade-badge" style={{ borderColor: dailyScore.color, color: dailyScore.color }}>
+                                        {dailyScore.grade}
+                                    </div>
+                                    <div className="stat-widget-body">
+                                        <div className="stat-label">Daily Score</div>
+                                        <div className="stat-value" style={{ color: dailyScore.color }}>{dailyScore.pct}%</div>
+                                        <div className="stat-sub">{dailyTasks.filter(t => t.completed).length}/{dailyTasks.length} tasks</div>
+                                    </div>
+                                </div>
+
+                                {/* Weekly Heatmap */}
+                                <div className="stat-widget heatmap-widget">
+                                    <div className="stat-label">This Week</div>
+                                    <div className="heatmap-grid">
+                                        {weeklyHeatmap.map((day, i) => {
+                                            let bg = 'rgba(255,255,255,0.05)';
+                                            if (day.isFuture) bg = 'rgba(255,255,255,0.02)';
+                                            else if (day.pct === -1) bg = 'rgba(255,255,255,0.06)';
+                                            else if (day.pct >= 100) bg = '#22c55e';
+                                            else if (day.pct >= 75) bg = 'rgba(34,197,94,0.7)';
+                                            else if (day.pct >= 50) bg = 'rgba(34,197,94,0.4)';
+                                            else if (day.pct >= 25) bg = 'rgba(34,197,94,0.2)';
+                                            else if (day.pct > 0) bg = 'rgba(34,197,94,0.1)';
+                                            return (
+                                                <div key={i} className={`heatmap-cell ${day.isToday ? 'today' : ''}`} title={`${day.date}: ${day.pct >= 0 ? day.pct + '%' : 'No data'}`}>
+                                                    <div className="heatmap-square" style={{ background: bg }} />
+                                                    <span className="heatmap-label">{day.label}</span>
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                </div>
+
+                                {/* Skill Radar */}
+                                <div className="stat-widget radar-widget">
+                                    <div className="stat-label">Skill Profile</div>
+                                    <RadarChart skills={skills} />
+                                </div>
+
+                                {/* XP Progress Bars */}
+                                <div className="stat-widget xp-bars-widget">
+                                    <div className="stat-label">Active Skills</div>
+                                    <div className="xp-bars-list">
+                                        {activeSkillProgress.slice(0, 6).map(sp => (
+                                            <div key={sp.name} className="xp-bar-row">
+                                                <span className="xp-bar-icon">{SKILL_ICONS[sp.name]}</span>
+                                                <span className="xp-bar-name">Lv.{sp.level}</span>
+                                                <div className="xp-bar-track">
+                                                    <div
+                                                        className="xp-bar-fill"
+                                                        style={{
+                                                            width: `${sp.percentage}%`,
+                                                            background: SKILL_COLORS[sp.name],
+                                                        }}
+                                                    />
+                                                </div>
+                                                <span className="xp-bar-text">{sp.current}/{sp.required}</span>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            </motion.div>
+                        )}
+                    </AnimatePresence>
+                </motion.div>
+
+                {/* ── Category Filter Bar ── */}
+                <div className="category-filter-bar">
+                    <button
+                        className={`category-pill ${activeCategoryFilter === 'all' ? 'active' : ''}`}
+                        onClick={() => setActiveCategoryFilter('all')}
+                    >
+                        All
+                    </button>
+                    {(Object.keys(CATEGORY_CONFIG) as TaskCategory[]).map(cat => (
+                        <button
+                            key={cat}
+                            className={`category-pill ${activeCategoryFilter === cat ? 'active' : ''}`}
+                            style={{ '--cat-color': CATEGORY_CONFIG[cat].color } as React.CSSProperties}
+                            onClick={() => setActiveCategoryFilter(activeCategoryFilter === cat ? 'all' : cat)}
+                        >
+                            {CATEGORY_CONFIG[cat].icon} {CATEGORY_CONFIG[cat].label}
+                        </button>
+                    ))}
+                </div>
 
                 {/* Add Task Shortcut */}
                 <div className="tasks-add-shortcut-row">
@@ -540,8 +817,6 @@ export const TasksPage = () => {
                     onClose={() => setShowTrainingInput(false)}
                     onSubmit={(selections) => completeTask('training_session', { trainingSelections: selections })}
                 />
-
-                {/* Skills moved to Stats tab */}
 
                 {/* Daily Chest */}
                 <motion.div

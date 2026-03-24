@@ -73,6 +73,12 @@ export const CONQUEST_MAP_NODES: ConquestNodeData[] = [
 ];
 
 // ─── CONQUEST ENEMY TYPES ───────────────────────────────────────────────────
+export type ConquestElement = 'fire' | 'ice' | 'shadow' | 'nature' | 'neutral';
+
+export const CONQUEST_ELEMENT_ICONS: Record<ConquestElement, string> = {
+    fire: '🔥', ice: '❄️', shadow: '🌑', nature: '🌿', neutral: '⚪',
+};
+
 export interface ConquestEnemyDef {
     id: string;
     name: string;
@@ -82,6 +88,7 @@ export interface ConquestEnemyDef {
     atkMod: number;
     defMod: number;
     hpMod: number;
+    element: ConquestElement;
     special?: string;
     tiers: number[]; // which tiers this can appear in
 }
@@ -90,49 +97,63 @@ export const CONQUEST_ENEMIES: ConquestEnemyDef[] = [
     {
         id: 'ash_crawler', name: 'Ash Crawler', icon: '🦂', tiers: [1, 2],
         description: 'Fast low-defense creature that attacks quickly. Early encounter enemy.',
-        atkMod: 1.1, defMod: 0.7, hpMod: 0.75, special: 'Attacks twice per turn',
+        atkMod: 1.1, defMod: 0.7, hpMod: 0.75, element: 'fire', special: 'attacks_twice',
     },
     {
         id: 'sigil_leech', name: 'Sigil Leech', icon: '🩸', tiers: [2, 3],
         description: 'Steals one random resource when attacking. If defeated quickly, stolen resources are returned.',
-        atkMod: 0.9, defMod: 0.85, hpMod: 0.9, special: 'Steals Sigils on hit',
+        atkMod: 0.9, defMod: 0.85, hpMod: 0.9, element: 'shadow', special: 'steals_sigils',
     },
     {
         id: 'iron_husk', name: 'Iron Husk', icon: '🛡️', tiers: [1, 2, 3],
         description: 'High defense but low attack. A slow durable enemy.',
-        atkMod: 0.7, defMod: 1.5, hpMod: 1.2, special: 'Very high DEF',
+        atkMod: 0.7, defMod: 1.5, hpMod: 1.2, element: 'neutral', special: 'very_high_def',
     },
     {
         id: 'balloon_goblin', name: 'Balloon Goblin', icon: '🎈', tiers: [3, 4],
         description: 'Fast attacker that has a chance to drop extra Balloons.',
-        atkMod: 1.0, defMod: 0.8, hpMod: 0.85, special: 'Drops Balloons on defeat',
+        atkMod: 1.0, defMod: 0.8, hpMod: 0.85, element: 'nature', special: 'drops_balloons',
     },
     {
         id: 'gem_cultist', name: 'Gem Cultist', icon: '💎', tiers: [4, 5],
         description: 'Balanced enemy that always drops a Gem when defeated.',
-        atkMod: 1.0, defMod: 1.0, hpMod: 1.0, special: 'Always drops 1 Gem',
+        atkMod: 1.0, defMod: 1.0, hpMod: 1.0, element: 'ice', special: 'drops_gem',
     },
     {
         id: 'mirror_shade', name: 'Mirror Shade', icon: '🪞', tiers: [5, 6],
         description: 'Copies a percentage of the player\'s attack stat each turn.',
-        atkMod: 0.5, defMod: 0.9, hpMod: 1.1, special: 'Mirrors +20% player ATK each turn',
+        atkMod: 0.5, defMod: 0.9, hpMod: 1.1, element: 'shadow', special: 'mirrors_atk',
     },
     {
         id: 'ruin_knight', name: 'Ruin Knight', icon: '⚔️', tiers: [6, 7],
         description: 'Late-run heavy enemy with high HP and increasing attack.',
-        atkMod: 1.2, defMod: 1.1, hpMod: 1.4, special: 'ATK increases each round',
+        atkMod: 1.2, defMod: 1.1, hpMod: 1.4, element: 'fire', special: 'atk_increases',
     },
     {
         id: 'crystal_warden', name: 'Crystal Warden', icon: '🔮', tiers: [7],
         description: 'Mini-boss enemy encountered near the end of the run.',
-        atkMod: 1.3, defMod: 1.2, hpMod: 1.5,
+        atkMod: 1.3, defMod: 1.2, hpMod: 1.5, element: 'ice',
     },
     {
         id: 'the_pathkeeper', name: 'The Pathkeeper', icon: '💀', tiers: [8],
-        description: 'A massive guardian of the Conquest path. Base stats scale with the player\'s level. Additional scaling from Treasure Vaults completed.',
-        atkMod: 1.6, defMod: 1.4, hpMod: 2.0,
+        description: 'A massive guardian of the Conquest path. Scaling from Treasure Vaults completed.',
+        atkMod: 1.6, defMod: 1.4, hpMod: 2.0, element: 'shadow',
+    },
+    {
+        id: 'the_dreadwyrm', name: 'The Dreadwyrm', icon: '🐉', tiers: [8],
+        description: 'An ancient dragon wreathed in flame. Burns attackers who strike too slowly.',
+        atkMod: 1.8, defMod: 1.2, hpMod: 1.8, element: 'fire', special: 'atk_increases',
+    },
+    {
+        id: 'the_voidweaver', name: 'The Voidweaver', icon: '🕸️', tiers: [8],
+        description: 'A spectral entity that mirrors the hero\'s power. The stronger you are, the stronger it becomes.',
+        atkMod: 1.4, defMod: 1.3, hpMod: 2.2, element: 'ice', special: 'mirrors_atk',
     },
 ];
+
+/** Pool of boss enemies — one is randomly assigned per run */
+export const CONQUEST_BOSS_POOL: ConquestEnemyDef[] =
+    CONQUEST_ENEMIES.filter(e => e.tiers.includes(8));
 
 /** Get the right enemies for a given tier (excluding boss) */
 export function getEnemiesForTier(tier: number): ConquestEnemyDef[] {

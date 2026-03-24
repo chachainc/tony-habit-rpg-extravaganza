@@ -652,3 +652,372 @@
     50% { border-color: rgba(239, 68, 68, 1); }
     100% { border-color: rgba(239, 68, 68, 0.4); }
 }
+
+/* ─── Wave Progress Bar ──────────────────────── */
+.td-wave-progress {
+    position: relative;
+    height: 20px;
+    background: rgba(15, 20, 35, 0.95);
+    border-bottom: 1px solid rgba(139, 92, 246, 0.15);
+    flex-shrink: 0;
+}
+
+.td-wave-progress-bar {
+    height: 100%;
+    background: linear-gradient(90deg, #7c3aed, #6366f1, #818cf8);
+    transition: width 0.3s ease-out;
+    border-radius: 0 4px 4px 0;
+}
+
+.td-wave-progress-label {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.65rem;
+    font-weight: 700;
+    color: #e2e8f0;
+    text-shadow: 0 1px 2px rgba(0,0,0,0.8);
+    letter-spacing: 0.5px;
+}
+
+/* ─── Speed Toggle ──────────────────────── */
+.td-speed-btn {
+    cursor: pointer;
+    border: none;
+    font-weight: 800;
+    display: flex;
+    align-items: center;
+    gap: 0.2rem;
+    transition: background 0.2s, color 0.2s;
+}
+
+.td-speed-btn.speed-1x { color: #94a3b8; }
+.td-speed-btn.speed-2x { color: #fbbf24; border-color: rgba(251, 191, 36, 0.3) !important; background: rgba(251, 191, 36, 0.1) !important; }
+.td-speed-btn.speed-3x { color: #f87171; border-color: rgba(248, 113, 113, 0.3) !important; background: rgba(248, 113, 113, 0.1) !important; }
+
+/* ─── Boss Health Bar ──────────────────────── */
+.td-boss-bar {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.3rem 0.75rem;
+    background: linear-gradient(135deg, rgba(127, 29, 29, 0.95), rgba(153, 27, 27, 0.9));
+    border-bottom: 2px solid #dc2626;
+    flex-shrink: 0;
+    animation: bossBarPulse 2s ease-in-out infinite;
+}
+
+@keyframes bossBarPulse {
+    0%, 100% { box-shadow: 0 2px 12px rgba(220, 38, 38, 0.3); }
+    50% { box-shadow: 0 2px 20px rgba(220, 38, 38, 0.6); }
+}
+
+.td-boss-bar-info {
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+    flex-shrink: 0;
+}
+
+.td-boss-icon { font-size: 1.2rem; }
+.td-boss-name {
+    font-weight: 800;
+    font-size: 0.8rem;
+    color: #fca5a5;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.td-boss-bar-track {
+    flex: 1;
+    height: 10px;
+    background: rgba(0, 0, 0, 0.5);
+    border-radius: 5px;
+    overflow: hidden;
+}
+
+.td-boss-bar-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #ef4444, #f97316);
+    transition: width 0.15s;
+    border-radius: 5px;
+}
+
+.td-boss-hp {
+    font-size: 0.7rem;
+    font-weight: 700;
+    color: #fecaca;
+    flex-shrink: 0;
+    min-width: 60px;
+    text-align: right;
+}
+
+/* ─── Tower Specialization Branches ──────────── */
+.td-spec-branches {
+    margin-bottom: 0.75rem;
+}
+
+.td-spec-title {
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: #fbbf24;
+    margin-bottom: 0.4rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.td-spec-row {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.td-spec-btn {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.2rem;
+    padding: 0.5rem;
+    background: rgba(99, 102, 241, 0.15);
+    border: 1px solid rgba(99, 102, 241, 0.3);
+    border-radius: 10px;
+    color: #e2e8f0;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.td-spec-btn:hover {
+    background: rgba(99, 102, 241, 0.3);
+    border-color: rgba(99, 102, 241, 0.6);
+    transform: translateY(-2px);
+}
+
+.td-spec-icon { font-size: 1.3rem; }
+.td-spec-name { font-weight: 800; font-size: 0.75rem; }
+.td-spec-desc { font-size: 0.6rem; color: #94a3b8; text-align: center; line-height: 1.2; }
+
+.tower-spec-badge {
+    position: absolute;
+    top: -4px;
+    left: -4px;
+    background: #7c3aed;
+    color: #fff;
+    font-size: 0.45rem;
+    font-weight: 900;
+    padding: 1px 3px;
+    border-radius: 3px;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    z-index: 10;
+}
+
+.spec-badge-inline {
+    color: #c084fc;
+    font-weight: 700;
+}
+
+/* ─── Burning Enemies ──────────────────────── */
+.td-entity.enemy.burning {
+    filter: drop-shadow(0 0 6px rgba(239, 68, 68, 0.8)) brightness(1.1);
+}
+
+.td-entity.enemy.burning::after {
+    content: '🔥';
+    position: absolute;
+    top: -6px;
+    right: -4px;
+    font-size: 0.5rem;
+    animation: burnFloat 0.6s ease-in-out infinite alternate;
+}
+
+@keyframes burnFloat {
+    0% { transform: translateY(0); opacity: 0.7; }
+    100% { transform: translateY(-3px); opacity: 1; }
+}
+
+/* Splash projectiles — slightly bigger */
+.td-projectile.splash {
+    width: 14px;
+    height: 14px;
+    box-shadow: 0 0 10px 4px currentColor, 0 0 20px 6px rgba(255,255,255,0.2);
+}
+
+/* ─── Stats Modal ──────────────────────── */
+.td-stats-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 200;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0, 0, 0, 0.7);
+    backdrop-filter: blur(4px);
+}
+
+.td-stats-modal {
+    width: 90%;
+    max-width: 380px;
+    background: rgba(15, 23, 42, 0.98);
+    border-radius: 16px;
+    padding: 1.5rem;
+    border: 2px solid rgba(99, 102, 241, 0.4);
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
+    animation: statsSlideIn 0.3s ease-out;
+}
+
+@keyframes statsSlideIn {
+    from { transform: scale(0.9) translateY(20px); opacity: 0; }
+    to { transform: scale(1) translateY(0); opacity: 1; }
+}
+
+.td-stats-modal.defeat { border-color: rgba(239, 68, 68, 0.5); }
+.td-stats-modal.victory { border-color: rgba(34, 197, 94, 0.4); }
+
+.td-stats-header {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 1.25rem;
+}
+
+.td-stats-header h2 {
+    margin: 0;
+    font-size: 1.3rem;
+    font-weight: 900;
+}
+
+.td-stats-modal.defeat .td-stats-header { color: #f87171; }
+.td-stats-modal.victory .td-stats-header { color: #4ade80; }
+
+.td-stats-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0.75rem;
+    margin-bottom: 1.25rem;
+}
+
+.td-stat-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.15rem;
+    padding: 0.6rem 0.4rem;
+    background: rgba(30, 41, 59, 0.6);
+    border-radius: 10px;
+    border: 1px solid rgba(71, 85, 105, 0.3);
+}
+
+.td-stat-icon { font-size: 1rem; color: #94a3b8; }
+.td-stat-val { font-size: 1.1rem; font-weight: 900; color: #f1f5f9; }
+.td-stat-label { font-size: 0.6rem; color: #64748b; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
+
+.td-stats-actions {
+    display: flex;
+    justify-content: center;
+    gap: 0.75rem;
+}
+
+.td-stats-btn {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.6rem 1.5rem;
+    border: none;
+    border-radius: 10px;
+    font-weight: 800;
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: transform 0.1s;
+}
+
+.td-stats-btn:active { transform: scale(0.95); }
+
+.td-stats-btn.primary {
+    background: linear-gradient(135deg, #7c3aed, #4f46e5);
+    color: white;
+    box-shadow: 0 4px 12px rgba(99, 102, 241, 0.4);
+}
+
+.td-stats-btn.danger {
+    background: linear-gradient(135deg, #dc2626, #b91c1c);
+    color: white;
+    box-shadow: 0 4px 12px rgba(220, 38, 38, 0.4);
+}
+
+/* ─── Drag cell highlight ──────────────────────── */
+.td-cell.drag-valid {
+    background: rgba(34, 197, 94, 0.2) !important;
+    border: 1px solid rgba(34, 197, 94, 0.6) !important;
+}
+
+.td-cell.drag-invalid {
+    background: rgba(239, 68, 68, 0.15) !important;
+    border: 1px solid rgba(239, 68, 68, 0.4) !important;
+}
+
+/* ─── Floating Damage Popups ──────────────────────── */
+.td-damage-popup {
+    position: absolute;
+    z-index: 50;
+    pointer-events: none;
+    font-size: 0.7rem;
+    font-weight: 900;
+    color: #4ade80;
+    text-shadow: 0 1px 3px rgba(0,0,0,0.9), 0 0 6px rgba(74, 222, 128, 0.4);
+    white-space: nowrap;
+    animation: dmgPopIn 0.15s ease-out;
+}
+
+.td-damage-popup.crit {
+    font-size: 0.9rem;
+    color: #fbbf24;
+    text-shadow: 0 1px 4px rgba(0,0,0,0.9), 0 0 10px rgba(251, 191, 36, 0.5);
+}
+
+@keyframes dmgPopIn {
+    from { transform: translate(-50%, 0) scale(0.5); }
+    to { transform: translate(-50%, 0) scale(1); }
+}
+
+/* ─── Elite Enemy Variant ──────────────────────── */
+.td-entity.enemy.elite {
+    filter: drop-shadow(0 0 6px rgba(239, 68, 68, 0.7));
+    animation: eliteGlow 1.5s ease-in-out infinite;
+}
+
+@keyframes eliteGlow {
+    0%, 100% { filter: drop-shadow(0 0 4px rgba(239, 68, 68, 0.5)); }
+    50% { filter: drop-shadow(0 0 10px rgba(239, 68, 68, 0.9)); }
+}
+
+.td-entity.enemy.elite .enemy-hp-bar-fill {
+    background: linear-gradient(90deg, #ef4444, #f97316) !important;
+}
+
+.elite-badge {
+    position: absolute;
+    top: -4px;
+    right: -2px;
+    font-size: 0.5rem;
+    z-index: 3;
+    filter: drop-shadow(0 1px 2px rgba(0,0,0,0.8));
+}
+
+/* ─── Screen Shake on Boss Death ──────────────────────── */
+.td-battlefield.screen-shake {
+    animation: tdScreenShake 0.4s ease-out;
+}
+
+@keyframes tdScreenShake {
+    0%, 100% { transform: translate(0, 0); }
+    10% { transform: translate(-4px, 2px); }
+    20% { transform: translate(4px, -2px); }
+    30% { transform: translate(-3px, -3px); }
+    40% { transform: translate(3px, 3px); }
+    50% { transform: translate(-2px, 1px); }
+    60% { transform: translate(2px, -1px); }
+    70% { transform: translate(-1px, 2px); }
+    80% { transform: translate(1px, -1px); }
+}

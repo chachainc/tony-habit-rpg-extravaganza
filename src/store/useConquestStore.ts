@@ -1,7 +1,8 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { useStrategyStore } from './useStrategyStore';
-import { CONQUEST_MAP_NODES, type ConquestNodeData } from '../data/conquest';
+import { CONQUEST_MAP_NODES, CONQUEST_ARTIFACTS, CONQUEST_BOSS_POOL, type ConquestNodeData } from '../data/conquest';
+import { generateConquestMap } from '../data/conquestMapGen';
 import { PERSIST_REGISTRY } from '../data/persistRegistry';
 
 
@@ -45,10 +46,12 @@ export interface ConquestState {
 
     // Conquest Map (Phase 1)
     act: number;
-    diceRolls: number; // Available to spend
-    activeDiceRoll: number | null; // The current face value rolled (1-6) waiting for a map choice
+    diceRolls: number;
+    activeDiceRoll: number | null;
     currentNodeId: string | null;
     completedNodes: string[];
+    generatedMap: ConquestNodeData[];
+    mapSeed: number;
 
     // Soldiers (Kept for Shop compatibility)
     soldiers: Soldier[];
@@ -85,10 +88,35 @@ export interface ConquestState {
     runArtifacts: string[];   // artifact IDs active this run
     runRelics: string[];      // relic IDs purchased this run
     rewardAmplifierActive: boolean;
+    activeConquestEnemyId: string | null; // tracks which conquest enemy is being fought
+    runBossId: string | null; // which boss was selected for this run
+
+    // Run Stats
+    runStats: {
+        enemiesDefeated: number;
+        nodesVisited: number;
+        totalDamageDealt: number;
+        totalDamageTaken: number;
+        itemsFound: number;
+    };
 
     // Meta Progression
     runsCompleted: number;
     bestFloor: number;
+    metaUpgrades: {
+        maxHpBonus: number;       // +10 per level
+        startingAtkBonus: number; // +5% per level
+        extraRunTickets: number;  // purchased ticket levels
+    };
+    runHistory: Array<{
+        date: string;
+        result: 'victory' | 'defeat';
+        floor: number;
+        enemiesDefeated: number;
+        nodesVisited: number;
+        bossName: string;
+    }>;
+    dailyTickets: number;
 
     // Run Actions
     startRun: () => void;
@@ -107,6 +135,24 @@ export interface ConquestState {
     addRunRelic: (id: string) => void;
     activateRewardAmplifier: () => void;
     getVaultScaledBossMultiplier: () => number;
+    setActiveConquestEnemy: (id: string | null) => void;
+    trackDamageDealt: (amount: number) => void;
+    trackDamageTaken: (amount: number) => void;
+    incrementEnemiesDefeated: () => void;
+    incrementItemsFound: () => void;
+
+    // Artifact effects
+    getArtifactEffects: () => {
+        goldBonusPct: number;
+        gemOnNextKill: boolean;
+        doubleResourceChance: number;
+    };
+
+    // Meta-shop actions
+    buyMetaMaxHp: () => boolean;
+    buyMetaAtk: () => boolean;
+    buyMetaTicket: () => boolean;
+    useRunTicket: () => boolean;
 
     // Memory Log
     memoryLog: MemoryLog;
@@ -243,6 +289,8 @@ export const useConquestStore = create<ConquestState>()(
             activeDiceRoll: null,
             currentNodeId: null,
             completedNodes: [],
+            generatedMap: [],
+            mapSeed: 0,
 
             soldiers: [],
             maxTeamSize: 1,
@@ -275,10 +323,28 @@ export const useConquestStore = create<ConquestState>()(
             runArtifacts: [],
             runRelics: [],
             rewardAmplifierActive: false,
+            activeConquestEnemyId: null,
+            runBossId: null,
+
+            // Run Stats
+            runStats: {
+                enemiesDefeated: 0,
+                nodesVisited: 0,
+                totalDamageDealt: 0,
+                totalDamageTaken: 0,
+                itemsFound: 0,
+            },
 
             // Meta
             runsCompleted: 0,
             bestFloor: 0,
+            metaUpgrades: {
+                maxHpBonus: 0,
+                startingAtkBonus: 0,
+                extraRunTickets: 0,
+            },
+            runHistory: [],
+            dailyTickets: 0,
 
             addSigils: (amount) => set(s => ({ sigils: s.sigils + amount })),
 
@@ -306,23 +372,25 @@ export const useConquestStore = create<ConquestState>()(
 
             getReachableNodes: () => {
                 const state = get();
-                return findExactDistanceNodes(state.currentNodeId, 1, CONQUEST_MAP_NODES);
+                const mapNodes = state.generatedMap.length > 0 ? state.generatedMap : CONQUEST_MAP_NODES;
+                return findExactDistanceNodes(state.currentNodeId, 1, mapNodes);
             },
             
             isDailyRunLocked: () => {
                 const state = get();
                 if (!state.lastRunDate) return false;
-
-                // Compare using the same ISO YYYY-MM-DD format that completeRun() writes
                 const todayISO = new Date().toISOString().split('T')[0];
-                return state.lastRunDate === todayISO;
+                if (state.lastRunDate !== todayISO) return false;
+                // If player has tickets, they can bypass the lock
+                if (state.dailyTickets > 0) return false;
+                return true;
             },
 
             movePlayer: (nodeId: string) => {
                 const state = get();
                 if (!state.completedNodes.includes(nodeId)) {
-                    // Find node to get its tier
-                    const nodeDef = CONQUEST_MAP_NODES.find(n => n.id === nodeId);
+                    const mapNodes = state.generatedMap.length > 0 ? state.generatedMap : CONQUEST_MAP_NODES;
+                    const nodeDef = mapNodes.find(n => n.id === nodeId);
                     const newFloor = nodeDef ? nodeDef.tier : state.runFloor;
                     const newBestFloor = Math.max(state.bestFloor, newFloor);
 
@@ -337,24 +405,47 @@ export const useConquestStore = create<ConquestState>()(
             },
 
             grantSpireReward: (gold: number, sigils: number, gems: number = 0) => {
-                // Apply strict reward caps
-                const cappedGold = Math.min(gold, 25);
-                const cappedSigils = Math.min(sigils, 3);
-                // Also capping gems just in case they are generated somewhere and misused
-                const cappedGems = Math.min(gems, 3);
+                // Apply artifact bonuses
+                const effects = get().getArtifactEffects();
+                const amplifier = get().rewardAmplifierActive ? 1 : 0;
+                
+                let finalGold = gold;
+                let finalSigils = sigils + amplifier;
+                let finalGems = gems + amplifier;
 
-                if (cappedGold > 0) {
+                // Gold bonus from Merchant's Coin artifact
+                if (effects.goldBonusPct > 0) {
+                    finalGold = Math.floor(finalGold * (1 + effects.goldBonusPct / 100));
+                }
+
+                // Double resource chance from Amplifier Sigil artifact
+                if (effects.doubleResourceChance > 0 && Math.random() < effects.doubleResourceChance / 100) {
+                    finalGold *= 2;
+                    finalSigils *= 2;
+                    finalGems *= 2;
+                }
+
+                if (finalGold > 0) {
                     import('./useCurrencyStore').then(({ useCurrencyStore }) => {
-                        useCurrencyStore.getState().addGold(cappedGold);
+                        useCurrencyStore.getState().addGold(finalGold);
                     }).catch(() => { });
                 }
-                if (cappedGems > 0) {
+                if (finalGems > 0) {
                     import('./useGameStore').then(({ useGameStore }) => {
-                        useGameStore.getState().addGems(cappedGems);
+                        useGameStore.getState().addGems(finalGems);
                     }).catch(() => { });
                 }
-                if (cappedSigils > 0) {
-                    get().addSigils(cappedSigils);
+                if (finalSigils > 0) {
+                    get().addSigils(finalSigils);
+                }
+
+                // Gem on next kill artifact (consumed after one use)
+                if (effects.gemOnNextKill) {
+                    import('./useGameStore').then(({ useGameStore }) => {
+                        useGameStore.getState().addGems(1);
+                    }).catch(() => { });
+                    // Remove the artifact from this run
+                    set(s => ({ runArtifacts: s.runArtifacts.filter(a => a !== 'art_gem_kill') }));
                 }
 
                 // 25% chance to drop a Risk card as connective progression
@@ -369,24 +460,53 @@ export const useConquestStore = create<ConquestState>()(
 
             // ─── RUN ACTIONS ───
             startRun: () => {
-                // NOTE: We do NOT stamp lastRunDate here — the date is only committed
-                // after the run ends (victory or defeat) in completeRun().
-                // This means visiting Conquest on a fresh profile is always unlocked.
+                const state = get();
+                
+                // If locked, consume a ticket
+                const todayISO = new Date().toISOString().split('T')[0];
+                if (state.lastRunDate === todayISO && state.dailyTickets > 0) {
+                    set(s => ({ dailyTickets: s.dailyTickets - 1 }));
+                }
+
+                // Apply meta upgrades
+                const baseMaxHP = 100 + state.metaUpgrades.maxHpBonus;
+
+                // Pick a random boss for this run
+                const bossPool = CONQUEST_BOSS_POOL;
+                const runBoss = bossPool[Math.floor(Math.random() * bossPool.length)];
+
+                // Generate a procedural map
+                const seed = Date.now();
+                const map = generateConquestMap(state.act, seed, runBoss.id);
+
                 set({
-                    runHP: get().runMaxHP,
+                    runHP: baseMaxHP,
+                    runMaxHP: baseMaxHP,
                     runFloor: 0,
-                    runBuffs: [],
+                    runBuffs: state.metaUpgrades.startingAtkBonus > 0
+                        ? [{ id: 'meta_atk', type: 'strength' as const, label: `Meta ATK: +${state.metaUpgrades.startingAtkBonus * 5}%`, amount: state.metaUpgrades.startingAtkBonus * 5 }]
+                        : [],
                     runComplete: 'none',
                     currentNodeId: 'start',
                     completedNodes: ['start'],
                     activeDiceRoll: null,
-                    // Reset new run fields
+                    generatedMap: map,
+                    mapSeed: seed,
+                    runBossId: runBoss.id,
                     balloons: 0,
                     shmeckles: 0,
                     treasureVaultsCompleted: 0,
                     runArtifacts: [],
                     runRelics: [],
                     rewardAmplifierActive: false,
+                    activeConquestEnemyId: null,
+                    runStats: {
+                        enemiesDefeated: 0,
+                        nodesVisited: 0,
+                        totalDamageDealt: 0,
+                        totalDamageTaken: 0,
+                        itemsFound: 0,
+                    },
                 });
             },
 
@@ -433,18 +553,82 @@ export const useConquestStore = create<ConquestState>()(
 
             completeRun: (victory: boolean) => {
                 const state = get();
-                // Always stamp today's date on run completion (both victory AND defeat)
-                // so the daily lock fires correctly after any run ends.
                 const today = new Date().toISOString().split('T')[0];
+                
+                // Get boss name for history
+                const bossEnemy = CONQUEST_BOSS_POOL.find(b => b.id === state.runBossId);
+                const bossName = bossEnemy?.name ?? 'Unknown';
+
+                const historyEntry = {
+                    date: today,
+                    result: (victory ? 'victory' : 'defeat') as 'victory' | 'defeat',
+                    floor: state.runFloor,
+                    enemiesDefeated: state.runStats.enemiesDefeated,
+                    nodesVisited: state.runStats.nodesVisited,
+                    bossName,
+                };
+
                 set({ 
                     runComplete: victory ? 'victory' : 'defeat',
                     runsCompleted: victory ? state.runsCompleted + 1 : state.runsCompleted,
                     lastRunDate: today,
+                    runHistory: [historyEntry, ...state.runHistory].slice(0, 20), // Keep last 20
                 });
             },
 
             resetRun: () => {
                 get().startRun();
+            },
+
+            // ─── ARTIFACT EFFECTS ───
+            getArtifactEffects: () => {
+                const artifacts = get().runArtifacts;
+                let goldBonusPct = 0;
+                let gemOnNextKill = false;
+                let doubleResourceChance = 0;
+
+                for (const artId of artifacts) {
+                    const def = CONQUEST_ARTIFACTS.find(a => a.id === artId);
+                    if (!def) continue;
+                    switch (def.effect) {
+                        case 'gold_bonus_10pct': goldBonusPct += 10; break;
+                        case 'gem_on_next_kill': gemOnNextKill = true; break;
+                        case 'double_resource_5pct': doubleResourceChance += 5; break;
+                    }
+                }
+                return { goldBonusPct, gemOnNextKill, doubleResourceChance };
+            },
+
+            // ─── RUN TRACKING ───
+            setActiveConquestEnemy: (id) => set({ activeConquestEnemyId: id }),
+            trackDamageDealt: (amount) => set(s => ({ runStats: { ...s.runStats, totalDamageDealt: s.runStats.totalDamageDealt + amount } })),
+            trackDamageTaken: (amount) => set(s => ({ runStats: { ...s.runStats, totalDamageTaken: s.runStats.totalDamageTaken + amount } })),
+            incrementEnemiesDefeated: () => set(s => ({ runStats: { ...s.runStats, enemiesDefeated: s.runStats.enemiesDefeated + 1 } })),
+            incrementItemsFound: () => set(s => ({ runStats: { ...s.runStats, itemsFound: s.runStats.itemsFound + 1 } })),
+
+            // ─── META-SHOP ───
+            buyMetaMaxHp: () => {
+                const cost = (get().metaUpgrades.maxHpBonus / 10 + 1) * 50; // 50, 100, 150...
+                if (!get().spendSigils(cost)) return false;
+                set(s => ({ metaUpgrades: { ...s.metaUpgrades, maxHpBonus: s.metaUpgrades.maxHpBonus + 10 } }));
+                return true;
+            },
+            buyMetaAtk: () => {
+                const cost = (get().metaUpgrades.startingAtkBonus + 1) * 75; // 75, 150, 225...
+                if (!get().spendSigils(cost)) return false;
+                set(s => ({ metaUpgrades: { ...s.metaUpgrades, startingAtkBonus: s.metaUpgrades.startingAtkBonus + 1 } }));
+                return true;
+            },
+            buyMetaTicket: () => {
+                const cost = 100;
+                if (!get().spendSigils(cost)) return false;
+                set(s => ({ dailyTickets: s.dailyTickets + 1 }));
+                return true;
+            },
+            useRunTicket: () => {
+                if (get().dailyTickets <= 0) return false;
+                set(s => ({ dailyTickets: s.dailyTickets - 1 }));
+                return true;
             },
 
             recruitSoldier: (name, role) => {

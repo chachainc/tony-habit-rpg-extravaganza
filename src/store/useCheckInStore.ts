@@ -43,20 +43,20 @@ export interface CheckInReward {
 
 // Returns the reward for a given absolute streak count (1-indexed)
 export function getStreakReward(streakCount: number): CheckInReward {
-    // Week 5+ (day 29+): 500 gold, 20 tickets, +5 gems every 7 days
+    // Week 5+ (day 29+): 200 gold (capped), 20 tickets, +5 gems every 7 days
     if (streakCount >= 29) {
         return {
-            gold: 500,
+            gold: 200,
             dailyTickets: 20,
             gems: streakCount % 7 === 0 ? 5 : 0,
         };
     }
     // Day 28 milestone
-    if (streakCount === 28) return { gold: 500, dailyTickets: 15, gems: 5 };
+    if (streakCount === 28) return { gold: 300, dailyTickets: 15, gems: 5 };
     // Days 22-27
     if (streakCount >= 22) return { gold: 200, dailyTickets: 15 };
     // Day 21 milestone (3-week)
-    if (streakCount === 21) return { gold: 500, dailyTickets: 20, gems: 5 };
+    if (streakCount === 21) return { gold: 300, dailyTickets: 20, gems: 5 };
     // Days 15-20
     if (streakCount >= 15) return { gold: 200, dailyTickets: 15 };
     // Day 14 milestone

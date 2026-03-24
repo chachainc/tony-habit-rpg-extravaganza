@@ -5,11 +5,50 @@ import { safeUUID } from '../utils/safeUUID';
 
 export type GiftCurrency = 'shmeckles' | 'balloons' | 'sigils';
 
+// ── Spending Categories ──
+export type BudgetCategory = 'food' | 'fun' | 'bills' | 'shopping' | 'coffee' | 'transport' | 'health' | 'other';
+
+export const BUDGET_CATEGORIES: Record<BudgetCategory, { emoji: string; label: string; color: string }> = {
+    food:      { emoji: '🍕', label: 'Food',      color: '#f97316' },
+    coffee:    { emoji: '☕', label: 'Coffee',    color: '#92400e' },
+    fun:       { emoji: '🎮', label: 'Fun',       color: '#a855f7' },
+    bills:     { emoji: '🏠', label: 'Bills',     color: '#3b82f6' },
+    shopping:  { emoji: '🛒', label: 'Shopping',  color: '#22c55e' },
+    transport: { emoji: '🚗', label: 'Transport', color: '#64748b' },
+    health:    { emoji: '💊', label: 'Health',     color: '#ef4444' },
+    other:     { emoji: '📦', label: 'Other',     color: '#6b7280' },
+};
+
+// ── Quick Presets ──
+export interface QuickPreset {
+    id: string;
+    emoji: string;
+    label: string;
+    amount: number;
+    category: BudgetCategory;
+}
+
+export const DEFAULT_PRESETS: QuickPreset[] = [
+    { id: 'p-coffee', emoji: '☕', label: 'Coffee', amount: 5, category: 'coffee' },
+    { id: 'p-lunch',  emoji: '🍕', label: 'Lunch',  amount: 12, category: 'food' },
+    { id: 'p-gas',    emoji: '⛽', label: 'Gas',    amount: 40, category: 'transport' },
+];
+
+// ── Week History ──
+export interface WeekRecord {
+    weekStart: string;
+    budget: number;
+    spent: number;
+    underBudget: boolean;
+    streakAtTime: number;
+}
+
 export interface Transaction {
     id: string;
     amount: number;
     label: string;
     date: string;
+    category: BudgetCategory;
 }
 
 interface BudgetState {
@@ -21,17 +60,31 @@ interface BudgetState {
     lastDailyGiftDate: string | null;
     trackingStreak: number;
 
+    // New: Quick presets
+    quickPresets: QuickPreset[];
+
+    // New: Weekly streak
+    weeklyStreak: number;
+
+    // New: Budget history
+    weekHistory: WeekRecord[];
+
     // Actions
     setupWeek: (budget: number, giftType: GiftCurrency) => void;
-    addTransaction: (amount: number, label: string) => void;
+    addTransaction: (amount: number, label: string, category?: BudgetCategory) => void;
     removeTransaction: (id: string) => void;
     checkAndResetWeek: () => void;
     processDailyLogin: () => void;
+    addPreset: (preset: Omit<QuickPreset, 'id'>) => void;
+    removePreset: (id: string) => void;
+    usePreset: (presetId: string) => void;
 
     // Computeds
     getTotalSpent: () => number;
+    getSpentByCategory: () => Record<BudgetCategory, number>;
     getPowerMultiplier: () => number;
     getDailyGiftTier: () => { tier: number, requiredSpent: [number, number], giftAmount: number } | null;
+    getStreakMultiplier: () => number;
 }
 
 // Helpers
@@ -66,6 +119,9 @@ export const useBudgetStore = create<BudgetState>()(
             lastLoginDate: null,
             lastDailyGiftDate: null,
             trackingStreak: 0,
+            quickPresets: DEFAULT_PRESETS,
+            weeklyStreak: 0,
+            weekHistory: [],
 
             setupWeek: (budget, giftType) => {
                 set({
@@ -73,16 +129,16 @@ export const useBudgetStore = create<BudgetState>()(
                     weeklyGiftType: giftType,
                     transactions: [],
                     weekStartDate: getWeekStart(),
-                    // Optionally reset streak or keep it rolling. Weekly setup resets week but not streak.
                 });
             },
 
-            addTransaction: (amount, label) => {
+            addTransaction: (amount, label, category = 'other') => {
                 const newTx: Transaction = {
                     id: safeUUID(),
                     amount,
                     label,
-                    date: getEasternDateString()
+                    date: getEasternDateString(),
+                    category,
                 };
                 set(state => ({ transactions: [newTx, ...state.transactions] }));
             },
@@ -91,19 +147,52 @@ export const useBudgetStore = create<BudgetState>()(
                 set(state => ({ transactions: state.transactions.filter(t => t.id !== id) }));
             },
 
+            addPreset: (preset) => {
+                const newPreset: QuickPreset = { ...preset, id: safeUUID() };
+                set(state => ({ quickPresets: [...state.quickPresets, newPreset] }));
+            },
+
+            removePreset: (id) => {
+                set(state => ({ quickPresets: state.quickPresets.filter(p => p.id !== id) }));
+            },
+
+            usePreset: (presetId) => {
+                const preset = get().quickPresets.find(p => p.id === presetId);
+                if (preset) {
+                    get().addTransaction(preset.amount, preset.label, preset.category);
+                }
+            },
+
             checkAndResetWeek: () => {
-                const { weekStartDate, weeklyBudget } = get();
+                const { weekStartDate, weeklyBudget, weeklyStreak, weekHistory } = get();
                 const currentWeek = getWeekStart();
                 if (weeklyBudget !== null && weekStartDate !== currentWeek) {
-                    // It's a new week. We could grant a weekly chest here if under budget.
                     const spent = get().getTotalSpent();
-                    if (spent <= weeklyBudget) {
-                        // Under budget! Award 10 gifts
+                    const underBudget = spent <= weeklyBudget;
+
+                    // Record history (keep last 8 weeks)
+                    const newRecord: WeekRecord = {
+                        weekStart: weekStartDate || currentWeek,
+                        budget: weeklyBudget,
+                        spent,
+                        underBudget,
+                        streakAtTime: weeklyStreak,
+                    };
+                    const newHistory = [newRecord, ...weekHistory].slice(0, 8);
+
+                    // Update streak
+                    const newStreak = underBudget ? weeklyStreak + 1 : 0;
+
+                    if (underBudget) {
                         const giftType = get().weeklyGiftType;
                         if (giftType) {
+                            // Streak multiplier: 1 + streak * 0.5 (capped at 4x)
+                            const streakMul = Math.min(4, 1 + newStreak * 0.5);
+                            const baseAmount = spent <= (weeklyBudget / 2) ? 20 : 10;
+                            const amount = Math.floor(baseAmount * streakMul);
+
                             import('./useCurrencyStore').then(({ useCurrencyStore }) => {
                                 const cs = useCurrencyStore.getState();
-                                const amount = spent <= (weeklyBudget / 2) ? 20 : 10;
                                 if (giftType === 'shmeckles') cs.addShmeckles(amount);
                                 if (giftType === 'balloons') cs.addBalloons(amount);
                                 if (giftType === 'sigils') {
@@ -112,6 +201,14 @@ export const useBudgetStore = create<BudgetState>()(
                                     });
                                 }
                             });
+
+                            import('../components/ui/Toast').then(({ useToastStore }) => {
+                                useToastStore.getState().addToast({
+                                    type: 'success',
+                                    message: `🔥 Week Complete! Streak x${newStreak}! +${amount} ${giftType}!`,
+                                    duration: 5000,
+                                });
+                            }).catch(() => {});
                         }
                     }
 
@@ -121,6 +218,8 @@ export const useBudgetStore = create<BudgetState>()(
                         weeklyGiftType: null,
                         transactions: [],
                         weekStartDate: null,
+                        weeklyStreak: newStreak,
+                        weekHistory: newHistory,
                     });
                 }
             },
@@ -131,9 +230,9 @@ export const useBudgetStore = create<BudgetState>()(
                 const { weeklyBudget, weeklyGiftType, lastDailyGiftDate } = get();
                 const today = getEasternDateString();
 
-                if (!weeklyBudget || !weeklyGiftType) return; // No active budget setup
+                if (!weeklyBudget || !weeklyGiftType) return;
 
-                if (lastDailyGiftDate === today) return; // Already claimed today
+                if (lastDailyGiftDate === today) return;
 
                 const tierInfo = get().getDailyGiftTier();
                 if (tierInfo && tierInfo.giftAmount > 0) {
@@ -162,15 +261,30 @@ export const useBudgetStore = create<BudgetState>()(
                 return get().transactions.reduce((sum, tx) => sum + tx.amount, 0);
             },
 
+            getSpentByCategory: () => {
+                const result: Record<BudgetCategory, number> = {
+                    food: 0, coffee: 0, fun: 0, bills: 0,
+                    shopping: 0, transport: 0, health: 0, other: 0,
+                };
+                for (const tx of get().transactions) {
+                    const cat = tx.category || 'other';
+                    result[cat] = (result[cat] || 0) + tx.amount;
+                }
+                return result;
+            },
+
             getPowerMultiplier: () => {
                 const { weeklyBudget } = get();
-                if (!weeklyBudget) return 1.0; // No active budget = no buff, but no penalty. Alternatively could be 1.0
+                if (!weeklyBudget) return 1.0;
 
                 const spent = get().getTotalSpent();
                 let multiplier = 1.5 - (spent / weeklyBudget);
                 
-                // Clamp between 0.75 and 1.5
                 return Math.max(0.75, Math.min(1.5, multiplier));
+            },
+
+            getStreakMultiplier: () => {
+                return Math.min(4, 1 + get().weeklyStreak * 0.5);
             },
 
             getDailyGiftTier: () => {

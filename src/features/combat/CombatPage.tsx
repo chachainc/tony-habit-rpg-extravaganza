@@ -1,6 +1,6 @@
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Swords, Crown, Shield, Zap, Map as MapIcon, Castle } from 'lucide-react';
+import { Swords, Crown, Shield, Zap, Map as MapIcon, Castle, ScrollText } from 'lucide-react';
 import { useBattleStore } from '../../store/useBattleStore';
 import { useConquestStore } from '../../store/useConquestStore';
 import { useGameStore } from '../../store/useGameStore';
@@ -8,6 +8,7 @@ import { useStrategyStore } from '../../store/useStrategyStore';
 import { useCurrencyStore } from '../../store/useCurrencyStore';
 import { ChessGame } from '../conquest/ChessGame';
 import { ConquestTiles } from '../conquest/ConquestTiles';
+import { WarJournal } from './WarJournal';
 import { useState } from 'react';
 import './CombatPage.css';
 
@@ -18,6 +19,7 @@ export const CombatPage = () => {
     const currency = useCurrencyStore();
     const [showChess, setShowChess] = useState(false);
     const [showTiles, setShowTiles] = useState(false);
+    const [showJournal, setShowJournal] = useState(false);
     const { getAttack, getDefense, getMagicAttack, getMaxMP } = useGameStore();
     const { currentMP, player } = useBattleStore();
 
@@ -60,6 +62,12 @@ export const CombatPage = () => {
                 >
                     <h1>⚔️ Combat</h1>
                     <p className="combat-subtitle">Choose your battlefield</p>
+                    <button
+                        className="wj-open-btn"
+                        onClick={() => setShowJournal(true)}
+                    >
+                        <ScrollText size={16} /> War Journal
+                    </button>
                 </motion.div>
 
                 {/* Combat Stats Bar */}
@@ -268,6 +276,9 @@ export const CombatPage = () => {
                 canPlay={strategy.canPlayTilesToday()}
                 canPlayImpossible={strategy.canPlayImpossible()}
                 />}
+            </AnimatePresence>
+            <AnimatePresence>
+                {showJournal && <WarJournal onClose={() => setShowJournal(false)} />}
             </AnimatePresence>
         </div>
     );

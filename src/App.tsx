@@ -167,8 +167,8 @@ function App() {
         <WakeUpModal onComplete={() => setShowWakeUp(false)} />
       )}
 
-      {/* Budget Setup Modal */}
-      {isLoggedIn && characterArchetype && <BudgetSetupModal />}
+      {/* Budget Setup Modal — only after wake-up flow is done */}
+      {isLoggedIn && characterArchetype && !showWakeUp && <BudgetSetupModal />}
 
       {/* Level Up Modal */}
       <AnimatePresence>

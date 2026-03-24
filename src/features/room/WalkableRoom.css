@@ -413,27 +413,331 @@
     margin: 0 0.25rem;
 }
 
-/* ── Responsive scale — use transform-origin:center so room stays centered ── */
+/* ── Responsive scale — camera handles scaling now, remove fixed transforms ── */
 @media (max-width: 1400px) {
-    .room-grid {
+    .room-grid:not(.world-grid) {
         transform: scale(0.85);
         transform-origin: center center;
     }
 }
 
 @media (max-width: 1000px) {
-    .room-grid {
+    .room-grid:not(.world-grid) {
         transform: scale(0.7);
         transform-origin: center center;
     }
 }
 
 @media (max-width: 700px) {
-    /* On narrow phones keep it readable but never let it overflow */
-    .room-grid {
+    .room-grid:not(.world-grid) {
         transform: scale(0.55);
         transform-origin: center center;
     }
+}
+
+/* ═══════════════════════════════════════════════════════
+   WORLD GRID — pixel-art fantasy base
+   ═══════════════════════════════════════════════════════ */
+.world-grid {
+    background:
+        /* Tiled earth/wood floor texture */
+        repeating-linear-gradient(
+            0deg,
+            rgba(80, 60, 35, 0.15) 0px,
+            rgba(60, 45, 25, 0.1) 32px,
+            rgba(80, 60, 35, 0.15) 64px
+        ),
+        repeating-linear-gradient(
+            90deg,
+            rgba(75, 55, 30, 0.12) 0px,
+            rgba(55, 40, 20, 0.08) 32px,
+            rgba(75, 55, 30, 0.12) 64px
+        ),
+        radial-gradient(ellipse at 50% 50%, rgba(40, 30, 15, 0.6) 0%, rgba(15, 10, 5, 0.9) 100%);
+    border: 4px solid rgba(90, 65, 30, 0.5);
+    border-radius: 8px;
+    box-shadow:
+        0 20px 60px rgba(0, 0, 0, 0.6),
+        inset 0 0 80px rgba(0, 0, 0, 0.3),
+        inset 0 0 200px rgba(40, 25, 10, 0.15);
+}
+
+/* ═══ STONE WALLS ═══ */
+.world-wall {
+    position: absolute;
+    z-index: 2;
+    pointer-events: none;
+}
+
+.world-wall--top {
+    top: 0; left: 0; right: 0;
+    height: 32px;
+    background: repeating-linear-gradient(
+        90deg,
+        rgba(100, 85, 60, 0.5) 0px, rgba(80, 65, 40, 0.4) 30px,
+        rgba(100, 85, 60, 0.5) 32px
+    );
+    border-bottom: 2px solid rgba(60, 45, 20, 0.6);
+}
+
+.world-wall--bottom {
+    bottom: 0; left: 0; right: 0;
+    height: 32px;
+    background: repeating-linear-gradient(
+        90deg,
+        rgba(100, 85, 60, 0.5) 0px, rgba(80, 65, 40, 0.4) 30px,
+        rgba(100, 85, 60, 0.5) 32px
+    );
+    border-top: 2px solid rgba(60, 45, 20, 0.6);
+}
+
+.world-wall--left {
+    top: 0; left: 0; bottom: 0;
+    width: 32px;
+    background: repeating-linear-gradient(
+        0deg,
+        rgba(100, 85, 60, 0.5) 0px, rgba(80, 65, 40, 0.4) 30px,
+        rgba(100, 85, 60, 0.5) 32px
+    );
+    border-right: 2px solid rgba(60, 45, 20, 0.6);
+}
+
+.world-wall--right {
+    top: 0; right: 0; bottom: 0;
+    width: 32px;
+    background: repeating-linear-gradient(
+        0deg,
+        rgba(100, 85, 60, 0.5) 0px, rgba(80, 65, 40, 0.4) 30px,
+        rgba(100, 85, 60, 0.5) 32px
+    );
+    border-left: 2px solid rgba(60, 45, 20, 0.6);
+}
+
+/* ═══ WALKABLE PATHS ═══ */
+.world-path {
+    position: absolute;
+    z-index: 1;
+    pointer-events: none;
+    background:
+        repeating-linear-gradient(
+            90deg,
+            rgba(160, 130, 80, 0.2) 0px,
+            rgba(140, 110, 60, 0.12) 16px,
+            rgba(160, 130, 80, 0.2) 32px
+        );
+    border: 1px solid rgba(160, 130, 80, 0.15);
+    border-radius: 3px;
+}
+
+/* ═══ WORLD ZONES ═══ */
+.world-zone {
+    position: absolute;
+    z-index: 5;
+    border-radius: 12px;
+    overflow: hidden;
+    transition: box-shadow 0.3s, border-color 0.3s;
+}
+
+.world-zone--interactive {
+    cursor: pointer;
+}
+
+.world-zone--interactive:hover {
+    box-shadow: 0 0 24px rgba(251, 191, 36, 0.3) !important;
+}
+
+.world-zone--decorative {
+    pointer-events: none;
+    opacity: 0.85;
+}
+
+/* Zone background image (library bookshelf) */
+.zone-bg-image {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    opacity: 0.35;
+    border-radius: 12px;
+    pointer-events: none;
+}
+
+/* Zone decorative emoji */
+.zone-deco-item {
+    position: absolute;
+    pointer-events: none;
+    user-select: none;
+    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.5));
+    z-index: 2;
+}
+
+/* Zone label plate */
+.zone-label-plate {
+    position: absolute;
+    bottom: 4px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1px;
+    padding: 3px 10px;
+    background: rgba(10, 8, 5, 0.85);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 8px;
+    z-index: 10;
+    white-space: nowrap;
+}
+
+.zone-label-name {
+    font-size: 0.7rem;
+    font-weight: 800;
+    color: rgba(255, 255, 255, 0.9);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.zone-label-sub {
+    font-size: 0.5rem;
+    color: rgba(255, 255, 255, 0.4);
+    font-weight: 600;
+}
+
+/* ── Zone Themes ── */
+.zone-bedroom {
+    background: radial-gradient(ellipse at 30% 40%, rgba(59, 130, 246, 0.15) 0%, rgba(30, 58, 138, 0.1) 60%, transparent 100%);
+    border: 2px solid rgba(59, 130, 246, 0.25);
+    box-shadow: inset 0 0 30px rgba(59, 130, 246, 0.08);
+}
+
+.zone-library {
+    background: radial-gradient(ellipse at 50% 50%, rgba(180, 140, 80, 0.18) 0%, rgba(120, 80, 30, 0.1) 60%, transparent 100%);
+    border: 2px solid rgba(180, 140, 80, 0.3);
+    box-shadow: inset 0 0 30px rgba(180, 140, 80, 0.08);
+}
+
+.zone-wardrobe {
+    background: radial-gradient(ellipse at 50% 40%, rgba(167, 139, 250, 0.15) 0%, rgba(109, 40, 217, 0.08) 60%, transparent 100%);
+    border: 2px solid rgba(167, 139, 250, 0.3);
+    box-shadow: inset 0 0 30px rgba(167, 139, 250, 0.08);
+}
+
+.zone-trophy {
+    background: radial-gradient(ellipse at 50% 40%, rgba(251, 191, 36, 0.18) 0%, rgba(180, 120, 0, 0.1) 60%, transparent 100%);
+    border: 2px solid rgba(251, 191, 36, 0.35);
+    box-shadow:
+        inset 0 0 30px rgba(251, 191, 36, 0.1),
+        0 0 20px rgba(251, 191, 36, 0.1);
+}
+
+.zone-body {
+    background: radial-gradient(ellipse at 50% 50%, rgba(236, 72, 153, 0.12) 0%, rgba(190, 24, 93, 0.06) 60%, transparent 100%);
+    border: 2px solid rgba(236, 72, 153, 0.25);
+    box-shadow: inset 0 0 25px rgba(236, 72, 153, 0.06);
+}
+
+.zone-workshop {
+    background: radial-gradient(ellipse at 50% 50%, rgba(245, 158, 11, 0.12) 0%, rgba(180, 100, 0, 0.06) 60%, transparent 100%);
+    border: 2px dashed rgba(245, 158, 11, 0.2);
+    box-shadow: inset 0 0 25px rgba(245, 158, 11, 0.05);
+}
+
+.zone-garden {
+    background:
+        radial-gradient(ellipse at 30% 70%, rgba(34, 197, 94, 0.12) 0%, transparent 50%),
+        radial-gradient(ellipse at 70% 30%, rgba(74, 222, 128, 0.08) 0%, transparent 50%),
+        radial-gradient(ellipse at 50% 50%, rgba(34, 197, 94, 0.15) 0%, rgba(22, 101, 52, 0.08) 60%, transparent 100%);
+    border: 2px dashed rgba(34, 197, 94, 0.2);
+    box-shadow: inset 0 0 30px rgba(34, 197, 94, 0.06);
+}
+
+.zone-cellar {
+    background:
+        radial-gradient(ellipse at 50% 30%, rgba(80, 60, 40, 0.25) 0%, rgba(40, 30, 20, 0.15) 60%, transparent 100%);
+    border: 2px solid rgba(80, 60, 40, 0.3);
+    box-shadow: inset 0 0 40px rgba(0, 0, 0, 0.2);
+}
+
+/* ── Doorway thresholds (interior/exterior transitions) ── */
+.world-zone--interactive::before {
+    content: '';
+    position: absolute;
+    bottom: -6px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 40%;
+    height: 6px;
+    background: linear-gradient(90deg,
+        transparent 0%,
+        rgba(180, 140, 80, 0.4) 20%,
+        rgba(200, 160, 90, 0.5) 50%,
+        rgba(180, 140, 80, 0.4) 80%,
+        transparent 100%
+    );
+    border-radius: 0 0 4px 4px;
+    pointer-events: none;
+    z-index: 1;
+}
+
+/* ── Zone hover glow pulse ── */
+.world-zone--interactive:hover .zone-label-plate {
+    background: rgba(251, 191, 36, 0.15);
+    border-color: rgba(251, 191, 36, 0.3);
+}
+
+.world-zone--interactive:active {
+    transform: scale(0.995);
+}
+
+/* ═══ WALKABLE PATHS (enhanced) ═══ */
+.world-path {
+    box-shadow:
+        inset 0 1px 2px rgba(0, 0, 0, 0.15),
+        0 1px 0 rgba(160, 130, 80, 0.08);
+}
+
+/* ═══ AMBIENT GROUND FOG ═══ */
+.world-grid::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    z-index: 0;
+    background:
+        radial-gradient(ellipse at 15% 50%, rgba(180, 160, 120, 0.04) 0%, transparent 40%),
+        radial-gradient(ellipse at 85% 50%, rgba(180, 160, 120, 0.04) 0%, transparent 40%),
+        radial-gradient(ellipse at 50% 85%, rgba(100, 80, 50, 0.06) 0%, transparent 35%),
+        radial-gradient(ellipse at 50% 15%, rgba(100, 80, 50, 0.06) 0%, transparent 35%);
+    animation: groundFogDrift 20s ease-in-out infinite alternate;
+}
+
+@keyframes groundFogDrift {
+    0% { opacity: 0.6; }
+    50% { opacity: 1; }
+    100% { opacity: 0.6; }
+}
+
+/* ═══ DECORATIVE CLUTTER ═══ */
+.deco-world-item {
+    position: absolute;
+    pointer-events: none;
+    user-select: none;
+    z-index: 3;
+    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.6));
+}
+
+/* Flicker animation for candles/torches */
+.deco-flicker {
+    animation: decoFlicker 2.5s ease-in-out infinite alternate;
+}
+
+@keyframes decoFlicker {
+    0% { filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.6)) brightness(1); }
+    25% { filter: drop-shadow(0 2px 8px rgba(255, 180, 50, 0.4)) brightness(1.1); }
+    50% { filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.6)) brightness(0.95); }
+    75% { filter: drop-shadow(0 2px 12px rgba(255, 160, 30, 0.5)) brightness(1.15); }
+    100% { filter: drop-shadow(0 2px 6px rgba(255, 200, 80, 0.3)) brightness(1.05); }
 }
 
 /* ==================== TROPHY CASE ==================== */

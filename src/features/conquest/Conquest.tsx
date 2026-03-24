@@ -17,6 +17,7 @@ import { ConquestStoreUI } from './ConquestStore';
 import { ChessGame } from './ChessGame';
 import { ConquestTiles } from './ConquestTiles';
 import { MysteryTile } from './MysteryTile';
+import { ConquestMeta } from './ConquestMeta';
 import { useStrategyStore } from '../../store/useStrategyStore';
 import { useNavigate } from 'react-router-dom';
 import { useBattleStore } from '../../store/useBattleStore';
@@ -56,6 +57,7 @@ export const Conquest = () => {
     const mapContainerRef = useRef<HTMLDivElement>(null);
 
     const [showStore, setShowStore] = useState(false);
+    const [showMeta, setShowMeta] = useState(false);
     const [showChess, setShowChess] = useState(false);
     const [showTiles, setShowTiles] = useState(false);
     const [showMystery, setShowMystery] = useState(false);
@@ -107,7 +109,10 @@ export const Conquest = () => {
                 const randomEnemy = pool.length > 0
                     ? pool[Math.floor(Math.random() * pool.length)].id
                     : 'ash_crawler';
-                const enemyId = node.type === 'boss' ? 'the_pathkeeper' : randomEnemy;
+                // Use the run's assigned boss for boss nodes, random enemy otherwise
+                const enemyId = node.type === 'boss'
+                    ? (conquest.runBossId || 'the_pathkeeper')
+                    : randomEnemy;
 
                 useBattleStore.getState().initBattle(enemyId, {
                     context: node.type === 'elite' ? 'conquest_elite' : node.type === 'boss' ? 'conquest_boss' : 'conquest',
@@ -201,10 +206,13 @@ export const Conquest = () => {
         setTimeout(() => { setShowResource(false); setActiveResourceTile(null); }, 1500);
     };
 
-    // Group nodes by tier
+    // Group nodes by tier — prefer procedural generatedMap, fallback to static
     const renderMapNodes = () => {
+        const mapSource = conquest.generatedMap.length > 0
+            ? conquest.generatedMap
+            : CONQUEST_MAP_NODES;
         const tiers: Record<number, ConquestNodeData[]> = {};
-        CONQUEST_MAP_NODES.forEach(n => {
+        mapSource.forEach(n => {
             if (!tiers[n.tier]) tiers[n.tier] = [];
             tiers[n.tier].push(n);
         });
@@ -298,6 +306,18 @@ export const Conquest = () => {
                     <div className="hud-stat sigils"><Crown size={14} /> {conquest.sigils}</div>
                     {conquest.balloons > 0 && <div className="hud-stat" style={{ color: '#60a5fa' }}>🎈 {conquest.balloons}</div>}
                     {conquest.shmeckles > 0 && <div className="hud-stat" style={{ color: '#a78bfa' }}>🪙 {conquest.shmeckles}</div>}
+                    <button
+                        onClick={() => setShowMeta(true)}
+                        style={{
+                            background: 'linear-gradient(135deg, rgba(139,92,246,0.3), rgba(88,28,135,0.3))',
+                            border: '1px solid rgba(167,139,250,0.4)',
+                            borderRadius: 8, padding: '0.3rem 0.6rem',
+                            color: '#c4b5fd', fontSize: '0.7rem', fontWeight: 700,
+                            cursor: 'pointer', whiteSpace: 'nowrap',
+                        }}
+                    >
+                        🏛️ Meta
+                    </button>
                 </div>
             </div>
 
@@ -353,6 +373,26 @@ export const Conquest = () => {
                         <div className="run-complete-modal map-modal" style={{ borderColor: '#ef4444' }}>
                             <h2 style={{ color: '#ef4444' }}>Conquest Locked</h2>
                             <p>You have already completed your Conquest run for today. Return tomorrow for another attempt!</p>
+                            {conquest.dailyTickets > 0 && (
+                                <button
+                                    className="continue-btn"
+                                    style={{ background: '#ca8a04', marginBottom: '0.5rem' }}
+                                    onClick={() => {
+                                        if (conquest.useRunTicket()) {
+                                            conquest.startRun();
+                                        }
+                                    }}
+                                >
+                                    🎟️ Use Run Ticket ({conquest.dailyTickets} left)
+                                </button>
+                            )}
+                            <button
+                                className="continue-btn"
+                                style={{ background: 'rgba(139,92,246,0.3)', border: '1px solid #a78bfa', marginBottom: '0.5rem' }}
+                                onClick={() => setShowMeta(true)}
+                            >
+                                🏛️ Open Meta Forge
+                            </button>
                             <button className="continue-btn" onClick={() => navigate('/')}>Return to Dashboard</button>
                         </div>
                     </motion.div>
@@ -609,6 +649,9 @@ export const Conquest = () => {
                     canPlay={strategy.canPlayTilesToday()}
                     canPlayImpossible={strategy.canPlayImpossible()}
                 />}
+            </AnimatePresence>
+            <AnimatePresence>
+                {showMeta && <ConquestMeta onClose={() => setShowMeta(false)} />}
             </AnimatePresence>
         </div>
     );

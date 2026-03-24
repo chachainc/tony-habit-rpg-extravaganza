@@ -17,17 +17,20 @@ export interface TowerDef {
     cooldown: number;   // ms between shots
     description: string;
     projectileColor: string;
+    splashRadius?: number; // AoE splash radius in grid tiles (cannon)
 }
 
 export interface EnemyDef {
     type: EnemyType;
     name: string;
     icon: string;
+    image?: string;
     baseHp: number;
     speed: number;      // Grid tiles per second
     reward: number;     // Shmeckles rewarded on kill
     useVideo?: boolean; // if true, render as video sprite instead of emoji
     healsNearby?: boolean; // necromancer trait
+    isBoss?: boolean;   // boss health bar treatment
 }
 
 export const TD_TOWERS: Record<TowerType, TowerDef> = {
@@ -35,20 +38,56 @@ export const TD_TOWERS: Record<TowerType, TowerDef> = {
     archer:   { type: 'archer',   name: 'Archer',       icon: '🏹', color: '#16a34a', cost: 50,  range: 3,   damage: 15,  cooldown: 600,  description: 'Fast, single target.',               projectileColor: '#86efac' },
     mage:     { type: 'mage',     name: 'Mage',         icon: '🔮', color: '#9333ea', cost: 100, range: 4,   damage: 40,  cooldown: 1200, description: 'High damage, slow.',                 projectileColor: '#d8b4fe' },
     frost:    { type: 'frost',    name: 'Frost',        icon: '❄️', color: '#0284c7', cost: 75,  range: 2,   damage: 5,   cooldown: 1500, description: 'Slows enemies in range.',             projectileColor: '#bae6fd' },
-    cannon:   { type: 'cannon',   name: 'Cannon',       icon: '💣', color: '#b91c1c', cost: 150, range: 2.5, damage: 80,  cooldown: 2000, description: 'Massive local damage.',              projectileColor: '#fca5a5' },
+    cannon:   { type: 'cannon',   name: 'Cannon',       icon: '💣', color: '#b91c1c', cost: 150, range: 2.5, damage: 80,  cooldown: 2000, description: 'Massive AoE damage.',                projectileColor: '#fca5a5', splashRadius: 1.5 },
     ballista: { type: 'ballista', name: 'Ballista',     icon: '🏹', color: '#ea580c', cost: 200, range: 6,   damage: 120, cooldown: 3000, description: 'Long range, high damage.',            projectileColor: '#fdba74' }
 };
 
+// ── Tower Specializations (unlocked at level 2) ──
+export type SpecBranch = string;
+export interface SpecDef {
+    name: string;
+    icon: string;
+    description: string;
+    dmgMod: number;      // multiplier to base damage
+    cdMod: number;       // multiplier to cooldown
+    rangeMod: number;    // multiplier to range
+    extraTargets?: number; // hits N additional targets
+    splashMod?: number;  // multiplier to splash radius
+    slowMod?: number;    // multiplier to slow duration
+    aoeSlow?: boolean;   // applies slow in AoE instead of single
+    dotDps?: number;     // damage-over-time per second applied on hit
+    chainBounces?: number; // chain lightning bounces
+}
+
+export const TD_SPECIALIZATIONS: Partial<Record<TowerType, Record<string, SpecDef>>> = {
+    archer: {
+        sharpshooter: { name: 'Sharpshooter', icon: '🎯', description: '+80% damage, +1 range', dmgMod: 1.8, cdMod: 1, rangeMod: 1.3, },
+        multishot:    { name: 'Multishot',    icon: '🏹', description: 'Hits 2 targets, -30% damage', dmgMod: 0.7, cdMod: 1, rangeMod: 1, extraTargets: 1 },
+    },
+    mage: {
+        inferno:        { name: 'Inferno',        icon: '🔥', description: 'Burn DoT: 15 dps for 3s', dmgMod: 0.8, cdMod: 1, rangeMod: 1, dotDps: 15 },
+        chain_lightning: { name: 'Chain Lightning', icon: '⚡', description: 'Bounces to 2 nearby enemies', dmgMod: 0.9, cdMod: 1, rangeMod: 1, chainBounces: 2 },
+    },
+    cannon: {
+        siege:   { name: 'Siege',   icon: '💥', description: '+100% damage, 30% slower', dmgMod: 2.0, cdMod: 1.3, rangeMod: 1, splashMod: 1.2 },
+        cluster: { name: 'Cluster', icon: '🧨', description: '3 smaller shells, wider AoE', dmgMod: 0.5, cdMod: 0.7, rangeMod: 1, splashMod: 1.8, extraTargets: 2 },
+    },
+    frost: {
+        permafrost: { name: 'Permafrost', icon: '🧊', description: '2x slow duration', dmgMod: 1, cdMod: 1, rangeMod: 1, slowMod: 2.0 },
+        blizzard:   { name: 'Blizzard',   icon: '🌨️', description: 'AoE slow, no damage', dmgMod: 0, cdMod: 0.8, rangeMod: 1.5, aoeSlow: true },
+    },
+};
+
 export const TD_ENEMIES: Record<EnemyType, EnemyDef> = {
-    goblin:       { type: 'goblin',       name: 'Goblin',       icon: '👺', baseHp: 40,   speed: 1.5, reward: 5 },
-    skeleton:     { type: 'skeleton',     name: 'Skeleton',     icon: '💀', baseHp: 60,   speed: 1.8, reward: 6 },
-    bat_swarm:    { type: 'bat_swarm',    name: 'Bat Swarm',    icon: '🦇', baseHp: 25,   speed: 2.2, reward: 3 },
-    orc:          { type: 'orc',          name: 'Orc',          icon: '👹', baseHp: 120,  speed: 1.0, reward: 10 },
-    dark_knight:  { type: 'dark_knight',  name: 'Dark Knight',  icon: '⚔️', baseHp: 200,  speed: 0.8, reward: 15 },
-    necromancer:  { type: 'necromancer',  name: 'Necromancer',  icon: '🧙‍♂️', baseHp: 150,  speed: 0.9, reward: 20, healsNearby: true },
-    golem:        { type: 'golem',        name: 'Golem',        icon: '🪨', baseHp: 400,  speed: 0.6, reward: 25 },
-    boss_slime:   { type: 'boss_slime',   name: 'King Slime',   icon: '👑', baseHp: 1500, speed: 0.4, reward: 100 },
-    flow_boss:    { type: 'flow_boss',    name: 'The Flow',     icon: '🌊', baseHp: 3000, speed: 0.3, reward: 200 },
+    goblin:       { type: 'goblin',       name: 'Goblin',       icon: '👺', image: '/assets/enemies/goblin.png', baseHp: 40,   speed: 1.5, reward: 5 },
+    skeleton:     { type: 'skeleton',     name: 'Skeleton',     icon: '💀', image: '/assets/enemies/skeleton.png', baseHp: 60,   speed: 1.8, reward: 6 },
+    bat_swarm:    { type: 'bat_swarm',    name: 'Bat Swarm',    icon: '🦇', image: '/assets/enemies/bat_swarm.png', baseHp: 25,   speed: 2.2, reward: 3 },
+    orc:          { type: 'orc',          name: 'Orc',          icon: '👹', image: '/assets/enemies/orc.png', baseHp: 120,  speed: 1.0, reward: 10 },
+    dark_knight:  { type: 'dark_knight',  name: 'Dark Knight',  icon: '⚔️', image: '/assets/enemies/dark_knight.png', baseHp: 200,  speed: 0.8, reward: 15 },
+    necromancer:  { type: 'necromancer',  name: 'Necromancer',  icon: '🧙‍♂️', image: '/assets/enemies/necromancer.png', baseHp: 150,  speed: 0.9, reward: 20, healsNearby: true },
+    golem:        { type: 'golem',        name: 'Golem',        icon: '🪨', image: '/assets/enemies/golem.png', baseHp: 400,  speed: 0.6, reward: 25 },
+    boss_slime:   { type: 'boss_slime',   name: 'King Slime',   icon: '👑', image: '/assets/enemies/boss_slime.png', baseHp: 1500, speed: 0.4, reward: 100, isBoss: true },
+    flow_boss:    { type: 'flow_boss',    name: 'The Flow',     icon: '🌊', image: '/assets/enemies/flow_boss.png', baseHp: 3000, speed: 0.3, reward: 200, isBoss: true },
 };
 
 // 12x8 Grid. 

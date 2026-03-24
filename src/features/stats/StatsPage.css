@@ -262,7 +262,7 @@
 ══════════════════════════════════ */
 .combat-stats-row {
     display: grid;
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: 1fr 1fr 1fr;
     gap: 0.6rem;
 }
 
@@ -472,3 +472,52 @@
 /* Icon colors */
 .icon-red  { color: #ef4444; }
 .icon-blue { color: #3b82f6; }
+
+/* ═══════════ PRESTIGE ═══════════ */
+.skill-prestige-badge {
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+    font-size: 0.65rem;
+    font-weight: 700;
+    color: #fbbf24;
+    padding: 0.2rem 0.5rem;
+    background: rgba(251, 191, 36, 0.08);
+    border: 1px solid rgba(251, 191, 36, 0.2);
+    border-radius: 6px;
+    margin-top: 0.15rem;
+}
+
+.skill-prestige-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.3rem;
+    width: 100%;
+    padding: 0.35rem 0.5rem;
+    margin-top: 0.25rem;
+    font-size: 0.65rem;
+    font-weight: 700;
+    color: #c084fc;
+    background: rgba(168, 85, 247, 0.08);
+    border: 1px solid rgba(168, 85, 247, 0.2);
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.15s;
+}
+
+.skill-prestige-btn:hover:not(:disabled) {
+    background: rgba(168, 85, 247, 0.15);
+    border-color: rgba(168, 85, 247, 0.4);
+}
+
+.skill-prestige-btn--locked {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+@media (max-width: 420px) {
+    .combat-stats-row {
+        grid-template-columns: 1fr 1fr;
+    }
+}

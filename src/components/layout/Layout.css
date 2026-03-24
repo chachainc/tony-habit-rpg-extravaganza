@@ -6,6 +6,10 @@
     background-color: var(--bg-primary);
     color: var(--text-primary);
     overflow: hidden;
+    /* iOS PWA safe area — push content below notch/status bar */
+    padding-top: env(safe-area-inset-top, 0px);
+    padding-left: env(safe-area-inset-left, 0px);
+    padding-right: env(safe-area-inset-right, 0px);
 }
 
 .main-wrapper {
