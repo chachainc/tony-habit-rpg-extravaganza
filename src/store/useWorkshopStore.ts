@@ -1,6 +1,5 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import { PERSIST_REGISTRY } from '../data/persistRegistry';
 
 // ── Materials ──
 export interface Material {
