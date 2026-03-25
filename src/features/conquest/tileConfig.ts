@@ -380,9 +380,9 @@ export function checkIsSolvable(board: BoardTile[], tray: BoardTile[], trayCapac
     return false; // Board locked structurally
 }
 
-// ─── POWER-UP COSTS ───────────────────────────────
+// ─── POWER-UP COSTS (in gold coins, not sigils) ───────────────────────────
 export const POWER_COSTS = {
-    remove: 10,
+    remove: 5,
     undo: 10,
-    shuffle: 10,
+    shuffle: 20,
 } as const;

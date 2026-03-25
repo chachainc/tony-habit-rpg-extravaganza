@@ -377,8 +377,9 @@ export const Library = () => {
                                                             >
                                                                 {book.format === 'audiobook' ? '🎧 Audiobook' : '📚 Physical'}
                                                             </span>
-                                                            <span className="book-started">
-                                                                Completed: {book.completedAt ? new Date(book.completedAt).toLocaleDateString() : 'N/A'}
+                                                            <span className="book-started" style={{ display: 'flex', flexDirection: 'column', gap: '2px', lineHeight: 1.2 }}>
+                                                                <span>Started: {new Date(book.startedAt).toLocaleDateString()}</span>
+                                                                <span>Completed: {book.completedAt ? new Date(book.completedAt).toLocaleDateString() : 'N/A'}</span>
                                                             </span>
                                                         </div>
                                                         <div

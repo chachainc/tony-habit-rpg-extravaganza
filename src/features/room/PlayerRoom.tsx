@@ -516,6 +516,7 @@ export const PlayerRoom = ({ onClose }: { onClose: () => void }) => {
     const [editMode, setEditMode] = useState(false);
     const [placingFurnitureId, setPlacingFurnitureId] = useState<string | null>(null);
     const [showQuickMenu, setShowQuickMenu] = useState(false);
+    const [showRoomFab, setShowRoomFab] = useState(false);
     const viewportRef = useRef<HTMLDivElement>(null);
     const containerRef = useRef<HTMLDivElement>(null);
 
@@ -826,6 +827,66 @@ export const PlayerRoom = ({ onClose }: { onClose: () => void }) => {
                             {editMode ? <><Check size={16} /> Done</> : <><Pencil size={16} /> Edit Room</>}
                         </button>
                     </div>
+
+                    {/* ── Room Panels FAB ── */}
+                    <AnimatePresence>
+                        {showRoomFab && (
+                            <motion.div
+                                initial={{ opacity: 0, y: 10 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                exit={{ opacity: 0, y: 10 }}
+                                style={{
+                                    position: 'absolute', bottom: 70, right: 12, zIndex: 30,
+                                    display: 'flex', flexDirection: 'column', gap: '0.4rem', alignItems: 'flex-end',
+                                }}
+                            >
+                                {([
+                                    { label: '🌱 Garden', panel: 'garden' as ActivePanel },
+                                    { label: '⚒️ Workshop', panel: 'workshop' as ActivePanel },
+                                    { label: '🛢 Cellar', panel: 'cellar' as ActivePanel },
+                                    { label: '🐾 Pet', panel: 'pet' as ActivePanel },
+                                ]).map(({ label, panel }) => (
+                                    <button
+                                        key={panel}
+                                        onClick={() => { setActivePanel(panel); setShowRoomFab(false); }}
+                                        style={{
+                                            background: 'rgba(15,23,42,0.95)',
+                                            border: '1px solid rgba(255,255,255,0.15)',
+                                            borderRadius: 10,
+                                            color: '#e2e8f0',
+                                            padding: '0.45rem 1rem',
+                                            fontSize: '0.8rem',
+                                            fontWeight: 700,
+                                            cursor: 'pointer',
+                                            whiteSpace: 'nowrap',
+                                            boxShadow: '0 4px 12px rgba(0,0,0,0.5)',
+                                        }}
+                                    >
+                                        {label}
+                                    </button>
+                                ))}
+                            </motion.div>
+                        )}
+                    </AnimatePresence>
+                    <button
+                        onClick={() => setShowRoomFab(v => !v)}
+                        style={{
+                            position: 'absolute', bottom: 16, right: 12, zIndex: 30,
+                            width: 48, height: 48, borderRadius: '50%',
+                            background: showRoomFab
+                                ? 'linear-gradient(135deg, #ef4444, #dc2626)'
+                                : 'linear-gradient(135deg, #f59e0b, #d97706)',
+                            border: 'none', color: 'white',
+                            fontSize: showRoomFab ? '1.5rem' : '1.8rem',
+                            fontWeight: 700, cursor: 'pointer',
+                            boxShadow: '0 4px 16px rgba(0,0,0,0.5)',
+                            display: 'flex', alignItems: 'center', justifyContent: 'center',
+                            transition: 'all 0.2s',
+                        }}
+                        title={showRoomFab ? 'Close' : 'Open Panels'}
+                    >
+                        {showRoomFab ? '✕' : '+'}
+                    </button>
 
                     {/* ── Viewport / Camera ── */}
                     <div

@@ -285,7 +285,11 @@ export const StormTheFort = () => {
                 ))}
 
                 {/* Render Defenders — draggable + ability tap */}
-                {defenders.map(def => (
+                {defenders.map((def) => {
+                    // Hide the very first cow's visual emoji, because the background video already serves as the visual for the "free starter cow" fighting goblins.
+                    const isFirstCow = def.type === 'cow' && def.id === defenders.find(d => d.type === 'cow')?.id;
+
+                    return (
                     <div
                         key={def.id}
                         className={`storm-entity storm-defender ${draggingId === def.id ? 'dragging' : ''} ${def.fortifyUntil > Date.now() ? 'fortified' : ''}`}
@@ -293,7 +297,7 @@ export const StormTheFort = () => {
                         onPointerDown={(e) => handleDefenderPointerDown(e, def.id)}
                         onClick={() => handleDefenderTap(def.id)}
                     >
-                        {getDefenderIcon(def.type)}
+                        {!isFirstCow && getDefenderIcon(def.type)}
                         {def.rank > 0 && (
                             <div className="storm-rank-badge">{getRankStars(def.rank)}</div>
                         )}
@@ -310,7 +314,8 @@ export const StormTheFort = () => {
                             </div>
                         )}
                     </div>
-                ))}
+                    );
+                })}
 
                 {/* Render Enemies — multi-lane y positions */}
                 {enemies.map(en => (

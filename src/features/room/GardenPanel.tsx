@@ -3,6 +3,7 @@ import { X, Droplets, Sprout } from 'lucide-react';
 import { useGardenStore, SEEDS } from '../../store/useGardenStore';
 import { useGameStore } from '../../store/useGameStore';
 import { Panel } from '../../components/ui/Panel';
+import { useToastStore } from '../../components/ui/Toast';
 import './RoomPanels.css';
 
 export const GardenPanel = ({ onClose }: { onClose: () => void }) => {
@@ -23,6 +24,15 @@ export const GardenPanel = ({ onClose }: { onClose: () => void }) => {
         if (!seed || currency < seed.cost) return;
         addCurrency(-seed.cost);
         garden.plantSeed(plotIndex, selectedSeed);
+        // Confirmation toast: what was planted and how long until ready
+        const h = Math.floor(seed.growTimeMs / 3600000);
+        const m = Math.floor((seed.growTimeMs % 3600000) / 60000);
+        const timeLabel = h > 0 ? `${h}h ${m > 0 ? m + 'm' : ''}`.trim() : `${m}m`;
+        useToastStore.getState().addToast({
+            type: 'success',
+            message: `🌱 ${seed.name} planted in Plot ${plotIndex + 1}! Ready in ${timeLabel}.`,
+            duration: 4000,
+        });
     };
 
     const handleHarvest = (plotIndex: number) => {
@@ -116,10 +126,11 @@ export const GardenPanel = ({ onClose }: { onClose: () => void }) => {
                             ) : (
                                 <>
                                     <div className="plot-seed-icon">{seed?.icon}</div>
+                                    <div className="plot-seed-name" style={{ fontSize: '0.65rem', color: '#94a3b8', marginBottom: 2 }}>{seed?.name}</div>
                                     <div className="plot-growth-bar">
                                         <div className="plot-growth-fill" style={{ width: `${growPct}%` }} />
                                     </div>
-                                    <div className="plot-timer">{isReady ? '🌾 Ready!' : formatTime(remaining)}</div>
+                                    <div className="plot-timer">{isReady ? '🌾 Ready!' : `${Math.round(growPct)}% — ${formatTime(remaining)}`}</div>
                                     <div className="plot-actions">
                                         {!isReady && !plot.wateredToday && (
                                             <button className="plot-water-btn" onClick={() => garden.waterPlot(i)}>

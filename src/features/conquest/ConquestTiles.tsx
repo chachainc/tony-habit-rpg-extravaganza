@@ -13,6 +13,7 @@ import {
     type Difficulty,
 } from './tileConfig';
 import { useConquestStore } from '../../store/useConquestStore';
+import { useCurrencyStore } from '../../store/useCurrencyStore';
 import { useToastStore } from '../../components/ui/Toast';
 import './ConquestTiles.css';
 
@@ -49,11 +50,17 @@ export const ConquestTiles = ({ onComplete, onClose, canPlay, canPlayImpossible 
     const [ownedUndo, setOwnedUndo] = useState(0);
     const [ownedShuffle, setOwnedShuffle] = useState(0);
     const [purchaseModal, setPurchaseModal] = useState<'remove' | 'undo' | 'shuffle' | null>(null);
+    // Daily use counters (reset when the game session reloads — stored per session only)
+    const [removeBoughtToday, setRemoveBoughtToday] = useState(0);
+    const [undoBoughtToday, setUndoBoughtToday] = useState(0);
+    const [shuffleBoughtToday, setShuffleBoughtToday] = useState(0);
+    const DAILY_BONUS_LIMIT = 3;
 
     // History for undo
     const history = useRef<{ tile: BoardTile; traySnapshot: BoardTile[] }[]>([]);
 
     const conquest = useConquestStore();
+    const currency = useCurrencyStore();
     const addToast = useToastStore(s => s.addToast);
 
     // ─── START GAME ───────────────────────────────
@@ -313,15 +320,22 @@ export const ConquestTiles = ({ onComplete, onClose, canPlay, canPlayImpossible 
     // ─── PURCHASE ─────────────────────────────────
     const handlePurchase = useCallback((type: 'remove' | 'undo' | 'shuffle') => {
         const cost = POWER_COSTS[type];
-        if (conquest.sigils < cost) return;
-        conquest.spendSigils(cost);
+        const boughtCounts = { remove: removeBoughtToday, undo: undoBoughtToday, shuffle: shuffleBoughtToday };
+        if (boughtCounts[type] >= DAILY_BONUS_LIMIT) {
+            addToast({ message: `Daily limit reached for this bonus (${DAILY_BONUS_LIMIT}/day)`, type: 'warning' });
+            return;
+        }
+        if (!currency.spendGold(cost)) {
+            addToast({ message: `Not enough gold! Need ${cost}🪙`, type: 'error' });
+            return;
+        }
         switch (type) {
-            case 'remove': setOwnedRemove(c => c + 1); break;
-            case 'undo': setOwnedUndo(c => c + 1); break;
-            case 'shuffle': setOwnedShuffle(c => c + 1); break;
+            case 'remove': setOwnedRemove(c => c + 1); setRemoveBoughtToday(c => c + 1); break;
+            case 'undo': setOwnedUndo(c => c + 1); setUndoBoughtToday(c => c + 1); break;
+            case 'shuffle': setOwnedShuffle(c => c + 1); setShuffleBoughtToday(c => c + 1); break;
         }
         setPurchaseModal(null);
-    }, [conquest]);
+    }, [conquest, currency, removeBoughtToday, undoBoughtToday, shuffleBoughtToday, addToast]);
 
     // ─── COMBO EXPIRY EFFECT ──────────────────────
     useEffect(() => {
@@ -423,6 +437,10 @@ export const ConquestTiles = ({ onComplete, onClose, canPlay, canPlayImpossible 
         const cost = POWER_COSTS[purchaseModal];
         const owned = purchaseModal === 'remove' ? ownedRemove : purchaseModal === 'undo' ? ownedUndo : ownedShuffle;
 
+        const boughtCounts: Record<string, number> = { remove: removeBoughtToday, undo: undoBoughtToday, shuffle: shuffleBoughtToday };
+        const usedToday = boughtCounts[purchaseModal] ?? 0;
+        const atLimit = usedToday >= DAILY_BONUS_LIMIT;
+
         return (
             <motion.div
                 className="tiles-purchase-overlay"
@@ -455,12 +473,16 @@ export const ConquestTiles = ({ onComplete, onClose, canPlay, canPlayImpossible 
                     </div>
 
                     <div className="tiles-purchase-cost">
-                        🔱 {cost} Sigils
+                        🪙 {cost} Gold {atLimit ? (
+                            <span style={{ color: '#ef4444', fontSize: '0.75rem', marginLeft: '0.5rem' }}>(Limit reached: {usedToday}/{DAILY_BONUS_LIMIT})</span>
+                        ) : (
+                            <span style={{ color: '#64748b', fontSize: '0.75rem', marginLeft: '0.5rem' }}>({usedToday}/{DAILY_BONUS_LIMIT} used today)</span>
+                        )}
                     </div>
 
                     <button
                         className="tiles-purchase-buy-btn"
-                        disabled={conquest.sigils < cost}
+                        disabled={currency.gold < cost || atLimit}
                         onClick={() => handlePurchase(purchaseModal)}
                     >
                         Purchase

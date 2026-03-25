@@ -18,20 +18,21 @@ export interface RiskCardDef {
     effect: string;
     category: string;
     cost: number;
+    currency: 'sigils' | 'gold' | 'shmeckles';
 }
 
 export const RISK_CARDS: Record<RiskCardId, RiskCardDef> = {
-    blitz:          { id: 'blitz',          icon: '⚡', name: 'Blitz',           effect: 'First die roll gets +1',                               category: 'Offense',  cost: 100 },
-    iron_discipline:{ id: 'iron_discipline', icon: '🛡️', name: 'Iron Discipline',  effect: 'Tied dice comparisons count as player wins',           category: 'Defense',  cost: 100 },
-    medic:          { id: 'medic',          icon: '💊', name: 'Medic Corps',      effect: 'Recover 1 soldier after any victory',                  category: 'Survival', cost: 100 },
-    war_banner:     { id: 'war_banner',     icon: '🚩', name: 'War Banner',       effect: '+1 die when attacking a Captain or Boss node',         category: 'Offense',  cost: 100 },
-    treasurer:      { id: 'treasurer',      icon: '💰', name: 'Treasurer',        effect: '+1 Schmeckle per game mode victory',                   category: 'Economy',  cost: 100 },
-    recruiter:      { id: 'recruiter',      icon: '📜', name: 'Recruiter',        effect: '+1 Sigil per territory captured',                      category: 'Economy',  cost: 100 },
-    warlord_sigil:  { id: 'warlord_sigil',  icon: '🏺', name: "Warlord's Sigil",  effect: '+1 Sigil per wave cleared (Tower/Storm)',              category: 'Economy',  cost: 100 },
-    tank_tactics:   { id: 'tank_tactics',   icon: '🪖', name: 'Tank Tactics',     effect: 'Your army does 15% more effective damage each battle', category: 'Offense',  cost: 100 },
-    iron_will:      { id: 'iron_will',      icon: '🛡️', name: 'Iron Will',         effect: '+10% defense in Risk battles',                          category: 'Defense',  cost: 100 },
-    treasure_sense: { id: 'treasure_sense', icon: '🗺️', name: 'Treasure Sense',    effect: '+20% gold from treasure nodes',                         category: 'Economy',  cost: 100 },
-    arcane_edge:    { id: 'arcane_edge',    icon: '🔮', name: 'Arcane Edge',        effect: '+15% magic damage in Risk battles',                     category: 'Offense',  cost: 100 },
+    blitz:          { id: 'blitz',          icon: '⚡', name: 'Blitz',            effect: 'First die roll gets +1',                               category: 'Offense',  cost: 75,   currency: 'gold'   },
+    iron_discipline:{ id: 'iron_discipline', icon: '🛡️', name: 'Iron Discipline',  effect: 'Tied dice comparisons count as player wins',           category: 'Defense',  cost: 2000, currency: 'gold'   },
+    medic:          { id: 'medic',          icon: '💊', name: 'Medic Corps',      effect: 'Recover 1 soldier after any victory',                  category: 'Survival', cost: 100,  currency: 'sigils' },
+    war_banner:     { id: 'war_banner',     icon: '🚩', name: 'War Banner',       effect: '+1 die when attacking a Captain or Boss node',         category: 'Offense',  cost: 250,  currency: 'gold'   },
+    treasurer:      { id: 'treasurer',      icon: '💰', name: 'Treasurer',        effect: '+1 Shmeckle per game mode victory',                    category: 'Economy',  cost: 500,  currency: 'shmeckles' },
+    recruiter:      { id: 'recruiter',      icon: '📜', name: 'Recruiter',        effect: '+1 Sigil per territory captured',                      category: 'Economy',  cost: 500,  currency: 'shmeckles' },
+    warlord_sigil:  { id: 'warlord_sigil',  icon: '🏺', name: "Warlord's Sigil",  effect: '+1 Sigil per wave cleared (Tower/Storm)',              category: 'Economy',  cost: 500,  currency: 'shmeckles' },
+    tank_tactics:   { id: 'tank_tactics',   icon: '🪖', name: 'Tank Tactics',     effect: 'Your army does 15% more effective damage each battle', category: 'Offense',  cost: 100,  currency: 'sigils' },
+    iron_will:      { id: 'iron_will',      icon: '🛡️', name: 'Iron Will',         effect: '+10% defense in Risk battles',                         category: 'Defense',  cost: 100,  currency: 'sigils' },
+    treasure_sense: { id: 'treasure_sense', icon: '🗺️', name: 'Treasure Sense',    effect: '+20% gold from treasure nodes',                        category: 'Economy',  cost: 20,   currency: 'sigils' },
+    arcane_edge:    { id: 'arcane_edge',    icon: '🔮', name: 'Arcane Edge',        effect: '+15% magic damage in Risk battles',                    category: 'Offense',  cost: 100,  currency: 'sigils' },
 };
 
 export interface RegionDef {
@@ -249,10 +250,26 @@ export const useRiskStore = create<RiskState>()(
             buyCard: (id: RiskCardId) => {
                 const state = get();
                 if (state.ownedCards.includes(id)) return false;
-                const cs = (require('./useConquestStore') as any).useConquestStore.getState();
-                const cost = RISK_CARDS[id].cost;
-                if (cs.sigils < cost) return false;
-                cs.addSigils(-cost);
+                const cardDef = RISK_CARDS[id];
+                const cost = cardDef.cost;
+                const currency = cardDef.currency;
+
+                if (currency === 'sigils') {
+                    const cs = (require('./useConquestStore') as any).useConquestStore.getState();
+                    if (cs.sigils < cost) return false;
+                    cs.addSigils(-cost);
+                } else if (currency === 'gold') {
+                    const curr = (require('./useCurrencyStore') as any).useCurrencyStore.getState();
+                    if ((curr.gold ?? 0) < cost) return false;
+                    curr.addGold(-cost);
+                } else if (currency === 'shmeckles') {
+                    const curr = (require('./useCurrencyStore') as any).useCurrencyStore.getState();
+                    if ((curr.shmeckles ?? 0) < cost) return false;
+                    curr.addShmeckles(-cost);
+                } else {
+                    return false;
+                }
+
                 set(s => ({ ownedCards: [...s.ownedCards, id] }));
                 return true;
             },

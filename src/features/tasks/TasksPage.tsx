@@ -1,13 +1,14 @@
 import { useState, useEffect, useRef, useMemo } from 'react';
 import dayjs from 'dayjs';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Plus, Gift, CheckCircle, Circle, Sun, Sunset, Moon, Star, MinusCircle, Trash2, Pencil, Dices, CalendarDays, ChevronDown, ChevronUp, GripVertical } from 'lucide-react';
+import { Plus, Gift, CheckCircle, Circle, Sun, Sunset, Moon, Star, MinusCircle, Trash2, Pencil, Dices, CalendarDays, ChevronDown, ChevronUp, GripVertical, ClipboardList, X } from 'lucide-react';
 import { Card } from '../../components/ui';
 import { useGameStore, type SkillName } from '../../store/useGameStore';
 import { safeUUID } from '../../utils/safeUUID';
 
 import { useRecurringTasksStore, type BundleType, type TaskCategory, DAILY_TASKS_TEMPLATE } from '../../store/useRecurringTasksStore';
 import { useCalendarStore } from '../../store/useCalendarStore';
+import { useTodoStore, type TimeOfDay, type Recurrence, TIME_OF_DAY_LABELS } from '../../store/useTodoStore';
 import { WeightInput } from '../../components/WeightInput/WeightInput';
 import { TrainingInput } from './TrainingInput';
 import { DailyChest } from './DailyChest';
@@ -135,6 +136,7 @@ export const TasksPage = () => {
         dailyTasks,
         weeklyTasks,
         completeTask,
+        uncompleteTask,
         checkAndReset,
         getBundleStatus,
         claimBundleReward,
@@ -199,6 +201,44 @@ export const TasksPage = () => {
     // Calendar Store
     const { addTask: addCalendarTask, tasks: calendarTasks, toggleTask: toggleCalendarTask, deleteTask: deleteCalendarTask } = useCalendarStore();
     const [selectedDate, setSelectedDate] = useState(dayjs().format('YYYY-MM-DD'));
+
+    // ── To-Do Store ────────────────────────────────────────
+    const { getTodayTodos, addTodo, completeTodo, uncompleteTodo, deleteTodo } = useTodoStore();
+    const todayTodos = getTodayTodos();
+    const [showTodoModal, setShowTodoModal] = useState(false);
+    const [todoTitle, setTodoTitle] = useState('');
+    const [todoNote, setTodoNote] = useState('');
+    const [todoTimeOfDay, setTodoTimeOfDay] = useState<TimeOfDay>('anytime');
+    const [todoDueDate, setTodoDueDate] = useState(dayjs().format('YYYY-MM-DD'));
+    const [todoRecurrence, setTodoRecurrence] = useState<Recurrence>('none');
+    const [todoRecurrenceDays, setTodoRecurrenceDays] = useState<number[]>([]);
+    const [showTodosSection, setShowTodosSection] = useState(true);
+
+    const handleAddTodo = (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!todoTitle.trim()) return;
+        addTodo({
+            title: todoTitle.trim(),
+            note: todoNote.trim() || undefined,
+            timeOfDay: todoTimeOfDay,
+            dueDate: todoDueDate,
+            recurrence: todoRecurrence,
+            recurrenceDays: todoRecurrence === 'custom' ? todoRecurrenceDays : undefined,
+        });
+        setTodoTitle('');
+        setTodoNote('');
+        setTodoTimeOfDay('anytime');
+        setTodoDueDate(dayjs().format('YYYY-MM-DD'));
+        setTodoRecurrence('none');
+        setTodoRecurrenceDays([]);
+        setShowTodoModal(false);
+    };
+
+    const toggleRecurrenceDay = (day: number) => {
+        setTodoRecurrenceDays(prev =>
+            prev.includes(day) ? prev.filter(d => d !== day) : [...prev, day]
+        );
+    };
 
     const handleAdd = (e: React.FormEvent) => {
         e.preventDefault();
@@ -383,7 +423,10 @@ export const TasksPage = () => {
                                     onDragStart={() => handleDragStart(bundleType, idx)}
                                     onDragOver={(e) => handleDragOver(e, bundleType, idx)}
                                     onClick={() => {
-                                        if (!task.completed) {
+                                        if (task.completed) {
+                                            // Allow un-checking accidental completions
+                                            uncompleteTask(task.id);
+                                        } else {
                                             if (task.requiresInput === 'training') {
                                                 setShowTrainingInput(true);
                                             } else {
@@ -499,7 +542,61 @@ export const TasksPage = () => {
                         <CalendarDays size={16} />
                         Calendar
                     </button>
+                    <button
+                        onClick={() => setShowTodoModal(true)}
+                        className="tasks-header-nav-btn tasks-header-nav-btn--todo"
+                    >
+                        <ClipboardList size={16} />
+                        + To-Do
+                    </button>
                 </motion.div>
+
+                {/* ── Today's To-Dos ── */}
+                {todayTodos.length > 0 && (
+                    <motion.div
+                        className="todo-section"
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                    >
+                        <div className="todo-section-header" onClick={() => setShowTodosSection(s => !s)}>
+                            <span className="todo-section-title"><ClipboardList size={16} /> Today's To-Dos</span>
+                            <span className="todo-section-count">{todayTodos.filter(t => t.completed).length}/{todayTodos.length}</span>
+                            {showTodosSection ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+                        </div>
+                        <AnimatePresence>
+                            {showTodosSection && (
+                                <motion.div
+                                    className="todo-list"
+                                    initial={{ height: 0, opacity: 0 }}
+                                    animate={{ height: 'auto', opacity: 1 }}
+                                    exit={{ height: 0, opacity: 0 }}
+                                >
+                                    {todayTodos.map(todo => (
+                                        <div key={todo.id} className={`todo-item ${todo.completed ? 'todo-item--done' : ''}`}>
+                                            <button
+                                                className="todo-check-btn"
+                                                onClick={() => todo.completed ? uncompleteTodo(todo.id) : completeTodo(todo.id)}
+                                            >
+                                                {todo.completed ? <CheckCircle size={22} className="check-done" /> : <Circle size={22} className="check-todo" />}
+                                            </button>
+                                            <div className="todo-item-body">
+                                                <span className="todo-item-title">{todo.title}</span>
+                                                {todo.note && <span className="todo-item-note">{todo.note}</span>}
+                                                <span className="todo-item-meta">
+                                                    {TIME_OF_DAY_LABELS[todo.timeOfDay]}
+                                                    {todo.recurrence !== 'none' && ` · 🔁 ${todo.recurrence}`}
+                                                </span>
+                                            </div>
+                                            <button className="todo-delete-btn" onClick={() => deleteTodo(todo.id)}>
+                                                <Trash2 size={15} />
+                                            </button>
+                                        </div>
+                                    ))}
+                                </motion.div>
+                            )}
+                        </AnimatePresence>
+                    </motion.div>
+                )}
 
                 {/* ── Stats Dashboard ── */}
                 <motion.div
@@ -993,8 +1090,114 @@ export const TasksPage = () => {
                     </Card>
                 </motion.div>
 
-
             </div>
+
+            {/* ── To-Do Creation Modal ── */}
+            <AnimatePresence>
+                {showTodoModal && (
+                    <motion.div
+                        className="todo-modal-overlay"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        onClick={() => setShowTodoModal(false)}
+                    >
+                        <motion.div
+                            className="todo-modal-card"
+                            initial={{ scale: 0.9, y: 30, opacity: 0 }}
+                            animate={{ scale: 1, y: 0, opacity: 1 }}
+                            exit={{ scale: 0.9, y: 30, opacity: 0 }}
+                            onClick={e => e.stopPropagation()}
+                        >
+                            <div className="todo-modal-header">
+                                <span><ClipboardList size={18} /> New To-Do</span>
+                                <button className="todo-modal-close" onClick={() => setShowTodoModal(false)}><X size={20} /></button>
+                            </div>
+                            <form onSubmit={handleAddTodo} className="todo-modal-form">
+                                <input
+                                    className="todo-modal-input"
+                                    type="text"
+                                    placeholder="What do you need to do?"
+                                    value={todoTitle}
+                                    onChange={e => setTodoTitle(e.target.value)}
+                                    autoFocus
+                                />
+                                <textarea
+                                    className="todo-modal-input todo-modal-textarea"
+                                    placeholder="Note (optional)"
+                                    value={todoNote}
+                                    onChange={e => setTodoNote(e.target.value)}
+                                    rows={2}
+                                />
+
+                                <div className="todo-modal-row">
+                                    <label className="todo-modal-label">Time of Day</label>
+                                    <div className="todo-time-chips">
+                                        {(['anytime', 'morning', 'afternoon', 'evening'] as TimeOfDay[]).map(t => (
+                                            <button
+                                                key={t}
+                                                type="button"
+                                                className={`todo-chip ${todoTimeOfDay === t ? 'todo-chip--active' : ''}`}
+                                                onClick={() => setTodoTimeOfDay(t)}
+                                            >
+                                                {TIME_OF_DAY_LABELS[t]}
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
+
+                                <div className="todo-modal-row">
+                                    <label className="todo-modal-label">Due Date</label>
+                                    <input
+                                        type="date"
+                                        className="todo-modal-input todo-modal-date"
+                                        value={todoDueDate}
+                                        onChange={e => setTodoDueDate(e.target.value)}
+                                    />
+                                </div>
+
+                                <div className="todo-modal-row">
+                                    <label className="todo-modal-label">Recurrence</label>
+                                    <div className="todo-time-chips">
+                                        {(['none', 'daily', 'weekly', 'custom'] as Recurrence[]).map(r => (
+                                            <button
+                                                key={r}
+                                                type="button"
+                                                className={`todo-chip ${todoRecurrence === r ? 'todo-chip--active' : ''}`}
+                                                onClick={() => setTodoRecurrence(r)}
+                                            >
+                                                {r === 'none' ? '🚫 Once' : r === 'daily' ? '🔁 Daily' : r === 'weekly' ? '📅 Weekly' : '🗓 Custom'}
+                                            </button>
+                                        ))}
+                                    </div>
+                                    {todoRecurrence === 'custom' && (
+                                        <div className="todo-day-chips">
+                                            {['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'].map((label, i) => (
+                                                <button
+                                                    key={i}
+                                                    type="button"
+                                                    className={`todo-day-chip ${todoRecurrenceDays.includes(i) ? 'todo-day-chip--active' : ''}`}
+                                                    onClick={() => toggleRecurrenceDay(i)}
+                                                >
+                                                    {label}
+                                                </button>
+                                            ))}
+                                        </div>
+                                    )}
+                                </div>
+
+                                <button
+                                    type="submit"
+                                    disabled={!todoTitle.trim()}
+                                    className="btn btn--primary btn--md todo-modal-submit"
+                                >
+                                    <Plus size={16} /> Add To-Do
+                                </button>
+                            </form>
+                        </motion.div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
         </div>
     );
 };

@@ -291,20 +291,25 @@ export const useStormStore = create<StormState>()((set, get) => ({
 
     savedFormation: JSON.parse(localStorage.getItem('stf-saved-formation') || '[]'),
 
-    startGame: () => set({ 
-        gameState: 'playing', 
-        wave: 1, 
-        fortHp: get().maxFortHp,
-        enemies: [],
-        defenders: [],
-        obstacles: [],
-        projectiles: [],
-        comboCount: 0,
-        comboTimer: 0,
-        comboPopups: [],
-        bossWarningActive: false,
-        rallyUntil: 0,
-    }),
+    startGame: () => {
+        // Reset hasBoughtFirstCow so the free starter is always available for a fresh game
+        localStorage.removeItem('stf-free-cow-claimed');
+        set({ 
+            gameState: 'playing', 
+            wave: 1, 
+            fortHp: get().maxFortHp,
+            enemies: [],
+            defenders: [],
+            obstacles: [],
+            projectiles: [],
+            comboCount: 0,
+            comboTimer: 0,
+            comboPopups: [],
+            bossWarningActive: false,
+            rallyUntil: 0,
+            hasBoughtFirstCow: false,
+        });
+    },
 
     pauseGame: () => set({ gameState: 'paused' }),
     resumeGame: () => set({ gameState: 'playing' }),

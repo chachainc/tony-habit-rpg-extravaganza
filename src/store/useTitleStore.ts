@@ -28,7 +28,7 @@ export const TITLES: Title[] = [
         requirement: 'Welcome to Gamified Life!',
         checkType: 'level',
         checkValue: 0,
-        bonus: { type: 'xp', value: 0.01 }, // +1% XP
+        bonus: { type: 'xp', value: 0 }, // No XP bonus
     },
     // Streak-based
     {
@@ -207,6 +207,7 @@ interface TitleState {
     incrementBattlesWon: () => void;
     getTotalBonus: (bonusType: 'atk' | 'def' | 'hp' | 'xp' | 'gold' | 'crit' | 'speed') => number;
     getUnlockedTitleDefs: () => Title[];
+    getDisplayTitle: (playerName: string) => string | null;
 }
 
 export const useTitleStore = create<TitleState>()(
@@ -285,6 +286,14 @@ export const useTitleStore = create<TitleState>()(
             getUnlockedTitleDefs: () => {
                 const { unlockedTitles } = get();
                 return TITLES.filter((t) => unlockedTitles.includes(t.id));
+            },
+
+            getDisplayTitle: (playerName: string) => {
+                const { activeTitle } = get();
+                if (!activeTitle) return null;
+                const titleDef = TITLES.find(t => t.id === activeTitle);
+                if (!titleDef) return null;
+                return `${playerName} the ${titleDef.name}`;
             },
         }),
         {

@@ -1,8 +1,8 @@
 import { useState, useMemo, useCallback } from 'react';
 import { X, Heart, Gift, Sparkles } from 'lucide-react';
 import { usePetStore, PET_DATABASE } from '../../store/usePetStore';
-import { useGameStore } from '../../store/useGameStore';
 import { useCurrencyStore } from '../../store/useCurrencyStore';
+import { useConquestStore } from '../../store/useConquestStore';
 import { Panel } from '../../components/ui/Panel';
 import './RoomPanels.css';
 
@@ -53,10 +53,24 @@ export const PetInteractionPanel = ({ onClose }: { onClose: () => void }) => {
     const handleFeed = useCallback(() => {
         if (gold < FEED_COST || lastFed === getTodayStr()) return;
         useCurrencyStore.getState().spendGold(FEED_COST);
-        useGameStore.getState().addGlobalXp(5);
+
+        // Give 1 random rare resource instead of gold
+        const roll = Math.random();
+        let rewardLabel = '';
+        if (roll < 0.33) {
+            useConquestStore.getState().addSigils(1);
+            rewardLabel = '🔱 +1 Sigil!';
+        } else if (roll < 0.66) {
+            useCurrencyStore.getState().addBalloons(1);
+            rewardLabel = '🎈 +1 Balloon!';
+        } else {
+            useCurrencyStore.getState().addShmeckles(1);
+            rewardLabel = '🐌 +1 Shmeckle!';
+        }
+
         setLastFed(getTodayStr());
         setFeedAnim(true);
-        showFloatingFeedback('+5 XP', 'xp');
+        showFloatingFeedback(rewardLabel, 'gold');
         setTimeout(() => setFeedAnim(false), 1000);
     }, [gold, lastFed]);
 
@@ -64,7 +78,7 @@ export const PetInteractionPanel = ({ onClose }: { onClose: () => void }) => {
         if (lastPlayedTs && (Date.now() - lastPlayedTs) / 3600000 < PLAY_COOLDOWN_HOURS) return;
         const reward = 5 + Math.floor(Math.random() * 15);
         useCurrencyStore.getState().addGold(reward, { exact: true });
-        useGameStore.getState().addGlobalXp(3);
+        // No XP from playing — just fun and gold!
         setLastPlayedTs(Date.now());
         setPlayAnim(true);
         showFloatingFeedback(`+${reward}g`, 'gold');
@@ -125,7 +139,7 @@ export const PetInteractionPanel = ({ onClose }: { onClose: () => void }) => {
                 >
                     <Heart size={20} />
                     <span>Feed</span>
-                    <small>{FEED_COST}g • +5 XP</small>
+                    <small>{FEED_COST}g • Nice job! 🐾</small>
                     {lastFed === today && <span className="pet-action-done">✅ Fed today</span>}
                 </button>
 
