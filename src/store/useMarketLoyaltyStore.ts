@@ -29,14 +29,17 @@ export interface MerchantItem {
     effect: string;
 }
 
-// Rotating pool of exclusive merchant items
+// Rotating pool of exclusive merchant items — now only sells Jar of Pewter
 const MERCHANT_POOL: MerchantItem[] = [
-    { id: 'merchant_elixir',    name: 'Elixir of Fortune', icon: '🧪', description: 'Doubles gold from next 3 battles', price: 2500, rarity: 'epic', effect: '+100% gold (3 battles)' },
-    { id: 'merchant_charm',     name: 'Lucky Charm',       icon: '🍀', description: 'Increases crit chance for 1 day',  price: 1800, rarity: 'rare', effect: '+15% crit (24h)' },
-    { id: 'merchant_crystal',   name: 'Star Crystal',      icon: '💎', description: 'Grants 200 XP to a random skill', price: 1500, rarity: 'rare', effect: '+200 skill XP' },
-    { id: 'merchant_tome',      name: 'Ancient Scroll',    icon: '📜', description: 'Grants 200 XP to a random skill', price: 2000, rarity: 'epic', effect: '+200 skill XP' },
-    { id: 'merchant_pendant',   name: 'Phoenix Pendant',   icon: '🔥', description: 'Revive once in arena combat',     price: 5000, rarity: 'legendary', effect: 'Auto-revive (1x)' },
-    { id: 'merchant_compass',   name: 'Merchant Compass',  icon: '🧭', description: 'Reveals hidden shop deals',       price: 1500, rarity: 'rare', effect: 'Unlock secret items' },
+    {
+        id: 'merchant_jar_of_pewter',
+        name: 'Jar of Pewter',
+        icon: '🫙',
+        description: 'A mysterious grey jar filled with ancient pewter dust. Boosts your attack power.',
+        price: 50,
+        rarity: 'epic',
+        effect: '+25% ATK for the day',
+    },
 ];
 
 interface MarketLoyaltyState {
@@ -74,19 +77,9 @@ const checkMerchantDay = (): boolean => {
     return day === 1 || day === 3 || day === 5;
 };
 
-// Seed-based selection from merchant pool (3 items per day)
+// Always returns just the Jar of Pewter (the only merchant item)
 const selectMerchantStock = (): MerchantItem[] => {
-    const today = getTodayString();
-    let seed = 0;
-    for (let i = 0; i < today.length; i++) seed += today.charCodeAt(i);
-    
-    const shuffled = [...MERCHANT_POOL].sort((a, b) => {
-        const ha = (seed * 31 + a.id.charCodeAt(0)) % 100;
-        const hb = (seed * 31 + b.id.charCodeAt(0)) % 100;
-        return ha - hb;
-    });
-    
-    return shuffled.slice(0, 3);
+    return [...MERCHANT_POOL];
 };
 
 export const useMarketLoyaltyStore = create<MarketLoyaltyState>()(
@@ -156,6 +149,22 @@ export const useMarketLoyaltyStore = create<MarketLoyaltyState>()(
                 set(state => ({
                     merchantPurchased: [...state.merchantPurchased, itemId],
                 }));
+
+                // Apply item effects
+                if (itemId === 'merchant_jar_of_pewter') {
+                    // +25% ATK buff for 24 hours
+                    import('./useBuffStore').then(({ useBuffStore }) => {
+                        useBuffStore.getState().addBuff('attack_boost', 0.25, 24, 'Jar of Pewter (+25% ATK)');
+                    }).catch(() => {});
+                    import('../components/ui/Toast').then(({ useToastStore }) => {
+                        useToastStore.getState().addToast({
+                            type: 'success',
+                            message: '🫙 Jar of Pewter applied! +25% ATK for 24h',
+                            duration: 4000,
+                        });
+                    }).catch(() => {});
+                }
+
                 return true;
             },
 

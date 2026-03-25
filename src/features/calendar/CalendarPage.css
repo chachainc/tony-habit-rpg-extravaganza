@@ -76,6 +76,7 @@
 .day-number {
     font-weight: 600;
     font-size: 0.9rem;
+    color: #fff;
 }
 
 .check-in-icon {
@@ -93,6 +94,12 @@
     padding: 2px 6px;
     border-radius: 4px;
     align-self: flex-start;
+    color: #fff;
+}
+
+.task-count {
+    color: #fff;
+    font-weight: 600;
 }
 
 /* Modal Styles */

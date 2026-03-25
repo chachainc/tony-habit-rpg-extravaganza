@@ -54,7 +54,7 @@ export const calculateEffectiveDefense = (defender: Combatant, isMagic: boolean 
 
 export interface CombatLog {
     message: string;
-    type: 'damage' | 'heal' | 'buff' | 'debuff' | 'crit' | 'element' | 'info' | 'victory' | 'defeat';
+    type: 'damage' | 'player_hit' | 'heal' | 'buff' | 'debuff' | 'crit' | 'element' | 'info' | 'victory' | 'defeat';
     value?: number;
 }
 
@@ -971,7 +971,7 @@ export const useBattleStore = create<BattleState>()((set, get) => ({
 
         logs.push({
             message: `${defender.name} takes ${finalDamage} damage!`,
-            type: 'damage',
+            type: attacker.isPlayer ? 'player_hit' : 'damage',
             value: finalDamage,
         });
 

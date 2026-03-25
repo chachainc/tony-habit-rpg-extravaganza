@@ -781,6 +781,7 @@
 }
 
 .cq-log-damage { color: #f87171; }
+.cq-log-player_hit { color: #4ade80; }
 .cq-log-heal   { color: #4ade80; }
 .cq-log-victory { color: #22c55e; font-weight: 800; }
 .cq-log-defeat  { color: #ef4444; font-weight: 800; }
@@ -979,4 +980,55 @@
     opacity: 0.35;
     cursor: not-allowed;
 }
+
+/* ─── Combat HP / Energy Bars ─────────────────────────── */
+.cq-hp-bar-wrap {
+    position: relative;
+    width: 100%;
+    height: 18px;
+    background: rgba(0, 0, 0, 0.5);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 99px;
+    overflow: hidden;
+    margin-top: 0.4rem;
+}
+
+.cq-hp-bar {
+    height: 100%;
+    border-radius: 99px;
+    transition: width 0.4s ease;
+    min-width: 4px;
+}
+
+.cq-hp-label {
+    position: absolute;
+    right: 6px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 0.65rem;
+    font-weight: 700;
+    color: rgba(255, 255, 255, 0.9);
+    pointer-events: none;
+    text-shadow: 0 1px 2px rgba(0,0,0,0.8);
+}
+
+.cq-energy-bar-wrap {
+    position: relative;
+    width: 100%;
+    height: 14px;
+    background: rgba(0, 0, 0, 0.4);
+    border: 1px solid rgba(251, 191, 36, 0.2);
+    border-radius: 99px;
+    overflow: hidden;
+    margin-top: 0.25rem;
+}
+
+.cq-energy-bar {
+    height: 100%;
+    background: linear-gradient(90deg, #fbbf24, #f59e0b);
+    border-radius: 99px;
+    transition: width 0.3s ease;
+    min-width: 2px;
+}
+
 

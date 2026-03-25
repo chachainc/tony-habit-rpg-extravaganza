@@ -2,6 +2,7 @@ import { useNavigate } from 'react-router-dom';
 import { useEffect, useRef, useState } from 'react';
 import { useRiskStore, RISK_CARDS, REGIONS, type TerritoryNode, type RegionId, type RiskBattleResult, type RiskCardId } from '../../store/useRiskStore';
 import { useConquestStore } from '../../store/useConquestStore';
+import { useCurrencyStore } from '../../store/useCurrencyStore';
 import { Map as MapIcon, ArrowLeft, Swords, TrendingUp, X, ShoppingCart, HelpCircle } from 'lucide-react';
 import './RiskPage.css';
 
@@ -602,12 +603,22 @@ export const RiskPage = () => {
                         <button className="close-btn" onClick={() => setShowCardShop(false)}><X size={20} /></button>
                         <h3 style={{ color: '#f59e0b', marginBottom: '0.25rem' }}>🛒 Command Card Shop</h3>
                         <p style={{ fontSize: '0.8rem', color: '#94a3b8', margin: '0 0 1rem' }}>
-                            Cards cost 100 🔱 each and are <strong>permanently owned</strong> once purchased.
+                            Cards grant powerful passives and are <strong>permanently owned</strong> once purchased.
                         </p>
                         <div className="cards-list" style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                            {(Object.values(RISK_CARDS)).map(def => {
+                            {(Object.values(RISK_CARDS))
+                                .filter(def => !['tank_tactics', 'iron_will', 'medic', 'arcane_edge'].includes(def.id))
+                                .map(def => {
                                 const owned = risk.ownedCards.includes(def.id);
-                                const canBuy = !owned && conquest.sigils >= def.cost;
+                                let canBuy = !owned;
+                                if (!owned) {
+                                    if (def.currency === 'sigils') canBuy = conquest.sigils >= def.cost;
+                                    if (def.currency === 'gold') canBuy = (useCurrencyStore.getState().gold ?? 0) >= def.cost;
+                                    if (def.currency === 'shmeckles') canBuy = (useCurrencyStore.getState().shmeckles ?? 0) >= def.cost;
+                                }
+                                const cIcon = def.currency === 'sigils' ? '🔱' : def.currency === 'gold' ? '🪙' : '💰';
+                                const cLabel = def.currency === 'sigils' ? 'Sigils' : def.currency === 'gold' ? 'Gold' : 'Coins';
+                                
                                 return (
                                     <div key={def.id} className={`card-item-rich rarity-common ${owned ? 'owned-card-row' : ''}`} style={{ borderLeftColor: owned ? '#10b981' : '#60a5fa' }}>
                                         <span className="card-icon-lg">{def.icon}</span>
@@ -625,9 +636,9 @@ export const RiskPage = () => {
                                                 className="card-equip-btn"
                                                 disabled={!canBuy}
                                                 onClick={() => risk.buyCard(def.id)}
-                                                title={!canBuy ? `Need ${def.cost} Sigils` : `Buy for ${def.cost} Sigils`}
+                                                title={!canBuy ? `Need ${def.cost} ${cLabel}` : `Buy for ${def.cost} ${cLabel}`}
                                             >
-                                                {def.cost} 🔱
+                                                {def.cost} {cIcon}
                                             </button>
                                         )}
                                     </div>
@@ -649,7 +660,7 @@ export const RiskPage = () => {
                             <li><strong>Hire soldiers</strong> for 10 Sigils each. Buy sigils by winning Chess, Tiles, Tower Defense waves, and Risk conquests.</li>
                             <li><strong>Battle</strong> — you and the enemy each roll your soldier dice. Highest vs highest wins comparisons. Most wins takes the node.</li>
                             <li><strong>Enemy scaling</strong> — Skirmish (1) → Patrol (2) → Guard (3) → Garrison (4) → Captain (5+) → Boss (10+) → Warlord (15+) → Legendary (20+).</li>
-                            <li><strong>Cards</strong> cost 100 Sigils each and are permanently in your collection.</li>
+                            <li><strong>Cards</strong> cost varying resources depending on power, and are permanently in your collection.</li>
                             <li><strong>Equip up to 3</strong> cards at a time. You can swap freely.</li>
                         </ul>
                     </div>

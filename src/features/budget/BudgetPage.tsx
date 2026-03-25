@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { DollarSign, Zap, Plus, Gift, History, PlusCircle, Trash2, TrendingDown, Flame, X } from 'lucide-react';
+import { DollarSign, Zap, Plus, Gift, History, PlusCircle, Trash2, TrendingDown, Flame, X, Clock } from 'lucide-react';
 import { Panel } from '../../components/ui/Panel';
 import { GachaButton } from '../../components/ui/GachaButton';
 import { useBudgetStore, BUDGET_CATEGORIES, type Transaction, type BudgetCategory } from '../../store/useBudgetStore';
@@ -23,6 +23,7 @@ export const BudgetPage: React.FC = () => {
         getStreakMultiplier,
         weekHistory,
         getSpentByCategory,
+        setForceShowSetup,
     } = useBudgetStore();
 
     const [isAddingTx, setIsAddingTx] = useState(false);
@@ -41,6 +42,14 @@ export const BudgetPage: React.FC = () => {
                     <DollarSign size={48} className="text-muted" />
                     <h2>No Active Budget</h2>
                     <p>Your weekly budget has not been set yet.</p>
+                    <button 
+                        className="bp-preset-btn bp-preset-add mt-4 mx-auto" 
+                        onClick={() => setForceShowSetup(true)}
+                        style={{ marginTop: '1rem', background: '#3b82f6', color: '#fff', border: 'none', padding: '0.75rem 1.5rem', borderRadius: 8, fontWeight: 700 }}
+                    >
+                        <PlusCircle size={18} />
+                        Set Budget Now
+                    </button>
                 </Panel>
 
                 {/* Show history even without active budget */}
@@ -71,6 +80,14 @@ export const BudgetPage: React.FC = () => {
     const dailyTier = getDailyGiftTier();
     const streakMul = getStreakMultiplier();
     const categorySpend = getSpentByCategory();
+
+    // Compute days until Sunday reset (Eastern)
+    const getDaysUntilReset = () => {
+        const now = new Date(new Date().toLocaleString('en-US', { timeZone: 'America/New_York' }));
+        const daysUntilSun = (7 - now.getDay()) % 7; // 0 = today is Sunday
+        return daysUntilSun === 0 ? 7 : daysUntilSun;
+    };
+    const daysUntilReset = getDaysUntilReset();
 
     const progressClass = progressPercent >= 100 ? 'danger' : progressPercent >= 80 ? 'warning' : 'safe';
 
@@ -108,7 +125,12 @@ export const BudgetPage: React.FC = () => {
                     Weekly Budget
                 </h1>
                 <p className="budget-subtitle">Track spending to maintain combat power &amp; earn daily gifts.</p>
-                {weeklyStreak > 0 && (
+                {/* reset countdown */}
+                <div className="bp-streak-header" style={{ color: '#64748b', fontSize: '0.75rem' }}>
+                    <Clock size={13} />
+                    <span>Resets in {daysUntilReset} day{daysUntilReset !== 1 ? 's' : ''}</span>
+                </div>
+            {weeklyStreak > 0 && (
                     <div className="bp-streak-header">
                         <Flame size={16} className="bp-streak-flame" />
                         <span>{weeklyStreak} Week Streak</span>

@@ -59,6 +59,7 @@ interface RecurringTasksState {
 
     // Actions
     completeTask: (id: string, inputData?: { weight?: number, trainingSelections?: string[] }) => void;
+    uncompleteTask: (id: string) => void; // Allow un-checking an accidentally completed task
 
     resetDailyTasks: () => void;
     resetWeeklyTasks: () => void;
@@ -205,7 +206,7 @@ export const DAILY_TASKS_TEMPLATE: Omit<RecurringTask, 'completed'>[] = [
     {
         id: 'tongue_exercises',
         title: 'Tongue Exercises',
-        bundle: 'afternoon',
+        bundle: 'night',
         type: 'daily',
         category: 'fitness',
         rewards: [
@@ -572,6 +573,17 @@ export const useRecurringTasksStore = create<RecurringTasksState>()(
                     }
 
                     return {};
+                });
+            },
+
+            uncompleteTask: (id: string) => {
+                // Only un-completes daily tasks (weekly tasks cannot be un-done easily)
+                set((state) => {
+                    const dailyIndex = state.dailyTasks.findIndex(t => t.id === id);
+                    if (dailyIndex === -1) return {};
+                    const newTasks = [...state.dailyTasks];
+                    newTasks[dailyIndex] = { ...newTasks[dailyIndex], completed: false };
+                    return { dailyTasks: newTasks };
                 });
             },
 

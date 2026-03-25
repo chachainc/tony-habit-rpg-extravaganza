@@ -69,6 +69,10 @@ interface BudgetState {
     // New: Budget history
     weekHistory: WeekRecord[];
 
+    // Modal Control
+    forceShowSetup: boolean;
+    dismissedPromptWeek: string | null;
+
     // Actions
     setupWeek: (budget: number, giftType: GiftCurrency) => void;
     addTransaction: (amount: number, label: string, category?: BudgetCategory) => void;
@@ -78,6 +82,8 @@ interface BudgetState {
     addPreset: (preset: Omit<QuickPreset, 'id'>) => void;
     removePreset: (id: string) => void;
     usePreset: (presetId: string) => void;
+    setForceShowSetup: (show: boolean) => void;
+    dismissPrompt: () => void;
 
     // Computeds
     getTotalSpent: () => number;
@@ -122,6 +128,8 @@ export const useBudgetStore = create<BudgetState>()(
             quickPresets: DEFAULT_PRESETS,
             weeklyStreak: 0,
             weekHistory: [],
+            forceShowSetup: false,
+            dismissedPromptWeek: null,
 
             setupWeek: (budget, giftType) => {
                 set({
@@ -129,6 +137,7 @@ export const useBudgetStore = create<BudgetState>()(
                     weeklyGiftType: giftType,
                     transactions: [],
                     weekStartDate: getWeekStart(),
+                    forceShowSetup: false,
                 });
             },
 
@@ -157,11 +166,15 @@ export const useBudgetStore = create<BudgetState>()(
             },
 
             usePreset: (presetId) => {
-                const preset = get().quickPresets.find(p => p.id === presetId);
+                const state = get();
+                const preset = state.quickPresets.find(p => p.id === presetId);
                 if (preset) {
-                    get().addTransaction(preset.amount, preset.label, preset.category);
+                    state.addTransaction(preset.amount, preset.label, preset.category);
                 }
             },
+
+            setForceShowSetup: (show) => set({ forceShowSetup: show }),
+            dismissPrompt: () => set({ dismissedPromptWeek: getWeekStart(), forceShowSetup: false }),
 
             checkAndResetWeek: () => {
                 const { weekStartDate, weeklyBudget, weeklyStreak, weekHistory } = get();

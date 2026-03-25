@@ -41,11 +41,26 @@ const REWARD_OPTIONS: RewardOption[] = [
 ];
 
 export const BudgetSetupModal: React.FC = () => {
-    const { setupWeek, weeklyBudget } = useBudgetStore();
+    const { setupWeek, weeklyBudget, forceShowSetup, dismissedPromptWeek, dismissPrompt } = useBudgetStore();
     const [budgetAmount, setBudgetAmount] = useState<string>('');
     const [rewardType, setRewardType] = useState<GiftCurrency | null>(null);
 
-    if (weeklyBudget !== null) return null;
+    if (weeklyBudget !== null && !forceShowSetup) return null;
+
+    // Determine current day and week
+    const now = new Date();
+    const isMonday = now.getDay() === 1; // 0 = Sun, 1 = Mon
+    // Get current week string (same logic as store)
+    const eastern = new Date(now.toLocaleString('en-US', { timeZone: 'America/New_York' }));
+    const eDay = eastern.getDay();
+    const eDiff = eastern.getDate() - eDay;
+    const currentWeekStart = new Date(eastern.setDate(eDiff)).toISOString().split('T')[0];
+
+    // Only show automatically if it's Monday AND we haven't dismissed it this week
+    const hasnNotDismissedThisWeek = dismissedPromptWeek !== currentWeekStart;
+    const shouldShowAuto = isMonday && hasnNotDismissedThisWeek;
+
+    if (!forceShowSetup && !shouldShowAuto) return null;
 
     const parsed = parseInt(budgetAmount, 10);
     const canConfirm = !isNaN(parsed) && parsed > 0 && !!rewardType;
@@ -80,6 +95,11 @@ export const BudgetSetupModal: React.FC = () => {
                             <Target size={28} />
                         </motion.div>
                         <h2 className="bsm-title">Weekly Budget<br />Challenge</h2>
+                        {!forceShowSetup && (
+                            <button className="bsm-close-btn" onClick={dismissPrompt} aria-label="Dismiss prompt for this week">
+                                &times;
+                            </button>
+                        )}
                         <p className="bsm-desc">
                             Set a spending goal for the week.<br />
                             Stay under budget → earn <strong>up to 1.5× Power</strong> in combat &amp; daily rewards.

@@ -4,6 +4,7 @@ import dayjs from 'dayjs';
 import { ChevronLeft, ChevronRight, Flame } from 'lucide-react';
 import { Button, Modal } from '../../components/ui';
 import { useCalendarStore } from '../../store/useCalendarStore';
+import { useTodoStore, TIME_OF_DAY_LABELS } from '../../store/useTodoStore';
 import './CalendarPage.css';
 
 export const CalendarPage = () => {
@@ -27,6 +28,8 @@ export const CalendarPage = () => {
         hasCheckedIn,
         getTasksForDate
     } = useCalendarStore();
+
+    const { getTodosForDate, completeTodo, uncompleteTodo } = useTodoStore();
 
     // Fallback if store is undefined (though improbable with Zustand)
     if (!checkIns) {
@@ -118,6 +121,23 @@ export const CalendarPage = () => {
                                     <span className="task-count">{dayTasks.filter(t => t.completed).length}/{dayTasks.length}</span>
                                 </div>
                             )}
+
+                            {/* Todo dots */}
+                            {(() => {
+                                const todos = getTodosForDate(dateStr);
+                                if (todos.length === 0) return null;
+                                return (
+                                    <div style={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>
+                                        {todos.map(t => (
+                                            <span key={t.id} style={{
+                                                width: 6, height: 6, borderRadius: '50%',
+                                                background: t.completed ? '#22d3ee88' : '#06b6d4',
+                                                display: 'inline-block', flexShrink: 0,
+                                            }} />
+                                        ))}
+                                    </div>
+                                );
+                            })()}
                         </div>
                     );
                 })}
@@ -159,6 +179,33 @@ export const CalendarPage = () => {
                                 ))
                             )}
                         </div>
+
+                        {/* To-Dos for this day */}
+                        {(() => {
+                            const todos = getTodosForDate(selectedDate);
+                            if (todos.length === 0) return null;
+                            return (
+                                <>
+                                    <h3 style={{ color: '#22d3ee', marginTop: '1rem' }}>📋 To-Dos</h3>
+                                    <div className="day-tasks-list">
+                                        {todos.map(todo => (
+                                            <div key={todo.id} className="day-task-item">
+                                                <input
+                                                    type="checkbox"
+                                                    checked={todo.completed}
+                                                    onChange={() => todo.completed ? uncompleteTodo(todo.id) : completeTodo(todo.id)}
+                                                />
+                                                <span className={todo.completed ? 'completed' : ''}>
+                                                    {todo.title}
+                                                    {todo.note && <span style={{ color: '#64748b', marginLeft: 6, fontSize: '0.8em' }}> — {todo.note}</span>}
+                                                </span>
+                                                <span style={{ marginLeft: 'auto', fontSize: '0.7rem', color: '#64748b' }}>{TIME_OF_DAY_LABELS[todo.timeOfDay]}</span>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </>
+                            );
+                        })()}
                     </div>
                 )}
             </Modal>

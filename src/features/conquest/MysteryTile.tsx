@@ -82,21 +82,10 @@ export const MysteryTile = ({ onClose }: MysteryTileProps) => {
 
     // ─── Trap Resolve ────────────────────────────────────────────────────────
     const handleTrapResolve = () => {
-        const r = Math.random();
-        if (r < 0.5) {
-            // Gold trap
-            const lostGold = Math.floor(Math.random() * 25) + 1;
-            currency.spendGold(lostGold);
-            setResultText(`Lost ${lostGold} Gold!`);
-        } else {
-            // Resource trap
-            const resources = ['Sigil', 'Balloon', 'Shmeckle'];
-            const lost = resources[Math.floor(Math.random() * resources.length)];
-            if (lost === 'Sigil') conquest.addSigils(-1);
-            else if (lost === 'Balloon') conquest.addBalloons(-1);
-            else conquest.addShmeckles(-1);
-            setResultText(`Lost 1 ${lost}!`);
-        }
+        // Traps deal Run HP damage — they never remove gold/sigils/resources
+        const hpLost = Math.floor(Math.random() * 10) + 5; // 5-14 HP damage
+        conquest.takeDamage(hpLost);
+        setResultText(`Lost ${hpLost} Run HP! (No gold was taken)`);
     };
 
     // ─── Treasure Resolve ─────────────────────────────────────────────────────
