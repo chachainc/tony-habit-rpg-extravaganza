@@ -58,8 +58,9 @@ const CATEGORY_CONFIG: Record<TaskCategory, { label: string; color: string; icon
 
 const BUNDLE_CONFIG: Record<BundleType, { title: string; icon: React.ReactNode; color: string }> = {
     morning: { title: 'Morning Foundation', icon: <Sun size={24} />, color: '#f59e0b' },
-    afternoon: { title: 'Afternoon Performance', icon: <Sunset size={24} />, color: '#f97316' },
-    night: { title: 'Night Shutdown', icon: <Moon size={24} />, color: '#8b5cf6' },
+    midday: { title: 'Mid Day', icon: <Sun size={24} />, color: '#eab308' },
+    afternoon: { title: 'Afternoon (After Work)', icon: <Sunset size={24} />, color: '#f97316' },
+    night: { title: 'Night (Before Bed)', icon: <Moon size={24} />, color: '#8b5cf6' },
 };
 
 // ── Radar chart helper: draws a polygon from skill levels ──
@@ -148,7 +149,7 @@ export const TasksPage = () => {
         addCustomRecurringTask,
         removeDailyTask,
         editDailyTask,
-        reorderDailyTasks,
+        moveDailyTask,
         getTodayWeight,
     } = useRecurringTasksStore();
 
@@ -174,8 +175,8 @@ export const TasksPage = () => {
     const [highlightAddTask, setHighlightAddTask] = useState(false);
 
     // Drag state
-    const dragItem = useRef<{ bundle: BundleType; index: number } | null>(null);
-    const dragOverItem = useRef<{ bundle: BundleType; index: number } | null>(null);
+    const dragItem = useRef<{ bundle: BundleType; index: number; taskId: string } | null>(null);
+    const dragOverItem = useRef<{ bundle: BundleType; index: number; taskId: string } | null>(null);
 
     const scrollToAdd = () => {
         const element = document.getElementById('add-task-section');
@@ -348,18 +349,18 @@ export const TasksPage = () => {
     };
 
     // ── Drag handlers ────────────────────────────────────
-    const handleDragStart = (bundle: BundleType, index: number) => {
-        dragItem.current = { bundle, index };
+    const handleDragStart = (bundle: BundleType, index: number, taskId: string) => {
+        dragItem.current = { bundle, index, taskId };
     };
 
-    const handleDragOver = (e: React.DragEvent, bundle: BundleType, index: number) => {
+    const handleDragOver = (e: React.DragEvent, bundle: BundleType, index: number, taskId: string) => {
         e.preventDefault();
-        dragOverItem.current = { bundle, index };
+        dragOverItem.current = { bundle, index, taskId };
     };
 
     const handleDrop = (bundle: BundleType) => {
-        if (dragItem.current && dragOverItem.current && dragItem.current.bundle === bundle) {
-            reorderDailyTasks(bundle, dragItem.current.index, dragOverItem.current.index);
+        if (dragItem.current) {
+            moveDailyTask(dragItem.current.taskId, bundle, dragOverItem.current?.index ?? 0);
         }
         dragItem.current = null;
         dragOverItem.current = null;
@@ -420,8 +421,8 @@ export const TasksPage = () => {
                                     key={task.id}
                                     className={`recurring-task ${task.completed ? 'completed' : ''}`}
                                     draggable
-                                    onDragStart={() => handleDragStart(bundleType, idx)}
-                                    onDragOver={(e) => handleDragOver(e, bundleType, idx)}
+                                    onDragStart={() => handleDragStart(bundleType, idx, task.id)}
+                                    onDragOver={(e) => handleDragOver(e, bundleType, idx, task.id)}
                                     onClick={() => {
                                         if (task.completed) {
                                             // Allow un-checking accidental completions
@@ -507,9 +508,10 @@ export const TasksPage = () => {
     };
 
     const morningStatus = getBundleStatus('morning');
+    const middayStatus = getBundleStatus('midday');
     const afternoonStatus = getBundleStatus('afternoon');
     const nightStatus = getBundleStatus('night');
-    const isPerfectDay = morningStatus.isComplete && afternoonStatus.isComplete && nightStatus.isComplete;
+    const isPerfectDay = morningStatus.isComplete && middayStatus.isComplete && afternoonStatus.isComplete && nightStatus.isComplete;
 
     return (
         <div className="tasks-page-aaa">
@@ -750,6 +752,7 @@ export const TasksPage = () => {
                 {/* Daily Bundles */}
                 <div className="bundles-container">
                     {renderBundle('morning')}
+                    {renderBundle('midday')}
                     {renderBundle('afternoon')}
                     {renderBundle('night')}
                 </div>

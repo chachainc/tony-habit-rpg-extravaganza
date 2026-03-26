@@ -63,6 +63,7 @@ interface GameState {
         amount: number,
         options?: { capExempt?: boolean }
     ) => { actual: number; overflow: number; leveledUp?: boolean; capHit?: boolean };
+    removeSkillXp: (skill: SkillName, amount: number) => void;
     addGlobalXp: (amount: number) => void;
     getGlobalLevel: () => number;
     clearLevelUp: () => void; // Clear pending level-up
@@ -428,6 +429,40 @@ export const useGameStore = create<GameState>()(
                 }).catch(() => { });
 
                 return { actual: actualXp, overflow: overflowAmount, leveledUp: didLevelUp };
+            },
+
+            removeSkillXp: (skillName, amount) => {
+                const state = get();
+                const skill = state.skills[skillName];
+                if (!skill) return;
+
+                let newTotalXp = Math.max(0, skill.totalXp - amount);
+                let newLevel = skill.level;
+                let newXp = skill.xp - amount;
+
+                // Handle de-leveling
+                while (newXp < 0 && newLevel > 1) {
+                    newLevel--;
+                    newXp += getXpForLevel(newLevel);
+                }
+
+                if (newXp < 0) newXp = 0;
+
+                set((s) => ({
+                    skills: {
+                        ...s.skills,
+                        [skillName]: {
+                            level: newLevel,
+                            xp: newXp,
+                            totalXp: newTotalXp,
+                        },
+                    },
+                    dailyXpGained: {
+                        ...s.dailyXpGained,
+                        [skillName]: Math.max(0, (s.dailyXpGained[skillName] || 0) - amount),
+                    },
+                    globalXp: Math.max(0, s.globalXp - Math.floor(amount * 0.1)),
+                }));
             },
 
             clearLevelUp: () => set({ pendingLevelUp: null }),
