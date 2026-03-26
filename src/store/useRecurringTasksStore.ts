@@ -4,7 +4,7 @@ import type { SkillName } from './useGameStore';
 import { PERSIST_REGISTRY } from '../data/persistRegistry';
 import { safeUUID } from '../utils/safeUUID';
 
-export type BundleType = 'morning' | 'afternoon' | 'night';
+export type BundleType = 'morning' | 'midday' | 'afternoon' | 'night';
 
 export interface TaskReward {
     skillId: SkillName;
@@ -45,6 +45,7 @@ interface RecurringTasksState {
 
     // Bundle Claims
     morningBundleClaimed: boolean;
+    middayBundleClaimed: boolean;
     afternoonBundleClaimed: boolean;
     nightBundleClaimed: boolean;
     perfectDayClaimed: boolean;
@@ -52,6 +53,7 @@ interface RecurringTasksState {
     weeklyBonusClaimed: boolean;
     customRecurringTasks: RecurringTask[];
     removedTaskIds: string[];
+    taskOverrides: Record<string, { bundle?: BundleType; index?: number }>;
 
     // Workout tracking (1 lift/day, 1 cardio/day)
     lastLiftDate: string | null;
@@ -74,7 +76,7 @@ interface RecurringTasksState {
     addCustomRecurringTask: (title: string, bundle: BundleType, rewards: TaskReward[]) => void;
     removeDailyTask: (id: string) => void;
     editDailyTask: (id: string, newTitle: string) => void;
-    reorderDailyTasks: (bundle: BundleType, fromIndex: number, toIndex: number) => void;
+    moveDailyTask: (taskId: string, targetBundle: BundleType, toIndex: number) => void;
 
     // Weight helpers
     getTodayWeight: () => number | null;
@@ -160,6 +162,14 @@ export const DAILY_TASKS_TEMPLATE: Omit<RecurringTask, 'completed'>[] = [
     },
 
     // ══ AFTERNOON PERFORMANCE ══════════════════════════════════════════════
+    {
+        id: 'complete_work',
+        title: 'Complete Work',
+        bundle: 'afternoon',
+        type: 'daily',
+        category: 'work',
+        rewards: [{ skillId: 'Work', xp: 2 }],
+    },
     {
         id: 'training_session',
         title: 'Training Session',
@@ -403,12 +413,14 @@ export const useRecurringTasksStore = create<RecurringTasksState>()(
             weightHistory: [],
 
             morningBundleClaimed: false,
+            middayBundleClaimed: false,
             afternoonBundleClaimed: false,
             nightBundleClaimed: false,
             perfectDayClaimed: false,
             weeklyBonusClaimed: false,
             customRecurringTasks: [],
             removedTaskIds: [],
+            taskOverrides: {},
             lastLiftDate: null,
             lastCardioDate: null,
 
@@ -582,28 +594,69 @@ export const useRecurringTasksStore = create<RecurringTasksState>()(
                     const dailyIndex = state.dailyTasks.findIndex(t => t.id === id);
                     if (dailyIndex === -1) return {};
                     const newTasks = [...state.dailyTasks];
-                    newTasks[dailyIndex] = { ...newTasks[dailyIndex], completed: false };
+                    const task = newTasks[dailyIndex];
+                    newTasks[dailyIndex] = { ...task, completed: false };
+
+                    // Refund XP
+                    import('./useGameStore').then(({ useGameStore }) => {
+                        const gameStore = useGameStore.getState();
+                        task.rewards.forEach(r => {
+                            gameStore.removeSkillXp(r.skillId, r.xp);
+                        });
+                    });
+
                     return { dailyTasks: newTasks };
                 });
             },
 
             resetDailyTasks: () => {
                 const todayDow = getEasternDayOfWeek();
-                const { customRecurringTasks, removedTaskIds } = get();
+                const { customRecurringTasks, removedTaskIds, taskOverrides } = get();
 
                 const baseTasks = DAILY_TASKS_TEMPLATE.filter(t => !removedTaskIds.includes(t.id));
 
-                const todaysTasks = [...baseTasks, ...customRecurringTasks]
+                let todaysTasks = [...baseTasks, ...customRecurringTasks]
                     .filter(t => {
                         if (!t.conditional) return true;
                         return t.conditional.days?.includes(todayDow);
                     })
                     .map(t => ({ ...t, completed: false }));
 
+                // Apply overrides
+                todaysTasks = todaysTasks.map(t => {
+                    const override = taskOverrides[t.id];
+                    if (override?.bundle) {
+                        return { ...t, bundle: override.bundle };
+                    }
+                    return t;
+                });
+
+                // Apply ordering overrides per bundle
+                const bundledTasks: Record<BundleType, RecurringTask[]> = {
+                    morning: [],
+                    midday: [],
+                    afternoon: [],
+                    night: []
+                };
+                todaysTasks.forEach(t => {
+                    if (t.bundle) {
+                        bundledTasks[t.bundle].push(t);
+                    }
+                });
+
+                const getIndex = (id: string) => taskOverrides[id]?.index ?? 999;
+                
+                const finalTasks: RecurringTask[] = [];
+                (['morning', 'midday', 'afternoon', 'night'] as BundleType[]).forEach(bundle => {
+                    const sorted = bundledTasks[bundle].sort((a, b) => getIndex(a.id) - getIndex(b.id));
+                    finalTasks.push(...sorted);
+                });
+
                 set({
-                    dailyTasks: todaysTasks,
+                    dailyTasks: finalTasks,
                     lastDailyReset: getEasternDateString(),
                     morningBundleClaimed: false,
+                    middayBundleClaimed: false,
                     afternoonBundleClaimed: false,
                     nightBundleClaimed: false,
                     perfectDayClaimed: false,
@@ -652,13 +705,38 @@ export const useRecurringTasksStore = create<RecurringTasksState>()(
                 }));
             },
 
-            reorderDailyTasks: (bundle, fromIndex, toIndex) => {
+            moveDailyTask: (taskId, targetBundle, toIndex) => {
                 set(state => {
-                    const bundleTasks = state.dailyTasks.filter(t => t.bundle === bundle);
-                    const otherTasks = state.dailyTasks.filter(t => t.bundle !== bundle);
-                    const [moved] = bundleTasks.splice(fromIndex, 1);
-                    bundleTasks.splice(toIndex, 0, moved);
-                    return { dailyTasks: [...otherTasks, ...bundleTasks] };
+                    const taskToMove = state.dailyTasks.find(t => t.id === taskId);
+                    if (!taskToMove) return {};
+
+                    const newDailyTasks = state.dailyTasks.filter(t => t.id !== taskId);
+                    const targetTasks = newDailyTasks.filter(t => t.bundle === targetBundle);
+                    const otherTasks = newDailyTasks.filter(t => t.bundle !== targetBundle);
+
+                    const updatedTask = { ...taskToMove, bundle: targetBundle };
+                    targetTasks.splice(toIndex, 0, updatedTask);
+
+                    const finalDailyTasks = [...otherTasks, ...targetTasks];
+
+                    // Update overrides
+                    const newOverrides = { ...state.taskOverrides };
+                    newOverrides[taskId] = { 
+                        ...newOverrides[taskId], 
+                        bundle: targetBundle 
+                    };
+
+                    targetTasks.forEach((t, idx) => {
+                        newOverrides[t.id] = {
+                            ...newOverrides[t.id],
+                            index: idx
+                        };
+                    });
+
+                    return { 
+                        dailyTasks: finalDailyTasks,
+                        taskOverrides: newOverrides
+                    };
                 });
             },
 
@@ -696,6 +774,7 @@ export const useRecurringTasksStore = create<RecurringTasksState>()(
 
                 let isClaimed = false;
                 if (bundle === 'morning') isClaimed = state.morningBundleClaimed;
+                if (bundle === 'midday') isClaimed = state.middayBundleClaimed;
                 if (bundle === 'afternoon') isClaimed = state.afternoonBundleClaimed;
                 if (bundle === 'night') isClaimed = state.nightBundleClaimed;
 
@@ -717,6 +796,7 @@ export const useRecurringTasksStore = create<RecurringTasksState>()(
                     });
 
                     if (bundle === 'morning') set({ morningBundleClaimed: true });
+                    if (bundle === 'midday') set({ middayBundleClaimed: true });
                     if (bundle === 'afternoon') set({ afternoonBundleClaimed: true });
                     if (bundle === 'night') set({ nightBundleClaimed: true });
                 }
@@ -725,10 +805,11 @@ export const useRecurringTasksStore = create<RecurringTasksState>()(
             claimPerfectDayBonus: () => {
                 const state = get();
                 const m = state.getBundleStatus('morning');
+                const md = state.getBundleStatus('midday');
                 const a = state.getBundleStatus('afternoon');
                 const n = state.getBundleStatus('night');
 
-                if (m.isComplete && a.isComplete && n.isComplete && !state.perfectDayClaimed) {
+                if (m.isComplete && md.isComplete && a.isComplete && n.isComplete && !state.perfectDayClaimed) {
                     import('./useCurrencyStore').then(({ useCurrencyStore }) => {
                         useCurrencyStore.getState().addGold(75, { exact: true });
                     });
