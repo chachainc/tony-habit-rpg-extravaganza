@@ -11,9 +11,7 @@ export type BoardSpaceType =
     | 'mystery'
     | 'ticket'
     | 'empty'
-    | 'tax'
-    | 'storm'
-    | 'thief';
+    | 'storm';
 
 export type BoardRarity = 'common' | 'uncommon' | 'rare' | 'epic' | 'ultra_rare';
 
@@ -76,17 +74,14 @@ export interface MysteryRollResult {
 }
 
 // ── Hazard helpers ─────────────────────────────────────────────
-export type HazardType = 'tax' | 'storm' | 'thief';
+export type HazardType = 'storm';
 
 const HAZARD_CONFIGS: Record<HazardType, { name: string; icon: string }> = {
-    tax:   { name: 'Tax Collector', icon: '💰' },
     storm: { name: 'Storm',         icon: '⛈️' },
-    thief: { name: 'Thief',         icon: '🗡️' },
 };
 
 const pickRandomHazard = (): HazardType => {
-    const types: HazardType[] = ['tax', 'storm', 'thief'];
-    return types[Math.floor(Math.random() * types.length)];
+    return 'storm';
 };
 
 // ── Board Generation (24 spaces perimeter board) ───────────────
@@ -336,29 +331,15 @@ export const useMonopolyStore = create<MonopolyState>()(
 
                 const landedSpace = currentBoard[newPosition];
 
-                // Handle hazard tiles
+                // Handle hazard tiles (storm only — no currency loss)
                 let hazardResult: MoveResult['hazardResult'];
-                if (landedSpace.type === 'tax') {
-                    const penalty = Math.floor(Math.random() * 11) + 5; // 5–15 gold
-                    hazardResult = {
-                        type: 'tax',
-                        penalty,
-                        message: `The Tax Collector takes ${penalty} gold!`,
-                    };
-                } else if (landedSpace.type === 'storm') {
+                if (landedSpace.type === 'storm') {
                     hazardResult = {
                         type: 'storm',
                         penalty: 0,
                         message: 'A storm brews! You must skip your next turn.',
                     };
                     set({ skipNextTurn: true });
-                } else if (landedSpace.type === 'thief') {
-                    const penalty = Math.floor(Math.random() * 3) + 1; // 1–3 shmeckles
-                    hazardResult = {
-                        type: 'thief',
-                        penalty,
-                        message: `A thief steals ${penalty} shmeckle${penalty > 1 ? 's' : ''}!`,
-                    };
                 }
 
                 return {
@@ -420,7 +401,7 @@ export const useMonopolyStore = create<MonopolyState>()(
                 const state = get();
                 if (state.ownedTiles[tileId]) return false;
                 const tile = currentBoard[tileId];
-                if (!tile || tile.type === 'go' || tile.type === 'tax' || tile.type === 'storm' || tile.type === 'thief') return false;
+                if (!tile || tile.type === 'go' || tile.type === 'storm') return false;
                 return true;
             },
 

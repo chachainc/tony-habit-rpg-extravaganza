@@ -169,14 +169,15 @@ export const TasksPage = () => {
     const [activeCategoryFilter, setActiveCategoryFilter] = useState<TaskCategory | 'all'>('all');
 
     // Stats dashboard
-    const [showStats, setShowStats] = useState(true);
+    const [showStats, setShowStats] = useState(false);
 
     // Scroll Highlight State
     const [highlightAddTask, setHighlightAddTask] = useState(false);
 
-    // Drag state
-    const dragItem = useRef<{ bundle: BundleType; index: number; taskId: string } | null>(null);
-    const dragOverItem = useRef<{ bundle: BundleType; index: number; taskId: string } | null>(null);
+    // Drag state — pointer-based for mobile touch support
+    const [dragState, setDragState] = useState<{ taskId: string; bundle: BundleType; index: number; startY: number; isDragging: boolean } | null>(null);
+    const dragOverItem = useRef<{ bundle: BundleType; index: number } | null>(null);
+    const DRAG_THRESHOLD = 8;
 
     const scrollToAdd = () => {
         const element = document.getElementById('add-task-section');
@@ -348,21 +349,37 @@ export const TasksPage = () => {
         return `${days}d ${hours}h ${minutes}m`;
     };
 
-    // ── Drag handlers ────────────────────────────────────
-    const handleDragStart = (bundle: BundleType, index: number, taskId: string) => {
-        dragItem.current = { bundle, index, taskId };
-    };
-
-    const handleDragOver = (e: React.DragEvent, bundle: BundleType, index: number, taskId: string) => {
+    // ── Drag handlers (pointer-based for mobile touch) ──
+    const handleDragPointerDown = (e: React.PointerEvent, bundle: BundleType, index: number, taskId: string) => {
         e.preventDefault();
-        dragOverItem.current = { bundle, index, taskId };
+        e.stopPropagation();
+        (e.target as HTMLElement).setPointerCapture(e.pointerId);
+        setDragState({ taskId, bundle, index, startY: e.clientY, isDragging: false });
     };
 
-    const handleDrop = (bundle: BundleType) => {
-        if (dragItem.current) {
-            moveDailyTask(dragItem.current.taskId, bundle, dragOverItem.current?.index ?? 0);
+    const handleDragPointerMove = (e: React.PointerEvent) => {
+        if (!dragState) return;
+        if (!dragState.isDragging) {
+            if (Math.abs(e.clientY - dragState.startY) > DRAG_THRESHOLD) {
+                setDragState(prev => prev ? { ...prev, isDragging: true } : null);
+            }
+            return;
         }
-        dragItem.current = null;
+        // Find which task element we're hovering over
+        const el = document.elementFromPoint(e.clientX, e.clientY);
+        const taskEl = el?.closest('.recurring-task') as HTMLElement | null;
+        if (taskEl) {
+            const idx = parseInt(taskEl.dataset.dragIndex || '0', 10);
+            const bundle = (taskEl.dataset.dragBundle || dragState.bundle) as BundleType;
+            dragOverItem.current = { bundle, index: idx };
+        }
+    };
+
+    const handleDragPointerUp = () => {
+        if (dragState?.isDragging && dragOverItem.current) {
+            moveDailyTask(dragState.taskId, dragOverItem.current.bundle, dragOverItem.current.index);
+        }
+        setDragState(null);
         dragOverItem.current = null;
     };
 
@@ -413,19 +430,19 @@ export const TasksPage = () => {
                         )}
                     </div>
 
-                    <div className="recurring-tasks-list" onDrop={() => handleDrop(bundleType)} onDragOver={(e) => e.preventDefault()}>
+                    <div className="recurring-tasks-list" onPointerMove={handleDragPointerMove} onPointerUp={handleDragPointerUp}>
                         {bundleTasks.map((task, idx) => {
                             const catConfig = task.category ? CATEGORY_CONFIG[task.category] : null;
+                            const isBeingDragged = dragState?.isDragging && dragState.taskId === task.id;
                             return (
                                 <div
                                     key={task.id}
-                                    className={`recurring-task ${task.completed ? 'completed' : ''}`}
-                                    draggable
-                                    onDragStart={() => handleDragStart(bundleType, idx, task.id)}
-                                    onDragOver={(e) => handleDragOver(e, bundleType, idx, task.id)}
+                                    className={`recurring-task ${task.completed ? 'completed' : ''} ${isBeingDragged ? 'dragging' : ''}`}
+                                    data-drag-index={idx}
+                                    data-drag-bundle={bundleType}
                                     onClick={() => {
+                                        if (dragState?.isDragging) return; // prevent tap during drag
                                         if (task.completed) {
-                                            // Allow un-checking accidental completions
                                             uncompleteTask(task.id);
                                         } else {
                                             if (task.requiresInput === 'training') {
@@ -436,7 +453,7 @@ export const TasksPage = () => {
                                         }
                                     }}
                                 >
-                                    <div className="drag-handle" onMouseDown={(e) => e.stopPropagation()}>
+                                    <div className="drag-handle" onPointerDown={(e) => handleDragPointerDown(e, bundleType, idx, task.id)}>
                                         <GripVertical size={16} />
                                     </div>
                                     <div className="recurring-task__check">
@@ -543,13 +560,6 @@ export const TasksPage = () => {
                     <button onClick={() => navigate('/calendar')} className="tasks-header-nav-btn tasks-header-nav-btn--calendar">
                         <CalendarDays size={16} />
                         Calendar
-                    </button>
-                    <button
-                        onClick={() => setShowTodoModal(true)}
-                        className="tasks-header-nav-btn tasks-header-nav-btn--todo"
-                    >
-                        <ClipboardList size={16} />
-                        + To-Do
                     </button>
                 </motion.div>
 
@@ -708,11 +718,15 @@ export const TasksPage = () => {
                     ))}
                 </div>
 
-                {/* Add Task Shortcut */}
+                {/* Add Task + To-Do Shortcut Row */}
                 <div className="tasks-add-shortcut-row">
                     <button onClick={scrollToAdd} className="add-task-shortcut-btn">
                         <Plus size={16} />
                         Add Task
+                    </button>
+                    <button onClick={() => setShowTodoModal(true)} className="add-task-shortcut-btn add-task-shortcut-btn--todo">
+                        <ClipboardList size={16} />
+                        + To-Do
                     </button>
                 </div>
 

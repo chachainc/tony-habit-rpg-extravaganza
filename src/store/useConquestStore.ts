@@ -749,12 +749,20 @@ export const useConquestStore = create<ConquestState>()(
             getTerrainModifier: (terrain) => {
                 const skillName = TERRAIN_SKILL_MAP[terrain];
                 if (!skillName) return 0;
-                // Lazy import to avoid circular dependency (useGameStore was removed from top-level import)
-                const { useGameStore } = require('./useGameStore');
-                const game = useGameStore.getState();
-                const skill = game.skills[skillName as keyof typeof game.skills];
-                if (!skill) return 0;
-                return Math.min(3, Math.floor(skill.level / 5));
+                // Use dynamic import() to avoid circular dependency (Vite-safe)
+                try {
+                    // Access useGameStore via the module cache (already loaded at this point)
+                    const gameModule = (globalThis as any).__useGameStore;
+                    if (!gameModule) {
+                        // Trigger async load for next call
+                        import('./useGameStore').then(m => { (globalThis as any).__useGameStore = m.useGameStore; });
+                        return 0;
+                    }
+                    const game = gameModule.getState();
+                    const skill = game.skills[skillName as keyof typeof game.skills];
+                    if (!skill) return 0;
+                    return Math.min(3, Math.floor(skill.level / 5));
+                } catch { return 0; }
             },
 
             getMoraleModifier: () => {

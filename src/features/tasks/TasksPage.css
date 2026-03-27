@@ -205,6 +205,7 @@
 .tasks-add-shortcut-row {
     display: flex;
     justify-content: center;
+    gap: 0.5rem;
     margin-bottom: 1rem;
 }
 
@@ -229,6 +230,19 @@
     background: linear-gradient(135deg, rgba(245, 158, 11, 0.25) 0%, rgba(234, 88, 12, 0.25) 100%);
     border-color: rgba(245, 158, 11, 0.7);
     box-shadow: 0 0 16px rgba(245, 158, 11, 0.3);
+    transform: translateY(-1px);
+}
+
+.add-task-shortcut-btn--todo {
+    background: linear-gradient(135deg, rgba(99, 102, 241, 0.15) 0%, rgba(124, 58, 237, 0.15) 100%);
+    border: 1px solid rgba(99, 102, 241, 0.4);
+    color: #a5b4fc;
+}
+
+.add-task-shortcut-btn--todo:hover {
+    background: linear-gradient(135deg, rgba(99, 102, 241, 0.25) 0%, rgba(124, 58, 237, 0.25) 100%);
+    border-color: rgba(99, 102, 241, 0.7);
+    box-shadow: 0 0 16px rgba(99, 102, 241, 0.3);
     transform: translateY(-1px);
 }
 
@@ -1154,16 +1168,21 @@
     color: rgba(255, 255, 255, 0.15);
     cursor: grab;
     flex-shrink: 0;
-    padding: 0 0.1rem;
+    padding: 0.4rem 0.25rem;
+    touch-action: none;
     transition: color 0.15s;
+    -webkit-user-select: none;
+    user-select: none;
 }
 
 .drag-handle:hover {
     color: rgba(255, 255, 255, 0.4);
 }
 
-.recurring-task[draggable="true"]:active .drag-handle {
-    cursor: grabbing;
+.recurring-task.dragging {
+    opacity: 0.5;
+    background: rgba(99, 102, 241, 0.15);
+    border: 1px dashed rgba(99, 102, 241, 0.4);
 }
 
 /* ==================== CATEGORY DOT ==================== */

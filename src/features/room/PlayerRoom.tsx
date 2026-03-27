@@ -1172,30 +1172,8 @@ export const PlayerRoom = ({ onClose }: { onClose: () => void }) => {
                                     <span>Trophies</span>
                                     <small>Display</small>
                                 </button>
-                                <button
-                                    className="room-feature-btn"
-                                    style={{ borderColor: 'rgba(34,197,94,0.3)' }}
-                                    onClick={() => { setShowQuickMenu(false); setEditMode(true); setActivePanel('furniture_edit'); }}
-                                >
-                                    <Pencil size={22} />
-                                    <span>Arrange</span>
-                                    <small>Furniture</small>
-                                </button>
-                                <button className="room-feature-btn" style={{ borderColor: 'rgba(245,158,11,0.3)' }} onClick={() => { setShowQuickMenu(false); setActivePanel('workshop'); }}>
-                                    <span style={{ fontSize: '1.5rem' }}>⚒️</span>
-                                    <span>Workshop</span>
-                                    <small>Craft & Enchant</small>
-                                </button>
-                                <button className="room-feature-btn" style={{ borderColor: 'rgba(34,197,94,0.3)' }} onClick={() => { setShowQuickMenu(false); setActivePanel('garden'); }}>
-                                    <span style={{ fontSize: '1.5rem' }}>🌱</span>
-                                    <span>Garden</span>
-                                    <small>Plant & Harvest</small>
-                                </button>
-                                <button className="room-feature-btn" style={{ borderColor: 'rgba(139,92,246,0.3)' }} onClick={() => { setShowQuickMenu(false); setActivePanel('cellar'); }}>
-                                    <span style={{ fontSize: '1.5rem' }}>📦</span>
-                                    <span>Cellar</span>
-                                    <small>Inventory Vault</small>
-                                </button>
+
+
 
                             </div>
                         </motion.div>

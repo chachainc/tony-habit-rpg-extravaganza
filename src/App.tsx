@@ -40,6 +40,7 @@ import { TrophyEvolvedModal } from './components/ui/TrophyEvolvedModal';
 import { CharacterPage } from './features/character/CharacterPage';
 import { CurrencyPopVFX } from './components/vfx/CurrencyPopVFX';
 import { PlayerRoom } from './features/room/PlayerRoom';
+import { RoomLobby } from './features/room/RoomLobby';
 import { useDayStore } from './store/useDayStore';
 import { useGameStore } from './store/useGameStore';
 import { useProfileStore, triggerAutoSync } from './store/useProfileStore';
@@ -60,10 +61,16 @@ const TownHubPage = () => {
   return <TownHub onNavigate={handleNavigate} />;
 };
 
-// PlayerRoom wrapper — this is now the default landing page
+// PlayerRoom wrapper — accessible from room lobby
 const PlayerRoomPage = () => {
   const navigate = useNavigate();
-  return <PlayerRoom onClose={() => navigate('/town')} />;
+  return <PlayerRoom onClose={() => navigate('/room')} />;
+};
+
+// RoomLobby wrapper — default landing for /room
+const RoomLobbyPage = () => {
+  const navigate = useNavigate();
+  return <RoomLobby onClose={() => navigate('/town')} />;
 };
 
 // HydrationGate: waits for Zustand persist to finish reading localStorage
@@ -201,7 +208,8 @@ function App() {
           <Route path="budget" element={<BudgetPage />} />
           <Route path="storm" element={<StormTheFort />} />
           <Route path="shop" element={<ShopModal category="general" onClose={() => window.history.back()} />} />
-          <Route path="room" element={<PlayerRoomPage />} />
+          <Route path="room" element={<RoomLobbyPage />} />
+          <Route path="room/2d" element={<PlayerRoomPage />} />
           <Route path="walkable-room" element={<WalkableRoom />} />
           <Route path="marketplace" element={<MarketplaceTown />} />
           <Route path="monopoly" element={<MonopolyBoard onClose={() => window.history.back()} />} />

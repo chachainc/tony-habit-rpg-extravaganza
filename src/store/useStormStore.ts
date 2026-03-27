@@ -12,14 +12,14 @@ const LANE_Y = [30, 50, 70]; // 3 lanes at 30%, 50%, 70%
 // ── Enemy type definitions for Storm ──────────────────────────────────────
 export type StormEnemyType = 'goblin' | 'orc' | 'skeleton' | 'bat_swarm' | 'dark_knight' | 'golem' | 'boss_slime';
 
-export const STORM_ENEMY_DEFS: Record<StormEnemyType, { icon: string; image?: string; name: string; hpBase: number; speedBase: number; damageBase: number; reward: number; isBoss?: boolean }> = {
-    goblin:       { icon: '👺', image: '/assets/enemies/goblin.png', name: 'Goblin',      hpBase: 20,  speedBase: 4.0, damageBase: 5,  reward: 2 },
-    skeleton:     { icon: '💀', image: '/assets/enemies/skeleton.png', name: 'Skeleton',    hpBase: 30,  speedBase: 3.5, damageBase: 6,  reward: 3 },
-    bat_swarm:    { icon: '🦇', image: '/assets/enemies/bat_swarm.png', name: 'Bat Swarm',   hpBase: 15,  speedBase: 5.0, damageBase: 3,  reward: 2 },
-    orc:          { icon: '👹', image: '/assets/enemies/orc.png', name: 'Orc',         hpBase: 50,  speedBase: 2.5, damageBase: 8,  reward: 5 },
-    dark_knight:  { icon: '⚔️', image: '/assets/enemies/dark_knight.png', name: 'Dark Knight', hpBase: 80,  speedBase: 2.0, damageBase: 12, reward: 8 },
-    golem:        { icon: '🪨', image: '/assets/enemies/golem.png', name: 'Golem',       hpBase: 150, speedBase: 1.5, damageBase: 15, reward: 12 },
-    boss_slime:   { icon: '👑', image: '/assets/enemies/boss_slime.png', name: 'King Slime',  hpBase: 300, speedBase: 1.0, damageBase: 20, reward: 25, isBoss: true },
+export const STORM_ENEMY_DEFS: Record<StormEnemyType, { icon: string; name: string; hpBase: number; speedBase: number; damageBase: number; reward: number; isBoss?: boolean }> = {
+    goblin:       { icon: '👺', name: 'Goblin',      hpBase: 20,  speedBase: 4.0, damageBase: 5,  reward: 2 },
+    skeleton:     { icon: '💀', name: 'Skeleton',    hpBase: 30,  speedBase: 3.5, damageBase: 6,  reward: 3 },
+    bat_swarm:    { icon: '🦇', name: 'Bat Swarm',   hpBase: 15,  speedBase: 5.0, damageBase: 3,  reward: 2 },
+    orc:          { icon: '👹', name: 'Orc',         hpBase: 50,  speedBase: 2.5, damageBase: 8,  reward: 5 },
+    dark_knight:  { icon: '⚔️', name: 'Dark Knight', hpBase: 80,  speedBase: 2.0, damageBase: 12, reward: 8 },
+    golem:        { icon: '🪨', name: 'Golem',       hpBase: 150, speedBase: 1.5, damageBase: 15, reward: 12 },
+    boss_slime:   { icon: '👑', name: 'King Slime',  hpBase: 300, speedBase: 1.0, damageBase: 20, reward: 25, isBoss: true },
 };
 
 function getStormWaveEnemies(wave: number): StormEnemyType[] {

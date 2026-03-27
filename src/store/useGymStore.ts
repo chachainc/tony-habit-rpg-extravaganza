@@ -3,7 +3,7 @@ import { persist } from 'zustand/middleware';
 import { PERSIST_REGISTRY } from '../data/persistRegistry';
 
 // ── Types ──────────────────────────────────────────────────────
-export type MuscleGroup = 'arms' | 'shoulders' | 'legs' | 'back' | 'chest';
+export type MuscleGroup = 'arms' | 'shoulders' | 'legs' | 'back' | 'chest' | 'full_body';
 
 export const MUSCLE_GROUPS: { id: MuscleGroup; label: string; icon: string }[] = [
     { id: 'arms', label: 'Arms', icon: '💪' },
@@ -11,6 +11,7 @@ export const MUSCLE_GROUPS: { id: MuscleGroup; label: string; icon: string }[] =
     { id: 'legs', label: 'Legs', icon: '🦵' },
     { id: 'back', label: 'Back', icon: '🔙' },
     { id: 'chest', label: 'Chest', icon: '🫁' },
+    { id: 'full_body', label: 'Full Body', icon: '🏋️‍♂️' },
 ];
 
 export interface ExerciseSet {

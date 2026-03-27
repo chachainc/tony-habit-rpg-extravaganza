@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Info, ChevronDown, ChevronUp, X, RefreshCw, Play, Square } from 'lucide-react';
 import { useMonopolyStore, getBoard, BOARD_ODDS, OWNERSHIP_TIERS, type BoardSpace, type MysteryRollResult, type MoveResult } from '../../store/useMonopolyStore';
 import { useCurrencyStore } from '../../store/useCurrencyStore';
+import { useConquestStore } from '../../store/useConquestStore';
 import { useHeroImage } from '../../hooks/useHeroImage';
 import './MonopolyBoard.css';
 
@@ -67,9 +68,7 @@ const BASE_REWARDS = [
     { icon: '🐌', label: 'Shmeckle tiles', note: '+1–5 Schmeckles' },
     { icon: '🎁', label: 'Mystery Crop tiles', note: 'Opens drop table above' },
     { icon: '🎫', label: 'Lost Ticket', note: '+1 Roll' },
-    { icon: '💰', label: 'Tax Collector', note: 'Lose 5–15 Gold' },
     { icon: '⛈️', label: 'Storm', note: 'Skip next turn' },
-    { icon: '🗡️', label: 'Thief', note: 'Lose 1–3 Shmeckles' },
 ];
 
 export const MonopolyBoard = ({ onClose }: { onClose: () => void }) => {
@@ -84,7 +83,7 @@ export const MonopolyBoard = ({ onClose }: { onClose: () => void }) => {
     const heroImage = useHeroImage();
 
     const addSigils = (n: number) => {
-        try { require('../../store/useConquestStore').useConquestStore.getState().addSigils(n); } catch {}
+        try { useConquestStore.getState().addSigils(n); } catch {}
     };
 
     // Derive player token from characterArchetype image
@@ -195,13 +194,7 @@ export const MonopolyBoard = ({ onClose }: { onClose: () => void }) => {
                         setPhase('go-result');
                         rollingRef.current = false;
                     } else if (moveResult.hazardResult) {
-                        // Hazard tile — apply penalty
-                        const hr = moveResult.hazardResult;
-                        if (hr.type === 'tax' && hr.penalty > 0) {
-                            spendGold(hr.penalty);
-                        } else if (hr.type === 'thief' && hr.penalty > 0) {
-                            spendShmeckles(hr.penalty);
-                        }
+                        // Hazard tile (storm only — no currency loss)
                         setPhase('hazard-result');
                         rollingRef.current = false;
                     } else {
@@ -401,7 +394,7 @@ export const MonopolyBoard = ({ onClose }: { onClose: () => void }) => {
                             if (!layout) return null;
                             const isCurrentSpace = index === playerPosition;
                             const isGoTile = space.type === 'go';
-                            const isHazard = space.type === 'tax' || space.type === 'storm' || space.type === 'thief';
+                            const isHazard = space.type === 'storm';
                             const ownerInfo = getOwnershipInfo(index);
                             const emptyIcon = space.type === 'empty' ? terrainIcons[index % terrainIcons.length] : space.icon;
 
@@ -688,12 +681,6 @@ export const MonopolyBoard = ({ onClose }: { onClose: () => void }) => {
                                 </div>
                                 <div className="reward-card-body">
                                     <p className="hazard-message">{moveResultData.hazardResult.message}</p>
-                                    {moveResultData.hazardResult.penalty > 0 && (
-                                        <div className="reward-line" style={{ color: '#ef4444' }}>
-                                            <span>{moveResultData.hazardResult.type === 'thief' ? '🐌' : '🪙'} Lost</span>
-                                            <span className="reward-val">-{moveResultData.hazardResult.penalty}</span>
-                                        </div>
-                                    )}
                                     {moveResultData.rentCollected > 0 && (
                                         <div className="reward-line gold" style={{ color: '#a3e635' }}>
                                             <span>🏡 Rent Collected</span>
