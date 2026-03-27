@@ -41,6 +41,7 @@ export const GymTracker = () => {
         legs: 'linear-gradient(135deg, #2ecc71, #27ae60)',
         back: 'linear-gradient(135deg, #9b59b6, #8e44ad)',
         chest: 'linear-gradient(135deg, #f39c12, #e67e22)',
+        full_body: 'linear-gradient(135deg, #e91e63, #9c27b0)',
     };
 
     const MUSCLE_ICONS: Record<MuscleGroup, string> = {
@@ -49,6 +50,7 @@ export const GymTracker = () => {
         legs: '🦵',
         back: '🔙',
         chest: '🫁',
+        full_body: '🏋️‍♂️',
     };
 
     if (selectedMuscle) {

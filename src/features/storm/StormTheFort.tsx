@@ -116,12 +116,9 @@ export const StormTheFort = () => {
         buyUpgrade(key);
     };
 
-    // Get enemy icon from type
-    const getEnemyIcon = (type: string): React.ReactNode => {
+    // Get enemy icon from type (emoji-only)
+    const getEnemyIcon = (type: string): string => {
         const def = STORM_ENEMY_DEFS[type as StormEnemyType];
-        if (def?.image) {
-            return <img src={def.image} alt={def.name} style={{width: '100%', height: '100%', objectFit: 'contain', pointerEvents: 'none'}} />;
-        }
         return def?.icon ?? '👿';
     };
 

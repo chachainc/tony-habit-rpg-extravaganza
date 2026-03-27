@@ -1,0 +1,30 @@
+﻿node.exe : npm warn 
+config production Use 
+`--omit=dev` instead.
+At line:1 char:1
++ & "C:\Program 
+Files\nodejs/node.exe" 
+"C:\Program 
+Files\nodejs/node_mo 
+...
++ ~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~
+~~
+    + CategoryInfo     
+         : NotSpecifi  
+  ed: (npm warn conf   
+ ig...t=dev` instea    
+d.:String) [], Rem    
+oteException
+    + FullyQualifiedEr 
+   rorId : NativeComm  
+  andError
+ 
+
+> gamified-life@0.0.0 build
+> tsc -b && vite build
+
+src/features/gym/GymTracker.tsx(38,11): error TS2741: Property 'full_body' is missing in type '{ arms: string; shoulders: string; legs: string; back: string; chest: string; }' but required in type 'Record<MuscleGroup, string>'.
+src/features/gym/GymTracker.tsx(46,11): error TS2741: Property 'full_body' is missing in type '{ arms: string; shoulders: string; legs: string; back: string; chest: string; }' but required in type 'Record<MuscleGroup, string>'.
+src/store/useXpWeaponStore.ts(380,2): error TS2552: Cannot find name 'NoNewLine'. Did you mean 'ononline'?

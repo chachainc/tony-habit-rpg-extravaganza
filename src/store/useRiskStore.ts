@@ -1,6 +1,8 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { PERSIST_REGISTRY } from '../data/persistRegistry';
+import { useConquestStore } from './useConquestStore';
+import { useCurrencyStore } from './useCurrencyStore';
 
 export type TerritoryTrait = 'fortified' | 'resource' | 'mystic' | 'none';
 export type RegionId = 'ashlands' | 'iron_highlands' | 'verdant_plains' | 'crystal_coast' | 'frozen_north' | 'sunken_expanse';
@@ -240,7 +242,7 @@ export const useRiskStore = create<RiskState>()(
             },
 
             buySoldier: () => {
-                const cs = (require('./useConquestStore') as any).useConquestStore.getState();
+                const cs = useConquestStore.getState();
                 if (cs.sigils < 10) return false;
                 cs.addSigils(-10);
                 set(s => ({ playerSoldiers: s.playerSoldiers + 1 }));
@@ -255,15 +257,15 @@ export const useRiskStore = create<RiskState>()(
                 const currency = cardDef.currency;
 
                 if (currency === 'sigils') {
-                    const cs = (require('./useConquestStore') as any).useConquestStore.getState();
+                    const cs = useConquestStore.getState();
                     if (cs.sigils < cost) return false;
                     cs.addSigils(-cost);
                 } else if (currency === 'gold') {
-                    const curr = (require('./useCurrencyStore') as any).useCurrencyStore.getState();
+                    const curr = useCurrencyStore.getState();
                     if ((curr.gold ?? 0) < cost) return false;
                     curr.addGold(-cost);
                 } else if (currency === 'shmeckles') {
-                    const curr = (require('./useCurrencyStore') as any).useCurrencyStore.getState();
+                    const curr = useCurrencyStore.getState();
                     if ((curr.shmeckles ?? 0) < cost) return false;
                     curr.addShmeckles(-cost);
                 } else {

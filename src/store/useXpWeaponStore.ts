@@ -304,8 +304,13 @@ export const useXpWeaponStore = create<XpWeaponState>()(
                     return { success: false, reason: 'Already owned' };
                 }
 
-                // Import lazily to avoid circular dep
-                const { useGameStore } = require('./useGameStore');
+                // Lazy import to avoid circular dep — cached on globalThis
+                let useGameStore = (globalThis as any).__useGameStoreRef;
+                if (!useGameStore) {
+                    // Not yet cached — trigger async load for next call
+                    import('./useGameStore').then(m => { (globalThis as any).__useGameStoreRef = m.useGameStore; });
+                    return { success: false, reason: 'Game store loading, please try again' };
+                }
                 const gameState = useGameStore.getState();
 
                 // Check all cost requirements (against totalXp)
@@ -355,9 +360,13 @@ export const useXpWeaponStore = create<XpWeaponState>()(
             canAfford: (weaponId) => {
                 const def = XP_WEAPON_MAP[weaponId];
                 if (!def) return false;
-                const { useGameStore } = require('./useGameStore');
+                const useGameStore = (globalThis as any).__useGameStoreRef;
+                if (!useGameStore) {
+                    import('./useGameStore').then(m => { (globalThis as any).__useGameStoreRef = m.useGameStore; });
+                    return false;
+                }
                 const skills = useGameStore.getState().skills;
-                return def.costs.every(c => (skills[c.skill]?.totalXp ?? 0) >= c.xp);
+                return def.costs.every((c: XpWeaponCost) => (skills[c.skill]?.totalXp ?? 0) >= c.xp);
             },
 
             getModifiers: () => {
@@ -368,3 +377,5 @@ export const useXpWeaponStore = create<XpWeaponState>()(
         { name: PERSIST_REGISTRY.xpWeapons.persistKey }
     )
 );
+// Eagerly cache useGameStore on globalThis for sync access in purchaseWeapon/canAfford
+import('./useGameStore').then(m => { (globalThis as any).__useGameStoreRef = m.useGameStore; }).catch(() => {});

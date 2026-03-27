@@ -333,8 +333,13 @@ export const useGameStore = create<GameState>()(
 
                 // 5. Prestige XP Multiplier (+10% per prestige rank)
                 try {
-                    const prestigeMult = require('./useEconomyBalanceStore').useEconomyBalanceStore.getState().getPrestigeMultiplier(skillName);
-                    finalAmount *= prestigeMult;
+                    const ebStore = (globalThis as any).__useEconomyBalanceStore;
+                    if (ebStore) {
+                        const prestigeMult = ebStore.getState().getPrestigeMultiplier(skillName);
+                        finalAmount *= prestigeMult;
+                    } else {
+                        import('./useEconomyBalanceStore').then(m => { (globalThis as any).__useEconomyBalanceStore = m.useEconomyBalanceStore; });
+                    }
                 } catch {}
 
                 const currentDailyXp = state.dailyXpGained[skillName] || 0;
@@ -481,7 +486,11 @@ export const useGameStore = create<GameState>()(
                 const strengthLevel = skills['Strength']?.level ?? 1;
                 // Shrine bonus stats
                 let bonus = 0;
-                try { bonus = require('./useEconomyBalanceStore').useEconomyBalanceStore.getState().shrineBonusStats; } catch {}
+                try {
+                    const ebStore = (globalThis as any).__useEconomyBalanceStore;
+                    if (ebStore) { bonus = ebStore.getState().shrineBonusStats; }
+                    else { import('./useEconomyBalanceStore').then(m => { (globalThis as any).__useEconomyBalanceStore = m.useEconomyBalanceStore; }); }
+                } catch {}
                 return 1 + strengthLevel + bonus;
             },
 
@@ -490,7 +499,11 @@ export const useGameStore = create<GameState>()(
                 const hygieneLevel = skills['Hygiene']?.level ?? 1;
                 // Shrine bonus stats
                 let bonus = 0;
-                try { bonus = require('./useEconomyBalanceStore').useEconomyBalanceStore.getState().shrineBonusStats; } catch {}
+                try {
+                    const ebStore = (globalThis as any).__useEconomyBalanceStore;
+                    if (ebStore) { bonus = ebStore.getState().shrineBonusStats; }
+                    else { import('./useEconomyBalanceStore').then(m => { (globalThis as any).__useEconomyBalanceStore = m.useEconomyBalanceStore; }); }
+                } catch {}
                 return 1 + hygieneLevel + bonus;
             },
 
