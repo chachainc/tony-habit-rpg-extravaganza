@@ -511,16 +511,16 @@
     }
 
     .storm-buy-card {
-        min-width: 80px;
-        padding: 0.4rem;
+        min-width: 130px;
+        padding: 0.5rem;
     }
 
     .storm-buy-card .icon {
-        font-size: 1.3rem;
+        font-size: 1.4rem;
     }
 
     .storm-buy-card .info h4 {
-        font-size: 0.7rem;
+        font-size: 0.75rem;
     }
 
     .storm-overlay h3 {

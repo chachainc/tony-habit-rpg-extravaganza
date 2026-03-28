@@ -1,96 +1,144 @@
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Home, BookOpen, Dumbbell, Hammer, ArrowLeft } from 'lucide-react';
+import { BedDouble, BookOpen, Shirt, Scale, Dumbbell, Pencil } from 'lucide-react';
+import { usePetStore } from '../../store/usePetStore';
+import { ITEM_DATABASE } from '../../data/items';
+import { useHeroImage } from '../../hooks/useHeroImage';
+import { SceneShell } from '../../components/scene';
+import homeCampBg from '../../assets/room-bg.jpg';
 import './RoomLobby.css';
 
 const ROOM_CARDS = [
     {
-        id: '2d-room',
-        icon: '🏠',
-        lucideIcon: Home,
-        title: '2D Room',
-        subtitle: 'Your personal room with Garden, Cellar & Workshop',
-        color: '#6366f1',
-        gradient: 'linear-gradient(135deg, rgba(99, 102, 241, 0.2), rgba(124, 58, 237, 0.2))',
-        borderColor: 'rgba(99, 102, 241, 0.4)',
+        id: 'closet',
+        icon: <Shirt size={28} />,
+        title: 'Closet',
+        subtitle: 'Titles, Auras, Pets',
+        color: 'rgba(139, 92, 246, 0.35)',
+        borderColor: 'rgba(139, 92, 246, 0.5)',
         route: '/room/2d',
+        panelHint: 'wardrobe',
+    },
+    {
+        id: 'bed',
+        icon: <BedDouble size={28} />,
+        title: 'Bed',
+        subtitle: 'Sleep Log',
+        color: 'rgba(59, 130, 246, 0.35)',
+        borderColor: 'rgba(59, 130, 246, 0.5)',
+        route: '/room/2d',
+        panelHint: 'sleep',
     },
     {
         id: 'library',
-        icon: '📚',
-        lucideIcon: BookOpen,
+        icon: <BookOpen size={28} />,
         title: 'Library',
-        subtitle: 'Track your reading progress & book collection',
-        color: '#f59e0b',
-        gradient: 'linear-gradient(135deg, rgba(245, 158, 11, 0.2), rgba(234, 88, 12, 0.2))',
-        borderColor: 'rgba(245, 158, 11, 0.4)',
+        subtitle: 'Book Collection',
+        color: 'rgba(245, 158, 11, 0.35)',
+        borderColor: 'rgba(245, 158, 11, 0.5)',
         route: '/library',
     },
     {
-        id: 'gym',
-        icon: '💪',
-        lucideIcon: Dumbbell,
-        title: 'Body Station',
-        subtitle: 'Health tracker, gym stats & body metrics',
-        color: '#ef4444',
-        gradient: 'linear-gradient(135deg, rgba(239, 68, 68, 0.2), rgba(220, 38, 38, 0.2))',
-        borderColor: 'rgba(239, 68, 68, 0.4)',
+        id: 'body',
+        icon: <Scale size={28} />,
+        title: 'Body',
+        subtitle: 'Weight & Calories',
+        color: 'rgba(236, 72, 153, 0.35)',
+        borderColor: 'rgba(236, 72, 153, 0.5)',
         route: '/health',
     },
     {
-        id: 'workshop',
-        icon: '🔨',
-        lucideIcon: Hammer,
-        title: 'Workshop',
-        subtitle: 'Craft items & manage your inventory',
-        color: '#22c55e',
-        gradient: 'linear-gradient(135deg, rgba(34, 197, 94, 0.2), rgba(21, 128, 61, 0.2))',
-        borderColor: 'rgba(34, 197, 94, 0.4)',
+        id: 'gym',
+        icon: <Dumbbell size={28} />,
+        title: 'Gym',
+        subtitle: 'Workout Tracker',
+        color: 'rgba(239, 68, 68, 0.35)',
+        borderColor: 'rgba(239, 68, 68, 0.5)',
+        route: '/gym',
+    },
+    {
+        id: 'arrange',
+        icon: <Pencil size={28} />,
+        title: 'Arrange',
+        subtitle: 'Place & Move Items',
+        color: 'rgba(30, 64, 100, 0.6)',
+        borderColor: 'rgba(59, 130, 246, 0.4)',
+        route: '/room/2d',
+        panelHint: 'furniture_edit',
+    },
+    {
+        id: 'pet',
+        icon: null, // filled dynamically
+        title: 'Pet',
+        subtitle: 'Care & Bond',
+        color: 'rgba(251, 191, 36, 0.35)',
+        borderColor: 'rgba(251, 191, 36, 0.5)',
+        route: '/room/2d',
+        panelHint: 'pet',
+    },
+    {
+        id: '2d-room',
+        icon: null, // filled dynamically with hero image
+        title: '2D Room',
+        subtitle: 'Walk Around',
+        color: 'rgba(30, 58, 90, 0.6)',
+        borderColor: 'rgba(59, 130, 246, 0.4)',
         route: '/room/2d',
     },
 ];
 
-export const RoomLobby = ({ onClose }: { onClose: () => void }) => {
+export const RoomLobby = ({ onClose: _onClose }: { onClose: () => void }) => {
     const navigate = useNavigate();
+    const { activePet, name: petName } = usePetStore();
+    const petData = ITEM_DATABASE[activePet];
+    const petSprite = petData?.icon || '🐮';
+    const heroImage = useHeroImage();
 
     return (
-        <div className="room-lobby">
-            <div className="room-lobby__header">
-                <button className="room-lobby__back" onClick={onClose}>
-                    <ArrowLeft size={20} />
-                </button>
-                <div>
-                    <h1>Your Room</h1>
-                    <p className="room-lobby__subtitle">Choose a zone to explore</p>
+        <SceneShell
+            backgroundImage={homeCampBg}
+            showFog={true}
+            showVignette={true}
+            showEmbers={true}
+        >
+            <div className="room-hub">
+                {/* Equipment Loadout Bar */}
+                <div className="room-hub__loadout">
+                    <img src={heroImage} alt="Hero" className="room-hub__hero-thumb" />
+                    <span className="room-hub__pet-badge">{petSprite} {petName}</span>
+                    <span className="room-hub__loadout-label">⚔ Equipment Loadout</span>
+                </div>
+
+                {/* Grid of cards */}
+                <div className="room-hub__grid">
+                    {ROOM_CARDS.map((card, i) => (
+                        <motion.button
+                            key={card.id}
+                            className="room-hub__card"
+                            style={{
+                                background: card.color,
+                                borderColor: card.borderColor,
+                            }}
+                            initial={{ opacity: 0, scale: 0.92 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            transition={{ delay: i * 0.04 }}
+                            whileTap={{ scale: 0.95 }}
+                            onClick={() => navigate(card.route)}
+                        >
+                            <div className="room-hub__card-icon">
+                                {card.id === 'pet'
+                                    ? <span style={{ fontSize: '1.6rem' }}>{petSprite}</span>
+                                    : card.id === '2d-room'
+                                        ? <img src={heroImage} alt="" className="room-hub__card-hero" />
+                                        : card.icon
+                                }
+                            </div>
+                            <span className="room-hub__card-title">{card.title}</span>
+                            <small className="room-hub__card-sub">{card.subtitle}</small>
+                        </motion.button>
+                    ))}
                 </div>
             </div>
-
-            <div className="room-lobby__grid">
-                {ROOM_CARDS.map((card, i) => (
-                    <motion.button
-                        key={card.id}
-                        className="room-lobby__card"
-                        style={{
-                            background: card.gradient,
-                            borderColor: card.borderColor,
-                        }}
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: i * 0.08 }}
-                        whileTap={{ scale: 0.97 }}
-                        onClick={() => navigate(card.route)}
-                    >
-                        <div className="room-lobby__card-icon" style={{ color: card.color }}>
-                            {card.icon}
-                        </div>
-                        <div className="room-lobby__card-info">
-                            <h3 style={{ color: card.color }}>{card.title}</h3>
-                            <p>{card.subtitle}</p>
-                        </div>
-                        <card.lucideIcon size={18} className="room-lobby__card-arrow" style={{ color: card.color }} />
-                    </motion.button>
-                ))}
-            </div>
-        </div>
+        </SceneShell>
     );
 };

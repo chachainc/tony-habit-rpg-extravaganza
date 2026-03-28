@@ -24,7 +24,6 @@ export const StormTheFort = () => {
         bossWarningActive,
         rallyUntil,
         savedFormation,
-        startGame,
         pauseGame,
         resumeGame,
         gameTick,
@@ -409,7 +408,7 @@ export const StormTheFort = () => {
                     <div className="storm-overlay danger">
                         <h3>Fort Destroyed!</h3>
                         <p>You survived until Wave {wave}. {wave > bestWave ? '🏆 New Record!' : `Best: Wave ${bestWave}`}</p>
-                        <button className="storm-btn danger" onClick={() => startGame()}>Restart</button>
+                        <button className="storm-btn danger" onClick={() => window.history.back()}>Exit</button>
                     </div>
                 )}
             </div>

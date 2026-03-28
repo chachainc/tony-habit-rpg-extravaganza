@@ -366,11 +366,17 @@ export const ConquestTiles = ({ onComplete, onClose, canPlay, canPlayImpossible 
 
     let boardWidth = 0;
     let boardHeight = 0;
+    let offsetX = 0;
+    let offsetY = 0;
     if (activeTiles.length > 0) {
-        const maxX = Math.max(...board.filter(t => !t.removed).map(t => t.x));
-        const maxY = Math.max(...board.filter(t => !t.removed).map(t => t.y));
-        boardWidth = (maxX + 1) * gap + tileSize;
-        boardHeight = (maxY + 1) * gap + tileSize;
+        const minX = Math.min(...activeTiles.map(t => t.x));
+        const minY = Math.min(...activeTiles.map(t => t.y));
+        const maxX = Math.max(...activeTiles.map(t => t.x));
+        const maxY = Math.max(...activeTiles.map(t => t.y));
+        offsetX = minX * gap;
+        offsetY = minY * gap;
+        boardWidth = (maxX - minX + 1) * gap + tileSize;
+        boardHeight = (maxY - minY + 1) * gap + tileSize;
     }
 
     // ─── SIGIL / GEM / XP REWARD CALC ─────────────
@@ -555,9 +561,10 @@ export const ConquestTiles = ({ onComplete, onClose, canPlay, canPlayImpossible 
                                     <motion.div
                                         key={tile.uid}
                                         className={`tiles-board-tile ${blocked ? 'blocked' : 'selectable'}`}
+                                        data-family={tile.symbol.colorFamily}
                                         style={{
-                                            left: tile.x * gap,
-                                            top: tile.y * gap,
+                                            left: tile.x * gap - offsetX,
+                                            top: tile.y * gap - offsetY,
                                             zIndex: tile.layer * 10,
                                             width: tileSize,
                                             height: tileSize,
@@ -598,6 +605,7 @@ export const ConquestTiles = ({ onComplete, onClose, canPlay, canPlayImpossible 
                                     <motion.div
                                         key={tile.uid}
                                         className={`tiles-tray-tile ${isClearing ? 'clearing' : ''} ${isMatching ? 'matching' : ''}`}
+                                        data-family={tile.symbol.colorFamily}
                                         initial={{ x: -20, opacity: 0, scale: 0.8 }}
                                         animate={{ x: 0, opacity: 1, scale: 1 }}
                                         transition={{ duration: 0.25, type: 'spring', stiffness: 300 }}

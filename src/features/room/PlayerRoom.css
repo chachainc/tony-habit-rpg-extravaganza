@@ -770,3 +770,38 @@
     background: linear-gradient(135deg, rgba(16, 185, 129, 0.3), rgba(5, 150, 105, 0.15));
     border-color: rgba(16, 185, 129, 0.4);
 }
+
+/* ═══ ROOM ZONE CHIP (subtle proximity prompt) ═══ */
+.room-zone-chip {
+    position: fixed;
+    bottom: calc(5rem + env(safe-area-inset-bottom, 0px));
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 150;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.45rem 1rem;
+    background: rgba(15, 23, 42, 0.85);
+    backdrop-filter: blur(8px);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 20px;
+    color: #e2e8f0;
+    font-size: 0.8rem;
+    font-weight: 600;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+    white-space: nowrap;
+}
+
+.room-zone-chip span {
+    color: #93c5fd;
+    font-weight: 700;
+}
+
+.room-zone-chip small {
+    color: rgba(148, 163, 184, 0.7);
+    font-size: 0.7rem;
+    font-weight: 500;
+}

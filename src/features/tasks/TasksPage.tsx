@@ -57,10 +57,10 @@ const CATEGORY_CONFIG: Record<TaskCategory, { label: string; color: string; icon
 };
 
 const BUNDLE_CONFIG: Record<BundleType, { title: string; icon: React.ReactNode; color: string }> = {
-    morning: { title: 'Morning Foundation', icon: <Sun size={24} />, color: '#f59e0b' },
-    midday: { title: 'Mid Day', icon: <Sun size={24} />, color: '#eab308' },
+    morning: { title: 'Morning (Before Work)', icon: <Sun size={24} />, color: '#f59e0b' },
+    midday: { title: 'Midday (During Work Hours)', icon: <Sun size={24} />, color: '#eab308' },
     afternoon: { title: 'Afternoon (After Work)', icon: <Sunset size={24} />, color: '#f97316' },
-    night: { title: 'Night (Before Bed)', icon: <Moon size={24} />, color: '#8b5cf6' },
+    night: { title: 'Night Shutdown (Before Bed)', icon: <Moon size={24} />, color: '#8b5cf6' },
 };
 
 // ── Radar chart helper: draws a polygon from skill levels ──
@@ -1067,9 +1067,9 @@ export const TasksPage = () => {
                                             onChange={(e) => setSelectedBundle(e.target.value as BundleType)}
                                             className="form-select"
                                         >
-                                            <option value="morning">Morning Foundation</option>
-                                            <option value="afternoon">Afternoon Performance</option>
-                                            <option value="night">Night Shutdown</option>
+                                            {(Object.keys(BUNDLE_CONFIG) as BundleType[]).map(b => (
+                                                <option key={b} value={b}>{BUNDLE_CONFIG[b].title}</option>
+                                            ))}
                                         </select>
                                     </div>
                                 )}

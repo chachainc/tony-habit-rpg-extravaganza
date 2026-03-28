@@ -2,7 +2,7 @@ import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, BedDouble, BookOpen, Shirt, Scale, Dumbbell, Pencil, Check, DollarSign, Menu } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { useRoomStore, ROOM_CATALOG } from '../../store/useRoomStore';
+import { useRoomStore } from '../../store/useRoomStore';
 import { usePetStore } from '../../store/usePetStore';
 import { useTitleStore } from '../../store/useTitleStore';
 import { useAuraStore, AURAS } from '../../store/useAuraStore';
@@ -496,14 +496,9 @@ export const PlayerRoom = ({ onClose }: { onClose: () => void }) => {
         playerPosition, setPlayerPosition,
         placedRoomFurniture, placeRoomFurniture,
         getPlacedBonusSummary,
-        currentRoomId, unlockedRooms, switchRoom,
     } = useRoomStore();
 
-    const allRooms = ROOM_CATALOG;
-    const currentRoomIdx = allRooms.findIndex(r => r.id === currentRoomId);
-    const prevRoom = currentRoomIdx > 0 ? allRooms[currentRoomIdx - 1] : null;
-    const nextRoom = currentRoomIdx < allRooms.length - 1 ? allRooms[currentRoomIdx + 1] : null;
-    const currentRoomDef = allRooms[currentRoomIdx];
+
     const { activePet, name: petName } = usePetStore();
     const { activeTitle, getUnlockedTitleDefs } = useTitleStore();
     const { activeAuraId } = useAuraStore();
@@ -511,7 +506,6 @@ export const PlayerRoom = ({ onClose }: { onClose: () => void }) => {
     const heroImage = useHeroImage();
 
     const [activePanel, setActivePanel] = useState<ActivePanel>(null);
-    const [tooltipSeen, setTooltipSeen] = useState(false);
     const keysPressed = useRef<Set<string>>(new Set());
     const [editMode, setEditMode] = useState(false);
     const [placingFurnitureId, setPlacingFurnitureId] = useState<string | null>(null);
@@ -630,7 +624,6 @@ export const PlayerRoom = ({ onClose }: { onClose: () => void }) => {
     const handleInteract = () => {
         if (nearbyObj && nearbyObj.panel) {
             setActivePanel(nearbyObj.panel);
-            setTooltipSeen(true);
             keysPressed.current.clear();
         }
     };
@@ -786,26 +779,6 @@ export const PlayerRoom = ({ onClose }: { onClose: () => void }) => {
                             <DollarSign size={20} /> Budget
                         </button>
 
-                        {/* Room Navigator */}
-                        <div className="room-navigator">
-                            <button
-                                className="room-nav-arrow"
-                                disabled={!prevRoom || !unlockedRooms.includes(prevRoom.id)}
-                                onClick={() => prevRoom && switchRoom(prevRoom.id)}
-                                title={prevRoom ? prevRoom.name : ''}
-                            >◀</button>
-                            <div className="room-nav-label">
-                                <span className="room-nav-icon">{currentRoomDef?.icon}</span>
-                                <span className="room-nav-name">{currentRoomDef?.name ?? 'Bedroom'}</span>
-                            </div>
-                            <button
-                                className="room-nav-arrow"
-                                disabled={!nextRoom || !unlockedRooms.includes(nextRoom.id)}
-                                onClick={() => nextRoom && switchRoom(nextRoom.id)}
-                                title={nextRoom ? nextRoom.unlockCondition ?? nextRoom.name : ''}
-                            >▶</button>
-                        </div>
-
                         {bonusSummary.length > 0 && !editMode && (
                             <div className="room-bonus-chip" onClick={() => setActivePanel('furniture_edit')}>
                                 ✨ {bonusSummary.length} bonus{bonusSummary.length > 1 ? 'es' : ''} active
@@ -828,7 +801,7 @@ export const PlayerRoom = ({ onClose }: { onClose: () => void }) => {
                         </button>
                     </div>
 
-                    {/* ── Room Panels FAB ── */}
+                    {/* ── Room Panels FAB (orange) ── */}
                     <AnimatePresence>
                         {showRoomFab && (
                             <motion.div
@@ -845,7 +818,7 @@ export const PlayerRoom = ({ onClose }: { onClose: () => void }) => {
                                     { label: '⚒️ Workshop', panel: 'workshop' as ActivePanel },
                                     { label: '🛢 Cellar', panel: 'cellar' as ActivePanel },
                                     { label: '🐾 Pet', panel: 'pet' as ActivePanel },
-                                ]).map(({ label, panel }) => (
+                                ] as const).map(({ label, panel }) => (
                                     <button
                                         key={panel}
                                         onClick={() => { setActivePanel(panel); setShowRoomFab(false); }}
@@ -858,7 +831,7 @@ export const PlayerRoom = ({ onClose }: { onClose: () => void }) => {
                                             fontSize: '0.8rem',
                                             fontWeight: 700,
                                             cursor: 'pointer',
-                                            whiteSpace: 'nowrap',
+                                            whiteSpace: 'nowrap' as const,
                                             boxShadow: '0 4px 12px rgba(0,0,0,0.5)',
                                         }}
                                     >
@@ -1069,25 +1042,24 @@ export const PlayerRoom = ({ onClose }: { onClose: () => void }) => {
                         </div>
                     </div>
 
-                    {/* ── Proximity Interaction Prompt ── */}
+                    {/* ── Proximity Interaction Prompt (subtle chip, no keyboard hints) ── */}
                     <AnimatePresence>
                         {nearbyObj && nearbyObj.panel && !activePanel && (
                             <motion.div
-                                className="room-item-prompt"
-                                initial={{ opacity: 0, y: 10 }}
+                                className="room-zone-chip"
+                                initial={{ opacity: 0, y: 8 }}
                                 animate={{ opacity: 1, y: 0 }}
-                                exit={{ opacity: 0, y: 10 }}
+                                exit={{ opacity: 0, y: 8 }}
                                 onClick={() => {
                                     if (nearbyObj.panel) {
                                         setActivePanel(nearbyObj.panel);
-                                        setTooltipSeen(true);
                                         keysPressed.current.clear();
                                     }
                                 }}
                                 style={{ cursor: 'pointer' }}
                             >
-                                <strong>{nearbyObj.label}</strong>
-                                {!tooltipSeen && <span className="press-key-hint">['E']</span>}
+                                <span>{nearbyObj.label}</span>
+                                <small>Tap to open</small>
                             </motion.div>
                         )}
                     </AnimatePresence>
