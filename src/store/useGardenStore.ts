@@ -8,8 +8,13 @@ export interface SeedDef {
     icon: string;
     growTimeMs: number; // milliseconds
     cost: number; // gold
-    yields: { type: 'gold' | 'xp' | 'material'; value: number; materialId?: string }[];
+    yields: HarvestYield[];
 }
+
+export type HarvestYield =
+    | { type: 'gold'; value: number }
+    | { type: 'xp'; value: number }
+    | { type: 'material'; value: number; materialId: string };
 
 export const SEEDS: SeedDef[] = [
     { id: 'herb_seed',    name: 'Herb Seed',    icon: '🌿', growTimeMs: 6 * 60 * 60 * 1000,  cost: 100, yields: [{ type: 'gold', value: 50 }] },
