@@ -78,7 +78,8 @@ export interface RiskState {
 
     initializeMap: () => void;
     resetAndAscendMap: () => void;
-    resolveRiskBattle: (nodeId: string, committedSoldiers: number) => RiskBattleResult | null;
+    resolveRiskBattle: (sourceNodeId: string, targetNodeId: string, attackingSoldiers: number) => RiskBattleResult | null;
+    deploySoldiers: (nodeId: string, count: number) => boolean;
     buySoldier: () => boolean;
     buyCard: (id: RiskCardId) => boolean;
     gainCard: (id: RiskCardId) => void;
@@ -249,6 +250,22 @@ export const useRiskStore = create<RiskState>()(
                 return true;
             },
 
+            deploySoldiers: (nodeId: string, count: number) => {
+                const state = get();
+                const node = state.mapNodes[nodeId];
+                if (!node || node.owner !== 'player') return false;
+                const deployable = Math.min(count, state.playerSoldiers);
+                if (deployable <= 0) return false;
+                set(s => ({
+                    playerSoldiers: s.playerSoldiers - deployable,
+                    mapNodes: {
+                        ...s.mapNodes,
+                        [nodeId]: { ...s.mapNodes[nodeId], soldierCount: s.mapNodes[nodeId].soldierCount + deployable }
+                    }
+                }));
+                return true;
+            },
+
             buyCard: (id: RiskCardId) => {
                 const state = get();
                 if (state.ownedCards.includes(id)) return false;
@@ -293,18 +310,34 @@ export const useRiskStore = create<RiskState>()(
                 set(state => ({ equippedCards: state.equippedCards.filter(c => c !== id) }));
             },
 
-            resolveRiskBattle: (nodeId: string, committedSoldiers: number) => {
+            resolveRiskBattle: (sourceNodeId: string, targetNodeId: string, attackingSoldiers: number) => {
                 const state = get();
-                const node = state.mapNodes[nodeId];
-                if (!node || node.owner === 'player' || node.nodeType === 'shop') return null;
+                const sourceNode = state.mapNodes[sourceNodeId];
+                const targetNode = state.mapNodes[targetNodeId];
+                if (!sourceNode || sourceNode.owner !== 'player') return null;
+                if (!targetNode || targetNode.owner === 'player' || targetNode.nodeType === 'shop') return null;
+                if (!sourceNode.neighbors.includes(targetNodeId)) return null;
+
+                // Clamp: must leave at least 1 behind, can't send more than available
+                const maxSendable = sourceNode.soldierCount - 1;
+                const actualAttacking = Math.min(attackingSoldiers, maxSendable);
+                if (actualAttacking <= 0) return null;
+
+                // Deduct soldiers from source BEFORE battle
+                set(s => ({
+                    mapNodes: {
+                        ...s.mapNodes,
+                        [sourceNodeId]: { ...s.mapNodes[sourceNodeId], soldierCount: s.mapNodes[sourceNodeId].soldierCount - actualAttacking }
+                    }
+                }));
 
                 const equipped = state.equippedCards;
-                let playerDice = Math.min(state.playerSoldiers, committedSoldiers);
-                const enemyDice = Math.max(1, node.soldierCount);
+                let playerDice = actualAttacking;
+                const enemyDice = Math.max(1, targetNode.soldierCount);
                 const triggeredEffects: string[] = [];
 
                 // War Banner: +1 die vs Captain (5+) or Boss nodes
-                if (equipped.includes('war_banner') && (node.soldierCount >= 5 || node.nodeType === 'boss')) {
+                if (equipped.includes('war_banner') && (targetNode.soldierCount >= 5 || targetNode.nodeType === 'boss')) {
                     playerDice += 1;
                     triggeredEffects.push('War Banner: +1 die vs elite');
                 }
@@ -348,27 +381,39 @@ export const useRiskStore = create<RiskState>()(
                 let extraSigils = 0;
 
                 if (success) {
+                    // Medic Corps: recover 1 soldier back to source node on victory
                     if (equipped.includes('medic')) {
-                        set(s => ({ playerSoldiers: s.playerSoldiers + 1 }));
-                        triggeredEffects.push('Medic Corps: +1 soldier');
+                        set(s => ({
+                            mapNodes: {
+                                ...s.mapNodes,
+                                [sourceNodeId]: { ...s.mapNodes[sourceNodeId], soldierCount: s.mapNodes[sourceNodeId].soldierCount + 1 }
+                            }
+                        }));
+                        triggeredEffects.push('Medic Corps: +1 soldier recovered to source');
                     }
                     if (equipped.includes('recruiter')) {
                         extraSigils += 1;
                         triggeredEffects.push('Recruiter: +1 Sigil');
                     }
 
-                    set(s => ({ mapNodes: { ...s.mapNodes, [nodeId]: { ...s.mapNodes[nodeId], owner: 'player' } } }));
+                    // Capture target: set owner to player, soldiers = attacking force
+                    set(s => ({
+                        mapNodes: {
+                            ...s.mapNodes,
+                            [targetNodeId]: { ...s.mapNodes[targetNodeId], owner: 'player', soldierCount: actualAttacking }
+                        }
+                    }));
 
                     if (extraSigils > 0) {
                         import('./useConquestStore').then(({ useConquestStore: cs }) => cs.getState().addSigils(extraSigils));
                     }
                 } else {
-                    // Defeat: lose committed soldiers
+                    // Defeat: attacking soldiers are lost (already deducted from source).
+                    // Enemy node takes 1 attrition.
                     set(s => ({
-                        playerSoldiers: Math.max(0, s.playerSoldiers - committedSoldiers),
                         mapNodes: {
                             ...s.mapNodes,
-                            [nodeId]: { ...s.mapNodes[nodeId], soldierCount: Math.max(1, s.mapNodes[nodeId].soldierCount - 1) }
+                            [targetNodeId]: { ...s.mapNodes[targetNodeId], soldierCount: Math.max(1, s.mapNodes[targetNodeId].soldierCount - 1) }
                         }
                     }));
                 }
@@ -377,7 +422,7 @@ export const useRiskStore = create<RiskState>()(
                 const fortifiedEnemyNodes: string[] = [];
                 set(s => {
                     const next = { ...s.mapNodes };
-                    node.neighbors.forEach(nId => {
+                    targetNode.neighbors.forEach(nId => {
                         if (next[nId]?.owner === 'enemy' && Math.random() < 0.1) {
                             next[nId] = { ...next[nId], soldierCount: next[nId].soldierCount + 1 };
                             fortifiedEnemyNodes.push(nId);
@@ -387,7 +432,7 @@ export const useRiskStore = create<RiskState>()(
                 });
 
                 const reward: RiskBattleResult['reward'] = success
-                    ? (node.trait === 'resource' ? 'sigil' : node.trait === 'mystic' && Math.random() > 0.5 ? 'card' : undefined)
+                    ? (targetNode.trait === 'resource' ? 'sigil' : targetNode.trait === 'mystic' && Math.random() > 0.5 ? 'card' : undefined)
                     : undefined;
 
                 return { success, playerRolls, enemyRolls, playerWins, enemyWins, triggeredEffects, fortifiedEnemyNodes, reward, extraSigils };

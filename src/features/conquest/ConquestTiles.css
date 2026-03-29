@@ -651,6 +651,11 @@
     border-color: rgba(239, 68, 68, 0.4);
 }
 
+.tiles-result-card.partial {
+    border-color: rgba(245, 158, 11, 0.5);
+    box-shadow: 0 20px 60px rgba(245, 158, 11, 0.15);
+}
+
 .tiles-result-card h2 {
     font-size: 1.6rem;
     margin-bottom: 1rem;

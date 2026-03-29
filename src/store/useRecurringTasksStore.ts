@@ -354,6 +354,14 @@ export const DAILY_TASKS_TEMPLATE: Omit<RecurringTask, 'completed'>[] = [
         rewards: [{ skillId: 'Intelligence', xp: 4 }],
     },
     {
+        id: 'audiobook_30_min',
+        title: 'Listen to 30 minutes of audiobook minimum today',
+        bundle: 'night',
+        type: 'daily',
+        category: 'lifestyle',
+        rewards: [{ skillId: 'Intelligence', xp: 1 }],
+    },
+    {
         id: 'charge_wear_oura',
         title: 'Charge Phone + Wear Oura Ring',
         bundle: 'night',

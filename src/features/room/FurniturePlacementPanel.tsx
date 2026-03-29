@@ -209,12 +209,15 @@ interface DraggablePieceProps {
     placed: PlacedFurniture;
     editMode: boolean;
     containerRef: React.RefObject<HTMLDivElement | null>;
+    /** Called when tapped in non-edit mode (e.g. opens a panel) */
+    onInteract?: () => void;
 }
 
 export const DraggableFurniturePiece: React.FC<DraggablePieceProps> = ({
     placed,
     editMode,
     containerRef,
+    onInteract,
 }) => {
     const { movePlacedFurniture, unplaceByFurnitureId } = useRoomStore();
     const def = ROOM_FURNITURE_CATALOG.find((d) => d.id === placed.furnitureId);
@@ -254,6 +257,12 @@ export const DraggableFurniturePiece: React.FC<DraggablePieceProps> = ({
     }, [isDragging, containerRef, movePlacedFurniture, placed.id, sizeW, sizeH]);
 
     const onPointerUp = useCallback((e: React.PointerEvent) => {
+        if (!isDragging && !editMode && onInteract) {
+            // Non-edit-mode tap → trigger interaction
+            e.stopPropagation();
+            onInteract();
+            return;
+        }
         if (!isDragging) return;
         e.stopPropagation();
         setIsDragging(false);
@@ -266,13 +275,13 @@ export const DraggableFurniturePiece: React.FC<DraggablePieceProps> = ({
             setShowActions((v) => !v);
         }
         dragStart.current = null;
-    }, [isDragging, editMode]);
+    }, [isDragging, editMode, onInteract]);
 
     if (!def) return null;
 
     return (
         <div
-            className={`fp-room-piece ${editMode ? 'edit-mode' : ''} ${isDragging ? 'dragging' : ''}`}
+            className={`fp-room-piece ${editMode ? 'edit-mode' : ''} ${isDragging ? 'dragging' : ''} ${onInteract && !editMode ? 'has-interaction' : ''}`}
             style={{
                 left: `${placed.x}%`,
                 top: `${placed.y}%`,

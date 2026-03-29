@@ -162,6 +162,29 @@ const isWalkable = (x: number, y: number, placedFurniture: { gridX: number; grid
     return true;
 };
 
+/* ══════ FURNITURE → PANEL INTERACTION MAPPING ══════
+   When tapping a placed furniture piece (NOT in edit mode),
+   this map determines which panel to open. */
+const FURNITURE_INTERACTIONS: Record<string, ActivePanel> = {
+    basic_bed:    'sleep',
+    comfy_bed:    'sleep',
+    premium_bed:  'sleep',
+    ornate_bed:   'sleep',
+    royal_canopy: 'sleep',
+    pet_bed:      'pet',
+    arcane_bookshelf: 'bookshelf',
+    writing_desk: 'bookshelf',
+    archmage_desk: 'bookshelf',
+    // Decorative — no interaction yet
+    guitar: null,
+    fireplace: null,
+    grandfather_clock: null,
+    magic_hearth: null,
+    celestial_chandelier: null,
+    enchanted_mirror: 'wardrobe',
+    enchanted_mirror_prestige: 'wardrobe',
+};
+
 /* ══════ DECORATIVE WORLD ELEMENTS ══════ */
 type DecoItem = { emoji: string; x: number; y: number; size: number; flicker?: boolean };
 const DECO_ITEMS: DecoItem[] = [
@@ -461,6 +484,41 @@ const ZONES = {
             { emoji: '🧱', ox: 1, oy: 3, size: 1.3 },
         ],
     },
+    // ── DOORWAY ZONES (multi-room exits) ──
+    gardenDoor: {
+        x: 0, y: 14, w: 2, h: 5,
+        panel: 'garden' as ActivePanel,
+        label: '→ Garden',
+        sublabel: 'Exit',
+        theme: 'zone-door-garden',
+        deco: [
+            { emoji: '🌿', ox: 0, oy: 0, size: 1.8 },
+            { emoji: '🍃', ox: 1, oy: 3, size: 1.4 },
+            { emoji: '🌱', ox: 0, oy: 4, size: 1.2 },
+        ],
+    },
+    trainingDoor: {
+        x: 30, y: 14, w: 2, h: 5,
+        panel: null as ActivePanel,
+        label: '→ Training',
+        sublabel: 'Locked',
+        theme: 'zone-door-training',
+        deco: [
+            { emoji: '🔒', ox: 0, oy: 1, size: 2.0 },
+            { emoji: '⚔️', ox: 1, oy: 3, size: 1.5 },
+        ],
+    },
+    studyDoor: {
+        x: 14, y: 30, w: 4, h: 2,
+        panel: 'workshop' as ActivePanel,
+        label: '→ Study',
+        sublabel: 'Exit',
+        theme: 'zone-door-garden',
+        deco: [
+            { emoji: '📜', ox: 0, oy: 0, size: 1.4 },
+            { emoji: '🕯️', ox: 3, oy: 0, size: 1.3, flicker: true },
+        ],
+    },
 };
 
 /* ══════ PATH SEGMENTS (connecting zones) ══════ */
@@ -489,6 +547,11 @@ const PATHS = [
     // ── Perimeter walkway ──
     { x: 2, y: 18, w: 1, h: 4 },   // west wall path
     { x: 29, y: 18, w: 1, h: 4 },  // east wall path
+
+    // ── Doorway approach paths ──
+    { x: 2, y: 15, w: 1, h: 3 },   // to garden door
+    { x: 29, y: 15, w: 1, h: 3 },  // to training door
+    { x: 14, y: 28, w: 4, h: 2 },  // to study door
 ];
 
 export const PlayerRoom = ({ onClose }: { onClose: () => void }) => {
@@ -975,14 +1038,21 @@ export const PlayerRoom = ({ onClose }: { onClose: () => void }) => {
                             ))}
 
                             {/* ═══ PLACED FURNITURE ═══ */}
-                            {placedRoomFurniture.map((placed) => (
-                                <DraggableFurniturePiece
-                                    key={placed.id}
-                                    placed={placed}
-                                    editMode={editMode}
-                                    containerRef={containerRef}
-                                />
-                            ))}
+                            {placedRoomFurniture.map((placed) => {
+                                const interaction = FURNITURE_INTERACTIONS[placed.furnitureId] ?? null;
+                                return (
+                                    <DraggableFurniturePiece
+                                        key={placed.id}
+                                        placed={placed}
+                                        editMode={editMode}
+                                        containerRef={containerRef}
+                                        onInteract={interaction ? () => {
+                                            setActivePanel(interaction);
+                                            keysPressed.current.clear();
+                                        } : undefined}
+                                    />
+                                );
+                            })}
 
                             {/* ═══ PET FOLLOWER ═══ */}
                             <motion.div
