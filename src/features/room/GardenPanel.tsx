@@ -51,8 +51,7 @@ const SeedModal = ({
                                 <span className="seed-modal-yield">
                                     {seed.yields.map(y =>
                                         y.type === 'gold' ? `+${y.value}🪙` :
-                                            y.type === 'xp' ? `+${y.value} XP` :
-                                                `+${y.value} 📦`
+                                            `+${y.value} 📦`
                                     ).join(' ')}
                                 </span>
                             </button>
