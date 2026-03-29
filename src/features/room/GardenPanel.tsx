@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { X, Droplets, Sprout } from 'lucide-react';
-import { useGardenStore, SEEDS } from '../../store/useGardenStore';
+import { useGardenStore, SEEDS, type HarvestYield } from '../../store/useGardenStore';
 import { useGameStore } from '../../store/useGameStore';
 import { Panel } from '../../components/ui/Panel';
 import { useToastStore } from '../../components/ui/Toast';
@@ -35,20 +35,27 @@ export const GardenPanel = ({ onClose }: { onClose: () => void }) => {
         });
     };
 
+    const applyHarvestYield = (y: HarvestYield, bonusMult: number) => {
+        const scaledValue = Math.floor(y.value * bonusMult);
+        if (y.type === 'gold') {
+            addCurrency(scaledValue);
+            return;
+        }
+        if (y.type === 'xp') {
+            useGameStore.getState().addGlobalXp(scaledValue);
+            return;
+        }
+        import('../../store/useWorkshopStore').then(({ useWorkshopStore }) => {
+            useWorkshopStore.getState().addMaterial(y.materialId, scaledValue);
+        });
+    };
+
     const handleHarvest = (plotIndex: number) => {
         const result = garden.harvestPlot(plotIndex);
         if (!result) return;
         const bonusMult = result.watered ? 1.25 : 1.0;
         for (const y of result.yields) {
-            if (y.type === 'gold') {
-                addCurrency(Math.floor(y.value * bonusMult));
-            } else if (y.type === 'xp') {
-                useGameStore.getState().addGlobalXp(Math.floor(y.value * bonusMult));
-            } else if (y.type === 'material' && y.materialId) {
-                import('../../store/useWorkshopStore').then(({ useWorkshopStore }) => {
-                    useWorkshopStore.getState().addMaterial(y.materialId!, Math.floor(y.value * bonusMult));
-                });
-            }
+            applyHarvestYield(y, bonusMult);
         }
     };
 
