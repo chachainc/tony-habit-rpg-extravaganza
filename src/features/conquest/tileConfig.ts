@@ -14,6 +14,7 @@ import voidling from '../../assets/pets/voidling.png';
 
 // ─── TYPES ────────────────────────────────────────
 export type TileRarity = 'common' | 'rare' | 'epic';
+export type TileColorFamily = 'blue' | 'gold' | 'red' | 'green' | 'purple';
 
 export interface TileSymbol {
     id: string;
@@ -21,42 +22,43 @@ export interface TileSymbol {
     emoji?: string;      // emoji-based icon
     imageSrc?: string;    // image-based icon (overrides emoji when present)
     rarity: TileRarity;
+    colorFamily: TileColorFamily;
 }
 
 // ─── RPG SYMBOLS (common) ─────────────────────
 export const SOLDIER_SYMBOLS: TileSymbol[] = [
-    { id: 'item_sword', label: 'Sword', emoji: '⚔️', rarity: 'common' },
-    { id: 'item_shield', label: 'Shield', emoji: '🛡️', rarity: 'common' },
-    { id: 'item_scroll', label: 'Scroll', emoji: '📜', rarity: 'common' },
-    { id: 'item_potion', label: 'Potion', emoji: '🧪', rarity: 'common' },
-    { id: 'item_gem', label: 'Gem', emoji: '💎', rarity: 'common' },
-    { id: 'item_coin', label: 'Coin', emoji: '🪙', rarity: 'common' },
-    { id: 'item_ring', label: 'Ring', emoji: '💍', rarity: 'common' },
-    { id: 'item_crown', label: 'Crown', emoji: '👑', rarity: 'common' },
-    { id: 'item_key', label: 'Key', emoji: '🗝️', rarity: 'common' },
-    { id: 'item_book', label: 'Book', emoji: '📘', rarity: 'common' },
-    { id: 'item_meat', label: 'Meat', emoji: '🍖', rarity: 'common' },
-    { id: 'item_chalice', label: 'Chalice', emoji: '🍷', rarity: 'common' },
+    { id: 'item_sword', label: 'Sword', emoji: '⚔️', rarity: 'common', colorFamily: 'red' },
+    { id: 'item_shield', label: 'Shield', emoji: '🛡️', rarity: 'common', colorFamily: 'red' },
+    { id: 'item_scroll', label: 'Scroll', emoji: '📜', rarity: 'common', colorFamily: 'blue' },
+    { id: 'item_potion', label: 'Potion', emoji: '🧪', rarity: 'common', colorFamily: 'blue' },
+    { id: 'item_gem', label: 'Gem', emoji: '💎', rarity: 'common', colorFamily: 'gold' },
+    { id: 'item_coin', label: 'Coin', emoji: '🪙', rarity: 'common', colorFamily: 'gold' },
+    { id: 'item_ring', label: 'Ring', emoji: '💍', rarity: 'common', colorFamily: 'gold' },
+    { id: 'item_crown', label: 'Crown', emoji: '👑', rarity: 'common', colorFamily: 'gold' },
+    { id: 'item_key', label: 'Key', emoji: '🗝️', rarity: 'common', colorFamily: 'gold' },
+    { id: 'item_book', label: 'Book', emoji: '📘', rarity: 'common', colorFamily: 'blue' },
+    { id: 'item_meat', label: 'Meat', emoji: '🍖', rarity: 'common', colorFamily: 'red' },
+    { id: 'item_chalice', label: 'Chalice', emoji: '🍷', rarity: 'common', colorFamily: 'gold' },
 ];
 
 // ─── SPECIAL SYMBOLS (epic) ──────────────────────
 export const SPECIAL_SYMBOLS: TileSymbol[] = [
-    { id: 'special_wildcard', label: 'Wildcard', emoji: '🌟', rarity: 'epic' },
-    { id: 'special_bomb', label: 'Bomb', emoji: '💥', rarity: 'epic' },
-    { id: 'special_shuffle', label: 'Shuffle', emoji: '🔀', rarity: 'epic' },
+    { id: 'special_wildcard', label: 'Wildcard', emoji: '🌟', rarity: 'epic', colorFamily: 'purple' },
+    { id: 'special_bomb', label: 'Bomb', emoji: '💥', rarity: 'epic', colorFamily: 'purple' },
+    { id: 'special_shuffle', label: 'Shuffle', emoji: '🔀', rarity: 'epic', colorFamily: 'purple' },
 ];
 
 // ─── PET SYMBOLS (rare) ──────────────────────────
 export const PET_SYMBOLS: TileSymbol[] = [
-    { id: 'pet_bloom_sprite', label: 'Bloom Sprite', imageSrc: bloomSprite, rarity: 'rare' },
-    { id: 'pet_clockwork_owl', label: 'Clockwork Owl', imageSrc: clockworkOwl, rarity: 'rare' },
-    { id: 'pet_emberfox', label: 'Emberfox', imageSrc: emberfox, rarity: 'rare' },
-    { id: 'pet_ethereal_cow', label: 'Ethereal Cow', imageSrc: etherealCow, rarity: 'epic' },
-    { id: 'pet_lantern_slime', label: 'Lantern Slime', imageSrc: lanternSlime, rarity: 'rare' },
-    { id: 'pet_moss_golem', label: 'Moss Golem', imageSrc: mossGolem, rarity: 'rare' },
-    { id: 'pet_obsidian_beetle', label: 'Obsidian Beetle', imageSrc: obsidianBeetle, rarity: 'rare' },
-    { id: 'pet_storm_pup', label: 'Storm Pup', imageSrc: stormPup, rarity: 'rare' },
-    { id: 'pet_voidling', label: 'Voidling', imageSrc: voidling, rarity: 'epic' },
+    { id: 'pet_bloom_sprite', label: 'Bloom Sprite', imageSrc: bloomSprite, rarity: 'rare', colorFamily: 'green' },
+    { id: 'pet_clockwork_owl', label: 'Clockwork Owl', imageSrc: clockworkOwl, rarity: 'rare', colorFamily: 'green' },
+    { id: 'pet_emberfox', label: 'Emberfox', imageSrc: emberfox, rarity: 'rare', colorFamily: 'green' },
+    { id: 'pet_ethereal_cow', label: 'Ethereal Cow', imageSrc: etherealCow, rarity: 'epic', colorFamily: 'green' },
+    { id: 'pet_lantern_slime', label: 'Lantern Slime', imageSrc: lanternSlime, rarity: 'rare', colorFamily: 'green' },
+    { id: 'pet_moss_golem', label: 'Moss Golem', imageSrc: mossGolem, rarity: 'rare', colorFamily: 'green' },
+    { id: 'pet_obsidian_beetle', label: 'Obsidian Beetle', imageSrc: obsidianBeetle, rarity: 'rare', colorFamily: 'green' },
+    { id: 'pet_storm_pup', label: 'Storm Pup', imageSrc: stormPup, rarity: 'rare', colorFamily: 'green' },
+    { id: 'pet_voidling', label: 'Voidling', imageSrc: voidling, rarity: 'epic', colorFamily: 'green' },
 ];
 
 export const ALL_SYMBOLS: TileSymbol[] = [...SOLDIER_SYMBOLS, ...PET_SYMBOLS, ...SPECIAL_SYMBOLS];

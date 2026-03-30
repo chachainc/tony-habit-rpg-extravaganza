@@ -1,124 +1,115 @@
-.room-lobby {
-    padding: 1.5rem 1rem;
-    padding-bottom: 100px;
+/* ═══ ROOM HUB — 2×4 grid of translucent cards over SceneShell ═══ */
+.room-hub {
+    position: relative;
+    z-index: 10;
+    padding: 0.75rem 0.75rem;
+    padding-bottom: calc(5.5rem + env(safe-area-inset-bottom, 0px));
     min-height: 100dvh;
-}
-
-.room-lobby__header {
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-    margin-bottom: 1.5rem;
-}
-
-.room-lobby__back {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 40px;
-    height: 40px;
-    background: rgba(255, 255, 255, 0.05);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    border-radius: 12px;
-    color: var(--text-primary, #e2e8f0);
-    cursor: pointer;
-    transition: all 0.2s ease;
-    flex-shrink: 0;
-}
-
-.room-lobby__back:hover {
-    background: rgba(255, 255, 255, 0.1);
-    border-color: rgba(255, 255, 255, 0.2);
-}
-
-.room-lobby__header h1 {
-    margin: 0;
-    font-size: 1.5rem;
-    font-weight: 700;
-    background: linear-gradient(135deg, #6366f1, #a78bfa);
-    -webkit-background-clip: text;
-    background-clip: text;
-    -webkit-text-fill-color: transparent;
-}
-
-.room-lobby__subtitle {
-    margin: 0;
-    font-size: 0.82rem;
-    color: var(--text-secondary, #94a3b8);
-}
-
-.room-lobby__grid {
     display: flex;
     flex-direction: column;
     gap: 0.75rem;
 }
 
-.room-lobby__card {
+/* ── Loadout bar ── */
+.room-hub__loadout {
     display: flex;
     align-items: center;
-    gap: 0.9rem;
-    padding: 1rem 1.1rem;
-    border: 1px solid;
+    gap: 0.6rem;
+    padding: 0.6rem 0.8rem;
+    background: rgba(15, 23, 42, 0.75);
+    backdrop-filter: blur(8px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 14px;
+}
+
+.room-hub__hero-thumb {
+    width: 36px;
+    height: 36px;
+    border-radius: 8px;
+    object-fit: cover;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+.room-hub__pet-badge {
+    font-size: 0.8rem;
+    color: #e2e8f0;
+    font-weight: 600;
+}
+
+.room-hub__loadout-label {
+    margin-left: auto;
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: #34d399;
+}
+
+/* ── Card grid ── */
+.room-hub__grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.65rem;
+    flex: 1;
+}
+
+.room-hub__card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.3rem;
+    padding: 1rem 0.5rem;
+    border: 2px solid;
     border-radius: 16px;
     cursor: pointer;
-    transition: all 0.2s ease;
-    text-align: left;
-    width: 100%;
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+    backdrop-filter: blur(6px);
+    min-height: 100px;
+    text-align: center;
+    transition: transform 0.15s, box-shadow 0.2s;
 }
 
-.room-lobby__card:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+.room-hub__card:active {
+    transform: scale(0.96);
 }
 
-.room-lobby__card:active {
-    transform: translateY(0);
-}
-
-.room-lobby__card-icon {
-    font-size: 2rem;
-    flex-shrink: 0;
-    width: 48px;
-    height: 48px;
+/* Card icon */
+.room-hub__card-icon {
+    color: rgba(255, 255, 255, 0.85);
     display: flex;
     align-items: center;
     justify-content: center;
-    background: rgba(0, 0, 0, 0.2);
-    border-radius: 12px;
+    width: 44px;
+    height: 44px;
 }
 
-.room-lobby__card-info {
-    flex: 1;
-    min-width: 0;
+.room-hub__card-hero {
+    width: 36px;
+    height: 36px;
+    object-fit: cover;
+    border-radius: 8px;
+    border: 1px solid rgba(255, 255, 255, 0.2);
 }
 
-.room-lobby__card-info h3 {
-    margin: 0 0 0.15rem 0;
-    font-size: 1rem;
+/* Card text */
+.room-hub__card-title {
+    font-size: 0.95rem;
     font-weight: 700;
+    color: #f1f5f9;
+    line-height: 1.2;
 }
 
-.room-lobby__card-info p {
-    margin: 0;
-    font-size: 0.78rem;
-    color: var(--text-secondary, #94a3b8);
-    line-height: 1.3;
+.room-hub__card-sub {
+    font-size: 0.7rem;
+    color: rgba(148, 163, 184, 0.8);
+    font-weight: 500;
+    line-height: 1.2;
 }
 
-.room-lobby__card-arrow {
-    flex-shrink: 0;
-    opacity: 0.6;
-}
-
-/* ── Responsive ── */
+/* ── Desktop ── */
 @media (min-width: 768px) {
-    .room-lobby__grid {
-        display: grid;
-        grid-template-columns: repeat(2, 1fr);
-    }
-
-    .room-lobby {
-        max-width: 800px;
+    .room-hub {
+        max-width: 600px;
         margin: 0 auto;
     }
 }

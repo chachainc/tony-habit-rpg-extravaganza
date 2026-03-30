@@ -44,6 +44,7 @@ export const RiskPage = () => {
     const [justConqueredRegion, setJustConqueredRegion] = useState<RegionId | null>(null);
     const [showCardShop, setShowCardShop] = useState(false);
     const [committedSoldiers, setCommittedSoldiers] = useState<number>(1);
+    const [attackSourceId, setAttackSourceId] = useState<string | null>(null);
     const [isRolling, setIsRolling] = useState(false);
     const [rollAnimDice, setRollAnimDice] = useState<{p: number[], e: number[]}>({ p: [], e: [] });
 
@@ -182,15 +183,48 @@ export const RiskPage = () => {
         }
     };
 
+    // Get valid source nodes for attacking a given enemy node
+    const getValidSources = (targetNode: TerritoryNode) => {
+        return targetNode.neighbors
+            .map(nId => risk.mapNodes[nId])
+            .filter(n => n && n.owner === 'player' && n.soldierCount >= 2);
+    };
+
     const handleNodeTap = (node: TerritoryNode) => {
         if (isPanning.current) return;
         setSelectedNode(node);
         setBattleResult(null);
-        setCommittedSoldiers(risk.playerSoldiers); // default to max
         setIsRolling(false);
+
+        // If enemy & attackable, auto-pick source
+        if (node.owner === 'enemy') {
+            const sources = getValidSources(node);
+            if (sources.length === 1) {
+                setAttackSourceId(sources[0].id);
+                setCommittedSoldiers(Math.max(1, sources[0].soldierCount - 1));
+            } else if (sources.length > 1) {
+                setAttackSourceId(sources[0].id);
+                setCommittedSoldiers(Math.max(1, sources[0].soldierCount - 1));
+            } else {
+                setAttackSourceId(null);
+                setCommittedSoldiers(1);
+            }
+        } else {
+            setAttackSourceId(null);
+            setCommittedSoldiers(1);
+        }
     };
 
-    const handleAttack = (nodeId: string) => {
+    const handleSelectSource = (sourceId: string) => {
+        setAttackSourceId(sourceId);
+        const sourceNode = risk.mapNodes[sourceId];
+        if (sourceNode) {
+            setCommittedSoldiers(Math.max(1, sourceNode.soldierCount - 1));
+        }
+    };
+
+    const handleAttack = (targetNodeId: string) => {
+        if (!attackSourceId) return;
         const prev = risk.getActiveRegionBonuses();
         
         // Start animation
@@ -198,22 +232,22 @@ export const RiskPage = () => {
         setBattleResult(null);
 
         // Simulate rolling visual
-        const pCount = Math.min(risk.playerSoldiers, committedSoldiers);
+        const pCount = committedSoldiers;
         const eCount = Math.max(1, selectedNode?.soldierCount || 1);
         
         let ticks = 0;
+        const sourceIdForBattle = attackSourceId;
         const rollInterval = setInterval(() => {
             setRollAnimDice({
                 p: Array.from({length: pCount}, () => Math.floor(Math.random() * 6) + 1),
                 e: Array.from({length: eCount}, () => Math.floor(Math.random() * 6) + 1)
             });
             ticks++;
-            if (ticks > 8) { // run ~8 frames of animation
+            if (ticks > 8) {
                 clearInterval(rollInterval);
                 setIsRolling(false);
 
-                // Actually resolve battle
-                const result = risk.resolveRiskBattle(nodeId, committedSoldiers);
+                const result = risk.resolveRiskBattle(sourceIdForBattle, targetNodeId, committedSoldiers);
                 if (!result) return;
                 setBattleResult(result);
 
@@ -224,11 +258,9 @@ export const RiskPage = () => {
                         setJustConqueredRegion(newRegion);
                         setTimeout(() => setJustConqueredRegion(null), 4000);
                     }
-                    // Update selected node to reflect new owner
-                    setSelectedNode(useRiskStore.getState().mapNodes[nodeId]);
+                    setSelectedNode(useRiskStore.getState().mapNodes[targetNodeId]);
                 } else {
-                    // Update node to reflect attrition or reinforcements
-                    setSelectedNode(useRiskStore.getState().mapNodes[nodeId]);
+                    setSelectedNode(useRiskStore.getState().mapNodes[targetNodeId]);
                 }
             }
         }, 80);
@@ -278,7 +310,7 @@ export const RiskPage = () => {
                 {/* ── Army Panel ── */}
                 <div className="risk-army-panel">
                     <div className="army-info">
-                        <span className="army-label">⚔️ Army: <strong>{risk.getSoldierLabel(risk.playerSoldiers)}</strong> ({risk.playerSoldiers} soldier{risk.playerSoldiers !== 1 ? 's' : ''})</span>
+                        <span className="army-label">⚔️ Army: <strong>{risk.getSoldierLabel(risk.playerSoldiers)}</strong> ({risk.playerSoldiers} soldier{risk.playerSoldiers !== 1 ? 's' : ''} in reserve)</span>
                         {risk.playerSoldiers < 2 && (
                             <span className="army-hint">Need 2+ soldiers to advance safely</span>
                         )}
@@ -362,7 +394,7 @@ export const RiskPage = () => {
                                     disabled={locked}
                                 >
                                     <span className="pin-type-icon" style={{ fontSize: '1rem', fontWeight: 900 }}>
-                                        {owned ? risk.playerSoldiers : node.soldierCount}
+                                        {node.soldierCount}
                                     </span>
                                     <span className="pin-name" style={{ marginTop: '2px' }}>{node.name}</span>
                                 </button>
@@ -462,13 +494,13 @@ export const RiskPage = () => {
 
             {/* ── Node Modal ── */}
             {selectedNode && (
-                <div className="risk-node-modal" onClick={() => { setSelectedNode(null); setBattleResult(null); }}>
+                <div className="risk-node-modal" onClick={() => { setSelectedNode(null); setBattleResult(null); setAttackSourceId(null); }}>
                     <div className="risk-node-modal-content" onClick={e => e.stopPropagation()}>
-                        <button className="close-btn" onClick={() => { setSelectedNode(null); setBattleResult(null); }}><X size={20} /></button>
+                        <button className="close-btn" onClick={() => { setSelectedNode(null); setBattleResult(null); setAttackSourceId(null); }}><X size={20} /></button>
 
                         <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.75rem' }}>
                             <span style={{ fontSize: '2rem', fontWeight: 900, color: selectedNode.owner === 'player' ? '#10b981' : NODE_TYPE_STYLE[selectedNode.nodeType]?.border }}>
-                                {selectedNode.owner === 'player' ? risk.playerSoldiers : selectedNode.soldierCount}
+                                {selectedNode.soldierCount}
                             </span>
                             <div>
                                 <h2 style={{ margin: 0, fontSize: '1.3rem', color: selectedNode.owner === 'player' ? '#10b981' : '#fff' }}>
@@ -481,41 +513,92 @@ export const RiskPage = () => {
                             </div>
                         </div>
 
-                        {selectedNode.owner === 'enemy' && selectedNode.nodeType !== 'shop' && (
-                            <div className="node-enemy-info">
-                                <div className="enemy-soldiers-row">
-                                    <span className="enemy-soldier-count">{selectedNode.soldierCount}</span>
-                                    <div>
-                                        <div style={{ fontWeight: 700 }}>{risk.getSoldierLabel(selectedNode.soldierCount)}</div>
-                                        <div style={{ fontSize: '0.8rem', color: '#94a3b8' }}>enemy soldiers defending</div>
+                        {/* ── Enemy node attack UI ── */}
+                        {selectedNode.owner === 'enemy' && selectedNode.nodeType !== 'shop' && (() => {
+                            const validSources = getValidSources(selectedNode);
+                            const sourceNode = attackSourceId ? risk.mapNodes[attackSourceId] : null;
+                            const maxSendable = sourceNode ? sourceNode.soldierCount - 1 : 0;
+                            const canAttack = isAttackable(selectedNode) && sourceNode && maxSendable > 0;
+
+                            return (
+                                <div className="node-enemy-info">
+                                    <div className="enemy-soldiers-row">
+                                        <span className="enemy-soldier-count">{selectedNode.soldierCount}</span>
+                                        <div>
+                                            <div style={{ fontWeight: 700 }}>{risk.getSoldierLabel(selectedNode.soldierCount)}</div>
+                                            <div style={{ fontSize: '0.8rem', color: '#94a3b8' }}>enemy soldiers defending</div>
+                                        </div>
                                     </div>
+
+                                    {isAttackable(selectedNode) && !isRolling && !battleResult && (
+                                        <>
+                                            {/* Source node selector */}
+                                            {validSources.length > 0 && (
+                                                <div style={{ marginTop: '0.75rem' }}>
+                                                    <label style={{ fontSize: '0.85rem', fontWeight: 600, marginBottom: '0.4rem', display: 'block', color: '#e2e8f0' }}>Attack from:</label>
+                                                    <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap' }}>
+                                                        {validSources.map(src => (
+                                                            <button
+                                                                key={src.id}
+                                                                onClick={() => handleSelectSource(src.id)}
+                                                                style={{
+                                                                    padding: '0.4rem 0.75rem',
+                                                                    borderRadius: 8,
+                                                                    border: attackSourceId === src.id ? '2px solid #10b981' : '1px solid #334155',
+                                                                    background: attackSourceId === src.id ? 'rgba(16,185,129,0.15)' : 'rgba(30,41,59,0.8)',
+                                                                    color: attackSourceId === src.id ? '#10b981' : '#94a3b8',
+                                                                    fontSize: '0.8rem',
+                                                                    cursor: 'pointer',
+                                                                    fontWeight: attackSourceId === src.id ? 700 : 400,
+                                                                    transition: 'all 0.15s',
+                                                                }}
+                                                            >
+                                                                {src.name} ({src.soldierCount} ⚔️)
+                                                            </button>
+                                                        ))}
+                                                    </div>
+                                                </div>
+                                            )}
+
+                                            {validSources.length === 0 && (
+                                                <p style={{ color: '#f87171', fontSize: '0.85rem', fontStyle: 'italic', margin: '0.75rem 0 0' }}>
+                                                    No adjacent territories have enough soldiers (need 2+).
+                                                </p>
+                                            )}
+
+                                            {/* Troop commitment slider */}
+                                            {canAttack && (
+                                                <div className="soldier-commit-section" style={{ marginTop: '1rem' }}>
+                                                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem', marginBottom: '0.3rem' }}>
+                                                        <span style={{ color: '#e2e8f0' }}>Soldiers to send</span>
+                                                        <span style={{ color: '#f59e0b', fontWeight: 700 }}>{committedSoldiers} / {maxSendable} max</span>
+                                                    </div>
+                                                    <input 
+                                                        type="range" 
+                                                        min="1" 
+                                                        max={maxSendable}
+                                                        value={Math.min(committedSoldiers, maxSendable)}
+                                                        onChange={(e) => setCommittedSoldiers(parseInt(e.target.value))}
+                                                        style={{ width: '100%', accentColor: '#f59e0b' }}
+                                                    />
+                                                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', color: '#64748b', marginTop: '0.2rem' }}>
+                                                        <span>1 stays behind</span>
+                                                        <span>{sourceNode!.name}: {sourceNode!.soldierCount} → {sourceNode!.soldierCount - committedSoldiers}</span>
+                                                    </div>
+                                                    <div className="dice-preview" style={{ marginTop: '0.5rem' }}>
+                                                        <span>You deploy: <strong>{committedSoldiers}d6</strong></span>
+                                                        <span>They roll: <strong>{selectedNode.soldierCount}d6</strong></span>
+                                                    </div>
+                                                    <p style={{ fontSize: '0.75rem', color: '#f87171', margin: '0.3rem 0 0', fontStyle: 'italic', textAlign: 'center' }}>
+                                                        ⚠️ Sent soldiers are lost permanently on defeat!
+                                                    </p>
+                                                </div>
+                                            )}
+                                        </>
+                                    )}
                                 </div>
-                                <div className="dice-preview">
-                                    <span>You deploy: <strong>{Math.min(risk.playerSoldiers, committedSoldiers)}d6</strong></span>
-                                    <span>They roll: <strong>{selectedNode.soldierCount}d6</strong></span>
-                                </div>
-                                
-                                {isAttackable(selectedNode) && !isRolling && !battleResult && (
-                                    <div className="soldier-commit-section" style={{ marginTop: '1rem' }}>
-                                        <label style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem', marginBottom: '0.3rem' }}>
-                                            <span>Combat Commitment</span>
-                                            <span style={{ color: '#f59e0b', fontWeight: 700 }}>{committedSoldiers} / {risk.playerSoldiers}</span>
-                                        </label>
-                                        <input 
-                                            type="range" 
-                                            min="1" 
-                                            max={Math.max(1, risk.playerSoldiers)}
-                                            value={committedSoldiers}
-                                            onChange={(e) => setCommittedSoldiers(parseInt(e.target.value))}
-                                            style={{ width: '100%', accentColor: '#f59e0b' }}
-                                        />
-                                        <p style={{ fontSize: '0.75rem', color: '#f87171', margin: '0.3rem 0 0', fontStyle: 'italic', textAlign: 'center' }}>
-                                            ⚠️ Committed soldiers are lost permanently on defeat!
-                                        </p>
-                                    </div>
-                                )}
-                            </div>
-                        )}
+                            );
+                        })()}
 
                         {selectedNode.nodeType === 'shop' && (
                             <div style={{ padding: '0.75rem', background: 'rgba(16,185,129,0.1)', borderRadius: 8, marginBottom: '1rem' }}>
@@ -528,32 +611,68 @@ export const RiskPage = () => {
                             </div>
                         )}
 
+                        {/* ── Owned node info + deploy ── */}
                         {selectedNode.owner === 'player' && (
-                            <div style={{ color: '#10b981', fontWeight: 700, marginBottom: '0.75rem' }}>✅ Controlled by your army</div>
+                            <div style={{ marginBottom: '0.75rem' }}>
+                                <div style={{ color: '#10b981', fontWeight: 700 }}>✅ Controlled by your army</div>
+                                <div style={{ fontSize: '0.8rem', color: '#94a3b8', marginTop: '0.25rem' }}>
+                                    Garrison: {selectedNode.soldierCount} soldier{selectedNode.soldierCount !== 1 ? 's' : ''}
+                                </div>
+                                {risk.playerSoldiers > 0 && (
+                                    <div style={{ marginTop: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                        <button
+                                            className="hire-btn"
+                                            style={{ fontSize: '0.8rem', padding: '0.35rem 0.75rem' }}
+                                            onClick={() => {
+                                                risk.deploySoldiers(selectedNode.id, 1);
+                                                setSelectedNode(useRiskStore.getState().mapNodes[selectedNode.id]);
+                                            }}
+                                        >
+                                            Deploy +1 from reserve ({risk.playerSoldiers} available)
+                                        </button>
+                                    </div>
+                                )}
+                            </div>
                         )}
 
-                        {selectedNode.owner === 'enemy' && selectedNode.nodeType !== 'shop' && (
-                            isAttackable(selectedNode) ? (
+                        {/* ── Attack / Can't attack buttons ── */}
+                        {selectedNode.owner === 'enemy' && selectedNode.nodeType !== 'shop' && (() => {
+                            const sourceNode = attackSourceId ? risk.mapNodes[attackSourceId] : null;
+                            const maxSendable = sourceNode ? sourceNode.soldierCount - 1 : 0;
+                            const canAttack = isAttackable(selectedNode) && sourceNode && maxSendable > 0;
+
+                            return canAttack ? (
                                 <button 
                                     className="risk-attack-btn" 
                                     onClick={() => handleAttack(selectedNode.id)}
-                                    disabled={isRolling || risk.playerSoldiers === 0}
-                                    style={{ opacity: isRolling || risk.playerSoldiers === 0 ? 0.5 : 1 }}
+                                    disabled={isRolling}
+                                    style={{ opacity: isRolling ? 0.5 : 1 }}
                                 >
-                                    {isRolling ? 'Rolling...' : <><Swords size={20} /> 🎲 Roll Dice ({committedSoldiers} vs {selectedNode.soldierCount})</>}
+                                    {isRolling ? 'Rolling...' : <><Swords size={20} /> 🎲 Attack! ({committedSoldiers} vs {selectedNode.soldierCount})</>}
                                 </button>
-                            ) : (
+                            ) : !isAttackable(selectedNode) ? (
                                 <p style={{ color: '#888', fontStyle: 'italic', textAlign: 'center', marginTop: '1rem' }}>
                                     Conquer an adjacent territory first.
                                 </p>
-                            )
-                        )}
+                            ) : null;
+                        })()}
 
-                        {selectedNode.owner === 'enemy' && selectedNode.nodeType === 'shop' && isAttackable(selectedNode) && (
-                            <button className="risk-attack-btn" style={{ background: '#10b981' }} onClick={() => handleAttack(selectedNode.id)}>
-                                <ShoppingCart size={18} /> Seize Supply Post
-                            </button>
-                        )}
+                        {selectedNode.owner === 'enemy' && selectedNode.nodeType === 'shop' && isAttackable(selectedNode) && (() => {
+                            const validSources = getValidSources(selectedNode);
+                            const sourceNode = attackSourceId ? risk.mapNodes[attackSourceId] : null;
+                            const maxSendable = sourceNode ? sourceNode.soldierCount - 1 : 0;
+                            const canAttack = sourceNode && maxSendable > 0;
+
+                            return canAttack ? (
+                                <button className="risk-attack-btn" style={{ background: '#10b981' }} onClick={() => handleAttack(selectedNode.id)}>
+                                    <ShoppingCart size={18} /> Seize Supply Post
+                                </button>
+                            ) : validSources.length === 0 ? (
+                                <p style={{ color: '#f87171', fontSize: '0.85rem', fontStyle: 'italic', margin: '0.75rem 0 0' }}>
+                                    No adjacent territories have enough soldiers (need 2+).
+                                </p>
+                            ) : null;
+                        })()}
 
                         {/* Rolling Animation Overlay */}
                         {isRolling && (
@@ -587,7 +706,12 @@ export const RiskPage = () => {
                                 )}
                                 {!battleResult.success && (
                                     <div style={{ fontSize: '0.8rem', color: '#f87171', marginTop: '0.3rem' }}>
-                                        ⚔️ You lost {committedSoldiers} soldiers!
+                                        ⚔️ {committedSoldiers} soldier{committedSoldiers !== 1 ? 's' : ''} lost in battle!
+                                    </div>
+                                )}
+                                {battleResult.success && attackSourceId && (
+                                    <div style={{ fontSize: '0.8rem', color: '#10b981', marginTop: '0.3rem' }}>
+                                        ✅ {risk.mapNodes[attackSourceId]?.name}: {risk.mapNodes[attackSourceId]?.soldierCount} remaining · {selectedNode.name}: {committedSoldiers} deployed
                                     </div>
                                 )}
                             </div>

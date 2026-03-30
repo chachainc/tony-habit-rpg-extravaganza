@@ -203,30 +203,32 @@
     align-items: center;
     justify-content: center;
     overflow: hidden;
+    max-width: 90vw;
+    margin: 0 auto;
 }
 
 .tiles-board { 
-    position: relative; 
-    transform: translateX(20px); /* Nudges the entire board right to prevent left-edge cutoff */
+    position: relative;
+    flex-shrink: 0;
 }
 
 .tiles-board-tile {
     position: absolute;
     width: 52px;
     height: 60px;
-    background: linear-gradient(180deg, #ffffff 0%, #e2e8f0 100%);
-    border: 1px solid rgba(0,0,0,0.4);
-    border-radius: 8px;
+    background: linear-gradient(180deg, #ffffff 0%, #e8ecf4 50%, #d4dbe8 100%);
+    border: 1.5px solid rgba(180, 210, 255, 0.5);
+    border-radius: 10px;
     display: flex;
     align-items: center;
     justify-content: center;
     cursor: pointer;
-    transition: filter 0.2s, border-color 0.2s;
+    transition: filter 0.12s ease, border-color 0.12s ease, transform 0.12s ease, box-shadow 0.12s ease;
     box-shadow: 
-        inset 0 2px 0 rgba(255,255,255,1), 
-        inset 0 -2px 4px rgba(0,0,0,0.1),
-        0 4px 6px rgba(0,0,0,0.4),
-        0 8px 12px rgba(0,0,0,0.2);
+        inset 0 2px 0 rgba(255,255,255,0.95),
+        inset 0 -3px 6px rgba(0,0,0,0.12),
+        0 6px 12px rgba(0,0,0,0.25),
+        0 2px 4px rgba(0,0,0,0.15);
     user-select: none;
 }
 
@@ -236,38 +238,107 @@
     display: flex;
     align-items: center;
     justify-content: center;
+    padding: 3px;
 }
 
 .tiles-board-tile.selectable {
-    border-color: rgba(59, 130, 246, 0.4);
+    border-color: rgba(180, 210, 255, 0.6);
 }
 
 .tiles-board-tile.selectable:hover {
-    border-color: #60a5fa;
+    border-color: rgba(96, 165, 250, 0.8);
+    transform: translateY(-2px) scale(1.03);
     box-shadow: 
-        inset 0 2px 0 rgba(255,255,255,1), 
-        0 8px 16px rgba(59, 130, 246, 0.4),
-        0 0 10px rgba(59, 130, 246, 0.6);
+        inset 0 2px 0 rgba(255,255,255,0.95),
+        inset 0 -3px 6px rgba(0,0,0,0.12),
+        0 8px 20px rgba(59, 130, 246, 0.35),
+        0 0 12px rgba(96, 165, 250, 0.5),
+        0 12px 16px rgba(0,0,0,0.2);
+    filter: brightness(1.05);
+}
+
+.tiles-board-tile.selectable:active {
+    transform: scale(1.05);
+    filter: brightness(1.1);
+    transition: transform 120ms ease, filter 120ms ease;
+}
+
+/* Ambient glow for top-layer selectable tiles */
+.tiles-board-tile.selectable::before {
+    content: '';
+    position: absolute;
+    inset: -3px;
+    border-radius: 12px;
+    background: radial-gradient(ellipse at 50% 100%, rgba(96, 165, 250, 0.12) 0%, transparent 70%);
+    pointer-events: none;
+    z-index: -1;
 }
 
 .tiles-board-tile.blocked {
     cursor: not-allowed;
-    background: linear-gradient(180deg, #cbd5e1 0%, #94a3b8 100%);
-    border-color: rgba(0,0,0,0.6);
-    box-shadow: 0 2px 4px rgba(0,0,0,0.5);
+    background: linear-gradient(180deg, #b8c1cf 0%, #949dac 50%, #8a96a8 100%);
+    border-color: rgba(0,0,0,0.35);
+    box-shadow: 0 2px 4px rgba(0,0,0,0.4);
+    filter: saturate(0.55) brightness(0.82);
 }
 
 .tiles-board-tile.blocked::after {
     content: '';
     position: absolute;
     inset: 0;
-    border-radius: 7px;
-    background: rgba(15, 23, 42, 0.4);
+    border-radius: 9px;
+    background: rgba(15, 23, 42, 0.3);
     pointer-events: none;
 }
 
-.tile-face { font-size: 1.6rem; line-height: 1; }
-.tile-face-img { width: 44px; height: 44px; object-fit: contain; border-radius: 4px; }
+/* ─── COLOR FAMILY TINTS (subtle overlay) ──────── */
+.tiles-board-tile.selectable[data-family="blue"] {
+    background: linear-gradient(180deg, #f0f5ff 0%, #dce6f8 50%, #c8d8f0 100%);
+    border-color: rgba(120, 170, 255, 0.5);
+}
+.tiles-board-tile.selectable[data-family="gold"] {
+    background: linear-gradient(180deg, #fffcf0 0%, #f5ecd4 50%, #ecdbb8 100%);
+    border-color: rgba(220, 180, 80, 0.45);
+}
+.tiles-board-tile.selectable[data-family="red"] {
+    background: linear-gradient(180deg, #fff5f5 0%, #f5dede 50%, #ecc8c8 100%);
+    border-color: rgba(230, 130, 130, 0.45);
+}
+.tiles-board-tile.selectable[data-family="green"] {
+    background: linear-gradient(180deg, #f0fff4 0%, #d8f0dc 50%, #c0e4c8 100%);
+    border-color: rgba(100, 190, 120, 0.45);
+}
+.tiles-board-tile.selectable[data-family="purple"] {
+    background: linear-gradient(180deg, #f8f0ff 0%, #e8d8f8 50%, #d8c4f0 100%);
+    border-color: rgba(167, 139, 250, 0.55);
+}
+
+/* Color family tints for blocked tiles (desaturated versions) */
+.tiles-board-tile.blocked[data-family="blue"] {
+    background: linear-gradient(180deg, #c8cfd8 0%, #b0b8c8 50%, #98a4b4 100%);
+}
+.tiles-board-tile.blocked[data-family="gold"] {
+    background: linear-gradient(180deg, #d0ccc0 0%, #beb8a8 50%, #a8a294 100%);
+}
+.tiles-board-tile.blocked[data-family="red"] {
+    background: linear-gradient(180deg, #d0c4c4 0%, #beb0b0 50%, #a89898 100%);
+}
+.tiles-board-tile.blocked[data-family="green"] {
+    background: linear-gradient(180deg, #c4d0c8 0%, #b0beb4 50%, #98a89c 100%);
+}
+.tiles-board-tile.blocked[data-family="purple"] {
+    background: linear-gradient(180deg, #ccc4d0 0%, #b8b0be 50%, #a498a8 100%);
+}
+
+.tile-face { font-size: 1.75rem; line-height: 1; }
+.tile-face-img {
+    width: 85%;
+    height: 85%;
+    max-width: 48px;
+    max-height: 48px;
+    object-fit: contain;
+    border-radius: 4px;
+}
 
 .tile-rarity-dot {
     position: absolute;
@@ -278,8 +349,8 @@
     border-radius: 50%;
 }
 .tile-rarity-dot.common { background: #94a3b8; }
-.tile-rarity-dot.rare { background: #60a5fa; box-shadow: 0 0 4px rgba(96, 165, 250, 0.8); }
-.tile-rarity-dot.epic { background: #a78bfa; box-shadow: 0 0 4px rgba(167, 139, 250, 0.8); }
+.tile-rarity-dot.rare { background: #60a5fa; box-shadow: 0 0 6px rgba(96, 165, 250, 0.9); }
+.tile-rarity-dot.epic { background: #a78bfa; box-shadow: 0 0 6px rgba(167, 139, 250, 0.9); }
 
 /* ─── RIGHT VERTICAL TRAY ──────────────────────────── */
 .tiles-tray-bar {
@@ -318,15 +389,40 @@
 .tiles-tray-tile {
     width: 52px;
     height: 60px;
-    background: linear-gradient(180deg, #ffffff 0%, #e2e8f0 100%);
-    border: 1px solid rgba(0,0,0,0.4);
-    border-radius: 8px;
+    background: linear-gradient(180deg, #ffffff 0%, #e8ecf4 50%, #d4dbe8 100%);
+    border: 1.5px solid rgba(180, 210, 255, 0.5);
+    border-radius: 10px;
     display: flex;
     align-items: center;
     justify-content: center;
     flex-shrink: 0;
     position: relative;
-    box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+    box-shadow:
+        inset 0 2px 0 rgba(255,255,255,0.9),
+        inset 0 -2px 4px rgba(0,0,0,0.08),
+        0 4px 8px rgba(0,0,0,0.25);
+}
+
+/* Tray color families */
+.tiles-tray-tile[data-family="blue"] {
+    background: linear-gradient(180deg, #f0f5ff 0%, #dce6f8 50%, #c8d8f0 100%);
+    border-color: rgba(120, 170, 255, 0.5);
+}
+.tiles-tray-tile[data-family="gold"] {
+    background: linear-gradient(180deg, #fffcf0 0%, #f5ecd4 50%, #ecdbb8 100%);
+    border-color: rgba(220, 180, 80, 0.45);
+}
+.tiles-tray-tile[data-family="red"] {
+    background: linear-gradient(180deg, #fff5f5 0%, #f5dede 50%, #ecc8c8 100%);
+    border-color: rgba(230, 130, 130, 0.45);
+}
+.tiles-tray-tile[data-family="green"] {
+    background: linear-gradient(180deg, #f0fff4 0%, #d8f0dc 50%, #c0e4c8 100%);
+    border-color: rgba(100, 190, 120, 0.45);
+}
+.tiles-tray-tile[data-family="purple"] {
+    background: linear-gradient(180deg, #f8f0ff 0%, #e8d8f8 50%, #d8c4f0 100%);
+    border-color: rgba(167, 139, 250, 0.55);
 }
 
 .tiles-tray-tile.matching {
@@ -416,9 +512,9 @@
         gap: 1.5rem;
         margin-bottom: 0px;
     }
-    .tiles-board-tile { width: 38px; height: 46px; }
-    .tile-face { font-size: 1.3rem; }
-    .tile-face-img { width: 32px; height: 32px; }
+    .tiles-board-tile { width: 38px; height: 46px; border-radius: 8px; }
+    .tile-face { font-size: 1.4rem; }
+    .tile-face-img { width: 85%; height: 85%; max-width: 34px; max-height: 34px; }
     .tiles-power-btn { width: 44px; height: 44px; font-size: 1.2rem; }
     .tiles-tray-bar {
         width: 100%;
@@ -553,6 +649,11 @@
 
 .tiles-result-card.defeat {
     border-color: rgba(239, 68, 68, 0.4);
+}
+
+.tiles-result-card.partial {
+    border-color: rgba(245, 158, 11, 0.5);
+    box-shadow: 0 20px 60px rgba(245, 158, 11, 0.15);
 }
 
 .tiles-result-card h2 {

@@ -57,10 +57,10 @@ const CATEGORY_CONFIG: Record<TaskCategory, { label: string; color: string; icon
 };
 
 const BUNDLE_CONFIG: Record<BundleType, { title: string; icon: React.ReactNode; color: string }> = {
-    morning: { title: 'Morning Foundation', icon: <Sun size={24} />, color: '#f59e0b' },
-    midday: { title: 'Mid Day', icon: <Sun size={24} />, color: '#eab308' },
+    morning: { title: 'Morning (Before Work)', icon: <Sun size={24} />, color: '#f59e0b' },
+    midday: { title: 'Midday (During Work Hours)', icon: <Sun size={24} />, color: '#eab308' },
     afternoon: { title: 'Afternoon (After Work)', icon: <Sunset size={24} />, color: '#f97316' },
-    night: { title: 'Night (Before Bed)', icon: <Moon size={24} />, color: '#8b5cf6' },
+    night: { title: 'Night Shutdown (Before Bed)', icon: <Moon size={24} />, color: '#8b5cf6' },
 };
 
 // ── Radar chart helper: draws a polygon from skill levels ──
@@ -372,6 +372,17 @@ export const TasksPage = () => {
             const idx = parseInt(taskEl.dataset.dragIndex || '0', 10);
             const bundle = (taskEl.dataset.dragBundle || dragState.bundle) as BundleType;
             dragOverItem.current = { bundle, index: idx };
+        } else {
+            // Check for empty bundle placeholder or list container
+            const placeholderEl = el?.closest('.bundle-empty-placeholder') as HTMLElement | null;
+            const listEl = el?.closest('.recurring-tasks-list') as HTMLElement | null;
+            const target = placeholderEl || listEl;
+            if (target) {
+                const bundle = (target.dataset.dragBundle) as BundleType | undefined;
+                if (bundle) {
+                    dragOverItem.current = { bundle, index: 0 };
+                }
+            }
         }
     };
 
@@ -393,7 +404,7 @@ export const TasksPage = () => {
             bundleTasks = bundleTasks.filter(t => t.category === activeCategoryFilter);
         }
 
-        if (bundleTasks.length === 0) return null;
+        const isEmpty = bundleTasks.length === 0;
 
         const status = getBundleStatus(bundleType);
         const config = BUNDLE_CONFIG[bundleType];
@@ -430,7 +441,26 @@ export const TasksPage = () => {
                         )}
                     </div>
 
-                    <div className="recurring-tasks-list" onPointerMove={handleDragPointerMove} onPointerUp={handleDragPointerUp}>
+                    <div className="recurring-tasks-list" data-drag-bundle={bundleType} onPointerMove={handleDragPointerMove} onPointerUp={handleDragPointerUp}>
+                        {isEmpty && (
+                            <div
+                                className="bundle-empty-placeholder"
+                                data-drag-index="0"
+                                data-drag-bundle={bundleType}
+                                style={{
+                                    padding: '1rem',
+                                    textAlign: 'center',
+                                    color: '#64748b',
+                                    fontSize: '0.85rem',
+                                    fontStyle: 'italic',
+                                    border: '1px dashed rgba(100,116,139,0.3)',
+                                    borderRadius: 8,
+                                    margin: '0.5rem 0',
+                                }}
+                            >
+                                Drag tasks here or add a new task to this bundle
+                            </div>
+                        )}
                         {bundleTasks.map((task, idx) => {
                             const catConfig = task.category ? CATEGORY_CONFIG[task.category] : null;
                             const isBeingDragged = dragState?.isDragging && dragState.taskId === task.id;
@@ -1067,9 +1097,9 @@ export const TasksPage = () => {
                                             onChange={(e) => setSelectedBundle(e.target.value as BundleType)}
                                             className="form-select"
                                         >
-                                            <option value="morning">Morning Foundation</option>
-                                            <option value="afternoon">Afternoon Performance</option>
-                                            <option value="night">Night Shutdown</option>
+                                            {(Object.keys(BUNDLE_CONFIG) as BundleType[]).map(b => (
+                                                <option key={b} value={b}>{BUNDLE_CONFIG[b].title}</option>
+                                            ))}
                                         </select>
                                     </div>
                                 )}

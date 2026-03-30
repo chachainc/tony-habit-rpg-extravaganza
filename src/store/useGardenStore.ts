@@ -1,27 +1,31 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 
+// ── Growth Stages ──
+export type PlotStage = 'empty' | 'planted' | 'sprout' | 'growing' | 'harvestable';
+
 // ── Seeds ──
 export interface SeedDef {
     id: string;
     name: string;
     icon: string;
-    growTimeMs: number; // milliseconds
-    cost: number; // gold
-    yields: { type: 'gold' | 'xp' | 'material'; value: number; materialId?: string }[];
+    growTimeMs: number;
+    cost: number;
+    cropIcon: string;     // icon shown when harvestable
+    yields: { type: 'gold' | 'material'; value: number; materialId?: string }[];
 }
 
 export const SEEDS: SeedDef[] = [
-    { id: 'herb_seed',    name: 'Herb Seed',    icon: '🌿', growTimeMs: 6 * 60 * 60 * 1000,  cost: 100, yields: [{ type: 'gold', value: 50 }] },
-    { id: 'flower_seed',  name: 'Flower Seed',  icon: '🌸', growTimeMs: 12 * 60 * 60 * 1000, cost: 200, yields: [{ type: 'xp', value: 15 }] },
-    { id: 'crystal_seed', name: 'Crystal Seed', icon: '💎', growTimeMs: 24 * 60 * 60 * 1000, cost: 500, yields: [{ type: 'material', value: 1, materialId: 'gem_shard' }] },
-    { id: 'mystic_seed',  name: 'Mystic Seed',  icon: '✨', growTimeMs: 18 * 60 * 60 * 1000, cost: 400, yields: [{ type: 'material', value: 2, materialId: 'mystic_dust' }] },
-    { id: 'dragon_seed',  name: 'Dragon Seed',  icon: '🐉', growTimeMs: 24 * 60 * 60 * 1000, cost: 800, yields: [{ type: 'material', value: 1, materialId: 'dragon_scale' }] },
+    { id: 'herb_seed',    name: 'Herb Seed',    icon: '🌿', cropIcon: '🌿', growTimeMs: 6 * 60 * 60 * 1000,  cost: 100, yields: [{ type: 'gold', value: 50 }] },
+    { id: 'flower_seed',  name: 'Flower Seed',  icon: '🌸', cropIcon: '🌺', growTimeMs: 12 * 60 * 60 * 1000, cost: 200, yields: [{ type: 'gold', value: 80 }] },
+    { id: 'crystal_seed', name: 'Crystal Seed', icon: '💎', cropIcon: '💠', growTimeMs: 24 * 60 * 60 * 1000, cost: 500, yields: [{ type: 'material', value: 1, materialId: 'gem_shard' }] },
+    { id: 'mystic_seed',  name: 'Mystic Seed',  icon: '✨', cropIcon: '🔮', growTimeMs: 18 * 60 * 60 * 1000, cost: 400, yields: [{ type: 'material', value: 2, materialId: 'mystic_dust' }] },
+    { id: 'dragon_seed',  name: 'Dragon Seed',  icon: '🐉', cropIcon: '🐲', growTimeMs: 24 * 60 * 60 * 1000, cost: 800, yields: [{ type: 'material', value: 1, materialId: 'dragon_scale' }] },
 ];
 
 export interface PlotState {
     seedId: string | null;
-    plantedAt: number | null; // timestamp
+    plantedAt: number | null;
     wateredToday: boolean;
     lastWateredDate: string | null;
 }
@@ -33,10 +37,12 @@ interface GardenState {
 
     plantSeed: (plotIndex: number, seedId: string) => void;
     waterPlot: (plotIndex: number) => void;
-    harvestPlot: (plotIndex: number) => { yields: SeedDef['yields']; watered: boolean } | null;
-    upgradePlots: () => number; // Returns new max, 0 if can't upgrade
-    isPlotReady: (plotIndex: number) => boolean;
+    harvestPlot: (plotIndex: number) => { yields: SeedDef['yields']; watered: boolean; seed: SeedDef } | null;
+    getPlotStage: (plotIndex: number) => PlotStage;
     getGrowthPercent: (plotIndex: number) => number;
+    isPlotReady: (plotIndex: number) => boolean;
+    isPlotThirsty: (plotIndex: number) => boolean;
+    upgradePlots: () => number;
 }
 
 const getDateString = (): string => {
@@ -48,17 +54,15 @@ const getDateString = (): string => {
     return `${y}-${m}-${d}`;
 };
 
-const PLOT_UPGRADE_COSTS = [0, 0, 0, 2000, 4000, 8000]; // Cost to unlock plot 4, 5, 6
+const EMPTY_PLOT: PlotState = { seedId: null, plantedAt: null, wateredToday: false, lastWateredDate: null };
+
+const INITIAL_PLOTS = 12; // 4×3 grid
 
 export const useGardenStore = create<GardenState>()(
     persist(
         (set, get) => ({
-            plots: [
-                { seedId: null, plantedAt: null, wateredToday: false, lastWateredDate: null },
-                { seedId: null, plantedAt: null, wateredToday: false, lastWateredDate: null },
-                { seedId: null, plantedAt: null, wateredToday: false, lastWateredDate: null },
-            ],
-            maxPlots: 3,
+            plots: Array.from({ length: INITIAL_PLOTS }, () => ({ ...EMPTY_PLOT })),
+            maxPlots: INITIAL_PLOTS,
             totalHarvests: 0,
 
             plantSeed: (plotIndex, seedId) => {
@@ -94,30 +98,23 @@ export const useGardenStore = create<GardenState>()(
                 const watered = plot.wateredToday;
                 set(s => {
                     const plots = [...s.plots];
-                    plots[plotIndex] = { seedId: null, plantedAt: null, wateredToday: false, lastWateredDate: null };
+                    plots[plotIndex] = { ...EMPTY_PLOT };
                     return { plots, totalHarvests: s.totalHarvests + 1 };
                 });
-                return { yields: seed.yields, watered };
+                return { yields: seed.yields, watered, seed };
             },
 
-            upgradePlots: () => {
-                const { maxPlots } = get();
-                if (maxPlots >= 6) return 0;
-                const cost = PLOT_UPGRADE_COSTS[maxPlots] ?? 0;
-                const newPlot: PlotState = { seedId: null, plantedAt: null, wateredToday: false, lastWateredDate: null };
-                set(s => ({
-                    maxPlots: s.maxPlots + 1,
-                    plots: [...s.plots, newPlot],
-                }));
-                return cost;
-            },
-
-            isPlotReady: (plotIndex) => {
+            getPlotStage: (plotIndex) => {
                 const plot = get().plots[plotIndex];
-                if (!plot?.seedId || !plot.plantedAt) return false;
+                if (!plot?.seedId || !plot.plantedAt) return 'empty';
                 const seed = SEEDS.find(s => s.id === plot.seedId);
-                if (!seed) return false;
-                return Date.now() - plot.plantedAt >= seed.growTimeMs;
+                if (!seed) return 'empty';
+                const elapsed = Date.now() - plot.plantedAt;
+                const pct = (elapsed / seed.growTimeMs) * 100;
+                if (pct >= 100) return 'harvestable';
+                if (pct >= 60) return 'growing';
+                if (pct >= 25) return 'sprout';
+                return 'planted';
             },
 
             getGrowthPercent: (plotIndex) => {
@@ -128,7 +125,31 @@ export const useGardenStore = create<GardenState>()(
                 const elapsed = Date.now() - plot.plantedAt;
                 return Math.min(100, Math.round((elapsed / seed.growTimeMs) * 100));
             },
+
+            isPlotReady: (plotIndex) => {
+                return get().getPlotStage(plotIndex) === 'harvestable';
+            },
+
+            isPlotThirsty: (plotIndex) => {
+                const plot = get().plots[plotIndex];
+                if (!plot?.seedId) return false;
+                const stage = get().getPlotStage(plotIndex);
+                if (stage === 'empty' || stage === 'harvestable') return false;
+                const today = getDateString();
+                return plot.lastWateredDate !== today;
+            },
+
+            upgradePlots: () => {
+                const { maxPlots } = get();
+                if (maxPlots >= 20) return 0;
+                const newPlot: PlotState = { ...EMPTY_PLOT };
+                set(s => ({
+                    maxPlots: s.maxPlots + 1,
+                    plots: [...s.plots, newPlot],
+                }));
+                return 0;
+            },
         }),
-        { name: 'gl-garden-v1' }
+        { name: 'gl-garden-v1', version: 2 }
     )
 );

@@ -19,7 +19,7 @@ import './ConquestTiles.css';
 
 // ─── PROPS ────────────────────────────────────────
 interface ConquestTilesProps {
-    onComplete: (result: 'win' | 'loss', difficulty: Difficulty) => void;
+    onComplete: (result: 'win' | 'loss', difficulty: Difficulty, clearPct: number) => void;
     onClose: () => void;
     canPlay: boolean;
     canPlayImpossible: boolean;
@@ -44,6 +44,7 @@ export const ConquestTiles = ({ onComplete, onClose, canPlay, canPlayImpossible 
     const [seed] = useState(() => Math.floor(Math.random() * 2147483647));
     const [trayFull, setTrayFull] = useState(false);
     const [trayFullMessage, setTrayFullMessage] = useState(false);
+    const [initialTileCount, setInitialTileCount] = useState(0);
 
     // Power-up state
     const [ownedRemove, setOwnedRemove] = useState(0);
@@ -75,6 +76,7 @@ export const ConquestTiles = ({ onComplete, onClose, canPlay, canPlayImpossible 
         setComboTimer(null);
         setResult(null);
         setClearingIds(new Set());
+        setInitialTileCount(newBoard.length);
         history.current = [];
         setPhase('playing');
     }, [seed]);
@@ -352,7 +354,9 @@ export const ConquestTiles = ({ onComplete, onClose, canPlay, canPlayImpossible 
     // ─── TRIGGER RESULT CALLBACK ──────────────────
     useEffect(() => {
         if (result && phase === 'result') {
-            onComplete(result, difficulty);
+            const tilesRemoved = board.filter(t => t.removed).length;
+            const pct = initialTileCount > 0 ? Math.round((tilesRemoved / initialTileCount) * 100) : 0;
+            onComplete(result, difficulty, result === 'win' ? 100 : pct);
         }
     }, [result, phase, difficulty, onComplete]);
 
@@ -366,21 +370,35 @@ export const ConquestTiles = ({ onComplete, onClose, canPlay, canPlayImpossible 
 
     let boardWidth = 0;
     let boardHeight = 0;
+    let offsetX = 0;
+    let offsetY = 0;
     if (activeTiles.length > 0) {
-        const maxX = Math.max(...board.filter(t => !t.removed).map(t => t.x));
-        const maxY = Math.max(...board.filter(t => !t.removed).map(t => t.y));
-        boardWidth = (maxX + 1) * gap + tileSize;
-        boardHeight = (maxY + 1) * gap + tileSize;
+        const minX = Math.min(...activeTiles.map(t => t.x));
+        const minY = Math.min(...activeTiles.map(t => t.y));
+        const maxX = Math.max(...activeTiles.map(t => t.x));
+        const maxY = Math.max(...activeTiles.map(t => t.y));
+        offsetX = minX * gap;
+        offsetY = minY * gap;
+        boardWidth = (maxX - minX + 1) * gap + tileSize;
+        boardHeight = (maxY - minY + 1) * gap + tileSize;
     }
 
     // ─── SIGIL / GEM / XP REWARD CALC ─────────────
     const preset = DIFFICULTY_PRESETS[difficulty];
     const XP_MULTIPLIER: Record<number, number> = { 1: 1, 2: 2, 3: 3, 4: 4 };
+
+    // Calculate clear percentage
+    const tilesRemoved = board.filter(t => t.removed).length;
+    const clearPct = initialTileCount > 0 ? Math.round((tilesRemoved / initialTileCount) * 100) : 0;
+    const isPartialClear = result === 'loss' && clearPct >= 50;
+
     const getXP = () => {
-        if (result !== 'win') return 0;
         const base = XP_MULTIPLIER[difficulty] || 1;
         const comboBonus = Math.floor(maxCombo / 3);
-        return base + comboBonus;
+        const fullXP = base + comboBonus;
+        if (result === 'win') return fullXP;
+        if (isPartialClear) return Math.max(1, Math.floor(fullXP / 2));
+        return 0;
     };
 
     // ─── RENDER: DIFFICULTY SELECT ────────────────
@@ -555,9 +573,10 @@ export const ConquestTiles = ({ onComplete, onClose, canPlay, canPlayImpossible 
                                     <motion.div
                                         key={tile.uid}
                                         className={`tiles-board-tile ${blocked ? 'blocked' : 'selectable'}`}
+                                        data-family={tile.symbol.colorFamily}
                                         style={{
-                                            left: tile.x * gap,
-                                            top: tile.y * gap,
+                                            left: tile.x * gap - offsetX,
+                                            top: tile.y * gap - offsetY,
                                             zIndex: tile.layer * 10,
                                             width: tileSize,
                                             height: tileSize,
@@ -598,6 +617,7 @@ export const ConquestTiles = ({ onComplete, onClose, canPlay, canPlayImpossible 
                                     <motion.div
                                         key={tile.uid}
                                         className={`tiles-tray-tile ${isClearing ? 'clearing' : ''} ${isMatching ? 'matching' : ''}`}
+                                        data-family={tile.symbol.colorFamily}
                                         initial={{ x: -20, opacity: 0, scale: 0.8 }}
                                         animate={{ x: 0, opacity: 1, scale: 1 }}
                                         transition={{ duration: 0.25, type: 'spring', stiffness: 300 }}
@@ -643,24 +663,31 @@ export const ConquestTiles = ({ onComplete, onClose, canPlay, canPlayImpossible 
                         exit={{ opacity: 0 }}
                     >
                         <motion.div
-                            className={`tiles-result-card ${result === 'win' ? 'victory' : 'defeat'}`}
+                            className={`tiles-result-card ${result === 'win' ? 'victory' : isPartialClear ? 'partial' : 'defeat'}`}
                             initial={{ scale: 0.8, opacity: 0 }}
                             animate={{ scale: 1, opacity: 1 }}
                         >
-                            <h2>{result === 'win' ? '🏆 VICTORY!' : '💀 DEFEAT'}</h2>
+                            <h2>{result === 'win' ? '🏆 VICTORY!' : isPartialClear ? '🌓 HALF CLEARED!' : '💀 DEFEAT'}</h2>
                             <div className="tiles-result-rewards">
                                 <div className="tiles-reward-row">📊 Points: {points}</div>
+                                <div className="tiles-reward-row">🗺️ Board Cleared: {clearPct}%</div>
                                 {result === 'win' && (
                                     <>
-                                        <div className="tiles-reward-row highlight">🔱 Sigils Earned!</div>
+                                        <div className="tiles-reward-row highlight">🔱 Full Clear — Sigils Earned!</div>
                                         <div className="tiles-reward-row highlight">🎯 +{getXP()} Strategy XP {maxCombo >= 3 ? `(Combo Bonus!)` : ''}</div>
                                         {preset.gemReward > 0 && (
                                             <div className="tiles-reward-row highlight">💎 +{preset.gemReward} Gems</div>
                                         )}
                                     </>
                                 )}
-                                {result === 'loss' && (
-                                    <div className="tiles-reward-row">Tray filled up — zero Strategy XP!</div>
+                                {isPartialClear && (
+                                    <>
+                                        <div className="tiles-reward-row highlight" style={{ color: '#f59e0b' }}>🌓 Partial Reward Earned!</div>
+                                        <div className="tiles-reward-row highlight" style={{ color: '#f59e0b' }}>🎯 +{getXP()} Strategy XP (50% reward)</div>
+                                    </>
+                                )}
+                                {result === 'loss' && !isPartialClear && (
+                                    <div className="tiles-reward-row">Cleared less than 50% — no reward.</div>
                                 )}
                             </div>
                             <button className="tiles-play-again-btn" onClick={onClose}>

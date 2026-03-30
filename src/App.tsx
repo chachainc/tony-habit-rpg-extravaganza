@@ -73,6 +73,8 @@ const RoomLobbyPage = () => {
   return <RoomLobby onClose={() => navigate('/town')} />;
 };
 
+
+
 // HydrationGate: waits for Zustand persist to finish reading localStorage
 // before rendering the app. Has a 1.5s timeout fallback for Safari/ITP,
 // where onRehydrateStorage sometimes never fires.

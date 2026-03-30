@@ -148,8 +148,8 @@ export const useTowerDefenseStore = create<TowerDefenseState>()(
                 } else {
                     // Purchase new tower
                     const currStore = useCurrencyStore.getState();
-                    if (currStore.shmeckles < finalCost) return false;
-                    currStore.spendShmeckles(finalCost);
+                    if ((currStore.balloons ?? 0) < finalCost) return false;
+                    currStore.spendBalloons(finalCost);
                     set(s => ({
                         towers: [...s.towers, {
                             id: `tower_${Date.now()}_${x}_${y}`,
@@ -172,7 +172,7 @@ export const useTowerDefenseStore = create<TowerDefenseState>()(
                 const refundRate = state.currentMapModifier === 'drought' ? 1.0 : 0.5;
                 const refund = Math.floor((def.cost * Math.pow(1.5, tower.level - 1)) * refundRate);
 
-                useCurrencyStore.getState().addShmeckles(refund);
+                useCurrencyStore.getState().addBalloons(refund);
                 const currentInv = state.towerInventory[tower.type] ?? 0;
                 set(s => ({
                     towers: s.towers.filter(t => t.id !== id),
@@ -189,9 +189,9 @@ export const useTowerDefenseStore = create<TowerDefenseState>()(
                 const cost = Math.floor(def.cost * Math.pow(1.5, tower.level)); // 50 -> 75 -> 112
                 
                 const currStore = useCurrencyStore.getState();
-                if (currStore.shmeckles < cost) return false;
+                if ((currStore.balloons ?? 0) < cost) return false;
 
-                currStore.spendShmeckles(cost);
+                currStore.spendBalloons(cost);
                 set({
                     towers: state.towers.map(t => 
                         t.id === id ? { ...t, level: t.level + 1, upgradeLevel: t.upgradeLevel + 1 } : t

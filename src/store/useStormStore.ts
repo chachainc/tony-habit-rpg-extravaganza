@@ -295,7 +295,7 @@ export const useStormStore = create<StormState>()((set, get) => ({
         // Reset hasBoughtFirstCow so the free starter is always available for a fresh game
         localStorage.removeItem('stf-free-cow-claimed');
         set({ 
-            gameState: 'playing', 
+            gameState: 'idle',  // idle, not playing — prevents instant false victory on empty battlefield
             wave: 1, 
             fortHp: get().maxFortHp,
             enemies: [],
@@ -308,6 +308,8 @@ export const useStormStore = create<StormState>()((set, get) => ({
             bossWarningActive: false,
             rallyUntil: 0,
             hasBoughtFirstCow: false,
+            lastWaveRewards: null,
+            enemiesToSpawn: [],
         });
     },
 

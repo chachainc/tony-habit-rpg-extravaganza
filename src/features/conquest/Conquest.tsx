@@ -638,10 +638,14 @@ export const Conquest = () => {
             </AnimatePresence>
             <AnimatePresence>
                 {showTiles && <ConquestTiles
-                    onComplete={(result, diff) => {
+                    onComplete={(result, diff, clearPct) => {
+                        const tilesGold: Record<number, number> = { 1: 5, 2: 15, 3: 30, 4: 50 };
+                        const fullGold = tilesGold[diff] ?? 5;
                         if (result === 'win') {
-                            const tilesGold: Record<number, number> = { 1: 5, 2: 15, 3: 30, 4: 50 };
-                            currency.addGold(tilesGold[diff] ?? 5);
+                            currency.addGold(fullGold);
+                        } else if (clearPct >= 50) {
+                            // Partial reward: 50% gold rounded down
+                            currency.addGold(Math.max(1, Math.floor(fullGold / 2)));
                         }
                         setShowTiles(false);
                     }}

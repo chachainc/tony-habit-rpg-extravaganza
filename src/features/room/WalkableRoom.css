@@ -223,16 +223,15 @@
 /* ==================== TOP BAR ==================== */
 .room-tile {
     position: absolute;
-    /* Subtle stone-floor tiles — clearly intentional grid without overcrowding */
-    background: rgba(55, 38, 28, 0.22);
-    /* Crisp grid lines that read as RPG floor tiles */
-    border: 1px solid rgba(255, 255, 255, 0.07);
-    box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.25);
+    /* Dark aged wood planks */
+    background: rgba(32, 22, 16, 0.28);
+    border: 1px solid rgba(255, 255, 255, 0.04);
+    box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.35);
     transition: background 0.3s;
 }
 
 .room-tile:nth-child(even) {
-    background: rgba(45, 32, 22, 0.18);
+    background: rgba(28, 18, 12, 0.24);
 }
 
 /* Hover feedback so tiles feel interactive when in placement mode */
@@ -440,29 +439,33 @@
    ═══════════════════════════════════════════════════════ */
 .world-grid {
     background:
-        /* Tiled earth/wood floor texture */
+        /* Dark aged wood plank texture */
         repeating-linear-gradient(
             0deg,
-            rgba(80, 60, 35, 0.15) 0px,
-            rgba(60, 45, 25, 0.1) 32px,
-            rgba(80, 60, 35, 0.15) 64px
+            rgba(42, 31, 24, 0.25) 0px,
+            rgba(26, 18, 12, 0.2) 32px,
+            rgba(42, 31, 24, 0.25) 64px
         ),
         repeating-linear-gradient(
             90deg,
-            rgba(75, 55, 30, 0.12) 0px,
-            rgba(55, 40, 20, 0.08) 32px,
-            rgba(75, 55, 30, 0.12) 64px
+            rgba(38, 28, 18, 0.2) 0px,
+            rgba(22, 15, 8, 0.15) 32px,
+            rgba(38, 28, 18, 0.2) 64px
         ),
-        radial-gradient(ellipse at 50% 50%, rgba(40, 30, 15, 0.6) 0%, rgba(15, 10, 5, 0.9) 100%);
-    border: 4px solid rgba(90, 65, 30, 0.5);
+        /* Warm candlelight pools */
+        radial-gradient(ellipse at 25% 25%, rgba(255, 160, 60, 0.06) 0%, transparent 40%),
+        radial-gradient(ellipse at 75% 25%, rgba(255, 140, 40, 0.05) 0%, transparent 35%),
+        radial-gradient(ellipse at 50% 50%, rgba(255, 180, 80, 0.04) 0%, transparent 50%),
+        radial-gradient(ellipse at 50% 50%, rgba(26, 18, 16, 0.85) 0%, rgba(10, 8, 6, 0.98) 100%);
+    border: 4px solid rgba(58, 42, 22, 0.6);
     border-radius: 8px;
     box-shadow:
-        0 20px 60px rgba(0, 0, 0, 0.6),
-        inset 0 0 80px rgba(0, 0, 0, 0.3),
-        inset 0 0 200px rgba(40, 25, 10, 0.15);
+        0 20px 60px rgba(0, 0, 0, 0.7),
+        inset 0 0 100px rgba(0, 0, 0, 0.4),
+        inset 0 0 250px rgba(20, 12, 5, 0.2);
 }
 
-/* ═══ STONE WALLS ═══ */
+/* ═══ DARK STONE WALLS ═══ */
 .world-wall {
     position: absolute;
     z-index: 2;
@@ -472,48 +475,60 @@
 .world-wall--top {
     top: 0; left: 0; right: 0;
     height: 32px;
-    background: repeating-linear-gradient(
-        90deg,
-        rgba(100, 85, 60, 0.5) 0px, rgba(80, 65, 40, 0.4) 30px,
-        rgba(100, 85, 60, 0.5) 32px
-    );
-    border-bottom: 2px solid rgba(60, 45, 20, 0.6);
+    background:
+        repeating-linear-gradient(
+            90deg,
+            rgba(45, 55, 40, 0.5) 0px, rgba(30, 38, 25, 0.45) 30px,
+            rgba(45, 55, 40, 0.5) 32px
+        ),
+        linear-gradient(180deg, rgba(25, 40, 30, 0.6) 0%, rgba(18, 28, 20, 0.4) 100%);
+    border-bottom: 2px solid rgba(35, 50, 30, 0.6);
+    box-shadow: inset 0 -4px 12px rgba(0, 0, 0, 0.3);
 }
 
 .world-wall--bottom {
     bottom: 0; left: 0; right: 0;
     height: 32px;
-    background: repeating-linear-gradient(
-        90deg,
-        rgba(100, 85, 60, 0.5) 0px, rgba(80, 65, 40, 0.4) 30px,
-        rgba(100, 85, 60, 0.5) 32px
-    );
-    border-top: 2px solid rgba(60, 45, 20, 0.6);
+    background:
+        repeating-linear-gradient(
+            90deg,
+            rgba(45, 55, 40, 0.5) 0px, rgba(30, 38, 25, 0.45) 30px,
+            rgba(45, 55, 40, 0.5) 32px
+        ),
+        linear-gradient(0deg, rgba(25, 40, 30, 0.6) 0%, rgba(18, 28, 20, 0.4) 100%);
+    border-top: 2px solid rgba(35, 50, 30, 0.6);
+    box-shadow: inset 0 4px 12px rgba(0, 0, 0, 0.3);
 }
 
 .world-wall--left {
     top: 0; left: 0; bottom: 0;
     width: 32px;
-    background: repeating-linear-gradient(
-        0deg,
-        rgba(100, 85, 60, 0.5) 0px, rgba(80, 65, 40, 0.4) 30px,
-        rgba(100, 85, 60, 0.5) 32px
-    );
-    border-right: 2px solid rgba(60, 45, 20, 0.6);
+    background:
+        repeating-linear-gradient(
+            0deg,
+            rgba(45, 55, 40, 0.5) 0px, rgba(30, 38, 25, 0.45) 30px,
+            rgba(45, 55, 40, 0.5) 32px
+        ),
+        linear-gradient(90deg, rgba(25, 40, 30, 0.6) 0%, rgba(18, 28, 20, 0.4) 100%);
+    border-right: 2px solid rgba(35, 50, 30, 0.6);
+    box-shadow: inset -4px 0 12px rgba(0, 0, 0, 0.3);
 }
 
 .world-wall--right {
     top: 0; right: 0; bottom: 0;
     width: 32px;
-    background: repeating-linear-gradient(
-        0deg,
-        rgba(100, 85, 60, 0.5) 0px, rgba(80, 65, 40, 0.4) 30px,
-        rgba(100, 85, 60, 0.5) 32px
-    );
-    border-left: 2px solid rgba(60, 45, 20, 0.6);
+    background:
+        repeating-linear-gradient(
+            0deg,
+            rgba(45, 55, 40, 0.5) 0px, rgba(30, 38, 25, 0.45) 30px,
+            rgba(45, 55, 40, 0.5) 32px
+        ),
+        linear-gradient(270deg, rgba(25, 40, 30, 0.6) 0%, rgba(18, 28, 20, 0.4) 100%);
+    border-left: 2px solid rgba(35, 50, 30, 0.6);
+    box-shadow: inset 4px 0 12px rgba(0, 0, 0, 0.3);
 }
 
-/* ═══ WALKABLE PATHS ═══ */
+/* ═══ WORN FLAGSTONE PATHS ═══ */
 .world-path {
     position: absolute;
     z-index: 1;
@@ -521,11 +536,12 @@
     background:
         repeating-linear-gradient(
             90deg,
-            rgba(160, 130, 80, 0.2) 0px,
-            rgba(140, 110, 60, 0.12) 16px,
-            rgba(160, 130, 80, 0.2) 32px
-        );
-    border: 1px solid rgba(160, 130, 80, 0.15);
+            rgba(90, 75, 50, 0.18) 0px,
+            rgba(65, 50, 30, 0.12) 16px,
+            rgba(90, 75, 50, 0.18) 32px
+        ),
+        rgba(50, 38, 22, 0.1);
+    border: 1px solid rgba(120, 95, 55, 0.12);
     border-radius: 3px;
 }
 
@@ -604,59 +620,110 @@
     font-weight: 600;
 }
 
-/* ── Zone Themes ── */
+/* ── Zone Themes (Dark Fantasy Jewel Tones) ── */
 .zone-bedroom {
-    background: radial-gradient(ellipse at 30% 40%, rgba(59, 130, 246, 0.15) 0%, rgba(30, 58, 138, 0.1) 60%, transparent 100%);
-    border: 2px solid rgba(59, 130, 246, 0.25);
-    box-shadow: inset 0 0 30px rgba(59, 130, 246, 0.08);
+    background:
+        radial-gradient(ellipse at 30% 40%, rgba(40, 60, 100, 0.2) 0%, rgba(20, 30, 65, 0.12) 60%, transparent 100%),
+        rgba(12, 16, 28, 0.3);
+    border: 2px solid rgba(50, 75, 120, 0.3);
+    box-shadow: inset 0 0 40px rgba(30, 50, 90, 0.12);
 }
 
 .zone-library {
-    background: radial-gradient(ellipse at 50% 50%, rgba(180, 140, 80, 0.18) 0%, rgba(120, 80, 30, 0.1) 60%, transparent 100%);
-    border: 2px solid rgba(180, 140, 80, 0.3);
-    box-shadow: inset 0 0 30px rgba(180, 140, 80, 0.08);
+    background:
+        radial-gradient(ellipse at 50% 50%, rgba(160, 120, 60, 0.2) 0%, rgba(100, 65, 20, 0.12) 60%, transparent 100%),
+        rgba(18, 12, 6, 0.3);
+    border: 2px solid rgba(160, 120, 60, 0.3);
+    box-shadow: inset 0 0 40px rgba(140, 100, 40, 0.1);
 }
 
 .zone-wardrobe {
-    background: radial-gradient(ellipse at 50% 40%, rgba(167, 139, 250, 0.15) 0%, rgba(109, 40, 217, 0.08) 60%, transparent 100%);
-    border: 2px solid rgba(167, 139, 250, 0.3);
-    box-shadow: inset 0 0 30px rgba(167, 139, 250, 0.08);
+    background:
+        radial-gradient(ellipse at 50% 40%, rgba(120, 90, 180, 0.18) 0%, rgba(70, 30, 140, 0.1) 60%, transparent 100%),
+        rgba(16, 10, 28, 0.3);
+    border: 2px solid rgba(120, 90, 180, 0.3);
+    box-shadow: inset 0 0 40px rgba(100, 70, 160, 0.1);
 }
 
 .zone-trophy {
-    background: radial-gradient(ellipse at 50% 40%, rgba(251, 191, 36, 0.18) 0%, rgba(180, 120, 0, 0.1) 60%, transparent 100%);
-    border: 2px solid rgba(251, 191, 36, 0.35);
+    background:
+        radial-gradient(ellipse at 50% 40%, rgba(184, 148, 62, 0.22) 0%, rgba(140, 100, 20, 0.12) 60%, transparent 100%),
+        rgba(18, 14, 6, 0.3);
+    border: 2px solid rgba(184, 148, 62, 0.35);
     box-shadow:
-        inset 0 0 30px rgba(251, 191, 36, 0.1),
-        0 0 20px rgba(251, 191, 36, 0.1);
+        inset 0 0 40px rgba(184, 148, 62, 0.1),
+        0 0 15px rgba(184, 148, 62, 0.08);
 }
 
 .zone-body {
-    background: radial-gradient(ellipse at 50% 50%, rgba(236, 72, 153, 0.12) 0%, rgba(190, 24, 93, 0.06) 60%, transparent 100%);
-    border: 2px solid rgba(236, 72, 153, 0.25);
-    box-shadow: inset 0 0 25px rgba(236, 72, 153, 0.06);
+    background:
+        radial-gradient(ellipse at 50% 50%, rgba(180, 50, 100, 0.14) 0%, rgba(120, 20, 60, 0.08) 60%, transparent 100%),
+        rgba(20, 8, 14, 0.3);
+    border: 2px solid rgba(180, 50, 100, 0.25);
+    box-shadow: inset 0 0 30px rgba(150, 40, 80, 0.08);
 }
 
 .zone-workshop {
-    background: radial-gradient(ellipse at 50% 50%, rgba(245, 158, 11, 0.12) 0%, rgba(180, 100, 0, 0.06) 60%, transparent 100%);
-    border: 2px dashed rgba(245, 158, 11, 0.2);
-    box-shadow: inset 0 0 25px rgba(245, 158, 11, 0.05);
+    background:
+        radial-gradient(ellipse at 50% 50%, rgba(200, 120, 20, 0.16) 0%, rgba(140, 80, 10, 0.08) 60%, transparent 100%),
+        rgba(20, 12, 4, 0.3);
+    border: 2px solid rgba(200, 120, 20, 0.25);
+    box-shadow: inset 0 0 30px rgba(180, 100, 10, 0.08);
 }
 
 .zone-garden {
     background:
-        radial-gradient(ellipse at 30% 70%, rgba(34, 197, 94, 0.12) 0%, transparent 50%),
-        radial-gradient(ellipse at 70% 30%, rgba(74, 222, 128, 0.08) 0%, transparent 50%),
-        radial-gradient(ellipse at 50% 50%, rgba(34, 197, 94, 0.15) 0%, rgba(22, 101, 52, 0.08) 60%, transparent 100%);
-    border: 2px dashed rgba(34, 197, 94, 0.2);
-    box-shadow: inset 0 0 30px rgba(34, 197, 94, 0.06);
+        radial-gradient(ellipse at 30% 70%, rgba(30, 120, 60, 0.15) 0%, transparent 50%),
+        radial-gradient(ellipse at 70% 30%, rgba(50, 140, 70, 0.1) 0%, transparent 50%),
+        radial-gradient(ellipse at 50% 50%, rgba(30, 100, 50, 0.18) 0%, rgba(15, 60, 30, 0.1) 60%, transparent 100%),
+        rgba(8, 18, 10, 0.3);
+    border: 2px solid rgba(40, 110, 55, 0.25);
+    box-shadow: inset 0 0 35px rgba(30, 100, 50, 0.08);
 }
 
 .zone-cellar {
     background:
-        radial-gradient(ellipse at 50% 30%, rgba(80, 60, 40, 0.25) 0%, rgba(40, 30, 20, 0.15) 60%, transparent 100%);
-    border: 2px solid rgba(80, 60, 40, 0.3);
-    box-shadow: inset 0 0 40px rgba(0, 0, 0, 0.2);
+        radial-gradient(ellipse at 50% 30%, rgba(60, 45, 30, 0.3) 0%, rgba(30, 20, 12, 0.18) 60%, transparent 100%),
+        rgba(10, 8, 5, 0.4);
+    border: 2px solid rgba(60, 45, 30, 0.35);
+    box-shadow: inset 0 0 50px rgba(0, 0, 0, 0.3);
+}
+
+/* ── Doorway Zone Themes ── */
+.zone-door-garden {
+    background:
+        radial-gradient(ellipse at 50% 60%, rgba(40, 120, 60, 0.25) 0%, rgba(20, 60, 30, 0.12) 60%, transparent 100%),
+        rgba(8, 18, 10, 0.5);
+    border: 3px solid rgba(50, 90, 50, 0.5);
+    border-radius: 50% 50% 8px 8px / 30% 30% 8px 8px;
+    box-shadow:
+        inset 0 0 30px rgba(40, 120, 60, 0.15),
+        0 0 20px rgba(40, 120, 60, 0.1);
+}
+
+.zone-door-locked {
+    background:
+        radial-gradient(ellipse at 50% 60%, rgba(60, 55, 50, 0.2) 0%, rgba(30, 25, 20, 0.15) 60%, transparent 100%),
+        rgba(12, 10, 8, 0.5);
+    border: 3px solid rgba(80, 65, 45, 0.4);
+    border-radius: 50% 50% 8px 8px / 30% 30% 8px 8px;
+    box-shadow: inset 0 0 30px rgba(0, 0, 0, 0.3);
+    opacity: 0.7;
+}
+
+.zone-door-locked .zone-label-name {
+    color: rgba(255, 255, 255, 0.4);
+}
+
+.zone-door-training {
+    background:
+        radial-gradient(ellipse at 50% 60%, rgba(160, 60, 40, 0.2) 0%, rgba(80, 30, 20, 0.12) 60%, transparent 100%),
+        rgba(18, 8, 6, 0.5);
+    border: 3px solid rgba(140, 70, 40, 0.4);
+    border-radius: 50% 50% 8px 8px / 30% 30% 8px 8px;
+    box-shadow:
+        inset 0 0 30px rgba(160, 60, 40, 0.1),
+        0 0 12px rgba(160, 60, 40, 0.06);
 }
 
 /* ── Doorway thresholds (interior/exterior transitions) ── */
@@ -697,7 +764,7 @@
         0 1px 0 rgba(160, 130, 80, 0.08);
 }
 
-/* ═══ AMBIENT GROUND FOG ═══ */
+/* ═══ AMBIENT CANDLELIGHT FOG ═══ */
 .world-grid::after {
     content: '';
     position: absolute;
@@ -705,17 +772,19 @@
     pointer-events: none;
     z-index: 0;
     background:
-        radial-gradient(ellipse at 15% 50%, rgba(180, 160, 120, 0.04) 0%, transparent 40%),
-        radial-gradient(ellipse at 85% 50%, rgba(180, 160, 120, 0.04) 0%, transparent 40%),
-        radial-gradient(ellipse at 50% 85%, rgba(100, 80, 50, 0.06) 0%, transparent 35%),
-        radial-gradient(ellipse at 50% 15%, rgba(100, 80, 50, 0.06) 0%, transparent 35%);
-    animation: groundFogDrift 20s ease-in-out infinite alternate;
+        radial-gradient(ellipse at 15% 25%, rgba(255, 160, 60, 0.05) 0%, transparent 35%),
+        radial-gradient(ellipse at 85% 25%, rgba(255, 140, 40, 0.04) 0%, transparent 35%),
+        radial-gradient(ellipse at 50% 50%, rgba(255, 180, 80, 0.035) 0%, transparent 40%),
+        radial-gradient(ellipse at 15% 75%, rgba(255, 160, 60, 0.04) 0%, transparent 35%),
+        radial-gradient(ellipse at 85% 75%, rgba(255, 140, 40, 0.035) 0%, transparent 35%);
+    animation: candleglowFog 8s ease-in-out infinite alternate;
 }
 
-@keyframes groundFogDrift {
-    0% { opacity: 0.6; }
-    50% { opacity: 1; }
-    100% { opacity: 0.6; }
+@keyframes candleglowFog {
+    0% { opacity: 0.5; }
+    33% { opacity: 0.8; }
+    66% { opacity: 0.6; }
+    100% { opacity: 0.9; }
 }
 
 /* ═══ DECORATIVE CLUTTER ═══ */

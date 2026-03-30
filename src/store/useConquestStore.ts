@@ -357,7 +357,20 @@ export const useConquestStore = create<ConquestState>()(
 
             initMap: () => {
                 const state = get();
-                if (state.currentNodeId) return; // Already initialized
+                const todayISO = new Date().toISOString().split('T')[0];
+
+                // ── Daily reset: if the last run was on a prior day, force a fresh run ──
+                const isStaleRun = state.currentNodeId && state.lastRunDate && state.lastRunDate !== todayISO;
+                const isCompletedRun = state.runComplete === 'victory' || state.runComplete === 'defeat';
+
+                if (isStaleRun || (state.currentNodeId && isCompletedRun && state.lastRunDate !== todayISO)) {
+                    // Clear yesterday's run and start fresh
+                    get().startRun();
+                    return;
+                }
+
+                if (state.currentNodeId) return; // Already initialized for today
+
                 set({
                     currentNodeId: 'start',
                     completedNodes: ['start'],

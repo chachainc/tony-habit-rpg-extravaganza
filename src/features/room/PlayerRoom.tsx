@@ -2,7 +2,7 @@ import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, BedDouble, BookOpen, Shirt, Scale, Dumbbell, Pencil, Check, DollarSign, Menu } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { useRoomStore, ROOM_CATALOG } from '../../store/useRoomStore';
+import { useRoomStore } from '../../store/useRoomStore';
 import { usePetStore } from '../../store/usePetStore';
 import { useTitleStore } from '../../store/useTitleStore';
 import { useAuraStore, AURAS } from '../../store/useAuraStore';
@@ -160,6 +160,29 @@ const isWalkable = (x: number, y: number, placedFurniture: { gridX: number; grid
         }
     }
     return true;
+};
+
+/* ══════ FURNITURE → PANEL INTERACTION MAPPING ══════
+   When tapping a placed furniture piece (NOT in edit mode),
+   this map determines which panel to open. */
+const FURNITURE_INTERACTIONS: Record<string, ActivePanel> = {
+    basic_bed:    'sleep',
+    comfy_bed:    'sleep',
+    premium_bed:  'sleep',
+    ornate_bed:   'sleep',
+    royal_canopy: 'sleep',
+    pet_bed:      'pet',
+    arcane_bookshelf: 'bookshelf',
+    writing_desk: 'bookshelf',
+    archmage_desk: 'bookshelf',
+    // Decorative — no interaction yet
+    guitar: null,
+    fireplace: null,
+    grandfather_clock: null,
+    magic_hearth: null,
+    celestial_chandelier: null,
+    enchanted_mirror: 'wardrobe',
+    enchanted_mirror_prestige: 'wardrobe',
 };
 
 /* ══════ DECORATIVE WORLD ELEMENTS ══════ */
@@ -461,6 +484,41 @@ const ZONES = {
             { emoji: '🧱', ox: 1, oy: 3, size: 1.3 },
         ],
     },
+    // ── DOORWAY ZONES (multi-room exits) ──
+    gardenDoor: {
+        x: 0, y: 14, w: 2, h: 5,
+        panel: 'garden' as ActivePanel,
+        label: '→ Garden',
+        sublabel: 'Exit',
+        theme: 'zone-door-garden',
+        deco: [
+            { emoji: '🌿', ox: 0, oy: 0, size: 1.8 },
+            { emoji: '🍃', ox: 1, oy: 3, size: 1.4 },
+            { emoji: '🌱', ox: 0, oy: 4, size: 1.2 },
+        ],
+    },
+    trainingDoor: {
+        x: 30, y: 14, w: 2, h: 5,
+        panel: null as ActivePanel,
+        label: '→ Training',
+        sublabel: 'Locked',
+        theme: 'zone-door-training',
+        deco: [
+            { emoji: '🔒', ox: 0, oy: 1, size: 2.0 },
+            { emoji: '⚔️', ox: 1, oy: 3, size: 1.5 },
+        ],
+    },
+    studyDoor: {
+        x: 14, y: 30, w: 4, h: 2,
+        panel: 'workshop' as ActivePanel,
+        label: '→ Study',
+        sublabel: 'Exit',
+        theme: 'zone-door-garden',
+        deco: [
+            { emoji: '📜', ox: 0, oy: 0, size: 1.4 },
+            { emoji: '🕯️', ox: 3, oy: 0, size: 1.3, flicker: true },
+        ],
+    },
 };
 
 /* ══════ PATH SEGMENTS (connecting zones) ══════ */
@@ -489,6 +547,11 @@ const PATHS = [
     // ── Perimeter walkway ──
     { x: 2, y: 18, w: 1, h: 4 },   // west wall path
     { x: 29, y: 18, w: 1, h: 4 },  // east wall path
+
+    // ── Doorway approach paths ──
+    { x: 2, y: 15, w: 1, h: 3 },   // to garden door
+    { x: 29, y: 15, w: 1, h: 3 },  // to training door
+    { x: 14, y: 28, w: 4, h: 2 },  // to study door
 ];
 
 export const PlayerRoom = ({ onClose }: { onClose: () => void }) => {
@@ -496,14 +559,9 @@ export const PlayerRoom = ({ onClose }: { onClose: () => void }) => {
         playerPosition, setPlayerPosition,
         placedRoomFurniture, placeRoomFurniture,
         getPlacedBonusSummary,
-        currentRoomId, unlockedRooms, switchRoom,
     } = useRoomStore();
 
-    const allRooms = ROOM_CATALOG;
-    const currentRoomIdx = allRooms.findIndex(r => r.id === currentRoomId);
-    const prevRoom = currentRoomIdx > 0 ? allRooms[currentRoomIdx - 1] : null;
-    const nextRoom = currentRoomIdx < allRooms.length - 1 ? allRooms[currentRoomIdx + 1] : null;
-    const currentRoomDef = allRooms[currentRoomIdx];
+
     const { activePet, name: petName } = usePetStore();
     const { activeTitle, getUnlockedTitleDefs } = useTitleStore();
     const { activeAuraId } = useAuraStore();
@@ -511,7 +569,6 @@ export const PlayerRoom = ({ onClose }: { onClose: () => void }) => {
     const heroImage = useHeroImage();
 
     const [activePanel, setActivePanel] = useState<ActivePanel>(null);
-    const [tooltipSeen, setTooltipSeen] = useState(false);
     const keysPressed = useRef<Set<string>>(new Set());
     const [editMode, setEditMode] = useState(false);
     const [placingFurnitureId, setPlacingFurnitureId] = useState<string | null>(null);
@@ -630,7 +687,6 @@ export const PlayerRoom = ({ onClose }: { onClose: () => void }) => {
     const handleInteract = () => {
         if (nearbyObj && nearbyObj.panel) {
             setActivePanel(nearbyObj.panel);
-            setTooltipSeen(true);
             keysPressed.current.clear();
         }
     };
@@ -786,26 +842,6 @@ export const PlayerRoom = ({ onClose }: { onClose: () => void }) => {
                             <DollarSign size={20} /> Budget
                         </button>
 
-                        {/* Room Navigator */}
-                        <div className="room-navigator">
-                            <button
-                                className="room-nav-arrow"
-                                disabled={!prevRoom || !unlockedRooms.includes(prevRoom.id)}
-                                onClick={() => prevRoom && switchRoom(prevRoom.id)}
-                                title={prevRoom ? prevRoom.name : ''}
-                            >◀</button>
-                            <div className="room-nav-label">
-                                <span className="room-nav-icon">{currentRoomDef?.icon}</span>
-                                <span className="room-nav-name">{currentRoomDef?.name ?? 'Bedroom'}</span>
-                            </div>
-                            <button
-                                className="room-nav-arrow"
-                                disabled={!nextRoom || !unlockedRooms.includes(nextRoom.id)}
-                                onClick={() => nextRoom && switchRoom(nextRoom.id)}
-                                title={nextRoom ? nextRoom.unlockCondition ?? nextRoom.name : ''}
-                            >▶</button>
-                        </div>
-
                         {bonusSummary.length > 0 && !editMode && (
                             <div className="room-bonus-chip" onClick={() => setActivePanel('furniture_edit')}>
                                 ✨ {bonusSummary.length} bonus{bonusSummary.length > 1 ? 'es' : ''} active
@@ -828,7 +864,7 @@ export const PlayerRoom = ({ onClose }: { onClose: () => void }) => {
                         </button>
                     </div>
 
-                    {/* ── Room Panels FAB ── */}
+                    {/* ── Room Panels FAB (orange) ── */}
                     <AnimatePresence>
                         {showRoomFab && (
                             <motion.div
@@ -845,7 +881,7 @@ export const PlayerRoom = ({ onClose }: { onClose: () => void }) => {
                                     { label: '⚒️ Workshop', panel: 'workshop' as ActivePanel },
                                     { label: '🛢 Cellar', panel: 'cellar' as ActivePanel },
                                     { label: '🐾 Pet', panel: 'pet' as ActivePanel },
-                                ]).map(({ label, panel }) => (
+                                ] as const).map(({ label, panel }) => (
                                     <button
                                         key={panel}
                                         onClick={() => { setActivePanel(panel); setShowRoomFab(false); }}
@@ -858,7 +894,7 @@ export const PlayerRoom = ({ onClose }: { onClose: () => void }) => {
                                             fontSize: '0.8rem',
                                             fontWeight: 700,
                                             cursor: 'pointer',
-                                            whiteSpace: 'nowrap',
+                                            whiteSpace: 'nowrap' as const,
                                             boxShadow: '0 4px 12px rgba(0,0,0,0.5)',
                                         }}
                                     >
@@ -1002,14 +1038,21 @@ export const PlayerRoom = ({ onClose }: { onClose: () => void }) => {
                             ))}
 
                             {/* ═══ PLACED FURNITURE ═══ */}
-                            {placedRoomFurniture.map((placed) => (
-                                <DraggableFurniturePiece
-                                    key={placed.id}
-                                    placed={placed}
-                                    editMode={editMode}
-                                    containerRef={containerRef}
-                                />
-                            ))}
+                            {placedRoomFurniture.map((placed) => {
+                                const interaction = FURNITURE_INTERACTIONS[placed.furnitureId] ?? null;
+                                return (
+                                    <DraggableFurniturePiece
+                                        key={placed.id}
+                                        placed={placed}
+                                        editMode={editMode}
+                                        containerRef={containerRef}
+                                        onInteract={interaction ? () => {
+                                            setActivePanel(interaction);
+                                            keysPressed.current.clear();
+                                        } : undefined}
+                                    />
+                                );
+                            })}
 
                             {/* ═══ PET FOLLOWER ═══ */}
                             <motion.div
@@ -1069,25 +1112,24 @@ export const PlayerRoom = ({ onClose }: { onClose: () => void }) => {
                         </div>
                     </div>
 
-                    {/* ── Proximity Interaction Prompt ── */}
+                    {/* ── Proximity Interaction Prompt (subtle chip, no keyboard hints) ── */}
                     <AnimatePresence>
                         {nearbyObj && nearbyObj.panel && !activePanel && (
                             <motion.div
-                                className="room-item-prompt"
-                                initial={{ opacity: 0, y: 10 }}
+                                className="room-zone-chip"
+                                initial={{ opacity: 0, y: 8 }}
                                 animate={{ opacity: 1, y: 0 }}
-                                exit={{ opacity: 0, y: 10 }}
+                                exit={{ opacity: 0, y: 8 }}
                                 onClick={() => {
                                     if (nearbyObj.panel) {
                                         setActivePanel(nearbyObj.panel);
-                                        setTooltipSeen(true);
                                         keysPressed.current.clear();
                                     }
                                 }}
                                 style={{ cursor: 'pointer' }}
                             >
-                                <strong>{nearbyObj.label}</strong>
-                                {!tooltipSeen && <span className="press-key-hint">['E']</span>}
+                                <span>{nearbyObj.label}</span>
+                                <small>Tap to open</small>
                             </motion.div>
                         )}
                     </AnimatePresence>

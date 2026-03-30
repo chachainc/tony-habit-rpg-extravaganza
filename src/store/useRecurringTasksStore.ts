@@ -115,7 +115,7 @@ const getWeekStart = (): string => {
 // ─── TEMPLATES ───────────────────────────────────────────────────────────────
 
 export const DAILY_TASKS_TEMPLATE: Omit<RecurringTask, 'completed'>[] = [
-    // ══ MORNING FOUNDATION ═════════════════════════════════════════════════
+    // ══ MORNING (BEFORE WORK) ═════════════════════════════════════════════
     {
         id: 'weigh_self',
         title: 'Weigh Self',
@@ -161,7 +161,7 @@ export const DAILY_TASKS_TEMPLATE: Omit<RecurringTask, 'completed'>[] = [
         ],
     },
 
-    // ══ AFTERNOON PERFORMANCE ══════════════════════════════════════════════
+    // ══ AFTERNOON (AFTER WORK) ═════════════════════════════════════════════
     {
         id: 'complete_work',
         title: 'Complete Work',
@@ -226,7 +226,7 @@ export const DAILY_TASKS_TEMPLATE: Omit<RecurringTask, 'completed'>[] = [
         ],
     },
 
-    // ══ NIGHT SHUTDOWN ═════════════════════════════════════════════════════
+    // ══ NIGHT SHUTDOWN (BEFORE BED) ════════════════════════════════════════
     {
         id: 'daily_steps',
         title: 'Walk 10,000 Steps',
@@ -352,6 +352,14 @@ export const DAILY_TASKS_TEMPLATE: Omit<RecurringTask, 'completed'>[] = [
         type: 'daily',
         category: 'lifestyle',
         rewards: [{ skillId: 'Intelligence', xp: 4 }],
+    },
+    {
+        id: 'audiobook_30_min',
+        title: 'Listen to 30 minutes of audiobook minimum today',
+        bundle: 'night',
+        type: 'daily',
+        category: 'lifestyle',
+        rewards: [{ skillId: 'Intelligence', xp: 1 }],
     },
     {
         id: 'charge_wear_oura',
