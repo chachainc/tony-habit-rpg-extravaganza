@@ -1,39 +1,137 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Store, Heart, Footprints, ShieldAlert } from 'lucide-react';
+import { X, Heart, Footprints, Sword, Sparkles } from 'lucide-react';
 import { usePetCatchingStore } from '../../store/usePetCatchingStore';
-import { useCurrencyStore } from '../../store/useCurrencyStore';
 import { usePetStore } from '../../store/usePetStore';
+import { useConquestStore } from '../../store/useConquestStore';
+import { WILD_ZONES } from '../../data/zones';
+import { calculateCatchChance } from '../../data/catchRules';
+import type { CatchRarity } from '../../data/catchRules';
 import './PetTown.css';
 
+// ── Helpers ───────────────────────────────────────────────────────────────────
+
+const ELEMENT_COLORS: Record<string, string> = {
+    Fire:    '#ef4444',
+    Water:   '#3b82f6',
+    Nature:  '#22c55e',
+    Earth:   '#b45309',
+    Air:     '#94a3b8',
+    Shadow:  '#a855f7',
+    Aether:  '#f59e0b',
+};
+
+const RARITY_LABELS: Record<string, string> = {
+    common:   'Common',
+    uncommon: 'Uncommon',
+    rare:     'Rare',
+};
+
+function rarityToCatchRarity(rarity: string, isRare: boolean): CatchRarity {
+    if (isRare) return 'rareEncounter';
+    if (rarity === 'rare')     return 'rare';
+    if (rarity === 'uncommon') return 'uncommon';
+    return 'common';
+}
+
+// ── Component ─────────────────────────────────────────────────────────────────
+
 export const PetTown = ({ onClose }: { onClose: () => void }) => {
-    const catchingState = usePetCatchingStore();
-    const { gold, spendGold } = useCurrencyStore();
-    const petStore = usePetStore();
-    const [view, setView] = useState<'town' | 'shop' | 'encounter'>('town');
+    const catching  = usePetCatchingStore();
+    const petStore  = usePetStore();
+    const conquest  = useConquestStore();
+    const logRef    = useRef<HTMLDivElement>(null);
 
-    // Automatically switch to encounter view if wild pet is present
+    const [view, setView] = useState<'zones' | 'encounter' | 'result'>('zones');
+    const [resultMsg, setResultMsg]   = useState('');
+    const [resultType, setResultType] = useState<'success' | 'fail'>('success');
+
+    // conquest.sigils is the live sigil count — no sync needed
+
+    // Switch views automatically when encounter starts/ends
     useEffect(() => {
-        if (catchingState.currentEncounter && view !== 'encounter') {
-            setView('encounter');
-        } else if (!catchingState.currentEncounter && view === 'encounter') {
-            setView('town');
-        }
-    }, [catchingState.currentEncounter, view]);
+        if (catching.currentEncounter && view === 'zones') setView('encounter');
+        if (!catching.currentEncounter && view === 'encounter') setView('zones');
+    }, [catching.currentEncounter]);
 
-    const handleBuyOrb = () => {
-        if (gold >= 50) {
-            spendGold(50);
-            catchingState.buyCaptureOrb(1);
+    // Auto-scroll logs
+    useEffect(() => {
+        logRef.current?.scrollTo({ top: logRef.current.scrollHeight, behavior: 'smooth' });
+    }, [catching.logs]);
+
+    // ── Active player pet (instance-aware) ──
+    const resolved     = petStore.getResolvedActivePet();
+    const playerPetDef = resolved.petDef;
+
+    // ── Catch chance display ──
+    const enc = catching.currentEncounter;
+    const catchChance = enc
+        ? calculateCatchChance(
+            rarityToCatchRarity(enc.rarity, enc.isRare),
+            enc.currentHp,
+            enc.maxHp,
+            enc.hasStatus,
+            enc.isRare
+          )
+        : 0;
+    const catchPct = (catchChance * 100).toFixed(0);
+
+    // ── Handlers ──
+    const handleSearch = (zoneId: string) => {
+        catching.setZone(zoneId);
+        catching.startEncounter(zoneId);
+    };
+
+    const handleAttack = () => {
+        if (catching.isCapturing || !enc || enc.currentHp <= 0) return;
+        catching.performAttack();
+    };
+
+    const handleCapture = async () => {
+        if (catching.isCapturing || !enc || enc.currentHp <= 0) return;
+        // Guard in UI: sigil check is also enforced inside attemptCapture
+        if (conquest.sigils <= 0) {
+            catching.addLog('No Capture Sigils! Earn some from the Monopoly board or daily tasks.');
+            return;
+        }
+
+        // attemptCapture reads conquest.sigils and calls addSigils(-1) internally
+        const capturedPet = catching.currentEncounter;
+        const success = await catching.attemptCapture();
+
+        if (success && capturedPet) {
+            petStore.addCaughtPetInstance({
+                petId:        capturedPet.id,
+                level:        capturedPet.level,
+                isRare:       capturedPet.isRare,
+                obtainMethod: 'caught',
+            });
+            const rareTag = capturedPet.isRare ? ' ✨ Rare' : '';
+            setResultMsg(`✅ ${capturedPet.name}${rareTag} (Lv.${capturedPet.level}) added to your collection!`);
+            setResultType('success');
+            setTimeout(() => {
+                catching.endEncounter();
+                setView('result');
+            }, 1200);
+        } else if (!success && !catching.currentEncounter) {
+            // Pet fled after failed capture — show fail result
+            setResultMsg(`${capturedPet?.name ?? 'The wild pet'} fled into the wild...`);
+            setResultType('fail');
+            setView('result');
         }
     };
 
-    const handleCatch = async () => {
-        const isSuccess = await catchingState.throwOrb();
-        if (isSuccess && catchingState.currentEncounter) {
-            petStore.addPet(catchingState.currentEncounter.id);
-        }
+    const handleFlee = () => {
+        catching.flee();
+        setView('zones');
     };
+
+    const handleCloseResult = () => {
+        setView('zones');
+        setResultMsg('');
+    };
+
+    // ── Render ────────────────────────────────────────────────────────────────
 
     return (
         <AnimatePresence>
@@ -44,164 +142,249 @@ export const PetTown = ({ onClose }: { onClose: () => void }) => {
                 exit={{ opacity: 0 }}
             >
                 <div className="pt-container">
+
+                    {/* ── Header ── */}
                     <div className="pt-header">
-                        <h2>🐾 Pet Town</h2>
-                        <button className="pt-close" onClick={onClose}><X size={20} /></button>
+                        <h2>🏕️ Pet Catch Mode</h2>
+                        <div className="pt-header-right">
+                            <span className="pt-sigil-badge" title="Capture Sigils">
+                                🔱 {conquest.sigils}
+                            </span>
+                            <button className="pt-close" onClick={onClose} aria-label="Close">
+                                <X size={20} />
+                            </button>
+                        </div>
                     </div>
 
+                    {/* ── Stats Bar ── */}
                     <div className="pt-stats-bar">
                         <div className="pt-stats-item">
-                            <Heart size={16} color="#ef4444" />
-                            <span>{catchingState.expeditionHp}/{catchingState.maxExpeditionHp}</span>
+                            <Heart size={14} color="#ef4444" />
+                            <span>{catching.expeditionHp}/{catching.maxExpeditionHp}</span>
                         </div>
-                        <div className="pt-stats-item" title="Capture Orbs">
-                            <div style={{ width: 14, height: 14, borderRadius: '50%', background: 'linear-gradient(to bottom, #ef4444 50%, white 50%)', border: '1px solid #333' }} />
-                            <span>{catchingState.captureOrbs}</span>
-                        </div>
+                        {playerPetDef && (
+                            <div className="pt-stats-item">
+                                <span style={{ fontSize: '1rem' }}>{playerPetDef.icon}</span>
+                                <span>{playerPetDef.name}</span>
+                            </div>
+                        )}
                         <div className="pt-stats-item">
-                            <span style={{color: '#fbbf24'}}>🪙</span> {gold}
+                            <Footprints size={14} color="#10b981" />
+                            <span>Sigils: {conquest.sigils}</span>
                         </div>
                     </div>
 
+                    {/* ── Content ── */}
                     <div className="pt-content">
-                        {/* TOWN HUB */}
-                        {view === 'town' && (
-                            <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} className="pt-menu-layout">
-                                <button className="pt-menu-btn" onClick={() => catchingState.enterGrass()}>
-                                    <div className="icon"><Footprints size={24} color="#10b981" /></div>
-                                    <div className="info">
-                                        <h3>Tall Grass</h3>
-                                        <p>Encounter wild pets</p>
-                                    </div>
-                                </button>
-                                
-                                <button className="pt-menu-btn" onClick={() => setView('shop')}>
-                                    <div className="icon"><Store size={24} color="#3b82f6" /></div>
-                                    <div className="info">
-                                        <h3>Town Shop</h3>
-                                        <p>Buy capture supplies</p>
-                                    </div>
-                                </button>
 
-                                <button className="pt-menu-btn" onClick={() => catchingState.healPlayer()}>
-                                    <div className="icon"><Heart size={24} color="#ef4444" /></div>
-                                    <div className="info">
-                                        <h3>Rest at Inn</h3>
-                                        <p>Fully restore Expedition HP (Free)</p>
-                                    </div>
-                                </button>
-                            </motion.div>
-                        )}
+                        {/* ════ ZONE SELECTION VIEW ════ */}
+                        {view === 'zones' && (
+                            <motion.div
+                                className="pt-zones-view"
+                                initial={{ opacity: 0, x: -20 }}
+                                animate={{ opacity: 1, x: 0 }}
+                            >
+                                <p className="pt-zone-hint">Choose a zone to explore:</p>
 
-                        {/* SHOP */}
-                        {view === 'shop' && (
-                            <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} className="pt-shop-layout">
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}>
-                                    <span style={{ fontSize: '1.2rem', fontWeight: 600 }}>Shop</span>
-                                </div>
-                                
-                                <button 
-                                    className="pt-menu-btn" 
-                                    onClick={handleBuyOrb}
-                                    style={{ opacity: gold >= 50 ? 1 : 0.5 }}
-                                >
-                                    <div className="icon">
-                                        <div style={{ width: 20, height: 20, borderRadius: '50%', background: 'linear-gradient(to bottom, #ef4444 50%, white 50%)', border: '1px solid #333' }} />
-                                    </div>
-                                    <div className="info">
-                                        <h3 style={{display:'flex', justifyContent:'space-between', width:'100%'}}>
-                                            <span>Capture Orb</span>
-                                            <span>50g</span>
-                                        </h3>
-                                        <p>A basic orb used to capture wild pets.</p>
-                                    </div>
-                                </button>
-
-                                <div style={{ marginTop: 'auto', paddingTop: '16px' }}>
-                                    <button 
-                                        className="pt-action-btn" 
-                                        onClick={() => setView('town')}
-                                        style={{ width: '100%', background: '#475569' }}
+                                {WILD_ZONES.map(zone => (
+                                    <button
+                                        key={zone.id}
+                                        className={`pt-zone-card ${zone.theme}`}
+                                        onClick={() => handleSearch(zone.id)}
                                     >
-                                        Back to Town
+                                        <div className="pt-zone-icon">{zone.icon}</div>
+                                        <div className="pt-zone-info">
+                                            <div className="pt-zone-name">{zone.name}</div>
+                                            <div className="pt-zone-desc">{zone.description}</div>
+                                            <div className="pt-zone-level">Lv.{zone.minLevel}–{zone.maxLevel}</div>
+                                        </div>
+                                        <div className="pt-zone-arrow">→</div>
                                     </button>
-                                </div>
+                                ))}
+
+                                {/* Heal button */}
+                                <button
+                                    className="pt-heal-btn"
+                                    onClick={() => catching.healPlayer()}
+                                >
+                                    <Heart size={16} color="#ef4444" />
+                                    Rest (Free — restore HP)
+                                </button>
+
+                                {/* Sigil tip if 0 */}
+                                {conquest.sigils === 0 && (
+                                    <div className="pt-no-sigil-tip">
+                                        ⚠️ No Capture Sigils! Earn them from the Monopoly board or daily tasks.
+                                    </div>
+                                )}
                             </motion.div>
                         )}
 
-                        {/* ENCOUNTER */}
-                        {view === 'encounter' && catchingState.currentEncounter && (
-                            <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="pt-encounter">
-                                <div className="pt-encounter-name">{catchingState.currentEncounter.name}</div>
-                                <div className={`pt-encounter-rarity ${catchingState.currentEncounter.rarity}`}>
-                                    {catchingState.currentEncounter.rarity}
-                                </div>
-                                
-                                <div className={`pt-wild-icon ${catchingState.isCapturing ? 'shake' : ''}`}>
-                                    {catchingState.currentEncounter.icon}
+                        {/* ════ ENCOUNTER VIEW ════ */}
+                        {view === 'encounter' && enc && (
+                            <motion.div
+                                className="pt-encounter"
+                                initial={{ opacity: 0, scale: 0.95 }}
+                                animate={{ opacity: 1, scale: 1 }}
+                            >
+                                {/* Wild Pet Info */}
+                                <div className="pt-wild-header">
+                                    <div className="pt-wild-name-row">
+                                        <span className="pt-wild-name">{enc.name}</span>
+                                        {enc.isRare && (
+                                            <span className="pt-rare-badge">✨ RARE</span>
+                                        )}
+                                    </div>
+                                    <div className="pt-wild-sub-row">
+                                        <span
+                                            className="pt-element-badge"
+                                            style={{ background: ELEMENT_COLORS[enc.type] || '#64748b' }}
+                                        >
+                                            {enc.type}
+                                        </span>
+                                        <span className={`pt-rarity-badge rarity-${enc.rarity}`}>
+                                            {RARITY_LABELS[enc.rarity] ?? enc.rarity}
+                                        </span>
+                                        <span className="pt-level-badge">Lv.{enc.level}</span>
+                                    </div>
                                 </div>
 
+                                {/* Wild Pet Sprite */}
+                                <div className={`pt-wild-icon ${catching.isCapturing ? 'shake' : ''} ${enc.isRare ? 'rare-glow' : ''}`}>
+                                    {enc.icon}
+                                </div>
+
+                                {/* Wild HP Bar */}
                                 <div className="pt-hp-bar-container">
                                     <div className="pt-hp-label">
                                         <span>Wild HP</span>
-                                        <span>{catchingState.currentEncounter.currentHp}/{catchingState.currentEncounter.maxHp}</span>
+                                        <span>{enc.currentHp}/{enc.maxHp}</span>
                                     </div>
                                     <div className="pt-hp-bar">
-                                        <div 
-                                            className="pt-hp-fill" 
-                                            style={{ width: `${(catchingState.currentEncounter.currentHp / catchingState.currentEncounter.maxHp) * 100}%` }} 
+                                        <div
+                                            className="pt-hp-fill"
+                                            style={{ width: `${Math.max(0, (enc.currentHp / enc.maxHp) * 100)}%` }}
                                         />
                                     </div>
                                 </div>
 
+                                {/* Catch Chance Display */}
+                                <div className="pt-catch-info">
+                                    <span className="pt-catch-label">Catch chance:</span>
+                                    <span
+                                        className="pt-catch-pct"
+                                        style={{
+                                            color: catchChance >= 0.5 ? '#22c55e'
+                                                 : catchChance >= 0.25 ? '#f59e0b'
+                                                 : '#ef4444'
+                                        }}
+                                    >
+                                        {catchPct}%
+                                    </span>
+                                    {enc.currentHp <= 0 && (
+                                        <span className="pt-fainted-label">Fainted — cannot catch!</span>
+                                    )}
+                                </div>
+
+                                {/* Player Pet Section */}
+                                {playerPetDef && (
+                                    <div className="pt-player-pet">
+                                        <div className="pt-player-pet-icon">{playerPetDef.icon}</div>
+                                        <div className="pt-player-pet-info">
+                                            <span className="pt-player-pet-name">
+                                                {playerPetDef.name}
+                                                {resolved.source === 'instance' && (
+                                                    <>
+                                                        <span style={{ marginLeft: 5, fontSize: '0.7rem', color: '#94a3b8' }}>Lv.{resolved.level}</span>
+                                                        {resolved.isRare && <span style={{ marginLeft: 4, fontSize: '0.65rem', color: '#f59e0b' }}>✨</span>}
+                                                    </>
+                                                )}
+                                            </span>
+                                            <div className="pt-player-hp-bar">
+                                                <div className="pt-hp-bar" style={{ height: 6 }}>
+                                                    <div
+                                                        className="pt-hp-fill player"
+                                                        style={{ width: `${(catching.expeditionHp / catching.maxExpeditionHp) * 100}%` }}
+                                                    />
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <span className="pt-player-hp-text">
+                                            {catching.expeditionHp}/{catching.maxExpeditionHp}
+                                        </span>
+                                    </div>
+                                )}
+
+                                {/* ── Action Buttons ── */}
                                 <div className="pt-actions">
-                                    <button 
-                                        className="pt-action-btn attack" 
-                                        onClick={() => catchingState.attack()}
-                                        disabled={catchingState.isCapturing || catchingState.currentEncounter.currentHp <= 0}
+                                    <button
+                                        className="pt-action-btn attack"
+                                        onClick={handleAttack}
+                                        disabled={catching.isCapturing || enc.currentHp <= 0}
                                     >
-                                        <ShieldAlert size={18} /> Attack
+                                        <Sword size={18} />
+                                        <span>Attack</span>
                                     </button>
-                                    <button 
-                                        className="pt-action-btn catch" 
-                                        onClick={handleCatch}
-                                        disabled={catchingState.isCapturing || catchingState.captureOrbs <= 0 || catchingState.currentEncounter.currentHp <= 0}
+
+                                    <button
+                                        className="pt-action-btn skill disabled-skill"
+                                        disabled
+                                        title="Skills coming soon!"
                                     >
-                                        <div style={{ width: 16, height: 16, borderRadius: '50%', background: 'linear-gradient(to bottom, #ef4444 50%, white 50%)', border: '1px solid #333' }} /> 
-                                        Catch ({catchingState.captureOrbs})
+                                        <Sparkles size={18} />
+                                        <span>Skill</span>
+                                        <span className="pt-soon-badge">Soon</span>
                                     </button>
-                                    <button 
-                                        className="pt-action-btn run" 
-                                        onClick={() => catchingState.fleeEncounter()}
-                                        disabled={catchingState.isCapturing || catchingState.currentEncounter.currentHp <= 0}
+
+                                    <button
+                                        className="pt-action-btn capture"
+                                        onClick={handleCapture}
+                                        disabled={catching.isCapturing || enc.currentHp <= 0 || conquest.sigils <= 0}
                                     >
-                                        <Footprints size={18} /> Run away
+                                        <span className="pt-orb-icon">⭐</span>
+                                        <span>Capture</span>
+                                        <span className="pt-sigil-count">({conquest.sigils})</span>
+                                    </button>
+
+                                    <button
+                                        className="pt-action-btn flee"
+                                        onClick={handleFlee}
+                                        disabled={catching.isCapturing}
+                                    >
+                                        <Footprints size={18} />
+                                        <span>Flee</span>
                                     </button>
                                 </div>
 
-                                <div className="pt-logs">
-                                    {catchingState.logs.map((log, i) => (
+                                {/* Battle Log */}
+                                <div className="pt-logs" ref={logRef}>
+                                    {catching.logs.slice(-8).map((log, i) => (
                                         <div key={i} className="pt-log-line">{log}</div>
                                     ))}
                                 </div>
-
-                                {/* Caught Overlay */}
-                                {catchingState.currentEncounter.currentHp > 0 && 
-                                 catchingState.logs.some(l => l.includes("Gotcha!")) && (
-                                    <motion.div 
-                                        initial={{ opacity: 0 }} 
-                                        animate={{ opacity: 1 }} 
-                                        className="pt-caught-overlay"
-                                    >
-                                        <div style={{ fontSize: '4rem', marginBottom: '16px' }}>✨</div>
-                                        <p>Caught {catchingState.currentEncounter.name}!</p>
-                                        <button className="pt-caught-btn" onClick={() => catchingState.fleeEncounter()}>
-                                            Back to Town
-                                        </button>
-                                    </motion.div>
-                                )}
                             </motion.div>
                         )}
+
+                        {/* ════ RESULT VIEW ════ */}
+                        {view === 'result' && (
+                            <motion.div
+                                className={`pt-result-view ${resultType}`}
+                                initial={{ opacity: 0, scale: 0.9 }}
+                                animate={{ opacity: 1, scale: 1 }}
+                            >
+                                <div className="pt-result-icon">
+                                    {resultType === 'success' ? '🎉' : '💨'}
+                                </div>
+                                <div className="pt-result-msg">{resultMsg}</div>
+                                <button
+                                    className="pt-result-btn"
+                                    onClick={handleCloseResult}
+                                >
+                                    Back to Zones
+                                </button>
+                            </motion.div>
+                        )}
+
                     </div>
                 </div>
             </motion.div>

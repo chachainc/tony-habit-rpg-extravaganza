@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { X, ChevronRight } from 'lucide-react';
-import { usePetBattleStore, WILD_CREATURES, getPetBattleStats, type WildCreature, type PetElementType } from '../../store/usePetBattleStore';
+import { usePetBattleStore, WILD_CREATURES, getPetBattleStats, getPetBattleStatsScaled, type WildCreature, type PetElementType } from '../../store/usePetBattleStore';
 import { usePetStore } from '../../store/usePetStore';
 import { useCurrencyStore } from '../../store/useCurrencyStore';
 import './PetBattle.css';
@@ -9,14 +9,20 @@ import './PetBattle.css';
 const TYPE_COLORS: Record<PetElementType, string> = {
     Earth: '#b45309', Fire: '#ef4444', Water: '#3b82f6',
     Nature: '#22c55e', Shadow: '#a855f7', Air: '#94a3b8',
+    Aether: '#f59e0b',
 };
 
 export const PetBattle = ({ onClose }: { onClose: () => void }) => {
     const battle = usePetBattleStore();
-    const { ownedPets } = usePetStore();
+    const petStore = usePetStore();
+    const { ownedPets } = petStore;
     const { addGold } = useCurrencyStore();
     const [selectedEnemy, setSelectedEnemy] = useState<WildCreature | null>(null);
     const logEndRef = useRef<HTMLDivElement>(null);
+
+    // Resolve active pet instance — used to scale stats when the player
+    // selects the species that matches their active pet instance.
+    const resolved = petStore.getResolvedActivePet();
 
     // Auto-scroll battle log
     useEffect(() => {
@@ -28,7 +34,11 @@ export const PetBattle = ({ onClose }: { onClose: () => void }) => {
 
     const handleStartBattle = (petId: string) => {
         if (!selectedEnemy) return;
-        battle.startBattle(petId, selectedEnemy);
+        // If this pet matches the active resolved instance, pass scaled stats
+        const overrideStats = (resolved.source === 'instance' && resolved.petId === petId)
+            ? getPetBattleStatsScaled(petId, resolved.level, resolved.isRare, resolved.ascensionStars) ?? undefined
+            : undefined;
+        battle.startBattle(petId, selectedEnemy, overrideStats);
     };
 
     const handleCollectReward = () => {
@@ -96,6 +106,8 @@ export const PetBattle = ({ onClose }: { onClose: () => void }) => {
                                 {ownedPets.map(petId => {
                                     const stats = getPetBattleStats(petId);
                                     if (!stats) return null;
+                                    // Show instance badge when this pet matches resolved active instance
+                                    const isActiveInstance = resolved.source === 'instance' && resolved.petId === petId;
                                     return (
                                         <button
                                             key={petId}
@@ -104,7 +116,15 @@ export const PetBattle = ({ onClose }: { onClose: () => void }) => {
                                         >
                                             <span className="pb-pet-icon">{stats.icon}</span>
                                             <div className="pb-pet-info">
-                                                <div className="pb-pet-name">{stats.name}</div>
+                                                <div className="pb-pet-name">
+                                                    {stats.name}
+                                                    {isActiveInstance && (
+                                                        <span style={{ marginLeft: 5, fontSize: '0.7rem', color: '#94a3b8' }}>
+                                                            Lv.{resolved.level}
+                                                            {resolved.isRare && <span style={{ marginLeft: 3, color: '#f59e0b' }}>✨</span>}
+                                                        </span>
+                                                    )}
+                                                </div>
                                                 <div className="pb-type-badge" style={{ background: TYPE_COLORS[stats.type] }}>{stats.type}</div>
                                             </div>
                                             <div className="pb-pet-stats-mini">
@@ -162,7 +182,15 @@ export const PetBattle = ({ onClose }: { onClose: () => void }) => {
                     {/* Player side */}
                     <div className="pb-combatant pb-player-side">
                         <div className="pb-combatant-icon">{pet.icon}</div>
-                        <div className="pb-combatant-name">{pet.name}</div>
+                        <div className="pb-combatant-name">
+                            {pet.name}
+                            {resolved.source === 'instance' && resolved.petId === battle.selectedPetId && (
+                                <span style={{ marginLeft: 5, fontSize: '0.68rem', color: '#94a3b8' }}>
+                                    Lv.{resolved.level}
+                                    {resolved.isRare && <span style={{ marginLeft: 3, color: '#f59e0b' }}>✨</span>}
+                                </span>
+                            )}
+                        </div>
                         <div className="pb-type-badge" style={{ background: TYPE_COLORS[pet.type] }}>{pet.type}</div>
                         <div className="pb-hp-bar">
                             <div className="pb-hp-fill player" style={{ width: `${(battle.playerHp / battle.playerMaxHp) * 100}%` }} />

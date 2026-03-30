@@ -4,7 +4,7 @@ import { PERSIST_REGISTRY } from '../data/persistRegistry';
 import { PET_DATABASE } from './usePetStore';
 
 // ── Pet Battle Type System ─────────────────────────────────────
-export type PetElementType = 'Fire' | 'Water' | 'Nature' | 'Earth' | 'Air' | 'Shadow';
+export type PetElementType = 'Fire' | 'Water' | 'Nature' | 'Earth' | 'Air' | 'Shadow' | 'Aether';
 
 const STRONG_AGAINST: Record<PetElementType, PetElementType[]> = {
     Fire: ['Nature'],
@@ -13,6 +13,7 @@ const STRONG_AGAINST: Record<PetElementType, PetElementType[]> = {
     Earth: ['Air'],
     Air: ['Water'],
     Shadow: [], // Shadow has special rules handled below
+    Aether: [], // Aether has special rules handled below (mutual with Shadow)
 };
 
 export function getTypeMultiplier(atk: PetElementType, def: PetElementType): number {
@@ -155,6 +156,41 @@ export function getPetBattleStats(petId: string): PetBattleStats | null {
     };
 }
 
+// ── Instance-aware scaled stats ─────────────────────────────────
+// Pure helper — does not touch store state.
+// Level 1 = baseline (no change). Scaling is conservative / additive.
+export function getPetBattleStatsScaled(
+    petId: string,
+    level: number,
+    isRare: boolean,
+    ascensionStars: number
+): PetBattleStats | null {
+    const base = getPetBattleStats(petId);
+    if (!base) return null;
+
+    const lvBonus = Math.max(0, level - 1); // 0 at Lv.1
+
+    // +3 HP and +0.5 ATK per level above 1
+    let scaledHp  = Math.floor(base.maxHp  + lvBonus * 3);
+    let scaledAtk = Math.floor(base.attack + lvBonus * 0.5);
+    let scaledDef = base.defense; // defense unchanged by level
+
+    // Rare catch: +15% to all three
+    if (isRare) {
+        scaledHp  = Math.floor(scaledHp  * 1.15);
+        scaledAtk = Math.floor(scaledAtk * 1.15);
+        scaledDef = Math.floor(scaledDef * 1.15);
+    }
+
+    // Ascension stars: +10% per star (0–5)
+    const ascMult = 1 + Math.min(5, ascensionStars) * 0.10;
+    scaledHp  = Math.floor(scaledHp  * ascMult);
+    scaledAtk = Math.floor(scaledAtk * ascMult);
+    scaledDef = Math.floor(scaledDef * ascMult);
+
+    return { ...base, maxHp: scaledHp, attack: scaledAtk, defense: scaledDef };
+}
+
 // ── Battle State ───────────────────────────────────────────────
 type BattlePhase = 'idle' | 'select-pet' | 'battle' | 'victory' | 'defeat';
 
@@ -197,7 +233,7 @@ interface BattleState {
     totalLosses: number;
 
     // Actions
-    startBattle: (petId: string, enemy: WildCreature) => void;
+    startBattle: (petId: string, enemy: WildCreature, overrideStats?: PetBattleStats) => void;
     useMove: (moveId: string) => void;
     resetBattle: () => void;
     canBattleToday: () => boolean;
@@ -229,8 +265,9 @@ export const usePetBattleStore = create<BattleState>()(
                 return s.battlesToday < 3;
             },
 
-            startBattle: (petId, enemy) => {
-                const pet = getPetBattleStats(petId);
+            startBattle: (petId, enemy, overrideStats) => {
+                // Use override stats (instance-aware) when provided, else fall back to base species stats
+                const pet = overrideStats ?? getPetBattleStats(petId);
                 if (!pet) return;
 
                 const today = getEasternDateString();

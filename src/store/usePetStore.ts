@@ -280,6 +280,20 @@ export const PET_DATABASE: Record<string, PetDefinition> = {
     }
 };
 
+// ── Per-catch instance shape ─────────────────────────────────────────────────
+// Exists alongside the existing species-quantity system. All existing logic is
+// untouched — instances are purely additive.
+export interface OwnedPetInstance {
+    instanceId: string;         // unique per catch (e.g. 'inst_war_chicken_1743330000')
+    petId: string;              // references PET_DATABASE key
+    nickname?: string;          // future: user-set nickname
+    level: number;              // level at time of catch
+    isRare: boolean;            // true if caught as a rare encounter
+    ascensionStars: number;     // 0–5, defaults to 0
+    obtainedAt: number;         // Date.now() at catch time
+    obtainMethod: string;       // e.g. 'caught', 'shop_purchase'
+}
+
 // ── Store ──────────────────────────────────────────────────────
 export interface PetState {
     activePet: string;
@@ -290,6 +304,10 @@ export interface PetState {
     energy: number;
     ownedPets: string[];
     petQuantities: Record<string, number>;
+
+    // Per-catch instances (NEW — additive, does not replace species ownership)
+    ownedPetInstances: OwnedPetInstance[];
+    activePetInstanceId: string | null;  // matches an instanceId; null = use species fallback
 
     // Evolution tracking
     evolvedPets: string[];  // pet IDs that have been evolved
@@ -310,6 +328,32 @@ export interface PetState {
     isEvolved: (petId: string) => boolean;
     hasUltimate: (petId: string) => boolean;
     getActivePetDef: () => PetDefinition | null;
+
+    // New instance-based actions
+    addCaughtPetInstance: (params: {
+        petId: string;
+        level: number;
+        isRare: boolean;
+        obtainMethod?: string;
+    }) => OwnedPetInstance;
+    getActivePetInstance: () => OwnedPetInstance | null;
+    setActivePetInstance: (instanceId: string | null) => void;
+
+    // Instance-aware resolution
+    getResolvedActivePet: () => ResolvedActivePet;
+    setActivePetByBestAvailable: (petId: string) => void;
+}
+
+// ── Resolved active pet shape ─────────────────────────────────────────────────
+// Single object callers can use regardless of whether an instance is active.
+export interface ResolvedActivePet {
+    petDef: PetDefinition;       // full stat definition
+    petId: string;
+    level: number;               // from instance if available, else 1
+    isRare: boolean;             // from instance if available, else false
+    ascensionStars: number;      // from instance if available, else 0
+    source: 'instance' | 'species';
+    instanceId: string | null;   // null when source === 'species'
 }
 
 export const usePetStore = create<PetState>()(
@@ -323,6 +367,9 @@ export const usePetStore = create<PetState>()(
             energy: 90,
             ownedPets: ['pet_cow'],
             petQuantities: { 'pet_cow': 1 },
+            // Instance layer — empty by default; populated by catches going forward
+            ownedPetInstances: [],
+            activePetInstanceId: null,
             evolvedPets: [],
             ultimateUnlocked: {},
 
@@ -352,7 +399,15 @@ export const usePetStore = create<PetState>()(
             switchPet: (petId) => {
                 const state = get();
                 if (state.ownedPets.includes(petId)) {
-                    set({ activePet: petId });
+                    // Clear instance pointer unless it already belongs to this species
+                    const currentInstance = state.activePetInstanceId
+                        ? state.ownedPetInstances.find(i => i.instanceId === state.activePetInstanceId)
+                        : null;
+                    const clearInstance = currentInstance?.petId !== petId;
+                    set({
+                        activePet: petId,
+                        ...(clearInstance ? { activePetInstanceId: null } : {}),
+                    });
                 }
             },
 
@@ -395,6 +450,123 @@ export const usePetStore = create<PetState>()(
                     return PET_DATABASE[pet.evolution.evolvedPetId] || pet;
                 }
                 return pet;
+            },
+
+            // ── Instance layer (additive — does not replace species logic) ──
+
+            addCaughtPetInstance: (params) => {
+                const { petId, level, isRare, obtainMethod = 'caught' } = params;
+                const state = get();
+
+                const instanceId = `inst_${petId}_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`;
+                const instance: OwnedPetInstance = {
+                    instanceId,
+                    petId,
+                    level,
+                    isRare,
+                    ascensionStars: 0,
+                    obtainedAt: Date.now(),
+                    obtainMethod,
+                };
+
+                // Increment petQuantities (backward compat) + ensure species in ownedPets
+                const currentQty = state.petQuantities?.[petId] ?? 0;
+                set({
+                    ownedPetInstances: [...state.ownedPetInstances, instance],
+                    ownedPets: currentQty === 0 ? [...state.ownedPets, petId] : state.ownedPets,
+                    petQuantities: { ...state.petQuantities, [petId]: currentQty + 1 },
+                });
+
+                return instance;
+            },
+
+            // Returns the active instance if activePetInstanceId is set and valid;
+            // otherwise returns null (caller should fall back to species logic).
+            getActivePetInstance: () => {
+                const { activePetInstanceId, ownedPetInstances } = get();
+                if (!activePetInstanceId) return null;
+                return ownedPetInstances.find(i => i.instanceId === activePetInstanceId) ?? null;
+            },
+
+            setActivePetInstance: (instanceId) => {
+                set({ activePetInstanceId: instanceId });
+            },
+
+            // ── getResolvedActivePet ──────────────────────────────────────────
+            // Primary selector for any UI that wants the "current active pet".
+            // Prefers instance data when activePetInstanceId is valid.
+            getResolvedActivePet: (): ResolvedActivePet => {
+                const state = get();
+
+                // Try to resolve active instance first
+                const instance = state.activePetInstanceId
+                    ? state.ownedPetInstances.find(i => i.instanceId === state.activePetInstanceId) ?? null
+                    : null;
+
+                // Determine which petId + def to use
+                const petId   = instance?.petId ?? state.activePet;
+                const evolved = state.evolvedPets.includes(petId);
+                const baseDef = PET_DATABASE[petId];
+                const petDef  = evolved && baseDef?.evolution
+                    ? (PET_DATABASE[baseDef.evolution.evolvedPetId] ?? baseDef)
+                    : baseDef;
+
+                if (!petDef) {
+                    // Safety fallback — should not happen in practice
+                    const fallbackId  = state.ownedPets[0] ?? 'pet_cow';
+                    const fallbackDef = PET_DATABASE[fallbackId] ?? PET_DATABASE['pet_cow'];
+                    return {
+                        petDef: fallbackDef!,
+                        petId: fallbackId,
+                        level: 1,
+                        isRare: false,
+                        ascensionStars: 0,
+                        source: 'species',
+                        instanceId: null,
+                    };
+                }
+
+                if (instance) {
+                    return {
+                        petDef,
+                        petId: instance.petId,
+                        level: instance.level,
+                        isRare: instance.isRare,
+                        ascensionStars: instance.ascensionStars,
+                        source: 'instance',
+                        instanceId: instance.instanceId,
+                    };
+                }
+
+                // Species-only fallback
+                return {
+                    petDef,
+                    petId,
+                    level: 1,
+                    isRare: false,
+                    ascensionStars: 0,
+                    source: 'species',
+                    instanceId: null,
+                };
+            },
+
+            // ── setActivePetByBestAvailable ───────────────────────────────────
+            // Selects a species as active pet AND wires to the best (highest level)
+            // owned instance of that species if one exists.
+            setActivePetByBestAvailable: (petId) => {
+                const state = get();
+                if (!state.ownedPets.includes(petId)) return;
+
+                // Find instances of this species, sort by level desc
+                const instances = state.ownedPetInstances
+                    .filter(i => i.petId === petId)
+                    .sort((a, b) => b.level - a.level);
+
+                const best = instances[0] ?? null;
+                set({
+                    activePet: petId,
+                    activePetInstanceId: best?.instanceId ?? null,
+                });
             },
         }),
         {
