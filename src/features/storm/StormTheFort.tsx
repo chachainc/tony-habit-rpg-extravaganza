@@ -35,6 +35,10 @@ export const StormTheFort = () => {
         saveFormation,
         loadFormation,
         startNextWave,
+        defenderInventory,
+        obstacleInventory,
+        storeDefender,
+        storeObstacle,
     } = useStormStore();
 
     const { shmeckles } = useCurrencyStore();
@@ -43,7 +47,9 @@ export const StormTheFort = () => {
 
     // Drag state for moving defenders
     const [draggingId, setDraggingId] = useState<string | null>(null);
+    const [selectedDefenderId, setSelectedDefenderId] = useState<string | null>(null);
     const battlefieldRef = useRef<HTMLDivElement>(null);
+    const storeZoneRef = useRef<HTMLDivElement>(null);
 
     // Game loop
     const requestRef = useRef<number | undefined>(undefined);
@@ -84,18 +90,21 @@ export const StormTheFort = () => {
         moveDefender(draggingId, xPct, yPct);
     }, [draggingId, moveDefender]);
 
-    const handlePointerUp = useCallback(() => {
+    const handlePointerUp = useCallback((e: React.PointerEvent) => {
+        if (draggingId && storeZoneRef.current) {
+            const rect = storeZoneRef.current.getBoundingClientRect();
+            if (e.clientX >= rect.left && e.clientX <= rect.right && e.clientY >= rect.top && e.clientY <= rect.bottom) {
+                 storeDefender(draggingId);
+            }
+        }
         setDraggingId(null);
-    }, []);
+    }, [draggingId, storeDefender]);
 
     // Ability tap handler (only when not dragging)
     const handleDefenderTap = useCallback((defId: string) => {
         if (draggingId) return;
-        const defender = defenders.find(d => d.id === defId);
-        if (defender?.abilityReady) {
-            activateAbility(defId);
-        }
-    }, [draggingId, defenders, activateAbility]);
+        setSelectedDefenderId(prev => (prev === defId ? null : defId));
+    }, [draggingId]);
 
     // Cost configuration
     const DEFENDER_COSTS: Record<DefenderType, number> = { cow: 5, swordsman: 15, shield: 25, archer: 20, medic: 20 };
@@ -274,6 +283,7 @@ export const StormTheFort = () => {
                         key={obs.id}
                         className={`storm-entity storm-obstacle storm-obs-${obs.type}`}
                         style={{ left: `${obs.x}%` }}
+                        onClick={() => storeObstacle(obs.id)}
                     >
                         {obs.type === 'barbed_wire' ? '〰️' : '🧱'}
                         <div className="storm-hp-bar"><div className="storm-hp-fill" style={{ width: `${(obs.hp / obs.maxHp) * 100}%` }} /></div>
@@ -309,6 +319,20 @@ export const StormTheFort = () => {
                                 {Math.ceil(def.abilityCooldownTimer / 1000)}s
                             </div>
                         )}
+                        {/* Selected Menu */}
+                        {selectedDefenderId === def.id && (
+                            <div className="storm-selected-menu">
+                                <button
+                                    onClick={(e) => { e.stopPropagation(); activateAbility(def.id); setSelectedDefenderId(null); }}
+                                    disabled={!def.abilityReady}
+                                >
+                                    Use Ability
+                                </button>
+                                <button onClick={(e) => { e.stopPropagation(); storeDefender(def.id); setSelectedDefenderId(null); }}>
+                                    Store
+                                </button>
+                            </div>
+                        )}
                     </div>
                     );
                 })}
@@ -317,7 +341,7 @@ export const StormTheFort = () => {
                 {enemies.map(en => (
                     <div
                         key={en.id}
-                        className={`storm-entity storm-enemy ${en.isElite ? 'elite' : ''}`}
+                        className={`storm-entity storm-enemy ${en.isElite ? 'elite' : ''} ${en.x >= 100 ? 'attacking-fort' : ''}`}
                         style={{ left: `${en.x}%`, top: `${en.y}%` }}
                     >
                         {getEnemyIcon(en.type)}
@@ -354,6 +378,14 @@ export const StormTheFort = () => {
                         +{popup.value}🐌
                     </div>
                 ))}
+
+                {/* Dropzone for Drag-to-Store */}
+                <div 
+                    ref={storeZoneRef} 
+                    className={`storm-dropzone-store ${draggingId ? 'visible' : ''}`}
+                >
+                    📥 Drop here to Store
+                </div>
 
                 {/* Overlays */}
                 {gameState === 'idle' && (
@@ -425,51 +457,34 @@ export const StormTheFort = () => {
                 <div className="storm-shop-content">
                     {activeTab === 'deploy' && (
                         <div className="storm-shop-grid">
-                            {/* Cow Defender — first one free! */}
-                            <button className="storm-buy-card" onClick={() => handleBuyDefender('cow')} disabled={hasBoughtFirstCow && shmeckles < DEFENDER_COSTS.cow}>
-                                <div className="icon">🐄</div>
-                                <div className="info">
-                                    <h4>Cow Defender</h4>
-                                    <span>Slow but loyal</span>
-                                </div>
-                                {!hasBoughtFirstCow ? (
-                                    <div className="free-tag">FREE</div>
-                                ) : (
-                                    <div className="cost">🐌 {DEFENDER_COSTS.cow}</div>
-                                )}
-                            </button>
-                            <button className="storm-buy-card" onClick={() => handleBuyDefender('swordsman')} disabled={shmeckles < DEFENDER_COSTS.swordsman}>
-                                <div className="icon">⚔️</div>
-                                <div className="info">
-                                    <h4>Swordsman</h4>
-                                    <span>Balanced melee</span>
-                                </div>
-                                <div className="cost">🐌 {DEFENDER_COSTS.swordsman}</div>
-                            </button>
-                            <button className="storm-buy-card" onClick={() => handleBuyDefender('shield')} disabled={shmeckles < DEFENDER_COSTS.shield}>
-                                <div className="icon">🛡️</div>
-                                <div className="info">
-                                    <h4>Shield</h4>
-                                    <span>High health</span>
-                                </div>
-                                <div className="cost">🐌 {DEFENDER_COSTS.shield}</div>
-                            </button>
-                            <button className="storm-buy-card" onClick={() => handleBuyDefender('archer')} disabled={shmeckles < DEFENDER_COSTS.archer}>
-                                <div className="icon">🏹</div>
-                                <div className="info">
-                                    <h4>Archer</h4>
-                                    <span>Long range</span>
-                                </div>
-                                <div className="cost">🐌 {DEFENDER_COSTS.archer}</div>
-                            </button>
-                            <button className="storm-buy-card" onClick={() => handleBuyDefender('medic')} disabled={shmeckles < DEFENDER_COSTS.medic}>
-                                <div className="icon">🩺</div>
-                                <div className="info">
-                                    <h4>Medic</h4>
-                                    <span>Heals allies</span>
-                                </div>
-                                <div className="cost">🐌 {DEFENDER_COSTS.medic}</div>
-                            </button>
+                            {(['cow', 'swordsman', 'shield', 'archer', 'medic'] as DefenderType[]).map(type => {
+                                const cost = DEFENDER_COSTS[type];
+                                const owned = defenderInventory[type] || 0;
+                                const isFreeFirstCow = type === 'cow' && !hasBoughtFirstCow;
+                                const canAfford = shmeckles >= cost || isFreeFirstCow || owned > 0;
+                                
+                                return (
+                                    <button 
+                                        key={type}
+                                        className="storm-buy-card" 
+                                        onClick={() => handleBuyDefender(type)} 
+                                        disabled={!canAfford}
+                                    >
+                                        <div className="icon">{getDefenderIcon(type)}</div>
+                                        <div className="info">
+                                            <h4>{type.charAt(0).toUpperCase() + type.slice(1)}</h4>
+                                            <span>{owned > 0 ? `Owned: ${owned}` : (isFreeFirstCow ? 'FREE' : `🐌 ${cost}`)}</span>
+                                        </div>
+                                        {owned > 0 ? (
+                                            <div className="cost owned">Place</div>
+                                        ) : isFreeFirstCow ? (
+                                            <div className="free-tag">FREE</div>
+                                        ) : (
+                                            <div className="cost">Buy</div>
+                                        )}
+                                    </button>
+                                );
+                            })}
 
                             {/* Formation buttons */}
                             <div className="storm-formation-btns">
@@ -485,22 +500,32 @@ export const StormTheFort = () => {
 
                     {activeTab === 'obstacles' && (
                         <div className="storm-shop-grid">
-                            <button className="storm-buy-card" onClick={() => handleBuyObstacle('barbed_wire')} disabled={shmeckles < 10}>
-                                <div className="icon">〰️</div>
-                                <div className="info">
-                                    <h4>Barbed Wire</h4>
-                                    <span>Slows & damages</span>
-                                </div>
-                                <div className="cost">🐌 10</div>
-                            </button>
-                            <button className="storm-buy-card" onClick={() => handleBuyObstacle('barricade')} disabled={shmeckles < 30}>
-                                <div className="icon">🧱</div>
-                                <div className="info">
-                                    <h4>Barricade</h4>
-                                    <span>Blocks enemies</span>
-                                </div>
-                                <div className="cost">🐌 30</div>
-                            </button>
+                            {(['barbed_wire', 'barricade'] as const).map(type => {
+                                const costs = { barbed_wire: 10, barricade: 30 };
+                                const cost = costs[type];
+                                const owned = obstacleInventory[type] || 0;
+                                const canAfford = shmeckles >= cost || owned > 0;
+
+                                return (
+                                    <button 
+                                        key={type}
+                                        className="storm-buy-card" 
+                                        onClick={() => handleBuyObstacle(type)} 
+                                        disabled={!canAfford}
+                                    >
+                                        <div className="icon">{type === 'barbed_wire' ? '〰️' : '🧱'}</div>
+                                        <div className="info">
+                                            <h4>{type === 'barbed_wire' ? 'Barbed Wire' : 'Barricade'}</h4>
+                                            <span>{owned > 0 ? `Owned: ${owned}` : `🐌 ${cost}`}</span>
+                                        </div>
+                                        {owned > 0 ? (
+                                            <div className="cost owned">Place</div>
+                                        ) : (
+                                            <div className="cost">Buy</div>
+                                        )}
+                                    </button>
+                                );
+                            })}
                         </div>
                     )}
 

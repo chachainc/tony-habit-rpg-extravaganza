@@ -87,37 +87,156 @@ const ENEMY_IMAGES: Record<string, string> = {
 };
 
 /**
- * Calculates a win probability percentage based on combatant stats.
- * Weighted primarily on ATK vs DEF and HP pools.
+ * Lightweight battle simulation to estimate win probability.
+ * Runs N fast in-memory fights using the same core mechanics as the real battle system.
+ * Accounts for: attack rolls, defense mitigation, enemy healing/drain, DOT, cooldowns.
+ * Does NOT mutate any Zustand state.
  */
-const calculateWinChance = (player: any, enemy: any): number => {
-    if (!player || !enemy) return 0;
+const SIM_COUNT = 150;
+const SIM_MAX_TURNS = 80; // Safety cap to avoid infinite loops with high-sustain enemies
 
-    // Estimate total damage cycles
-    const playerDmgPerTurn = Math.max(5, player.atk - (enemy.def * 0.5));
-    const enemyDmgPerTurn = Math.max(5, enemy.atk - (player.def * 0.5));
-
-    const turnsToKillEnemy = enemy.maxHp / playerDmgPerTurn;
-    const turnsToKillPlayer = player.maxHp / enemyDmgPerTurn;
-
-    // Win chance is inverse ratio of turns to kill
-    // If turnsToKillEnemy is smaller, player wins faster
-    let chance = (turnsToKillPlayer / (turnsToKillEnemy + turnsToKillPlayer)) * 100;
-
-    // Add speed weight
-    const spdDiff = player.spd - enemy.spd;
-    chance += spdDiff * 0.1;
-
-    // Add level/floor scaling offset to keep it within realistic bounds
-    return Math.min(99.9, Math.max(0.1, Math.round(chance)));
+type SimCombatant = {
+    hp: number;
+    maxHp: number;
+    atk: number;
+    def: number;
+    energy: number;
+    cooldowns: Record<string, number>;
+    dotTurns: number;
+    dotDamage: number;
 };
 
-const getWinChanceColor = (chance: number): string => {
-    if (chance < 30) return '#ef4444'; // Red
-    if (chance < 50) return '#f97316'; // Orange
-    if (chance < 70) return '#fbbf24'; // Yellow
+/** Apply mitigation formula matching useBattleStore.applyDamage */
+const simMitigate = (rawDmg: number, def: number): number => {
+    return Math.max(1, Math.round(rawDmg * (100 / (100 + def)) * (0.95 + Math.random() * 0.1)));
+};
+
+/** Run a single simulated battle. Returns true if player wins. */
+const runOneSim = (pIn: SimCombatant, eIn: SimCombatant, enemyDef: any): boolean => {
+    const p = { ...pIn, cooldowns: {}, dotTurns: 0, dotDamage: 0 };
+    const e = { ...eIn, cooldowns: {} as Record<string, number>, dotTurns: 0, dotDamage: 0 };
+
+    // Precompute the enemy's heal-on-attack abilities
+    const allAbilities: any[] = [
+        { id: 'basic_attack', damageMultiplier: 1.0, cooldown: 0, effects: undefined, energyCost: 0 },
+        ...(enemyDef.abilities || []),
+    ];
+
+    for (let turn = 0; turn < SIM_MAX_TURNS; turn++) {
+        // ── PLAYER TURN (light attack: random roll 1..ATK) ──
+        {
+            const atkRoll = Math.floor(Math.random() * Math.max(1, p.atk)) + 1;
+            const dmg = simMitigate(atkRoll, e.def);
+            e.hp -= dmg;
+            if (e.hp <= 0) return true;
+            // Player gains energy on attack
+            p.energy = Math.min(100, p.energy + 20);
+        }
+
+        // ── ENEMY TURN ──
+        {
+            // Tick down enemy cooldowns
+            for (const id in e.cooldowns) {
+                if (e.cooldowns[id] > 0) e.cooldowns[id]--;
+            }
+
+            // Choose ability: skill off-cooldown first, else basic
+            let chosen = allAbilities[0];
+            // Check ultimate
+            const ult = allAbilities.find((a: any) => a.type === 'ultimate' && e.energy >= (a.energyCost || 100));
+            if (ult) {
+                chosen = ult;
+                e.energy = 0;
+            } else {
+                const availSkill = allAbilities.find(
+                    (a: any) => a.type === 'skill' && (!e.cooldowns[a.id] || e.cooldowns[a.id] <= 0)
+                );
+                if (availSkill) chosen = availSkill;
+            }
+
+            // Apply cooldown
+            if (chosen.cooldown > 0) e.cooldowns[chosen.id] = chosen.cooldown;
+            // Gain energy
+            if (chosen.type !== 'ultimate') e.energy = Math.min(100, e.energy + 15);
+
+            // Compute damage
+            const rawDmg = e.atk * (chosen.damageMultiplier ?? 1.0);
+            const finalDmg = simMitigate(rawDmg, p.def);
+            p.hp -= finalDmg;
+
+            // Apply DOT to player
+            if (chosen.effects?.dot) {
+                p.dotTurns = chosen.effects.dot.turns;
+                p.dotDamage = chosen.effects.dot.damage;
+            }
+
+            // Enemy heals itself (heal is % of maxHp)
+            if (chosen.effects?.heal) {
+                const healAmt = Math.round(e.maxHp * chosen.effects.heal / 100);
+                e.hp = Math.min(e.maxHp, e.hp + healAmt);
+            }
+
+            if (p.hp <= 0) return false;
+        }
+
+        // ── DOT tick on player ──
+        if (p.dotTurns > 0) {
+            p.hp -= p.dotDamage;
+            p.dotTurns--;
+            if (p.hp <= 0) return false;
+        }
+    }
+    // If we hit the turn cap, treat as draw → loss (sustain enemy survived)
+    return false;
+};
+
+interface WinEstimate {
+    winRate: number;      // 0–100
+    label: string;        // 'Dangerous' | 'Unfavorable' | 'Close Fight' | 'Favored' | 'Very Favored'
+    sustainWarning: boolean;
+}
+
+const estimateWinChance = (player: any, enemy: any, enemyDef: any): WinEstimate => {
+    if (!player || !enemy || !enemyDef) return { winRate: 0, label: 'Dangerous', sustainWarning: false };
+
+    const pSim: SimCombatant = {
+        hp: player.maxHp, maxHp: player.maxHp,
+        atk: player.atk, def: player.def,
+        energy: 0, cooldowns: {}, dotTurns: 0, dotDamage: 0,
+    };
+    const eSim: SimCombatant = {
+        hp: enemy.maxHp, maxHp: enemy.maxHp,
+        atk: enemy.atk, def: enemy.def,
+        energy: 0, cooldowns: {}, dotTurns: 0, dotDamage: 0,
+    };
+
+    let wins = 0;
+    for (let i = 0; i < SIM_COUNT; i++) {
+        if (runOneSim(pSim, eSim, enemyDef)) wins++;
+    }
+
+    const winRate = Math.round((wins / SIM_COUNT) * 100);
+
+    let label: string;
+    if (winRate < 20) label = 'Dangerous';
+    else if (winRate < 40) label = 'Unfavorable';
+    else if (winRate < 60) label = 'Close Fight';
+    else if (winRate < 80) label = 'Favored';
+    else label = 'Very Favored';
+
+    // Detect sustain enemies (any ability with heal)
+    const sustainWarning = (enemyDef.abilities || []).some((a: any) => a.effects?.heal);
+
+    return { winRate, label, sustainWarning };
+};
+
+const getWinChanceColor = (winRate: number): string => {
+    if (winRate < 20) return '#ef4444'; // Red
+    if (winRate < 40) return '#f97316'; // Orange
+    if (winRate < 60) return '#fbbf24'; // Yellow
     return '#22c55e'; // Green
 };
+
 
 export const Arena = ({ onClose }: { onClose: () => void }) => {
     const navigate = useNavigate();
@@ -503,8 +622,8 @@ export const Arena = ({ onClose }: { onClose: () => void }) => {
     if (view === 'battle') {
         if (phase === 'prep' && enemy && player) {
             const enemyDef = ENEMY_DB[enemy.id];
-            const winChance = calculateWinChance(player, enemy);
-            const winColor = getWinChanceColor(winChance);
+            const estimate = estimateWinChance(player, enemy, enemyDef);
+            const winColor = getWinChanceColor(estimate.winRate);
             const { activePet: activePetId } = usePetStore.getState();
             const activePet = activePetId ? PET_DATABASE[activePetId] : null;
 
@@ -520,8 +639,13 @@ export const Arena = ({ onClose }: { onClose: () => void }) => {
                                 <h2>⚔️ BATTLE PREPARATION ⚔️</h2>
                                 <p>Equip your spells and prepare for combat.</p>
                                 <div className="win-chance-text" style={{ color: winColor }}>
-                                    WIN CHANCE: {winChance}%
+                                    {estimate.label.toUpperCase()} — ~{estimate.winRate}% WIN CHANCE
                                 </div>
+                                {estimate.sustainWarning && (
+                                    <div style={{ fontSize: '0.72rem', color: '#f59e0b', marginTop: '0.25rem', opacity: 0.85 }}>
+                                        ⚠️ Enemy has healing/sustain — longer fights are riskier.
+                                    </div>
+                                )}
                             </div>
 
                             <div className="prep-scrollable">

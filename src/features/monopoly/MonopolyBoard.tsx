@@ -7,6 +7,28 @@ import { useConquestStore } from '../../store/useConquestStore';
 import { useHeroImage } from '../../hooks/useHeroImage';
 import './MonopolyBoard.css';
 
+import petCowSpin from '../../assets/pets/pet_cow_spin.jpg';
+import petChickenSpin from '../../assets/pets/pet_chicken_spin.jpg';
+import petPigSpin from '../../assets/pets/pet_pig_spin.jpg';
+import petSheepSpin from '../../assets/pets/pet_sheep_spin.jpg';
+import petDogSpin from '../../assets/pets/pet_dog_spin.jpg';
+import petRabbitSpin from '../../assets/pets/pet_rabbit_spin.jpg';
+import petCatSpin from '../../assets/pets/pet_cat_spin.jpg';
+import petGooseSpin from '../../assets/pets/pet_goose_spin.jpg';
+import etherealCowImg from '../../assets/pets/ethereal_cow.png';
+
+const SPIN_IMAGES: Record<string, string> = {
+    'pet_cow': petCowSpin,
+    'pet_chicken': petChickenSpin,
+    'pet_pig': petPigSpin,
+    'pet_sheep': petSheepSpin,
+    'pet_dog': petDogSpin,
+    'pet_rabbit': petRabbitSpin,
+    'pet_cat': petCatSpin,
+    'pet_goose': petGooseSpin,
+    'ethereal_cow': etherealCowImg
+};
+
 // ── 24-space path on a 7×7 grid (perimeter, clockwise from top-left) ──
 // Top-left = GO (0,0). Path goes: top row L→R, right col T→B, bottom row R→L, left col B→T
 const PATH_LAYOUT = [
@@ -25,7 +47,7 @@ const PATH_LAYOUT = [
 const DICE_FACES = ['⚀', '⚁', '⚂', '⚃', '⚄', '⚅'];
 
 // Flow phases
-type Phase = 'idle' | 'dice-spin' | 'dice-reveal' | 'moving' | 'result' | 'go-result' | 'mystery-spin' | 'mystery-result' | 'hazard-result' | 'storm-skip';
+type Phase = 'idle' | 'dice-spin' | 'dice-reveal' | 'moving' | 'result' | 'go-result' | 'mystery-spin' | 'mystery-result' | 'hazard-result';
 
 // Build live odds rows from BOARD_ODDS
 const ODDS_ROWS = [
@@ -68,7 +90,6 @@ const BASE_REWARDS = [
     { icon: '🐌', label: 'Shmeckle tiles', note: '+1–5 Schmeckles' },
     { icon: '🎁', label: 'Mystery Crop tiles', note: 'Opens drop table above' },
     { icon: '🎫', label: 'Lost Ticket', note: '+1 Roll' },
-    { icon: '⛈️', label: 'Storm', note: 'Skip next turn' },
 ];
 
 export const MonopolyBoard = ({ onClose }: { onClose: () => void }) => {
@@ -76,7 +97,7 @@ export const MonopolyBoard = ({ onClose }: { onClose: () => void }) => {
         dailyTickets, currentPosition, rollDice, movePlayer,
         canRoll, rollMysteryBox, streakMultiplierActive,
         lapCount, boardRefreshPending, regenerateBoard, getGoReward,
-        ownedTiles, skipNextTurn, buyTile, upgradeTile,
+        ownedTiles, buyTile, upgradeTile,
         canBuyTile, canUpgradeTile, getBuyCost, getUpgradeCost, getTileMultiplier,
     } = useMonopolyStore();
     const { addGold, addShmeckles, addTickets, gold, shmeckles, spendGold, spendShmeckles } = useCurrencyStore();
@@ -136,16 +157,6 @@ export const MonopolyBoard = ({ onClose }: { onClose: () => void }) => {
     const handleRoll = () => {
         if (!canRoll() || phase !== 'idle' || rollingRef.current) return;
 
-        // Handle storm skip
-        if (skipNextTurn) {
-            setPhase('storm-skip');
-            useMonopolyStore.setState({ skipNextTurn: false });
-            setTimeout(() => {
-                setPhase('idle');
-            }, 2000);
-            return;
-        }
-
         rollingRef.current = true;
 
         setLandedSpace(null);
@@ -192,10 +203,6 @@ export const MonopolyBoard = ({ onClose }: { onClose: () => void }) => {
                         setGoRewardAmount(moveResult.goReward);
                         addGold(moveResult.goReward, { exact: true });
                         setPhase('go-result');
-                        rollingRef.current = false;
-                    } else if (moveResult.hazardResult) {
-                        // Hazard tile (storm only — no currency loss)
-                        setPhase('hazard-result');
                         rollingRef.current = false;
                     } else {
                         // Normal tile landing
@@ -394,17 +401,15 @@ export const MonopolyBoard = ({ onClose }: { onClose: () => void }) => {
                             if (!layout) return null;
                             const isCurrentSpace = index === playerPosition;
                             const isGoTile = space.type === 'go';
-                            const isHazard = space.type === 'storm';
                             const ownerInfo = getOwnershipInfo(index);
                             const emptyIcon = space.type === 'empty' ? terrainIcons[index % terrainIcons.length] : space.icon;
 
                             const ownerClass = ownerInfo ? `owned-${ownerInfo.level}` : '';
-                            const hazardClass = isHazard ? 'hazard' : '';
 
                             return (
                                 <motion.div
                                     key={space.id}
-                                    className={`path-tile ${space.type} ${isCurrentSpace ? 'current' : ''} ${isGoTile ? 'go-tile' : ''} ${ownerClass} ${hazardClass}`}
+                                    className={`path-tile ${space.type} ${isCurrentSpace ? 'current' : ''} ${isGoTile ? 'go-tile' : ''} ${ownerClass}`}
                                     style={{ gridRow: layout.row + 1, gridColumn: layout.col + 1 }}
                                     animate={isCurrentSpace ? { scale: [1, 1.05, 1] } : {}}
                                     transition={{ repeat: Infinity, duration: 2 }}
@@ -490,23 +495,7 @@ export const MonopolyBoard = ({ onClose }: { onClose: () => void }) => {
                         )}
                     </AnimatePresence>
 
-                    {/* Storm skip overlay */}
-                    <AnimatePresence>
-                        {phase === 'storm-skip' && (
-                            <motion.div
-                                className="dice-center-overlay"
-                                initial={{ opacity: 0 }}
-                                animate={{ opacity: 1 }}
-                                exit={{ opacity: 0 }}
-                            >
-                                <div className="storm-skip-banner">
-                                    <span className="storm-skip-icon">⛈️</span>
-                                    <h3>Storm! Turn Skipped</h3>
-                                    <p>The storm passes... you can roll next turn.</p>
-                                </div>
-                            </motion.div>
-                        )}
-                    </AnimatePresence>
+
                 </div>
 
                 {/* Controls row */}
@@ -522,10 +511,7 @@ export const MonopolyBoard = ({ onClose }: { onClose: () => void }) => {
                         </motion.button>
                     )}
 
-                    {/* Skip turn indicator */}
-                    {phase === 'idle' && skipNextTurn && (
-                        <div className="storm-pending-pill">⛈️ Storm — next roll is skipped</div>
-                    )}
+                    {/* No more storm pill — storm tiles removed */}
 
                     {/* Auto Roll toggle */}
                     {canRoll() && (
@@ -554,7 +540,7 @@ export const MonopolyBoard = ({ onClose }: { onClose: () => void }) => {
                         </motion.button>
                     )}
 
-                    {phase === 'idle' && !canRoll() && !skipNextTurn && (
+                    {phase === 'idle' && !canRoll() && (
                         <div className="no-tickets">
                             <p>No rolls remaining!</p>
                             <p className="comeback">Earn more tickets by completing training sessions</p>
@@ -591,6 +577,34 @@ export const MonopolyBoard = ({ onClose }: { onClose: () => void }) => {
                                     <span className="odds-items">{row.items}</span>
                                 </div>
                             ))}
+
+                            {/* Overall pet odds callout */}
+                            {(() => {
+                                const board = getBoard();
+                                const mysteryCropCount = board.filter(t => t.type === 'mystery').length;
+                                const totalTiles = board.length;
+                                // Combined pet odds = P(land on mystery) × P(pet drop | mystery)
+                                // Pet drops: rare (1%) + epic pets (0.5% × 2 of 4 options = 0.25%) + ultra_rare (0.001%)
+                                const petOddsOnMystery = BOARD_ODDS.rare + (BOARD_ODDS.epic * 0.5) + BOARD_ODDS.ultra_rare;
+                                const overallPetOdds = (mysteryCropCount / totalTiles) * petOddsOnMystery * 100;
+                                return (
+                                    <div className="odds-pet-callout">
+                                        <div className="odds-pet-line">
+                                            <span>🐾 Pet chance on Mystery Crop tile:</span>
+                                            <span style={{ color: '#c084fc', fontWeight: 700 }}>{(petOddsOnMystery * 100).toFixed(2)}%</span>
+                                        </div>
+                                        <div className="odds-pet-line">
+                                            <span>🍀 Overall pet chance per roll:</span>
+                                            <span style={{ color: '#60a5fa', fontWeight: 700 }}>{overallPetOdds.toFixed(3)}%</span>
+                                        </div>
+                                        <div className="odds-pet-note">
+                                            Pets only drop from Mystery Crop tiles ({mysteryCropCount}/{totalTiles} tiles).
+                                            Overall odds = landing chance × drop rate.
+                                        </div>
+                                    </div>
+                                );
+                            })()}
+
                             <div className="odds-divider" />
                             <div className="odds-section-title">🗺️ Board Tile Rewards</div>
                             {BASE_REWARDS.map(r => (
@@ -659,52 +673,6 @@ export const MonopolyBoard = ({ onClose }: { onClose: () => void }) => {
                     )}
                 </AnimatePresence>
 
-                {/* ── Hazard Result Modal ── */}
-                <AnimatePresence>
-                    {phase === 'hazard-result' && moveResultData?.hazardResult && (
-                        <div className="board-reward-overlay">
-                            <motion.div
-                                className="reward-card-premium hazard-reward-card"
-                                initial={{ scale: 0, opacity: 0 }}
-                                animate={{ scale: 1, opacity: 1 }}
-                                exit={{ scale: 0, opacity: 0 }}
-                            >
-                                <div className="hazard-header">
-                                    <motion.div
-                                        className="hazard-icon"
-                                        animate={{ scale: [1, 1.2, 1], rotate: [0, -5, 5, 0] }}
-                                        transition={{ repeat: Infinity, duration: 1.5 }}
-                                    >
-                                        {landedSpace?.icon}
-                                    </motion.div>
-                                    <h2 style={{ color: '#ef4444' }}>{landedSpace?.name}!</h2>
-                                </div>
-                                <div className="reward-card-body">
-                                    <p className="hazard-message">{moveResultData.hazardResult.message}</p>
-                                    {moveResultData.rentCollected > 0 && (
-                                        <div className="reward-line gold" style={{ color: '#a3e635' }}>
-                                            <span>🏡 Rent Collected</span>
-                                            <span className="reward-val">+{moveResultData.rentCollected}</span>
-                                        </div>
-                                    )}
-                                </div>
-                                <div className="reward-action-row">
-                                    {canRoll() && !autoRollActive && (
-                                        <button className="roll-again-btn" onClick={handleRollAgain}>
-                                            <RefreshCw size={16} /> Roll Again
-                                        </button>
-                                    )}
-                                    {autoRollActive && (
-                                        <div className="rolling-status-pill">⚡ Auto Rolling...</div>
-                                    )}
-                                    <button className="luck-continue-btn" onClick={handleCloseResult}>
-                                        {canRoll() ? 'Continue' : 'Done'}
-                                    </button>
-                                </div>
-                            </motion.div>
-                        </div>
-                    )}
-                </AnimatePresence>
 
                 {/* ── Mystery Result Modal ── */}
                 <AnimatePresence>
@@ -740,7 +708,33 @@ export const MonopolyBoard = ({ onClose }: { onClose: () => void }) => {
                                     </div>
                                     {(mysteryEvent.reward.petId || mysteryEvent.reward.cosmeticId || mysteryEvent.reward.titleId) && (
                                         <div className="pet-unlock">
-                                            <div className="pet-preview">{mysteryEvent.isDuplicate ? '🪙' : '🆕'}</div>
+                                            {mysteryEvent.reward.petId && SPIN_IMAGES[mysteryEvent.reward.petId] ? (
+                                                <div style={{ textAlign: 'center', marginTop: '1rem' }}>
+                                                    <motion.img 
+                                                        src={SPIN_IMAGES[mysteryEvent.reward.petId]} 
+                                                        alt="Pet Reward"
+                                                        initial={{ scale: 0.5, opacity: 0 }}
+                                                        animate={{ scale: 1, opacity: 1 }}
+                                                        transition={{ type: "spring", stiffness: 200, damping: 15 }}
+                                                        style={{ 
+                                                            width: '120px', 
+                                                            height: '120px', 
+                                                            objectFit: 'cover', 
+                                                            borderRadius: '16px', 
+                                                            border: '3px solid #fef08a',
+                                                            boxShadow: '0 10px 25px rgba(0,0,0,0.5)',
+                                                            margin: '0 auto'
+                                                        }} 
+                                                    />
+                                                    {mysteryEvent.isDuplicate && (
+                                                        <div style={{ marginTop: '0.5rem', fontSize: '0.8rem', color: '#fcd34d' }}>
+                                                            Duplicate Tracked
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            ) : (
+                                                <div className="pet-preview">{mysteryEvent.isDuplicate ? '🪙' : '🆕'}</div>
+                                            )}
                                         </div>
                                     )}
                                 </div>

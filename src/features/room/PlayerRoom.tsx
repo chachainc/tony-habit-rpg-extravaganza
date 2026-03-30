@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, BedDouble, BookOpen, Shirt, Scale, Dumbbell, Pencil, Check, DollarSign, Menu } from 'lucide-react';
+import { X, Pencil, Check, ArrowLeft, Dumbbell, Scale } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useRoomStore } from '../../store/useRoomStore';
 import { usePetStore } from '../../store/usePetStore';
@@ -312,7 +312,7 @@ const DECO_ITEMS: DecoItem[] = [
 const ZONES = {
     bedroom: {
         x: 2, y: 2, w: 7, h: 5,
-        panel: 'sleep' as ActivePanel,
+        panel: null as ActivePanel,
         label: 'Bedroom',
         sublabel: 'Sleep Log',
         theme: 'zone-bedroom',
@@ -330,7 +330,7 @@ const ZONES = {
     },
     library: {
         x: 2, y: 9, w: 8, h: 5,
-        panel: 'bookshelf' as ActivePanel,
+        panel: null as ActivePanel,
         label: 'Library',
         sublabel: 'Book Collection',
         theme: 'zone-library',
@@ -356,7 +356,7 @@ const ZONES = {
     },
     wardrobe: {
         x: 22, y: 2, w: 7, h: 6,
-        panel: 'wardrobe' as ActivePanel,
+        panel: null as ActivePanel,
         label: 'Wardrobe',
         sublabel: 'Titles, Auras, Pets',
         theme: 'zone-wardrobe',
@@ -380,7 +380,7 @@ const ZONES = {
     },
     trophy: {
         x: 22, y: 10, w: 7, h: 5,
-        panel: 'trophies' as ActivePanel,
+        panel: null as ActivePanel,
         label: 'Trophy Hall',
         sublabel: 'Display Case',
         theme: 'zone-trophy',
@@ -406,7 +406,7 @@ const ZONES = {
     },
     body: {
         x: 2, y: 22, w: 6, h: 5,
-        panel: 'body' as ActivePanel,
+        panel: null as ActivePanel,
         label: 'Body Station',
         sublabel: 'Weight & Fitness',
         theme: 'zone-body',
@@ -554,7 +554,7 @@ const PATHS = [
     { x: 14, y: 28, w: 4, h: 2 },  // to study door
 ];
 
-export const PlayerRoom = ({ onClose }: { onClose: () => void }) => {
+export const PlayerRoom = ({ onClose: _onClose }: { onClose: () => void }) => {
     const {
         playerPosition, setPlayerPosition,
         placedRoomFurniture, placeRoomFurniture,
@@ -572,7 +572,6 @@ export const PlayerRoom = ({ onClose }: { onClose: () => void }) => {
     const keysPressed = useRef<Set<string>>(new Set());
     const [editMode, setEditMode] = useState(false);
     const [placingFurnitureId, setPlacingFurnitureId] = useState<string | null>(null);
-    const [showQuickMenu, setShowQuickMenu] = useState(false);
     const [showRoomFab, setShowRoomFab] = useState(false);
     const viewportRef = useRef<HTMLDivElement>(null);
     const containerRef = useRef<HTMLDivElement>(null);
@@ -627,7 +626,6 @@ export const PlayerRoom = ({ onClose }: { onClose: () => void }) => {
             }
             if (key === 'escape') {
                 setActivePanel(null);
-                setShowQuickMenu(false);
             }
             if (key === 'e') {
                 handleInteract();
@@ -835,11 +833,8 @@ export const PlayerRoom = ({ onClose }: { onClose: () => void }) => {
                 <div className="walkable-room">
                     {/* ── Top Action Bar ── */}
                     <div className="room-top-bar">
-                        <button className="room-exit-btn" onClick={onClose}>
-                            <X size={20} /> Exit
-                        </button>
-                        <button className="room-exit-btn" onClick={() => navigate('/budget')}>
-                            <DollarSign size={20} /> Budget
+                        <button className="room-exit-btn" onClick={() => navigate('/room')} style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+                            <ArrowLeft size={18} /> Room Menu
                         </button>
 
                         {bonusSummary.length > 0 && !editMode && (
@@ -880,7 +875,6 @@ export const PlayerRoom = ({ onClose }: { onClose: () => void }) => {
                                     { label: '🌱 Garden', panel: 'garden' as ActivePanel },
                                     { label: '⚒️ Workshop', panel: 'workshop' as ActivePanel },
                                     { label: '🛢 Cellar', panel: 'cellar' as ActivePanel },
-                                    { label: '🐾 Pet', panel: 'pet' as ActivePanel },
                                 ] as const).map(({ label, panel }) => (
                                     <button
                                         key={panel}
@@ -1037,6 +1031,57 @@ export const PlayerRoom = ({ onClose }: { onClose: () => void }) => {
                                 </span>
                             ))}
 
+                            {/* ═══ INTERACTIVE FURNITURE ═══ */}
+                            {([
+                                { emoji: '🛏️', label: 'Bed', x: 3, y: 3, action: () => setActivePanel('sleep') },
+                                { emoji: '👗', label: 'Closet', x: 24, y: 3, action: () => setActivePanel('wardrobe') },
+                                { emoji: '📚', label: 'Library', x: 3, y: 10, action: () => setActivePanel('bookshelf') },
+                                { emoji: '🏆', label: 'Trophies', x: 24, y: 11, action: () => setActivePanel('trophies') },
+                                { emoji: '🏋️', label: 'Gym', x: 4, y: 23, action: () => navigate('/gym') },
+                            ] as const).map((item) => (
+                                <motion.div
+                                    key={item.label}
+                                    className="room-furniture-item"
+                                    onClick={(e) => { e.stopPropagation(); item.action(); }}
+                                    whileTap={{ scale: 0.9 }}
+                                    whileHover={{ scale: 1.1 }}
+                                    style={{
+                                        position: 'absolute',
+                                        left: item.x * TILE,
+                                        top: item.y * TILE,
+                                        width: TILE * 1.5,
+                                        height: TILE * 1.5,
+                                        display: 'flex',
+                                        flexDirection: 'column',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        cursor: 'pointer',
+                                        zIndex: 15,
+                                        borderRadius: '12px',
+                                        background: 'radial-gradient(circle, rgba(251,191,36,0.15) 0%, transparent 70%)',
+                                        transition: 'background 0.2s',
+                                    }}
+                                >
+                                    <motion.span
+                                        animate={{ y: [0, -2, 0] }}
+                                        transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
+                                        style={{ fontSize: '2rem', filter: 'drop-shadow(0 2px 6px rgba(0,0,0,0.5))' }}
+                                    >
+                                        {item.emoji}
+                                    </motion.span>
+                                    <span style={{
+                                        fontSize: '0.55rem',
+                                        color: '#fbbf24',
+                                        fontWeight: 700,
+                                        textShadow: '0 1px 4px rgba(0,0,0,0.8)',
+                                        marginTop: '2px',
+                                        letterSpacing: '0.03em',
+                                    }}>
+                                        {item.label}
+                                    </span>
+                                </motion.div>
+                            ))}
+
                             {/* ═══ PLACED FURNITURE ═══ */}
                             {placedRoomFurniture.map((placed) => {
                                 const interaction = FURNITURE_INTERACTIONS[placed.furnitureId] ?? null;
@@ -1134,94 +1179,11 @@ export const PlayerRoom = ({ onClose }: { onClose: () => void }) => {
                         )}
                     </AnimatePresence>
 
-                    {/* ── Mobile Quick Menu FAB ── */}
-                    <button
-                        className="quick-menu-fab"
-                        onClick={() => setShowQuickMenu(v => !v)}
-                        aria-label="Quick Menu"
-                    >
-                        <Menu size={24} />
-                    </button>
+
                 </div>
             </SceneShell>
 
-            {/* ═══ QUICK MENU SHEET ═══ */}
-            <AnimatePresence>
-                {showQuickMenu && (
-                    <motion.div
-                        className="quick-menu-overlay"
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        exit={{ opacity: 0 }}
-                        onClick={() => setShowQuickMenu(false)}
-                    >
-                        <motion.div
-                            className="quick-menu-sheet"
-                            initial={{ y: '100%' }}
-                            animate={{ y: 0 }}
-                            exit={{ y: '100%' }}
-                            transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-                            onClick={(e) => e.stopPropagation()}
-                        >
-                            <div className="quick-menu-handle" />
-                            <div className="quick-menu-grid">
-                                <button className="room-feature-btn room-feature-btn--wardrobe" onClick={() => { setShowQuickMenu(false); setActivePanel('wardrobe'); }}>
-                                    <Shirt size={24} />
-                                    <span>Closet</span>
-                                    <small>Titles, Auras, Pets</small>
-                                </button>
-                                <button className="room-feature-btn room-feature-btn--sleep" onClick={() => { setShowQuickMenu(false); setActivePanel('sleep'); }}>
-                                    <BedDouble size={24} />
-                                    <span>Bed</span>
-                                    <small>Sleep Log</small>
-                                </button>
-                                <button className="room-feature-btn room-feature-btn--bookshelf" onClick={() => { setShowQuickMenu(false); setActivePanel('bookshelf'); }}>
-                                    <BookOpen size={24} />
-                                    <span>Library</span>
-                                    <small>Books</small>
-                                </button>
-                                <button className="room-feature-btn room-feature-btn--body" onClick={() => { setShowQuickMenu(false); setActivePanel('body'); }}>
-                                    <Scale size={24} />
-                                    <span>Body</span>
-                                    <small>Weight & Fitness</small>
-                                </button>
-                                <button className="room-feature-btn room-feature-btn--gym" onClick={() => { setShowQuickMenu(false); navigate('/gym'); }}>
-                                    <Dumbbell size={24} />
-                                    <span>Gym</span>
-                                    <small>Tracker</small>
-                                </button>
-                                <button className="room-feature-btn room-feature-btn--budget" onClick={() => { setShowQuickMenu(false); navigate('/budget'); }}>
-                                    <DollarSign size={24} />
-                                    <span>Budget</span>
-                                    <small>Finances</small>
-                                </button>
-                                <button className="room-feature-btn room-feature-btn--pet" onClick={() => { setShowQuickMenu(false); setActivePanel('pet'); }}>
-                                    <span style={{ fontSize: '1.5rem' }}>{petSprite || '🐾'}</span>
-                                    <span>Pet</span>
-                                    <small>Feed & Play</small>
-                                </button>
-                                <button className="room-feature-btn room-feature-btn--wardrobe" onClick={() => { setShowQuickMenu(false); setActivePanel('loadout'); }}>
-                                    <span style={{ fontSize: '1.5rem' }}>⚔️</span>
-                                    <span>Loadout</span>
-                                    <small>Equipment</small>
-                                </button>
-                                <button
-                                    className="room-feature-btn"
-                                    style={{ borderColor: 'rgba(251,191,36,0.3)' }}
-                                    onClick={() => { setShowQuickMenu(false); setActivePanel('trophies'); }}
-                                >
-                                    <span style={{ fontSize: '1.5rem' }}>🏆</span>
-                                    <span>Trophies</span>
-                                    <small>Display</small>
-                                </button>
 
-
-
-                            </div>
-                        </motion.div>
-                    </motion.div>
-                )}
-            </AnimatePresence>
 
             {/* ═══ PANEL MODALS ═══ */}
             <AnimatePresence>

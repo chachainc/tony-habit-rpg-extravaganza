@@ -607,9 +607,7 @@ export const useBattleStore = create<BattleState>()((set, get) => ({
             dots: tickedDots,
             isDefending: false, // Reset defense at start of turn
             mana: Math.min(current.maxMana, current.mana + current.manaRegen), // Mana regen
-            hp: current.isPlayer
-                ? Math.max(0, current.hp - dotDamage)
-                : current.hp,
+            hp: Math.max(0, current.hp - dotDamage),
         };
 
         // Get next in turn order
@@ -623,10 +621,34 @@ export const useBattleStore = create<BattleState>()((set, get) => ({
         let newLog = [...get().combatLog];
         if (dotDamage > 0) {
             newLog.push({
-                message: `${current.name} takes ${dotDamage} DOT damage!`,
+                message: `${current.name} takes ${dotDamage} poison damage!`,
                 type: 'damage',
                 value: dotDamage,
             });
+            // If enemy died from DOT
+            if (updatedCurrent.hp <= 0 && !current.isPlayer) {
+                set({
+                    player,
+                    enemy: { ...updatedCurrent, hp: 0 } as Combatant,
+                    phase: 'victory',
+                    combatLog: [
+                        ...newLog,
+                        { message: `🏆 Victory! ${current.name} defeated by poison!`, type: 'victory' },
+                    ],
+                });
+                return;
+            } else if (updatedCurrent.hp <= 0 && current.isPlayer) {
+                set({
+                    player: { ...updatedCurrent, hp: 0 } as Combatant,
+                    enemy,
+                    phase: 'defeat',
+                    combatLog: [
+                        ...newLog,
+                        { message: `💀 Defeated... But you can try again!`, type: 'defeat' },
+                    ],
+                });
+                return;
+            }
         }
 
         // Check Golden Slime escape (at the end of player's turn)
@@ -733,7 +755,7 @@ export const useBattleStore = create<BattleState>()((set, get) => ({
         // Get player skill levels for scaling
         const gameState = useGameStore.getState();
         const scalingLevel = ability.scalingStat
-            ? (gameState.skills[ability.scalingStat]?.level || 1)
+            ? (gameState.skills[ability.scalingStat as keyof typeof gameState.skills]?.level || 1)
             : 1;
 
         switch (ability.type) {
@@ -1106,15 +1128,30 @@ export const useBattleStore = create<BattleState>()((set, get) => ({
                 const rawDmg = Math.round(spell.baseDamage * (1 + intLevel * 0.03) * get().playerDamageModifier);
                 const finalDmg = Math.max(1, rawDmg);
                 updatedEnemy.hp = Math.max(0, updatedEnemy.hp - finalDmg);
+
+                const logs: CombatLog[] = [];
+                logs.push({
+                    message: `${updatedEnemy.name} takes ${finalDmg} spell damage!`,
+                    type: 'damage',
+                    value: finalDmg,
+                });
+
+                if (spell.effect.dot) {
+                    updatedEnemy.dots.push({
+                        damage: spell.effect.dot.damage,
+                        turnsLeft: spell.effect.dot.turns,
+                    });
+                    logs.push({
+                        message: `${updatedEnemy.name} is poisoned for ${spell.effect.dot.turns} turns!`,
+                        type: 'debuff',
+                    });
+                }
+
                 set({
                     enemy: updatedEnemy,
                     player: updatedPlayer,
                     lastDamage: { target: updatedEnemy.id, amount: finalDmg, isCrit: false, elementBonus: 1 },
-                    combatLog: [...get().combatLog, {
-                        message: `${updatedEnemy.name} takes ${finalDmg} spell damage!`,
-                        type: 'damage',
-                        value: finalDmg,
-                    }],
+                    combatLog: [...get().combatLog, ...logs],
                 });
             } else {
                 const tempAbility: Ability = {

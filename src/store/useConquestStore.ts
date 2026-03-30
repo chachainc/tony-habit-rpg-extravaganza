@@ -78,6 +78,7 @@ export interface ConquestState {
     runBuffs: RunBuff[];
     runComplete: 'none' | 'victory' | 'defeat';
     lastRunDate: string | null;
+    currentRunStartDate: string | null;
 
     // NEW — run resources
     balloons: number;
@@ -313,6 +314,7 @@ export const useConquestStore = create<ConquestState>()(
             runBuffs: [],
             runComplete: 'none',
             lastRunDate: null,
+            currentRunStartDate: null,
 
             // NEW — run resources
             balloons: 0,
@@ -359,12 +361,12 @@ export const useConquestStore = create<ConquestState>()(
                 const state = get();
                 const todayISO = new Date().toISOString().split('T')[0];
 
-                // ── Daily reset: if the last run was on a prior day, force a fresh run ──
-                const isStaleRun = state.currentNodeId && state.lastRunDate && state.lastRunDate !== todayISO;
-                const isCompletedRun = state.runComplete === 'victory' || state.runComplete === 'defeat';
+                // ── Daily reset: if the run started on a prior day, force a fresh run ──
+                const hasActiveRun = state.currentNodeId !== null;
+                const isStaleRun = state.currentRunStartDate !== todayISO;
 
-                if (isStaleRun || (state.currentNodeId && isCompletedRun && state.lastRunDate !== todayISO)) {
-                    // Clear yesterday's run and start fresh
+                if (hasActiveRun && isStaleRun) {
+                    // Clear old run and start fresh
                     get().startRun();
                     return;
                 }
@@ -500,6 +502,7 @@ export const useConquestStore = create<ConquestState>()(
                         ? [{ id: 'meta_atk', type: 'strength' as const, label: `Meta ATK: +${state.metaUpgrades.startingAtkBonus * 5}%`, amount: state.metaUpgrades.startingAtkBonus * 5 }]
                         : [],
                     runComplete: 'none',
+                    currentRunStartDate: todayISO,
                     currentNodeId: 'start',
                     completedNodes: ['start'],
                     activeDiceRoll: null,

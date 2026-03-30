@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { PERSIST_REGISTRY } from '../data/persistRegistry';
 import { useBoardCollectionStore } from './useBoardCollectionStore';
+import { usePetStore } from './usePetStore';
 
 // ── Tile Types ─────────────────────────────────────────────────
 export type BoardSpaceType =
@@ -10,8 +11,7 @@ export type BoardSpaceType =
     | 'shmeckles'
     | 'mystery'
     | 'ticket'
-    | 'empty'
-    | 'storm';
+    | 'empty';
 
 export type BoardRarity = 'common' | 'uncommon' | 'rare' | 'epic' | 'ultra_rare';
 
@@ -73,16 +73,6 @@ export interface MysteryRollResult {
     isDuplicate?: boolean;
 }
 
-// ── Hazard helpers ─────────────────────────────────────────────
-export type HazardType = 'storm';
-
-const HAZARD_CONFIGS: Record<HazardType, { name: string; icon: string }> = {
-    storm: { name: 'Storm',         icon: '⛈️' },
-};
-
-const pickRandomHazard = (): HazardType => {
-    return 'storm';
-};
 
 // ── Board Generation (24 spaces perimeter board) ───────────────
 const TOTAL_SPACES = 24;
@@ -152,18 +142,7 @@ const createBoard = (): BoardSpace[] => {
             };
         }
 
-        // Hazard Tiles (2 tiles — random hazard type each board gen)
-        if (i === 6 || i === 18) {
-            const hazard = pickRandomHazard();
-            const cfg = HAZARD_CONFIGS[hazard];
-            space = {
-                id: i,
-                type: hazard,
-                name: cfg.name,
-                icon: cfg.icon,
-                baseReward: {},
-            };
-        }
+        // Positions 6 and 18: remain as grass (empty) — no hazard tiles
 
         board.push(space);
     }
@@ -195,11 +174,6 @@ export interface MoveResult {
     passedGo: boolean;
     goReward: number; // gold awarded for passing GO (0 if didn't pass)
     rentCollected: number; // gold collected from owned tiles passed over
-    hazardResult?: {
-        type: HazardType;
-        penalty: number; // gold/shmeckles lost
-        message: string;
-    };
 }
 
 // ── Store ──────────────────────────────────────────────────────
@@ -216,7 +190,6 @@ interface MonopolyState {
 
     // Property Ownership
     ownedTiles: Record<number, OwnedTile>;
-    skipNextTurn: boolean;
 
     // Actions
     rollDice: () => number;
@@ -252,7 +225,6 @@ export const useMonopolyStore = create<MonopolyState>()(
             lapCount: 0,
             boardRefreshPending: false,
             ownedTiles: {},
-            skipNextTurn: false,
 
             canRoll: () => {
                 const state = get();
@@ -262,20 +234,11 @@ export const useMonopolyStore = create<MonopolyState>()(
                     get().resetDailyTickets();
                 }
 
-                if (state.skipNextTurn) return false;
-
                 return state.dailyTickets > 0;
             },
 
             rollDice: () => {
                 const state = get();
-
-                // If skip turn is active, consume it and return 0
-                if (state.skipNextTurn) {
-                    set({ skipNextTurn: false });
-                    return 0;
-                }
-
                 if (!state.canRoll()) return 0;
 
                 const roll = Math.floor(Math.random() * 6) + 1;
@@ -331,23 +294,11 @@ export const useMonopolyStore = create<MonopolyState>()(
 
                 const landedSpace = currentBoard[newPosition];
 
-                // Handle hazard tiles (storm only — no currency loss)
-                let hazardResult: MoveResult['hazardResult'];
-                if (landedSpace.type === 'storm') {
-                    hazardResult = {
-                        type: 'storm',
-                        penalty: 0,
-                        message: 'A storm brews! You must skip your next turn.',
-                    };
-                    set({ skipNextTurn: true });
-                }
-
                 return {
                     landedSpace,
                     passedGo: false,
                     goReward: 0,
                     rentCollected,
-                    hazardResult,
                 };
             },
 
@@ -367,7 +318,6 @@ export const useMonopolyStore = create<MonopolyState>()(
                     totalRollsToday: 0,
                     lapCount: 0,
                     boardRefreshPending: false,
-                    skipNextTurn: false,
                 });
             },
 
@@ -401,7 +351,7 @@ export const useMonopolyStore = create<MonopolyState>()(
                 const state = get();
                 if (state.ownedTiles[tileId]) return false;
                 const tile = currentBoard[tileId];
-                if (!tile || tile.type === 'go' || tile.type === 'storm') return false;
+                if (!tile || tile.type === 'go') return false;
                 return true;
             },
 
@@ -489,21 +439,20 @@ export const useMonopolyStore = create<MonopolyState>()(
                     }
                 }
                 else if (rarity === 'rare') {
-                    const rareItems = ['cow', 'sheep', 'pig', 'chicken'];
+                    // Common pet tier
+                    const rareItems = ['pet_cow', 'pet_chicken', 'pet_pig', 'pet_sheep'];
                     const drop = rareItems[Math.floor(Math.random() * rareItems.length)];
-                    result.reward.petId = `board_farm_${drop}`;
-                    result.message = `Found a stray ${drop}!`;
+                    result.reward.petId = drop;
                     
-                    if (boardCol.ownedPets.includes(result.reward.petId)) {
-                        result.isDuplicate = true;
-                        result.reward.gold = 15; // duplicate compensation
-                        result.message = `You already own the ${drop}. Converted to 15 Gold.`;
-                    } else {
-                        boardCol.unlockPet(result.reward.petId);
-                    }
+                    const displayName = drop.replace('pet_', '').charAt(0).toUpperCase() + drop.replace('pet_', '').slice(1);
+                    
+                    result.message = `Found a stray ${displayName}!`;
+                    usePetStore.getState().addPet(drop);
+                    result.isDuplicate = (usePetStore.getState().petQuantities[drop] || 0) > 1;
                 }
                 else if (rarity === 'epic') {
-                    const epicItems = ['goat', 'duck', 'straw_hat', 'farmer_title'];
+                    // Uncommon / Rare pet tier
+                    const epicItems = ['pet_dog', 'pet_rabbit', 'pet_cat', 'pet_goose', 'straw_hat', 'farmer_title'];
                     const drop = epicItems[Math.floor(Math.random() * epicItems.length)];
 
                     if (drop === 'straw_hat') {
@@ -525,27 +474,19 @@ export const useMonopolyStore = create<MonopolyState>()(
                             boardCol.unlockTitle(result.reward.titleId);
                         }
                     } else {
-                        result.reward.petId = `board_farm_${drop}`;
-                        result.message = `Found a rare ${drop}!`;
-                        if (boardCol.ownedPets.includes(result.reward.petId)) {
-                            result.isDuplicate = true;
-                            result.reward.gold = 20;
-                        } else {
-                            boardCol.unlockPet(result.reward.petId);
-                        }
+                        result.reward.petId = drop;
+                        const displayName = drop.replace('pet_', '').charAt(0).toUpperCase() + drop.replace('pet_', '').slice(1);
+                        result.message = `Found a rare ${displayName}!`;
+                        usePetStore.getState().addPet(drop);
+                        result.isDuplicate = (usePetStore.getState().petQuantities[drop] || 0) > 1;
                     }
                 }
                 else if (rarity === 'ultra_rare') {
                     // Always Ethereal Cow — 1 in 100,000
-                    result.reward.petId = 'board_farm_ethereal_cow';
+                    result.reward.petId = 'ethereal_cow';
                     result.message = `🌌✨ UNIVERSE LUCK! Unlocked the ETHEREAL COW! (1 in 100,000)`;
-                    if (boardCol.ownedPets.includes(result.reward.petId)) {
-                        result.isDuplicate = true;
-                        result.reward.gold = 100;
-                        result.message = `You already own the Ethereal Cow... +100 Gold (consolation).`;
-                    } else {
-                        boardCol.unlockPet(result.reward.petId);
-                    }
+                    usePetStore.getState().addPet('ethereal_cow');
+                    result.isDuplicate = (usePetStore.getState().petQuantities['ethereal_cow'] || 0) > 1;
                 }
 
                 set({ lastLuckRoll: result });

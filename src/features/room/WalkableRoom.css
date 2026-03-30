@@ -16,8 +16,8 @@
 /* Exit button */
 .room-exit-btn {
     position: absolute;
-    top: 1rem;
-    left: 2rem;
+    top: calc(max(1rem, env(safe-area-inset-top, 30px)) + 55px);
+    left: 1rem;
     z-index: 100;
     display: flex;
     align-items: center;
@@ -40,8 +40,8 @@
 /* Edit room mode button */
 .room-edit-btn {
     position: absolute;
-    top: 1rem;
-    right: 2rem;
+    top: calc(max(1rem, env(safe-area-inset-top, 30px)) + 55px);
+    right: 1rem;
     z-index: 100;
     display: flex;
     align-items: center;
@@ -66,7 +66,7 @@
 /* Active bonus chip — click to open placement panel */
 .room-bonus-chip {
     position: absolute;
-    top: 1rem;
+    top: calc(max(1rem, env(safe-area-inset-top, 30px)) + 55px);
     left: 50%;
     transform: translateX(-50%);
     z-index: 100;

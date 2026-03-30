@@ -37,7 +37,8 @@ export const PetPage = () => {
     const { activePet, name, health, hunger, mood, energy, feed, play } = usePetStore();
     const { items, removeItem } = useInventoryStore();
     const { playerCurrentHP, playerMaxHP, heal } = useDayStore();
-    const roomBonuses = useRoomStore((s) => s.getRoomCombatBonuses());
+    const getRoomCombatBonuses = useRoomStore((s) => s.getRoomCombatBonuses);
+    const roomBonuses = getRoomCombatBonuses();
     const effectiveMaxHP = playerMaxHP + roomBonuses.maxHP;
 
     // ── Sub-tab state ──────────────────────────────────────────────────────────

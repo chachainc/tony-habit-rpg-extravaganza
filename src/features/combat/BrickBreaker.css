@@ -1,0 +1,53 @@
+/* Brick Breaker */
+.breaker-overlay {
+    position: fixed; inset: 0; z-index: 1000;
+    background: rgba(0,0,0,0.9);
+    display: flex; align-items: center; justify-content: center;
+    padding: 0.5rem;
+}
+.breaker-container {
+    width: 100%; max-width: 420px;
+    background: #0f172a;
+    border: 1px solid rgba(163,230,53,0.2);
+    border-radius: 14px; overflow: hidden;
+    display: flex; flex-direction: column;
+    position: relative;
+}
+.breaker-header {
+    display: flex; align-items: center; gap: 0.5rem;
+    padding: 0.5rem 0.75rem;
+    background: rgba(0,0,0,0.3);
+    border-bottom: 1px solid rgba(163,230,53,0.1);
+}
+.breaker-header h2 { flex: 1; font-size: 1rem; font-weight: 800; color: #a3e635; margin: 0; }
+.breaker-close { background: none; border: none; color: rgba(255,255,255,0.5); cursor: pointer; }
+
+.breaker-canvas {
+    width: 100%; height: 340px;
+    touch-action: none; cursor: none;
+}
+.breaker-hint {
+    text-align: center; font-size: 0.7rem; color: rgba(255,255,255,0.4);
+    padding: 0.3rem;
+}
+.breaker-limit, .breaker-high-score {
+    text-align: center; padding: 1.5rem; color: rgba(255,255,255,0.6); font-size: 0.85rem;
+}
+.breaker-result-overlay {
+    position: absolute; inset: 0;
+    background: rgba(0,0,0,0.8);
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    gap: 0.6rem;
+}
+.breaker-result-title { font-size: 1.5rem; font-weight: 900; }
+.breaker-result-title.win { color: #22c55e; }
+.breaker-result-title.lose { color: #ef4444; }
+.breaker-result-score { font-size: 0.9rem; color: rgba(255,255,255,0.6); }
+.breaker-result-actions { display: flex; gap: 0.5rem; }
+.breaker-exit-btn {
+    padding: 0.5rem 1.5rem; border-radius: 8px;
+    background: linear-gradient(135deg, #22c55e, #16a34a); border: none;
+    color: white; font-weight: 700; font-size: 0.85rem; cursor: pointer;
+    transition: transform 0.2s;
+}
+.breaker-exit-btn:hover { transform: scale(1.05); }

@@ -6,6 +6,13 @@ import archerCowImg from '../assets/pets/archer_cow.png';
 import wizardCowImg from '../assets/pets/wizard_cow.png';
 import cowKingImg from '../assets/pets/cow_king.png';
 
+import petPorcupineImg from '../assets/pets/pet_porcupine.jpg';
+import petPlatypusImg from '../assets/pets/pet_platypus.jpg';
+import petGiraffeImg from '../assets/pets/pet_giraffe.jpg';
+import petRavenImg from '../assets/pets/pet_raven.jpg';
+import petElephantImg from '../assets/pets/pet_elephant.jpg';
+import petRhinoImg from '../assets/pets/pet_rhino.jpg';
+
 export type ItemType = 'armor' | 'weapon' | 'pet' | 'furniture' | 'consumable' | 'cosmetic' | 'pet_accessory';
 export type ItemCategory = 'hygiene' | 'sleep' | 'general' | 'combat' | 'social';
 
@@ -298,12 +305,68 @@ const PET_ITEMS: Item[] = [
         name: 'Porcupine',
         description: 'Spiky legend',
         icon: '🦔',
+        image: petPorcupineImg,
         type: 'pet',
         category: 'social',
         unlockRequirement: { skills: [{ skill: 'Social', level: 8 }] },
         cost: { gold: 5000 },
         stats: { attack: 3 },
         rarity: 'uncommon' },
+    {
+        id: 'pet_platypus',
+        name: 'Platypus',
+        description: 'A highly adaptable Water creature.',
+        icon: '🦆',
+        image: petPlatypusImg,
+        type: 'pet',
+        category: 'social',
+        unlockRequirement: { skills: [{ skill: 'Social', level: 10 }] },
+        cost: { gold: 15000 },
+        rarity: 'uncommon' },
+    {
+        id: 'pet_giraffe',
+        name: 'Giraffe',
+        description: 'A tall Nature companion that sees all.',
+        icon: '🦒',
+        image: petGiraffeImg,
+        type: 'pet',
+        category: 'social',
+        unlockRequirement: { skills: [{ skill: 'Social', level: 14 }] },
+        cost: { gold: 30000 },
+        rarity: 'rare' },
+    {
+        id: 'pet_raven',
+        name: 'Raven',
+        description: 'A swift Shadow bird.',
+        icon: '🐦‍⬛',
+        image: petRavenImg,
+        type: 'pet',
+        category: 'social',
+        unlockRequirement: { skills: [{ skill: 'Social', level: 18 }] },
+        cost: { gold: 30000 },
+        rarity: 'rare' },
+    {
+        id: 'pet_elephant',
+        name: 'Elephant',
+        description: 'An ancient Earth behemoth.',
+        icon: '🐘',
+        image: petElephantImg,
+        type: 'pet',
+        category: 'social',
+        unlockRequirement: { skills: [{ skill: 'Social', level: 25 }] },
+        cost: { gold: 60000, diamonds: 25 },
+        rarity: 'epic' },
+    {
+        id: 'pet_rhino',
+        name: 'Rhino',
+        description: 'A massive Earth juggernaut.',
+        icon: '🦏',
+        image: petRhinoImg,
+        type: 'pet',
+        category: 'social',
+        unlockRequirement: { skills: [{ skill: 'Social', level: 25 }] },
+        cost: { gold: 60000, diamonds: 25 },
+        rarity: 'epic' },
     {
         id: 'pet_dog',
         name: 'Dog',

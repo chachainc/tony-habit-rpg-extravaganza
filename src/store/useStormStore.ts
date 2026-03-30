@@ -1,4 +1,6 @@
 import { create } from 'zustand';
+import { persist } from 'zustand/middleware';
+import { PERSIST_REGISTRY } from '../data/persistRegistry';
 import { useCurrencyStore } from './useCurrencyStore';
 import { useArenaStatsStore } from './useArenaStatsStore';
 
@@ -178,6 +180,9 @@ export interface StormState {
     enemiesToSpawn: Enemy[];
     spawnTimer: number;
 
+    defenderInventory: Record<DefenderType, number>;
+    obstacleInventory: Record<string, number>;
+
     upgrades: {
         fortHealthLevel: number;
         fortArmorLevel: number;
@@ -224,6 +229,8 @@ export interface StormState {
     buyDefender: (type: DefenderType) => boolean;
     buyObstacle: (type: 'barbed_wire' | 'barricade', xPos: number) => boolean;
     buyUpgrade: (upgradeKey: keyof StormState['upgrades']) => boolean;
+    storeDefender: (id: string) => void;
+    storeObstacle: (id: string) => void;
     hasBoughtFirstCow: boolean;
     
     // Movement
@@ -249,7 +256,9 @@ const DEFENDER_STATS: Record<DefenderType, { hp: number; dmg: number; range: num
     medic:     { hp: 35, dmg: 0,  range: 25, cd: 2000 },
 };
 
-export const useStormStore = create<StormState>()((set, get) => ({
+export const useStormStore = create<StormState>()(
+    persist(
+        (set, get) => ({
     gameState: 'idle',
     wave: 1,
     fortHp: 100,
@@ -261,6 +270,8 @@ export const useStormStore = create<StormState>()((set, get) => ({
     damagePopups: [],
     enemiesToSpawn: [],
     spawnTimer: 0,
+    defenderInventory: { cow: 0, swordsman: 0, shield: 0, archer: 0, medic: 0 },
+    obstacleInventory: { barbed_wire: 0, barricade: 0 },
     hasBoughtFirstCow: localStorage.getItem('stf-free-cow-claimed') === 'true',
     
     upgrades: {
@@ -292,22 +303,15 @@ export const useStormStore = create<StormState>()((set, get) => ({
     savedFormation: JSON.parse(localStorage.getItem('stf-saved-formation') || '[]'),
 
     startGame: () => {
-        // Reset hasBoughtFirstCow so the free starter is always available for a fresh game
-        localStorage.removeItem('stf-free-cow-claimed');
         set({ 
             gameState: 'idle',  // idle, not playing — prevents instant false victory on empty battlefield
-            wave: 1, 
-            fortHp: get().maxFortHp,
             enemies: [],
-            defenders: [],
-            obstacles: [],
             projectiles: [],
             comboCount: 0,
             comboTimer: 0,
             comboPopups: [],
             bossWarningActive: false,
             rallyUntil: 0,
-            hasBoughtFirstCow: false,
             lastWaveRewards: null,
             enemiesToSpawn: [],
         });
@@ -478,18 +482,44 @@ export const useStormStore = create<StormState>()((set, get) => ({
         });
     },
 
+    storeDefender: (id) => {
+        const state = get();
+        const defender = state.defenders.find(d => d.id === id);
+        if (!defender) return;
+        set(s => ({
+            defenders: s.defenders.filter(d => d.id !== id),
+            defenderInventory: { ...s.defenderInventory, [defender.defenderType]: (s.defenderInventory[defender.defenderType] || 0) + 1 }
+        }));
+    },
+
+    storeObstacle: (id) => {
+        const state = get();
+        const obs = state.obstacles.find(o => o.id === id);
+        if (!obs) return;
+        set(s => ({
+            obstacles: s.obstacles.filter(o => o.id !== id),
+            obstacleInventory: { ...s.obstacleInventory, [obs.type]: (s.obstacleInventory[obs.type] || 0) + 1 }
+        }));
+    },
+
     buyDefender: (type) => {
         const cost = DEFENDER_COSTS[type];
         const store = useCurrencyStore.getState();
         const state = get();
 
         const isFree = type === 'cow' && !state.hasBoughtFirstCow;
+        const owned = state.defenderInventory[type] || 0;
         
-        if (isFree || store.shmeckles >= cost) {
-            if (!isFree) store.spendShmeckles(cost);
-            if (type === 'cow' && !state.hasBoughtFirstCow) {
-                set({ hasBoughtFirstCow: true });
-                localStorage.setItem('stf-free-cow-claimed', 'true');
+        if (owned > 0 || isFree || store.shmeckles >= cost) {
+            if (owned > 0) {
+                // Consume inventory instead of shmeckles
+                set(s => ({ defenderInventory: { ...s.defenderInventory, [type]: owned - 1 } }));
+            } else {
+                if (!isFree) store.spendShmeckles(cost);
+                if (type === 'cow' && !state.hasBoughtFirstCow) {
+                    set({ hasBoughtFirstCow: true });
+                    localStorage.setItem('stf-free-cow-claimed', 'true');
+                }
             }
 
             const s = DEFENDER_STATS[type];
@@ -529,9 +559,16 @@ export const useStormStore = create<StormState>()((set, get) => ({
         const costs = { 'barbed_wire': 10, 'barricade': 30 };
         const cost = costs[type];
         const store = useCurrencyStore.getState();
+        const state = get();
 
-        if (store.shmeckles >= cost) {
-            store.spendShmeckles(cost);
+        const owned = state.obstacleInventory[type] || 0;
+
+        if (owned > 0 || store.shmeckles >= cost) {
+            if (owned > 0) {
+                set(s => ({ obstacleInventory: { ...s.obstacleInventory, [type]: owned - 1 } }));
+            } else {
+                store.spendShmeckles(cost);
+            }
             const newObstacle: Obstacle = {
                 id: `obs-${Date.now()}`,
                 type,
@@ -725,7 +762,6 @@ export const useStormStore = create<StormState>()((set, get) => ({
                     const damageReduction = state.upgrades.fortArmorLevel * 2;
                     const tickDamage = Math.max(0.5, BASE_DAMAGE_PER_ENEMY_PER_TICK - damageReduction);
                     fortHp -= tickDamage * (deltaMs / 1000);
-                    e.hp -= tickDamage * (deltaMs / 1000);
                 }
             }
         }
@@ -921,4 +957,22 @@ export const useStormStore = create<StormState>()((set, get) => ({
         });
     }
 
-}));
+}),
+        {
+            name: PERSIST_REGISTRY.storm.persistKey,
+            partialize: (state) => ({
+                wave: state.wave,
+                fortHp: state.fortHp,
+                maxFortHp: state.maxFortHp,
+                defenders: state.defenders,
+                obstacles: state.obstacles,
+                defenderInventory: state.defenderInventory,
+                obstacleInventory: state.obstacleInventory,
+                bestWave: state.bestWave,
+                hasBoughtFirstCow: state.hasBoughtFirstCow,
+                upgrades: state.upgrades,
+                savedFormation: state.savedFormation
+            })
+        }
+    )
+);
