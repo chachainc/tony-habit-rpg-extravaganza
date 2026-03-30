@@ -8,7 +8,7 @@ import './PetBattle.css';
 
 const TYPE_COLORS: Record<PetElementType, string> = {
     Earth: '#b45309', Fire: '#ef4444', Water: '#3b82f6',
-    Nature: '#22c55e', Shadow: '#a855f7', Air: '#94a3b8',
+    Nature: '#22c55e', Shadow: '#a855f7', Air: '#94a3b8', Aether: '#7c3aed',
 };
 
 export const PetBattle = ({ onClose }: { onClose: () => void }) => {
