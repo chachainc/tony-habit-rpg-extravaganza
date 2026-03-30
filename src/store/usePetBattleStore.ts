@@ -1,17 +1,17 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { PERSIST_REGISTRY } from '../data/persistRegistry';
-import { PET_DATABASE } from './usePetStore';
+import { PET_DATABASE, type PetElementType } from './usePetStore';
+export type { PetElementType } from './usePetStore';
 
 // ── Pet Battle Type System ─────────────────────────────────────
-export type PetElementType = 'Fire' | 'Water' | 'Nature' | 'Earth' | 'Air' | 'Shadow';
-
 const STRONG_AGAINST: Record<PetElementType, PetElementType[]> = {
     Fire: ['Nature'],
     Water: ['Fire', 'Earth'],
     Nature: ['Water'],
     Earth: ['Air'],
     Air: ['Water'],
+    Aether: ['Shadow'],
     Shadow: [], // Shadow has special rules handled below
 };
 
