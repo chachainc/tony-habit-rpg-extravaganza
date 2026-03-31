@@ -906,8 +906,6 @@ export const useBattleStore = create<BattleState>()((set, get) => ({
             lastDamage: null,
             isGoldenSlime: false,
             goldenSlimeTurnsRemaining: 3,
-            petAbilityCooldown: 0,
-            petAbilityUsedThisBattle: false,
             spellCooldownTurns: 0,
             heavyAttackCooldown: 0,
         });

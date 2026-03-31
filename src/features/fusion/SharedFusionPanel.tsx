@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Sparkles, Play, Check, X, Brain } from 'lucide-react';
 import { useFusionStore } from '../../store/useFusionStore';
-import { useGachaStore } from '../../store/useGachaStore';
+import { usePetStore } from '../../store/usePetStore';
 import { useInventoryStore } from '../../store/useInventoryStore';
 import './SharedFusionPanel.css';
 
@@ -13,7 +13,7 @@ interface SharedFusionPanelProps {
 export const SharedFusionPanel = ({ mode }: SharedFusionPanelProps) => {
     // Stores
     const { getFusionInfo, fusePet } = useFusionStore();
-    const { ownedPets } = useGachaStore();
+    const { ownedPets } = usePetStore();
     const inventory = useInventoryStore(s => s.items);
     const removeItem = useInventoryStore(s => s.removeItem);
     const addItem = useInventoryStore(s => s.addItem);
@@ -27,7 +27,7 @@ export const SharedFusionPanel = ({ mode }: SharedFusionPanelProps) => {
     let availableItems: { id: string; name: string; level: number; count: number; rarity?: string; emoji?: string; req: number }[] = [];
 
     if (mode === 'pet') {
-        const uniquePets = Array.from(new Set(ownedPets.map((p: any) => p || '')));
+        const uniquePets = Array.from(new Set(ownedPets.map((p: string) => p).filter(Boolean)));
         availableItems = uniquePets.map(petId => {
             if (!petId || typeof petId !== 'string') return null;
             const info = getFusionInfo(petId);

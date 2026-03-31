@@ -159,3 +159,6 @@ export const usePetStore = create<PetState>()(
         }
     )
 );
+
+// Re-export PET_DATABASE so components can import it directly from this module
+export { PET_DATABASE } from '../data/pets';

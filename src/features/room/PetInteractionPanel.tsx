@@ -165,17 +165,9 @@ export const PetInteractionPanel = ({ onClose }: { onClose: () => void }) => {
 
             {/* Pet info */}
             <div className="pet-info-section">
-                <h4>Abilities</h4>
-                <div className="pet-abilities-list">
-                    {petDef.abilities.map(a => (
-                        <div key={a.id} className="pet-ability-chip">
-                            <span>{a.icon} {a.name}</span>
-                            <small>{a.description}</small>
-                        </div>
-                    ))}
-                </div>
+                <h4>Passive Ability</h4>
                 <div className="pet-passive-info">
-                    <strong>{petDef.passive.icon} {petDef.passive.name}</strong>
+                    <strong>{petDef.passive.name}</strong>
                     <span>{petDef.passive.description}</span>
                 </div>
             </div>

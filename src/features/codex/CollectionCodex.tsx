@@ -13,7 +13,7 @@ import {
     type CodexSection,
     type CodexRarity,
 } from '../../data/codex';
-import { useGachaStore } from '../../store/useGachaStore';
+import { usePetStore } from '../../store/usePetStore';
 import { useAuraStore } from '../../store/useAuraStore';
 import { useTitleStore } from '../../store/useTitleStore';
 import { useCodexStore } from '../../store/useCodexStore';
@@ -27,7 +27,7 @@ import './CollectionCodex.css';
 // ── Owned-check logic per section ───────────────────────────────────────────
 
 function useOwnedChecker() {
-    const gachaStore = useGachaStore();
+    const petStore = usePetStore();
     const auraStore = useAuraStore();
     const titleStore = useTitleStore();
     const codexStore = useCodexStore();
@@ -45,7 +45,7 @@ function useOwnedChecker() {
 
         if (entry.section === 'pets') {
             const petId = entry.id.replace('codex_pet_', '');
-            return gachaStore.ownedPets.includes(petId) || boardStore.ownedPets.includes(petId);
+            return petStore.ownedPets.includes(petId) || boardStore.ownedPets.includes(petId);
         }
         if (entry.section === 'auras') {
             const auraId = entry.id.replace('codex_aura_', '');

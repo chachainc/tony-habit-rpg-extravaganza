@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useFusionStore, FUSION_CATALOG, FUSION_MAP } from '../../store/useFusionStore';
-import { useGachaStore } from '../../store/useGachaStore';
+import { usePetStore } from '../../store/usePetStore';
 import './PetFusionPanel.css';
 
 
@@ -19,7 +19,7 @@ const RARITY_COLORS: Record<string, string> = {
 
 export const PetFusionPanel = () => {
     const { fusePet, getFusionInfo } = useFusionStore();
-    const { ownedPets } = useGachaStore();
+    const { ownedPets } = usePetStore();
 
     const [lastFused, setLastFused] = useState<string | null>(null);
     const [fuseFlash, setFuseFlash] = useState<string | null>(null);

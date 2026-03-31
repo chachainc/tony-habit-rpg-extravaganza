@@ -120,6 +120,12 @@ export const useGachaStore = create<GachaState>()(
 
 console.log('[BOOT] useGachaStore module load finished');
 
+// ── Backward-compatibility re-exports ────────────────────────────────────────
+// Legacy consumers import { PET_DB, PetDef } from '../store/useGachaStore'.
+// Re-export from the canonical source so those imports keep working.
+export { PET_DATABASE as PET_DB } from '../data/pets';
+export type { PetDefinition as PetDef } from '../data/pets';
+
 const getDailySpinPetPool = (): PetDefinition[] => {
     // Collect pets meant for the Gacha / Daily Spin
     return Object.values(PET_DATABASE).filter((pet) => {

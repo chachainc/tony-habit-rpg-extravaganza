@@ -202,7 +202,7 @@ export const LoadoutPanel = ({ onClose }: { onClose: () => void }) => {
         if (snapshot.relic) invStore.equipItem(snapshot.relic, 'relic'); else invStore.unequipItem('relic');
         if (snapshot.pet_accessory) invStore.equipItem(snapshot.pet_accessory, 'pet_accessory'); else invStore.unequipItem('pet_accessory');
         
-        if (snapshot.pet) petStore.switchPet(snapshot.pet);
+        if (snapshot.pet) petStore.equipPet(snapshot.pet);
     };
 
 
@@ -315,7 +315,7 @@ export const LoadoutPanel = ({ onClose }: { onClose: () => void }) => {
                 case 'weapon': equipStore.equipItem(itemId); break;
                 case 'shield': invStore.equipItem(itemId, 'armor'); break;
                 case 'ring': equipStore.equipItem(itemId); break;
-                case 'pet': petStore.switchPet(itemId); break;
+                case 'pet': petStore.equipPet(itemId); break;
                 case 'pet_accessory': invStore.equipItem(itemId, 'pet_accessory'); break;
                 case 'book': invStore.equipItem(itemId, 'book'); break;
                 case 'artifact': invStore.equipItem(itemId, 'artifact'); break;

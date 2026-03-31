@@ -74,7 +74,7 @@ export const WalkableRoom = () => {
     const keysPressed = useRef<Set<string>>(new Set());
 
     // Get pet sprite
-    const petData = ITEM_DATABASE[equippedPetId];
+    const petData = equippedPetId ? ITEM_DATABASE[equippedPetId] : null;
     const petSprite = petData?.icon || '🐮';
 
     // Get trophy tier data

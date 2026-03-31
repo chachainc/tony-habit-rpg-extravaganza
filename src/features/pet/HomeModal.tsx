@@ -17,7 +17,7 @@ export const HomeModal = ({ onClose }: Props) => {
     const effectiveMaxHP = playerMaxHP + roomBonuses.maxHP;
 
     // Get active pet data from database
-    const petData = ITEM_DATABASE[equippedPetId];
+    const petData = equippedPetId ? ITEM_DATABASE[equippedPetId] : null;
     const petSprite = petData?.icon || '🐮'; // Fallback to cow
 
     // Get owned furniture

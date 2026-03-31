@@ -91,7 +91,7 @@ const ROOM_CARDS = [
 export const RoomLobby = ({ onClose: _onClose }: { onClose: () => void }) => {
     const navigate = useNavigate();
     const { equippedPetId, name: petName } = usePetStore();
-    const petData = ITEM_DATABASE[equippedPetId];
+    const petData = equippedPetId ? ITEM_DATABASE[equippedPetId] : null;
     const petSprite = petData?.icon || '🐮';
     const heroImage = useHeroImage();
     

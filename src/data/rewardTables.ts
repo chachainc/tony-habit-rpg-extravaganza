@@ -1,5 +1,5 @@
 import { ITEM_DB, type ItemDef } from '../store/useInventoryStore';
-import { PET_DB, type PetDef } from '../store/useGachaStore';
+import { PET_DATABASE, type PetDefinition } from '../data/pets';
 import { CODEX_ENTRIES } from './codex';
 
 // ── Actual Implementation ────────
@@ -42,9 +42,9 @@ export const getArenaRewardPool = (): ItemDef[] => {
     );
 }
 
-export const getDailySpinPetPool = (): PetDef[] => {
+export const getDailySpinPetPool = (): PetDefinition[] => {
     // Daily Spin should strictly contain Pets where source includes 'gacha' or 'daily_spin'
-    return Object.values(PET_DB).filter(pet => {
+    return Object.values(PET_DATABASE).filter(pet => {
         const sources = getSourcesForId(pet.id);
         // By default, if no external source was provided, contentLoader defaults pets to 'daily_spin'
         return sources.includes('gacha') || sources.includes('daily_spin');

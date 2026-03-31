@@ -592,7 +592,7 @@ export const PlayerRoom = ({ onClose: _onClose }: { onClose: () => void }) => {
     const activeTitleDef = useMemo(() => getUnlockedTitleDefs().find(t => t.id === activeTitle), [activeTitle, getUnlockedTitleDefs]);
 
     // Pet Sprite
-    const petData = ITEM_DATABASE[equippedPetId];
+    const petData = equippedPetId ? ITEM_DATABASE[equippedPetId] : null;
     const petSprite = petData?.icon || '🐮';
 
     // Placement click handler

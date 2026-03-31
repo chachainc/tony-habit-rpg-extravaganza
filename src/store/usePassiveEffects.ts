@@ -1,6 +1,6 @@
 import { useInventoryStore, ITEM_DB, type ItemStatBonuses } from './useInventoryStore';
 import { ITEM_DATABASE } from '../data/items';
-import { PET_DB } from './useGachaStore';
+import { PET_DATABASE } from '../data/pets';
 import { useRiskStore } from './useRiskStore';
 import { useTraitStore } from './useTraitStore';
 
@@ -101,16 +101,13 @@ export const getPassiveBonuses = (): PassiveBonuses => {
     processGear(equipped.book);     // New: book slot
     processGear(equipped.jewelry);  // New: jewelry slot
 
-    // Process Pet (via PET_DB or ITEM_DATABASE)
+    // Process Pet (via PET_DATABASE or ITEM_DATABASE)
     if (equipped.pet) {
-        const gachaPet = PET_DB[equipped.pet];
+        const gachaPet = PET_DATABASE[equipped.pet];
         if (gachaPet) {
-            if (gachaPet.passiveBonus.type === 'attack') bonuses.attack_bonus += (gachaPet.passiveBonus.value * 10);
-            if (gachaPet.passiveBonus.type === 'defense') bonuses.defense_bonus += (gachaPet.passiveBonus.value * 10);
-            if (gachaPet.passiveBonus.type === 'skill_xp') {
-                if (gachaPet.passiveBonus.skillName === 'intelligence') bonuses.intelligence_bonus += 5;
-                if (gachaPet.passiveBonus.skillName === 'strategy') bonuses.strategy_bonus += 5;
-            }
+            const effectType = gachaPet.passive?.effectType;
+            if (effectType === 'bonus_gold') bonuses.gold_bonus += (gachaPet.passive?.value ?? 0);
+            // Note: new passive model is simpler — no attack/defense/skill_xp subtypes
         }
         
         const marketPet = ITEM_DATABASE[equipped.pet];

@@ -45,10 +45,10 @@ export const PetPage = () => {
     const [activeTab, setActiveTab] = useState<'pets' | 'fusion'>('pets');
 
     // Get active pet data from database
-    const petItem = ITEM_DATABASE[equippedPetId];
-    const petDef = PET_DATABASE[equippedPetId];
+    const petItem = equippedPetId ? ITEM_DATABASE[equippedPetId] : null;
+    const petDef = equippedPetId ? PET_DATABASE[equippedPetId] : null;
     const petSprite = petItem?.icon || '🐮'; // Fallback emoji
-    const petImage = PET_IMAGES[equippedPetId]; // AI-generated image if available
+    const petImage = equippedPetId ? PET_IMAGES[equippedPetId] : undefined; // AI-generated image if available
 
     // Get usable items (food/toys/potions)
     const usableItems = Object.entries(items)
