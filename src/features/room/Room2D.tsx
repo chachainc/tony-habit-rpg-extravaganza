@@ -8,7 +8,7 @@ export const Room2D = () => {
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const { position, equipped } = useCharacterStore();
     const { furnitureItems, roomDimensions } = useRoomStore();
-    const { activePet } = usePetStore();
+    const { equippedPetId } = usePetStore();
 
     useEffect(() => {
         const canvas = canvasRef.current;
@@ -35,13 +35,13 @@ export const Room2D = () => {
             drawCharacter(ctx, position.x, position.y, equipped);
 
             // Draw pet (if exists)
-            if (activePet) {
+            if (equippedPetId) {
                 drawPet(ctx, position.x + 40, position.y + 40); // Near character
             }
         };
 
         render();
-    }, [position, equipped, furnitureItems, roomDimensions, activePet]);
+    }, [position, equipped, furnitureItems, roomDimensions, equippedPetId]);
 
     return (
         <div className="room-2d-container">

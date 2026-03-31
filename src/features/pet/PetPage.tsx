@@ -34,7 +34,7 @@ const PET_IMAGES: Record<string, string> = {
 };
 
 export const PetPage = () => {
-    const { activePet, name, health, hunger, mood, energy, feed, play } = usePetStore();
+    const { equippedPetId, name, health, hunger, mood, energy, feed, play } = usePetStore();
     const { items, removeItem } = useInventoryStore();
     const { playerCurrentHP, playerMaxHP, heal } = useDayStore();
     const getRoomCombatBonuses = useRoomStore((s) => s.getRoomCombatBonuses);
@@ -45,10 +45,10 @@ export const PetPage = () => {
     const [activeTab, setActiveTab] = useState<'pets' | 'fusion'>('pets');
 
     // Get active pet data from database
-    const petItem = ITEM_DATABASE[activePet];
-    const petDef = PET_DATABASE[activePet];
+    const petItem = ITEM_DATABASE[equippedPetId];
+    const petDef = PET_DATABASE[equippedPetId];
     const petSprite = petItem?.icon || '🐮'; // Fallback emoji
-    const petImage = PET_IMAGES[activePet]; // AI-generated image if available
+    const petImage = PET_IMAGES[equippedPetId]; // AI-generated image if available
 
     // Get usable items (food/toys/potions)
     const usableItems = Object.entries(items)

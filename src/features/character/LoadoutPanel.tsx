@@ -78,7 +78,7 @@ export const LoadoutPanel = ({ onClose }: { onClose: () => void }) => {
                 const ring = equipStore.equippedAccessory ? EQUIPMENT_DB[equipStore.equippedAccessory] : null;
                 return { icon: ring?.icon || '', name: ring?.name || '', emptyIcon: '💍' };
             case 'pet':
-                const pet = petStore.activePet ? ITEM_DATABASE[petStore.activePet] : null;
+                const pet = petStore.equippedPetId ? ITEM_DATABASE[petStore.equippedPetId] : null;
                 return { icon: pet?.icon || '', name: pet?.name || '', emptyIcon: '🐾' };
             case 'book':
                 const book = invStore.equipped.book ? ITEM_DB[invStore.equipped.book] : null;
@@ -172,7 +172,7 @@ export const LoadoutPanel = ({ onClose }: { onClose: () => void }) => {
             weapon: equipStore.equippedWeapon ?? null,
             shield: invStore.equipped.armor ?? null,
             ring: equipStore.equippedAccessory ?? null,
-            pet: petStore.activePet ?? null,
+            pet: petStore.equippedPetId ?? null,
             pet_accessory: invStore.equipped.pet_accessory ?? null,
             book: invStore.equipped.book ?? null,
             artifact: invStore.equipped.artifact ?? null,

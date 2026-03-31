@@ -48,7 +48,7 @@ export const WalkableRoom = () => {
     const heroImage = useHeroImage();
     const { playerPosition, setPlayerPosition } = useRoomStore();
     const { items } = useInventoryStore();
-    const { activePet, name: petName } = usePetStore();
+    const { equippedPetId, name: petName } = usePetStore();
     const { totalBooksRead, getCurrentTrophy } = useBookTrophyStore();
     const { completedBooks } = useBookStore();
 
@@ -74,7 +74,7 @@ export const WalkableRoom = () => {
     const keysPressed = useRef<Set<string>>(new Set());
 
     // Get pet sprite
-    const petData = ITEM_DATABASE[activePet];
+    const petData = ITEM_DATABASE[equippedPetId];
     const petSprite = petData?.icon || '🐮';
 
     // Get trophy tier data

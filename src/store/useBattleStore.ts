@@ -2,7 +2,6 @@ import { create } from 'zustand';
 import { ENEMY_DB, type Ability, type Element, getElementMultiplier, ELEMENT_ICONS } from './useEnemyStore';
 import { useGameStore } from './useGameStore';
 import { useConsistencyStore } from './useConsistencyStore';
-import { usePetStore } from './usePetStore';
 import { useMagicStore, SPELL_DB } from './useMagicStore';
 import { useRoomStore } from './useRoomStore';
 import { useCampaignStore } from './useCampaignStore';
@@ -72,8 +71,6 @@ interface BattleState {
     lastDamage: { target: string; amount: number; isCrit: boolean; elementBonus: number } | null;
     isGoldenSlime: boolean; // Track if current enemy is Golden Slime
     goldenSlimeTurnsRemaining: number; // Turns before Golden Slime escapes
-    petAbilityCooldown: number; // Turns remaining before pet ability can be used again
-    petAbilityUsedThisBattle: boolean; // Track if pet ability has been triggered
     currentMP: number; // Player's current mana for spells
     maxMP: number; // Player's max mana
     equippedSpells: string[]; // IDs of spells equipped for battle
@@ -101,7 +98,6 @@ interface BattleState {
     applyDamage: (attacker: Combatant, defender: Combatant, ability: Ability) => number;
     resetBattle: () => void;
     playerDefend: () => void; // New action
-    usePetAbility: () => void; // Pet ability action
     castSpell: (spellId: string) => void; // Cast a spell from magic store
     restoreMP: (amount: number) => void; // Restore MP (used by room resting)
     startBattle: () => void;
@@ -162,8 +158,6 @@ export const useBattleStore = create<BattleState>()((set, get) => ({
     lastDamage: null,
     isGoldenSlime: false,
     goldenSlimeTurnsRemaining: 3,
-    petAbilityCooldown: 0,
-    petAbilityUsedThisBattle: false,
     currentMP: 60, // Default, updated on battle init
     maxMP: 60,
     equippedSpells: [],
@@ -678,15 +672,8 @@ export const useBattleStore = create<BattleState>()((set, get) => ({
             set({ goldenSlimeTurnsRemaining: newTurnsRemaining });
         }
 
-
-        // Decrement pet ability cooldown at start of player turn
-        const curState = get();
-        const { petAbilityCooldown } = curState;
-        const newPetCooldown = nextTurn === 'player' && petAbilityCooldown > 0
-            ? petAbilityCooldown - 1
-            : petAbilityCooldown;
-
         // Decrement spell and heavy attack cooldowns after player's turn ends
+        const curState = get();
         const newSpellCD = currentTurn === 'player' && curState.spellCooldownTurns > 0
             ? curState.spellCooldownTurns - 1
             : curState.spellCooldownTurns;
@@ -701,7 +688,6 @@ export const useBattleStore = create<BattleState>()((set, get) => ({
             turnNumber: newTurnNumber,
             phase: nextTurn === 'player' ? 'select_action' : 'enemy_turn',
             combatLog: newLog,
-            petAbilityCooldown: newPetCooldown,
             spellCooldownTurns: newSpellCD,
             heavyAttackCooldown: newHeavyCD,
         });
@@ -726,145 +712,6 @@ export const useBattleStore = create<BattleState>()((set, get) => ({
         });
 
         setTimeout(() => get().endTurn(), 500);
-    },
-
-    usePetAbility: () => {
-        const { player, enemy, phase, petAbilityCooldown } = get();
-        if (!player || !enemy || phase !== 'select_action') return;
-        if (petAbilityCooldown > 0) return;
-
-        const petStore = usePetStore.getState();
-        const petDef = petStore.getActivePetDef();
-        if (!petDef) return;
-
-        // Use the first active ability by default
-        const ability = petDef.abilities[0];
-        if (!ability) return;
-
-        set({ phase: 'executing' });
-
-        const logs: CombatLog[] = [];
-        logs.push({
-            message: `${petStore.name} uses ${ability.icon} ${ability.name}!`,
-            type: 'info',
-        });
-
-        let updatedPlayer = { ...player };
-        let updatedEnemy = { ...enemy };
-
-        // Get player skill levels for scaling
-        const gameState = useGameStore.getState();
-        const scalingLevel = ability.scalingStat
-            ? (gameState.skills[ability.scalingStat as keyof typeof gameState.skills]?.level || 1)
-            : 1;
-
-        switch (ability.type) {
-            case 'heal': {
-                const healAmount = Math.round((ability.healBase || 20) + scalingLevel * (ability.healScaling || 0.5));
-                updatedPlayer.hp = Math.min(updatedPlayer.maxHp, updatedPlayer.hp + healAmount);
-                logs.push({
-                    message: `${player.name} heals ${healAmount} HP!`,
-                    type: 'heal',
-                    value: healAmount,
-                });
-                break;
-            }
-
-            case 'damage':
-            case 'extra_damage': {
-                const damage = Math.round((ability.baseDamage || 10) + scalingLevel * (ability.scalingFactor || 1.0));
-                updatedEnemy.hp = Math.max(0, updatedEnemy.hp - damage);
-                logs.push({
-                    message: `${enemy.name} takes ${damage} damage!`,
-                    type: 'damage',
-                    value: damage,
-                });
-                set({
-                    lastDamage: {
-                        target: enemy.id,
-                        amount: damage,
-                        isCrit: false,
-                        elementBonus: 1,
-                    },
-                });
-                break;
-            }
-
-            case 'buff_atk': {
-                const atkBoost = Math.round(player.atk * ((ability.buffValue || 20) / 100));
-                updatedPlayer.buffs = [
-                    ...updatedPlayer.buffs,
-                    { stat: 'atk', amount: atkBoost, turnsLeft: ability.buffDuration || 2 }
-                ];
-                logs.push({
-                    message: `${player.name}'s ATK increased by ${ability.buffValue}%!`,
-                    type: 'buff',
-                });
-                break;
-            }
-
-            case 'buff_def': {
-                const defBoost = Math.round(player.def * ((ability.buffValue || 20) / 100));
-                updatedPlayer.buffs = [
-                    ...updatedPlayer.buffs,
-                    { stat: 'def', amount: defBoost, turnsLeft: ability.buffDuration || 2 }
-                ];
-                logs.push({
-                    message: `${player.name}'s DEF increased by ${ability.buffValue}%!`,
-                    type: 'buff',
-                });
-                break;
-            }
-
-            case 'debuff_def': {
-                const defReduction = Math.round(enemy.def * ((ability.buffValue || 20) / 100));
-                updatedEnemy.buffs = [
-                    ...updatedEnemy.buffs,
-                    { stat: 'def', amount: -defReduction, turnsLeft: ability.buffDuration || 2 }
-                ];
-                logs.push({
-                    message: `${enemy.name}'s DEF reduced by ${ability.buffValue}%!`,
-                    type: 'debuff',
-                });
-                break;
-            }
-
-            case 'reduce_damage': {
-                updatedPlayer.damageReduction = ability.buffValue || 30;
-                updatedPlayer.damageReductionTurns = ability.buffDuration || 2;
-                logs.push({
-                    message: `${player.name} gains ${ability.buffValue}% damage reduction!`,
-                    type: 'buff',
-                });
-                break;
-            }
-        }
-
-        // Check for victory
-        if (updatedEnemy.hp <= 0) {
-            set({
-                phase: 'victory',
-                player: updatedPlayer,
-                enemy: updatedEnemy,
-                petAbilityCooldown: ability.cooldown,
-                combatLog: [
-                    ...get().combatLog,
-                    ...logs,
-                    { message: `🏆 Victory! ${enemy.name} defeated!`, type: 'victory' },
-                ],
-            });
-            return;
-        }
-
-        set({
-            player: updatedPlayer,
-            enemy: updatedEnemy,
-            petAbilityCooldown: ability.cooldown,
-            combatLog: [...get().combatLog, ...logs],
-        });
-
-        // End player turn
-        setTimeout(() => get().endTurn(), 800);
     },
 
     applyDamage: (attacker: Combatant, defender: Combatant, ability: Ability) => {

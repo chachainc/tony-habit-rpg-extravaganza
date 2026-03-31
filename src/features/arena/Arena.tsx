@@ -624,8 +624,8 @@ export const Arena = ({ onClose }: { onClose: () => void }) => {
             const enemyDef = ENEMY_DB[enemy.id];
             const estimate = estimateWinChance(player, enemy, enemyDef);
             const winColor = getWinChanceColor(estimate.winRate);
-            const { activePet: activePetId } = usePetStore.getState();
-            const activePet = activePetId ? PET_DATABASE[activePetId] : null;
+            const { equippedPetId: activePetId } = usePetStore.getState();
+            const equippedPet = activePetId ? PET_DATABASE[activePetId] : null;
 
 
 
@@ -743,14 +743,12 @@ export const Arena = ({ onClose }: { onClose: () => void }) => {
                                             {/* Active Pet */}
                                             <div className="active-pet-section">
                                                 <div className="prep-section-label">ACTIVE PET</div>
-                                                {activePet ? (
+                                                {equippedPet ? (
                                                     <div className="pet-prep-card">
-                                                        <span className="pet-prep-icon">{activePet.icon}</span>
+                                                        <span className="pet-prep-icon">{equippedPet.icon}</span>
                                                         <div className="pet-prep-info">
-                                                            <span className="pet-prep-name">{activePet.name}</span>
-                                                            {activePet.abilities && activePet.abilities[0] && (
-                                                                <span className="pet-prep-ability">{activePet.abilities[0].name}: {activePet.abilities[0].description}</span>
-                                                            )}
+                                                            <span className="pet-prep-name">{equippedPet.name}</span>
+                                                            
                                                         </div>
                                                     </div>
                                                 ) : (

@@ -562,7 +562,7 @@ export const PlayerRoom = ({ onClose: _onClose }: { onClose: () => void }) => {
     } = useRoomStore();
 
 
-    const { activePet, name: petName } = usePetStore();
+    const { equippedPetId, name: petName } = usePetStore();
     const { activeTitle, getUnlockedTitleDefs } = useTitleStore();
     const { activeAuraId } = useAuraStore();
     const navigate = useNavigate();
@@ -592,7 +592,7 @@ export const PlayerRoom = ({ onClose: _onClose }: { onClose: () => void }) => {
     const activeTitleDef = useMemo(() => getUnlockedTitleDefs().find(t => t.id === activeTitle), [activeTitle, getUnlockedTitleDefs]);
 
     // Pet Sprite
-    const petData = ITEM_DATABASE[activePet];
+    const petData = ITEM_DATABASE[equippedPetId];
     const petSprite = petData?.icon || '🐮';
 
     // Placement click handler

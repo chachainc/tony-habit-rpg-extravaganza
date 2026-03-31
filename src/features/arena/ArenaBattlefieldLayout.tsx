@@ -100,11 +100,11 @@ const UnitEntity = ({ combatant, isAlly, isActive, isHit, imageSrc, petItem }: {
 export const ArenaBattlefieldLayout = () => {
   const { phase, player, enemy, turnNumber, isGoldenSlime, lastDamage, currentTurn } = useBattleStore();
   const { currentFloor, currentStreak } = useCampaignStore();
-  const { activePet } = usePetStore();
+  const { equippedPetId } = usePetStore();
   const { activeAuraId } = useAuraStore();
   const heroImage = useHeroImage();
 
-  const petItem = activePet ? ITEM_DATABASE[activePet] : null;
+  const petItem = equippedPetId ? ITEM_DATABASE[equippedPetId] : null;
   const [floatingTexts, setFloatingTexts] = useState<Array<{ id: number; text: string; type: 'damage' | 'heal' | 'crit'; x: number; y: number }>>([]);
   const [hitTargetId, setHitTargetId] = useState<string | null>(null);
 

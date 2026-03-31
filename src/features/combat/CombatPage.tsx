@@ -9,10 +9,7 @@ import { useCurrencyStore } from '../../store/useCurrencyStore';
 import { ChessGame } from '../conquest/ChessGame';
 import { ConquestTiles } from '../conquest/ConquestTiles';
 import { WarJournal } from './WarJournal';
-import { PetBattle } from './PetBattle';
-import { PetTown } from './PetTown';
 import { Blackjack } from './Blackjack';
-import { PhysicsLauncher } from './PhysicsLauncher';
 import { BrickBreaker } from './BrickBreaker';
 import { useState } from 'react';
 import './CombatPage.css';
@@ -25,10 +22,7 @@ export const CombatPage = () => {
     const [showChess, setShowChess] = useState(false);
     const [showTiles, setShowTiles] = useState(false);
     const [showJournal, setShowJournal] = useState(false);
-    const [showPetBattle, setShowPetBattle] = useState(false);
-    const [showPetTown, setShowPetTown] = useState(false);
     const [showBlackjack, setShowBlackjack] = useState(false);
-    const [showLauncher, setShowLauncher] = useState(false);
     const [showBreaker, setShowBreaker] = useState(false);
     const { getAttack, getDefense, getMagicAttack, getMaxMP } = useGameStore();
     const { currentMP, player } = useBattleStore();
@@ -141,42 +135,7 @@ export const CombatPage = () => {
                         <div className="combat-option__arrow">→</div>
                     </motion.button>
 
-                    <motion.button
-                        className="combat-option combat-option--petbattle"
-                        onClick={() => setShowPetBattle(true)}
-                        initial={{ opacity: 0, x: 30 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        transition={{ delay: 0.2 }}
-                        whileHover={{ scale: 1.02 }}
-                        whileTap={{ scale: 0.98 }}
-                    >
-                        <div className="combat-option__icon" style={{ fontSize: '48px', lineHeight: '48px' }}>🐾</div>
-                        <div className="combat-option__info">
-                            <h2>Pet Battle <span className="combat-limit-badge">3/day</span></h2>
-                            <p>Pokémon-style combat with your pets. Type advantages and turn-based strategy!</p>
-                        </div>
-                        <div className="combat-option__arrow">→</div>
-                    </motion.button>
 
-                    {/* ═══════════ PETS SECTION ═══════════ */}
-                    <div className="combat-section-label">🐾 PETS</div>
-
-                    <motion.button
-                        className="combat-option combat-option--pets"
-                        onClick={() => setShowPetTown(true)}
-                        initial={{ opacity: 0, x: -30 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        transition={{ delay: 0.22 }}
-                        whileHover={{ scale: 1.02 }}
-                        whileTap={{ scale: 0.98 }}
-                    >
-                        <div className="combat-option__icon" style={{ fontSize: '48px', lineHeight: '48px' }}>🏕️</div>
-                        <div className="combat-option__info">
-                            <h2>Pet Town</h2>
-                            <p>Capture wild pets and build your collection!</p>
-                        </div>
-                        <div className="combat-option__arrow">→</div>
-                    </motion.button>
 
                     {/* ═══════════ STRATEGY SECTION ═══════════ */}
                     <div className="combat-section-label">🎯 STRATEGY</div>
@@ -198,22 +157,6 @@ export const CombatPage = () => {
                         <div className="combat-option__arrow">→</div>
                     </motion.button>
 
-                    <motion.button
-                        className="combat-option combat-option--launcher"
-                        onClick={() => setShowLauncher(true)}
-                        initial={{ opacity: 0, x: 30 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        transition={{ delay: 0.3 }}
-                        whileHover={{ scale: 1.02 }}
-                        whileTap={{ scale: 0.98 }}
-                    >
-                        <div className="combat-option__icon" style={{ fontSize: '48px', lineHeight: '48px' }}>🏗️</div>
-                        <div className="combat-option__info">
-                            <h2>Physics Launcher <span className="combat-limit-badge">3/day</span></h2>
-                            <p>Angry Birds-style! Drag, aim, and destroy targets.</p>
-                        </div>
-                        <div className="combat-option__arrow">→</div>
-                    </motion.button>
 
                     <motion.button
                         className="combat-option combat-option--breaker"
@@ -382,16 +325,7 @@ export const CombatPage = () => {
                 {showJournal && <WarJournal onClose={() => setShowJournal(false)} />}
             </AnimatePresence>
             <AnimatePresence>
-                {showPetBattle && <PetBattle onClose={() => setShowPetBattle(false)} />}
-            </AnimatePresence>
-            <AnimatePresence>
-                {showPetTown && <PetTown onClose={() => setShowPetTown(false)} />}
-            </AnimatePresence>
-            <AnimatePresence>
                 {showBlackjack && <Blackjack onClose={() => setShowBlackjack(false)} />}
-            </AnimatePresence>
-            <AnimatePresence>
-                {showLauncher && <PhysicsLauncher onClose={() => setShowLauncher(false)} />}
             </AnimatePresence>
             <AnimatePresence>
                 {showBreaker && <BrickBreaker onClose={() => setShowBreaker(false)} />}

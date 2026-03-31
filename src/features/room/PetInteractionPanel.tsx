@@ -31,7 +31,7 @@ const getTodayStr = () => {
 };
 
 export const PetInteractionPanel = ({ onClose }: { onClose: () => void }) => {
-    const activePet = usePetStore(s => s.activePet);
+    const equippedPetId = usePetStore(s => s.equippedPetId);
     const petName = usePetStore(s => s.name);
     const gold = useCurrencyStore(s => s.gold);
 
@@ -41,7 +41,7 @@ export const PetInteractionPanel = ({ onClose }: { onClose: () => void }) => {
     const [feedAnim, setFeedAnim] = useState(false);
     const [playAnim, setPlayAnim] = useState(false);
 
-    const petDef = activePet ? PET_DATABASE[activePet] : null;
+    const petDef = equippedPetId ? PET_DATABASE[equippedPetId] : null;
     const displayName = petName || petDef?.name || 'Your Pet';
     const petIcon = petDef?.icon || '🐾';
 

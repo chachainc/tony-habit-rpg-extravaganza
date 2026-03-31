@@ -57,10 +57,8 @@ export const PERSIST_REGISTRY: Record<string, PersistConfig> = {
     economyBalance: { storeName: "useEconomyBalanceStore", persistKey: "gl-economy-balance-v1", syncEnabled: true, restoreEnabled: true },
     xpWeapons: { storeName: "useXpWeaponStore", persistKey: "gl-xp-weapons-v1", syncEnabled: true, restoreEnabled: true },
     storm: { storeName: "useStormStore", persistKey: "gl-storm-v1", syncEnabled: true, restoreEnabled: true },
-    petBattle: { storeName: "usePetBattleStore", persistKey: "gl-pet-battle-v1", syncEnabled: true, restoreEnabled: true },
     blackjack: { storeName: "useBlackjackStore", persistKey: "gl-blackjack-v1", syncEnabled: true, restoreEnabled: true },
     miniGames: { storeName: "useMiniGameStore", persistKey: "gl-mini-games-v1", syncEnabled: true, restoreEnabled: true },
-    petCatching: { storeName: "usePetCatchingStore", persistKey: "gl-pet-catching-v1", syncEnabled: true, restoreEnabled: true },
 
     // Special store: Profile itself is persisted, but does NOT participate in the nested sync payload (it is the root schema itself).
     profile: { storeName: "useProfileStore", persistKey: "gl-profile-storage", syncEnabled: false, restoreEnabled: false },

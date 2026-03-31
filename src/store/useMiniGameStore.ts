@@ -7,59 +7,35 @@ function getEasternDateString(): string {
 }
 
 interface MiniGameState {
-    // Physics Launcher
-    launcherPlaysToday: number;
-    lastLauncherDate: string | null;
-
     // Brick Breaker
     breakerPlaysToday: number;
     lastBreakerDate: string | null;
 
     // Lifetime
-    launcherHighScore: number;
     breakerHighScore: number;
-    launcherTotalPlays: number;
     breakerTotalPlays: number;
 
+    // Level Progression
+    highestBreakerLevel: number;
+
     // Actions
-    canPlayLauncher: () => boolean;
     canPlayBreaker: () => boolean;
-    recordLauncherPlay: (score: number) => void;
     recordBreakerPlay: (score: number) => void;
+    unlockNextLevel: (beatenLevel: number) => void;
 }
 
 export const useMiniGameStore = create<MiniGameState>()(
     persist(
         (set, get) => ({
-            launcherPlaysToday: 0, lastLauncherDate: null,
             breakerPlaysToday: 0, lastBreakerDate: null,
-            launcherHighScore: 0, breakerHighScore: 0,
-            launcherTotalPlays: 0, breakerTotalPlays: 0,
-
-            canPlayLauncher: () => {
-                const s = get();
-                const today = getEasternDateString();
-                if (s.lastLauncherDate !== today) return true;
-                return s.launcherPlaysToday < 3;
-            },
+            breakerHighScore: 0, breakerTotalPlays: 0,
+            highestBreakerLevel: 1,
 
             canPlayBreaker: () => {
                 const s = get();
                 const today = getEasternDateString();
                 if (s.lastBreakerDate !== today) return true;
                 return s.breakerPlaysToday < 3;
-            },
-
-            recordLauncherPlay: (score) => {
-                const s = get();
-                const today = getEasternDateString();
-                const plays = s.lastLauncherDate === today ? s.launcherPlaysToday : 0;
-                set({
-                    launcherPlaysToday: plays + 1,
-                    lastLauncherDate: today,
-                    launcherHighScore: Math.max(s.launcherHighScore, score),
-                    launcherTotalPlays: s.launcherTotalPlays + 1,
-                });
             },
 
             recordBreakerPlay: (score) => {
@@ -73,7 +49,25 @@ export const useMiniGameStore = create<MiniGameState>()(
                     breakerTotalPlays: s.breakerTotalPlays + 1,
                 });
             },
+
+            unlockNextLevel: (beatenLevel) => {
+                const s = get();
+                // Only advance if they beat the frontier level — never reduce it
+                if (beatenLevel >= s.highestBreakerLevel) {
+                    set({ highestBreakerLevel: beatenLevel + 1 });
+                }
+            },
         }),
-        { name: PERSIST_REGISTRY.miniGames.persistKey }
+        {
+            name: PERSIST_REGISTRY.miniGames.persistKey,
+            version: 2,
+            migrate: (persisted: any, version: number) => {
+                const state = { ...persisted };
+                if (version < 2) {
+                    state.highestBreakerLevel = state.highestBreakerLevel ?? 1;
+                }
+                return state as any;
+            },
+        }
     )
 );

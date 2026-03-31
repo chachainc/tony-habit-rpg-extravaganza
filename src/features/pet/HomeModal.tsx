@@ -10,14 +10,14 @@ import './HomeModal.css';
 interface Props { onClose: () => void }
 
 export const HomeModal = ({ onClose }: Props) => {
-    const { activePet, name, health, hunger, mood, energy, feed, play } = usePetStore();
+    const { equippedPetId, name, health, hunger, mood, energy, feed, play } = usePetStore();
     const { items, removeItem } = useInventoryStore();
     const { playerCurrentHP, playerMaxHP, heal } = useDayStore();
     const roomBonuses = useRoomStore((s) => s.getRoomCombatBonuses());
     const effectiveMaxHP = playerMaxHP + roomBonuses.maxHP;
 
     // Get active pet data from database
-    const petData = ITEM_DATABASE[activePet];
+    const petData = ITEM_DATABASE[equippedPetId];
     const petSprite = petData?.icon || '🐮'; // Fallback to cow
 
     // Get owned furniture

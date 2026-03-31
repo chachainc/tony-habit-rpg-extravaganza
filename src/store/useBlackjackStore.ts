@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { PERSIST_REGISTRY } from '../data/persistRegistry';
+import type { DealerId, ThemeId } from '../data/blackjackContent';
 
 // ── Card / Deck helpers ────────────────────────────────────────
 type Suit = '♠' | '♥' | '♦' | '♣';
@@ -69,6 +70,15 @@ interface BlackjackState {
     totalHands: number;
     totalWins: number;
 
+    // Progression & Cosmetics
+    currentWinStreak: number;
+    highestWinStreak: number;
+    totalBlackjacks: number;
+    unlockedDealers: DealerId[];
+    unlockedThemes: ThemeId[];
+    selectedDealer: DealerId;
+    selectedTheme: ThemeId;
+
     // Actions
     resetDaily: () => void;
     canPlay: () => boolean;
@@ -77,6 +87,9 @@ interface BlackjackState {
     stand: () => void;
     doubleDown: () => void;
     newHand: () => void;
+    
+    selectDealer: (id: DealerId) => void;
+    selectTheme: (id: ThemeId) => void;
 }
 
 const MAX_DAILY_WINNINGS = 500;
@@ -99,6 +112,17 @@ export const useBlackjackStore = create<BlackjackState>()(
 
             totalHands: 0,
             totalWins: 0,
+            
+            currentWinStreak: 0,
+            highestWinStreak: 0,
+            totalBlackjacks: 0,
+            unlockedDealers: ['classic_cow'],
+            unlockedThemes: ['classic_felt'],
+            selectedDealer: 'classic_cow',
+            selectedTheme: 'classic_felt',
+
+            selectDealer: (id) => set({ selectedDealer: id }),
+            selectTheme: (id) => set({ selectedTheme: id }),
 
             resetDaily: () => {
                 const today = getEasternDateString();
@@ -144,12 +168,15 @@ export const useBlackjackStore = create<BlackjackState>()(
                         });
                     } else {
                         const cappedWin = Math.min(win, MAX_DAILY_WINNINGS - state.dailyWinnings);
+                        const newStreak = state.currentWinStreak + 1;
                         set({
                             deck, playerHand, dealerHand, currentBet: amount,
                             casinoCoins: state.casinoCoins - amount + amount + cappedWin,
                             dailyWinnings: state.dailyWinnings + cappedWin,
                             phase: 'result', result: 'blackjack', message: `Blackjack! +${cappedWin} coins!`,
                             totalHands: state.totalHands + 1, totalWins: state.totalWins + 1, lastPlayDate: today,
+                            currentWinStreak: newStreak, highestWinStreak: Math.max(state.highestWinStreak, newStreak),
+                            totalBlackjacks: state.totalBlackjacks + 1
                         });
                     }
                     return;
@@ -173,6 +200,7 @@ export const useBlackjackStore = create<BlackjackState>()(
                     set({
                         deck, playerHand,
                         phase: 'result', result: 'lose', message: `Bust! (${val})`,
+                        currentWinStreak: 0
                     });
                 } else if (val === 21) {
                     // Auto-stand on 21
@@ -219,11 +247,15 @@ export const useBlackjackStore = create<BlackjackState>()(
                     : 0;
                 const coinsBack = result === 'push' ? s.currentBet : (result === 'win' ? s.currentBet + cappedWin : 0);
 
+                const newStreak = result === 'win' ? s.currentWinStreak + 1 : (result === 'push' ? s.currentWinStreak : 0);
+
                 set({
                     deck, dealerHand, phase: 'result', result, message,
                     casinoCoins: s.casinoCoins + coinsBack,
                     dailyWinnings: s.dailyWinnings + cappedWin,
                     totalWins: result === 'win' ? s.totalWins + 1 : s.totalWins,
+                    currentWinStreak: newStreak,
+                    highestWinStreak: Math.max(s.highestWinStreak, newStreak)
                 });
             },
 
@@ -246,6 +278,7 @@ export const useBlackjackStore = create<BlackjackState>()(
                 if (val > 21) {
                     set({
                         phase: 'result', result: 'lose', message: `Bust! (${val})`,
+                        currentWinStreak: 0
                     });
                 } else {
                     // Auto-stand after double
@@ -257,6 +290,22 @@ export const useBlackjackStore = create<BlackjackState>()(
                 set({ phase: 'idle', playerHand: [], dealerHand: [], deck: [], currentBet: 0, result: null, message: '' });
             },
         }),
-        { name: PERSIST_REGISTRY.blackjack.persistKey }
+        { 
+            name: PERSIST_REGISTRY.blackjack.persistKey,
+            version: 2,
+            migrate: (persistedState: any, version: number) => {
+                const state = { ...persistedState };
+                if (version === 0 || version === 1) { 
+                    state.currentWinStreak = state.currentWinStreak || 0;
+                    state.highestWinStreak = state.highestWinStreak || 0;
+                    state.totalBlackjacks = state.totalBlackjacks || 0;
+                    state.unlockedDealers = state.unlockedDealers || ['classic_cow'];
+                    state.unlockedThemes = state.unlockedThemes || ['classic_felt'];
+                    state.selectedDealer = state.selectedDealer || 'classic_cow';
+                    state.selectedTheme = state.selectedTheme || 'classic_felt';
+                }
+                return state as any;
+            }
+        }
     )
 );
