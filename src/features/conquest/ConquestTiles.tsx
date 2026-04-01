@@ -357,8 +357,11 @@ export const ConquestTiles = ({ onComplete, onClose, canPlay, canPlayImpossible 
 
     // ─── COMPUTE LAYOUT BOUNDS ────────────────────
     const activeTiles = board.filter(t => !t.removed);
-    const tileSize = window.innerWidth < 600 ? 40 : 60;
-    const gap = tileSize * 0.85;
+    const isMobile = window.innerWidth < 600;
+    const tileW = isMobile ? 36 : 48;
+    const tileH = isMobile ? 46 : 60;
+    const gapX = tileW;
+    const gapY = tileH * 0.85;
 
     let boardWidth = 0;
     let boardHeight = 0;
@@ -369,10 +372,10 @@ export const ConquestTiles = ({ onComplete, onClose, canPlay, canPlayImpossible 
         const minY = Math.min(...activeTiles.map(t => t.y));
         const maxX = Math.max(...activeTiles.map(t => t.x));
         const maxY = Math.max(...activeTiles.map(t => t.y));
-        offsetX = minX * gap;
-        offsetY = minY * gap;
-        boardWidth = (maxX - minX + 1) * gap + tileSize;
-        boardHeight = (maxY - minY + 1) * gap + tileSize;
+        offsetX = minX * gapX;
+        offsetY = minY * gapY;
+        boardWidth = (maxX - minX + 1) * gapX + tileW;
+        boardHeight = (maxY - minY + 1) * gapY + tileH;
     }
 
     // ─── SIGIL / GEM / XP REWARD CALC ─────────────
@@ -583,11 +586,9 @@ export const ConquestTiles = ({ onComplete, onClose, canPlay, canPlayImpossible 
                                         className={`tiles-board-tile ${blocked ? 'blocked' : 'selectable'}`}
                                         data-family={tile.symbol.colorFamily}
                                         style={{
-                                            left: tile.x * gap - offsetX,
-                                            top: tile.y * gap - offsetY,
+                                            left: tile.x * gapX - offsetX,
+                                            top: tile.y * gapY - offsetY,
                                             zIndex: tile.layer * 10,
-                                            width: tileSize,
-                                            height: tileSize,
                                         }}
                                         initial={{ scale: 0, opacity: 0 }}
                                         animate={{ scale: 1, opacity: 1 }}

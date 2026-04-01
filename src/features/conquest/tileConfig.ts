@@ -164,133 +164,133 @@ export function generateBoard(difficulty: Difficulty, seed: number): BoardTile[]
         }
     }
 
-    // ─── ORGANIC CLUSTER LAYOUT ──────────────────────────────────────────────
-    // Each entry is a base (x, y) grid position for a "slot".
-    // Templates are designed per difficulty to give a Mahjong-style scattered look:
-    //  - Two tall stacked columns on each side, denser toward center
-    //  - Bridged rows in the middle
-    //  - A few isolated accent tiles at the bottom
-    // Positions repeat (stacked layers land on the same base x,y with a 0.35 offset).
-    //
-    // Design rationale:
-    //   80% handcrafted center-weighted shape
-    //   20% per-tile fine jitter so no two runs look identical
-    // ─────────────────────────────────────────────────────────────────────────
-
-    // Base slot positions — interleaved left/center/right so even small tile counts
-    // spread across the full board shape (important for Easy difficulty with only ~16 slots).
-    const BASE_CLUSTER: [number, number][] = [
-        // Pair left + right tower to guarantee both sides fill simultaneously
-        [0, 0], [7, 0],
-        [1, 0], [8, 0],
-        [0, 1], [7, 1],
-        [1, 1], [8, 1],
-        [0, 2], [6, 2],
-        [1, 2], [7, 2],
-        // Center bridge
-        [3, 2], [5, 2],
-        [4, 2], [4, 3],
-        // More towers
-        [0, 3], [6, 3],
-        [1, 3], [7, 3],
-        [0, 4], [6, 4],
-        [1, 4], [7, 4],
-        // Center fill
-        [2, 2], [5, 3],
-        [3, 3], [5, 4],
-        // Top center accents
-        [3, 0], [5, 0],
-        [4, 0], [4, 1],
-        [3, 1], [5, 1],
-        // Tower bottoms + side accents
-        [0, 5], [7, 5],
-        [1, 5], [6, 1],
-        // Bottom isolated accent tiles — classic Mahjong flourish
-        [1, 7], [7, 7],
-        // Extra inner fill
-        [2, 1], [5, 5],
-    ];
-
-
-    // Extended positions for harder difficulties (more tiles needed)
-    const EXTENDED_CLUSTER: [number, number][] = [
-        ...BASE_CLUSTER,
-        // Wider left fringe
-        [-1, 1], [-1, 2], [-1, 3],
-        // Wider right fringe
-        [9, 1], [9, 2], [9, 3],
-        // Extra center mass
-        [2, 5], [3, 5], [4, 5], [5, 4],
-        // Low row linking towers
-        [1, 6], [2, 6], [3, 6], [4, 6], [5, 6], [6, 6],
-        // Top extensions
-        [2, -1], [3, -1], [4, -1], [5, -1],
-        // More inner fill
-        [1, 0.5], [7, 0.5],
-    ];
-
-    const HUGE_CLUSTER: [number, number][] = [
-        ...EXTENDED_CLUSTER,
-        [-1, 0], [-1, 4],
-        [9, 0], [9, 4],
-        [0, 6], [8, 6],
-        [2, 7], [3, 7], [4, 7], [5, 7], [6, 7],
-        [-1, -1], [9, -1],
-        [4, -2], [5, -2], [3, -2],
-    ];
-
-    // Pick the right pool based on tile count
-    const slotPool: [number, number][] =
-        preset.totalTiles <= 48  ? BASE_CLUSTER :
-        preset.totalTiles <= 72  ? EXTENDED_CLUSTER :
-                                   HUGE_CLUSTER;
-
-    // How many base positions do we actually need?
-    // Each position hosts `preset.layers` stacked tiles.
-    const slotsNeeded = Math.ceil(preset.totalTiles / preset.layers);
-
-    // Build the working slot list: repeat/cycle the pool if more slots needed
-    const workingSlots: [number, number][] = [];
-    for (let i = 0; i < slotsNeeded; i++) {
-        workingSlots.push(slotPool[i % slotPool.length]);
-    }
-
-    // Shuffle the slot order so adjacent tiles in the bag land in random positions
-    for (let i = workingSlots.length - 1; i > 0; i--) {
-        const j = Math.floor(rng() * (i + 1));
-        [workingSlots[i], workingSlots[j]] = [workingSlots[j], workingSlots[i]];
-    }
-
-    const tiles: BoardTile[] = [];
-    let uid = 0;
-
-    // Assign tiles: each slot gets `preset.layers` tiles (one per layer), offset by 0.35 per layer
-    // so they stack visually at the same screen position as in classic Mahjong.
-    let tileIdx = 0;
-    for (let slotIdx = 0; slotIdx < workingSlots.length && tileIdx < tileBag.length; slotIdx++) {
-        const [baseX, baseY] = workingSlots[slotIdx];
-        const layersForSlot = Math.min(preset.layers, tileBag.length - tileIdx);
-
-        for (let layer = 0; layer < layersForSlot && tileIdx < tileBag.length; layer++) {
-            // Fine per-tile jitter: small, deterministic, adds organic feel without chaos
-            const xJitter = (rng() - 0.5) * 0.12;
-            const yJitter = (rng() - 0.5) * 0.12;
-
-            // Layer stagger: higher layers sit slightly right-down (Mahjong depth effect)
-            const xOffset = layer * 0.35;
-            const yOffset = layer * 0.35;
-
-            tiles.push({
-                uid: uid++,
-                symbolId: tileBag[tileIdx].symbolId,
-                symbol: tileBag[tileIdx].symbol,
-                layer,
-                x: baseX + xOffset + xJitter,
-                y: baseY + yOffset + yJitter,
-                removed: false,
-            });
-            tileIdx++;
+    // ─── ALGORITHMIC STRUCTURE PATTERNS ──────────────────────────────────────
+    // To achieve the premium Mahjong-style puzzle layout, we avoid random scatter
+    // and instead build explicit, symmetric, highly layered structures.
+    
+    // Choose pattern deterministically based on difficulty & seed
+    const templates = ['pyramid', 'twin_towers', 'arena', 'cross'];
+    const selectedTemplate = templates[Math.floor(rng() * templates.length)];
+    
+    const generatedSlots: { x: number, y: number, layer: number }[] = [];
+    
+    let currentZ = 0;
+    let tilesPlaced = 0;
+    
+    // Helper to add symmetrical tiles (left & right)
+    const placeSym = (cx: number, cy: number, l: number) => {
+        if (tilesPlaced >= preset.totalTiles) return;
+        generatedSlots.push({ x: cx, y: cy, layer: l });
+        tilesPlaced++;
+        // If not exactly on center X line, mirror it
+        if (cx !== 0 && tilesPlaced < preset.totalTiles) {
+            generatedSlots.push({ x: -cx, y: cy, layer: l });
+            tilesPlaced++;
         }
+    };
+    
+    // We generate bottom up. The patterns scale automatically by expanding their radius
+    // until totalTiles is reached. Since totalTiles % 3 === 0, and we place symmetrically,
+    // we occasionally might have 1 leftover tile. We handle exact placement carefully.
+    
+    if (selectedTemplate === 'pyramid') {
+        // Classic center-heavy pyramid
+        let radius = Math.ceil(Math.sqrt(preset.totalTiles / 4));
+        while (tilesPlaced < preset.totalTiles) {
+            for (let x = 0; x <= radius; x++) {
+                for (let y = -radius; y <= radius; y++) {
+                    if (Math.abs(x) + Math.abs(y) <= radius && tilesPlaced < preset.totalTiles) {
+                        placeSym(x * 0.5, y * 0.5, currentZ);
+                    }
+                }
+            }
+            radius--;
+            currentZ++;
+            if (radius < 0) radius = 1; // force peak if we run out of geometric shape
+        }
+    } else if (selectedTemplate === 'twin_towers') {
+        // Two distinct deep vertical stacks on left and right borders
+        const towerDist = Math.max(2, Math.floor(preset.totalTiles / 30));
+        let yReach = Math.ceil(preset.totalTiles / 20);
+        while (tilesPlaced < preset.totalTiles) {
+            for (let y = -yReach; y <= yReach; y++) {
+                if (tilesPlaced < preset.totalTiles) placeSym(towerDist, y * 0.6, currentZ);
+                // add thickness to tower
+                if (currentZ < 3 && tilesPlaced < preset.totalTiles) {
+                    placeSym(towerDist + 0.5, y * 0.6 + 0.25, currentZ);
+                }
+            }
+            currentZ++;
+            yReach = Math.max(1, yReach - 1);
+        }
+    } else if (selectedTemplate === 'arena') {
+        // A hollow ring with high walls and a flat center
+        let outer = Math.ceil(Math.sqrt(preset.totalTiles / 3));
+        let inner = outer - 2;
+        while (tilesPlaced < preset.totalTiles) {
+            for (let x = 0; x <= outer; x++) {
+                for (let y = -outer; y <= outer; y++) {
+                    const dist = Math.max(Math.abs(x), Math.abs(y));
+                    // Base layer is flat
+                    if (currentZ === 0 && dist <= outer && tilesPlaced < preset.totalTiles) {
+                        placeSym(x, y, currentZ);
+                    }
+                    // Walls are high
+                    if (currentZ > 0 && dist >= inner && dist <= outer && tilesPlaced < preset.totalTiles) {
+                        placeSym(x, y, currentZ);
+                    }
+                }
+            }
+            currentZ++;
+            inner++;
+            if (inner > outer) inner = outer; // keep stacking walls
+        }
+    } else {
+        // 'cross' pattern
+        let armLen = Math.ceil(preset.totalTiles / 12);
+        while (tilesPlaced < preset.totalTiles) {
+            // Horizontal arm
+            for (let x = 0; x <= armLen; x++) {
+                if (tilesPlaced < preset.totalTiles) placeSym(x * 0.5, 0, currentZ);
+            }
+            // Vertical arm (avoid double counting center)
+            for (let y = 1; y <= armLen; y++) {
+                if (tilesPlaced < preset.totalTiles) placeSym(0, y * 0.5, currentZ);
+                if (tilesPlaced < preset.totalTiles) placeSym(0, -y * 0.5, currentZ);
+            }
+            currentZ++;
+            armLen = Math.max(1, armLen - 1);
+        }
+    }
+    
+    // Symmetries might leave 1 tile dangling if parity doesn't align perfectly with totalTiles
+    // which was stopped instantly. This is fine, totalTiles is met exactly.
+    // The bag is already shuffled, so just assign in the sorted Z order (top down or bottom up doesn't matter since bag is random)
+    
+    // Apply minor visual stagger offset per layer (Mahjong depth perspective)
+    // We rely purely on exact structural overlap for blocking now.
+    
+    generatedSlots.sort((a, b) => a.layer - b.layer);
+    
+    const tiles: BoardTile[] = [];
+    for (let i = 0; i < preset.totalTiles; i++) {
+        const slot = generatedSlots[i];
+        
+        // Exact overlapping is standard in these tile games; visual depth is handled 
+        // by slight isometric shifts in CSS, but grid logic treats (x, y) as base coordinates.
+        // We add a tiny positional y offset per layer to visually stack down-and-right slightly in engine
+        const layerOffsetX = slot.layer * 0.15;
+        const layerOffsetY = slot.layer * 0.15;
+        
+        tiles.push({
+            uid: i,
+            symbolId: tileBag[i].symbolId,
+            symbol: tileBag[i].symbol,
+            layer: slot.layer,
+            x: slot.x + layerOffsetX,
+            y: slot.y + layerOffsetY,
+            removed: false,
+        });
     }
 
     return tiles;

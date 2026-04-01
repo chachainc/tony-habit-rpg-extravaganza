@@ -1,12 +1,13 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { BedDouble, BookOpen, Shirt, Scale, Dumbbell, DollarSign, Edit3 } from 'lucide-react';
+import { BedDouble, BookOpen, Shirt, Scale, Dumbbell, DollarSign } from 'lucide-react';
 import { usePetStore } from '../../store/usePetStore';
 import { ITEM_DATABASE } from '../../data/items';
 import { useHeroImage } from '../../hooks/useHeroImage';
 import { SceneShell } from '../../components/scene';
 import { LoadoutPanel } from '../character/LoadoutPanel';
+import { SleepPanel } from './SleepPanel';
 import homeCampBg from '../../assets/room-bg.jpg';
 import './RoomLobby.css';
 
@@ -28,7 +29,7 @@ const ROOM_CARDS = [
         subtitle: 'Sleep Log',
         color: 'rgba(59, 130, 246, 0.35)',
         borderColor: 'rgba(59, 130, 246, 0.5)',
-        route: '/room/2d',
+        route: null,
         panelHint: 'sleep',
     },
     {
@@ -68,16 +69,6 @@ const ROOM_CARDS = [
         route: '/budget',
     },
     {
-        id: 'arrange',
-        icon: <Edit3 size={28} />,
-        title: 'Arrange',
-        subtitle: 'Place & Move Items',
-        color: 'rgba(59, 130, 246, 0.4)',
-        borderColor: 'rgba(59, 130, 246, 0.6)',
-        route: '/room/2d',
-        state: { autoEdit: true },
-    },
-    {
         id: 'pet',
         icon: null, // filled dynamically
         title: 'Pet',
@@ -107,6 +98,7 @@ export const RoomLobby = ({ onClose: _onClose }: { onClose: () => void }) => {
     const heroImage = useHeroImage();
     
     const [showLoadout, setShowLoadout] = useState(false);
+    const [showSleep, setShowSleep] = useState(false);
 
     return (
         <SceneShell
@@ -145,6 +137,8 @@ export const RoomLobby = ({ onClose: _onClose }: { onClose: () => void }) => {
                             onClick={() => {
                                 if (card.id === 'closet') {
                                     setShowLoadout(true);
+                                } else if (card.id === 'bed') {
+                                    setShowSleep(true);
                                 } else if (card.route) {
                                     navigate(card.route, card.state ? { state: card.state } : undefined);
                                 }
@@ -180,6 +174,28 @@ export const RoomLobby = ({ onClose: _onClose }: { onClose: () => void }) => {
                         }}
                     >
                         <LoadoutPanel onClose={() => setShowLoadout(false)} />
+                    </motion.div>
+                )}
+                {showSleep && (
+                    <motion.div
+                        initial={{ opacity: 0, scale: 0.95 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        exit={{ opacity: 0, scale: 0.95 }}
+                        style={{
+                            position: 'fixed',
+                            inset: 0,
+                            backgroundColor: 'rgba(15, 23, 42, 0.98)',
+                            zIndex: 60,
+                            overflowY: 'auto',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            padding: '1rem'
+                        }}
+                    >
+                        <div style={{ width: '100%', maxWidth: '600px' }}>
+                            <SleepPanel onClose={() => setShowSleep(false)} />
+                        </div>
                     </motion.div>
                 )}
             </AnimatePresence>
