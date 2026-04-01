@@ -24,7 +24,7 @@ const PET_ITEMS = [
     'pet_raven',
     'pet_elephant',
     'pet_rhino',
-    'pet_dog',
+    'pet_bear',
     'cow_king',
     'wizard_cow',
     'highland_archer_cow',

@@ -137,11 +137,18 @@ export const getPassiveBonuses = (): PassiveBonuses => {
 
     // Process Risk Map Region Bonuses
     const activeRiskRegions = useRiskStore.getState().getActiveRegionBonuses();
+    // Map 1 regions
     if (activeRiskRegions.includes('verdant_plains')) bonuses.attack_bonus += Math.floor(bonuses.attack_bonus * 0.05) || 1; // +5% ATK
     if (activeRiskRegions.includes('ashlands')) bonuses.gold_multiplier += 10; // +10% Gold
     if (activeRiskRegions.includes('iron_highlands')) bonuses.defense_bonus += Math.floor(bonuses.defense_bonus * 0.10) || 1; // +10% DEF 
     if (activeRiskRegions.includes('frozen_north')) bonuses.xp_multiplier += 10; // +10% XP
     if (activeRiskRegions.includes('sunken_expanse')) bonuses.max_hp_bonus += 5; // +5 Max HP
+    // Map 2 regions (stronger)
+    if (activeRiskRegions.includes('obsidian_peaks')) bonuses.attack_bonus += Math.floor(bonuses.attack_bonus * 0.15) || 2; // +15% ATK
+    if (activeRiskRegions.includes('dead_marshes')) bonuses.gold_multiplier += 15; // +15% Gold
+    if (activeRiskRegions.includes('ember_wastes')) bonuses.max_hp_bonus += 10; // +10 Max HP
+    if (activeRiskRegions.includes('shadow_rift')) bonuses.defense_bonus += Math.floor(bonuses.defense_bonus * 0.20) || 2; // +20% DEF
+    if (activeRiskRegions.includes('cursed_tundra')) bonuses.xp_multiplier += 15; // +15% XP
 
     return bonuses;
 };

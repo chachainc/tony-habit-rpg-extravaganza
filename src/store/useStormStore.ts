@@ -162,11 +162,7 @@ export interface Projectile {
     isHeal?: boolean; // medic heal projectile
 }
 
-export interface SavedFormation {
-    type: DefenderType;
-    x: number;
-    y: number;
-}
+// Legacy SavedFormation interface removed
 
 export interface StormState {
     gameState: StormGameState;
@@ -216,11 +212,9 @@ export interface StormState {
     // Damage popups
     damagePopups: StormDamagePopup[];
 
-    // Saved formation
-    savedFormation: SavedFormation[];
-
     // Actions
     startGame: () => void;
+    resetToIdle: () => void;
     pauseGame: () => void;
     resumeGame: () => void;
     gameTick: (deltaMs: number) => void;
@@ -231,15 +225,13 @@ export interface StormState {
     buyUpgrade: (upgradeKey: keyof StormState['upgrades']) => boolean;
     storeDefender: (id: string) => void;
     storeObstacle: (id: string) => void;
+    storeAllDefenders: () => void;
+    storeAllObstacles: () => void;
     hasBoughtFirstCow: boolean;
     
     // Movement
     moveDefender: (id: string, x: number, y: number) => void;
     activateAbility: (id: string) => void;
-
-    // Formation
-    saveFormation: () => void;
-    loadFormation: () => void;
 
     // Wave Generation
     startNextWave: () => void;
@@ -300,11 +292,24 @@ export const useStormStore = create<StormState>()(
 
     rallyUntil: 0,
 
-    savedFormation: JSON.parse(localStorage.getItem('stf-saved-formation') || '[]'),
-
     startGame: () => {
         set({ 
             gameState: 'idle',  // idle, not playing — prevents instant false victory on empty battlefield
+            enemies: [],
+            projectiles: [],
+            comboCount: 0,
+            comboTimer: 0,
+            comboPopups: [],
+            bossWarningActive: false,
+            rallyUntil: 0,
+            lastWaveRewards: null,
+            enemiesToSpawn: [],
+        });
+    },
+
+    resetToIdle: () => {
+        set({
+            gameState: 'idle',
             enemies: [],
             projectiles: [],
             comboCount: 0,
@@ -404,37 +409,33 @@ export const useStormStore = create<StormState>()(
             }
         }
     },
-
-    saveFormation: () => {
+    storeAllDefenders: () => {
         const state = get();
-        const formation: SavedFormation[] = state.defenders.map(d => ({
-            type: d.defenderType,
-            x: d.x,
-            y: d.y,
-        }));
-        localStorage.setItem('stf-saved-formation', JSON.stringify(formation));
-        set({ savedFormation: formation });
+        const newInventory = { ...state.defenderInventory };
+        
+        state.defenders.forEach(d => {
+            newInventory[d.defenderType] = (newInventory[d.defenderType] ?? 0) + 1;
+        });
+        
+        set({
+            defenders: [],
+            defenderInventory: newInventory
+        });
     },
 
-    loadFormation: () => {
+    storeAllObstacles: () => {
         const state = get();
-        const formation = state.savedFormation;
-        if (formation.length === 0) return;
-
-        const currStore = useCurrencyStore.getState();
-        for (const f of formation) {
-            const cost = DEFENDER_COSTS[f.type];
-            const isFree = f.type === 'cow' && !state.hasBoughtFirstCow;
-            if (isFree || currStore.shmeckles >= cost) {
-                get().buyDefender(f.type);
-                // Move the last defender to the saved position
-                const defs = get().defenders;
-                if (defs.length > 0) {
-                    const lastDef = defs[defs.length - 1];
-                    get().moveDefender(lastDef.id, f.x, f.y);
-                }
-            }
-        }
+        const newInventory = { ...state.obstacleInventory };
+        
+        state.obstacles.forEach(o => {
+            const key = o.type === 'barbed_wire' ? 'barbed_wire' : 'barricade';
+            newInventory[key] = (newInventory[key] ?? 0) + 1;
+        });
+        
+        set({
+            obstacles: [],
+            obstacleInventory: newInventory
+        });
     },
 
     startNextWave: () => {
@@ -970,8 +971,7 @@ export const useStormStore = create<StormState>()(
                 obstacleInventory: state.obstacleInventory,
                 bestWave: state.bestWave,
                 hasBoughtFirstCow: state.hasBoughtFirstCow,
-                upgrades: state.upgrades,
-                savedFormation: state.savedFormation
+                upgrades: state.upgrades
             })
         }
     )

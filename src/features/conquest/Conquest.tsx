@@ -55,6 +55,8 @@ export const Conquest = () => {
     const navigate = useNavigate();
     const heroImage = useHeroImage();
     const mapContainerRef = useRef<HTMLDivElement>(null);
+    const mapContentRef = useRef<HTMLDivElement>(null);
+    const [mapLines, setMapLines] = useState<{ id1: string, id2: string, x1: number, y1: number, x2: number, y2: number, status: string }[]>([]);
 
     const [showStore, setShowStore] = useState(false);
     const [showMeta, setShowMeta] = useState(false);
@@ -95,6 +97,60 @@ export const Conquest = () => {
     }, [hasBounced]);
 
     const reachableNodes = conquest.getReachableNodes();
+
+    useEffect(() => {
+        const recalculateLines = () => {
+            if (!mapContentRef.current) return;
+            const containerRect = mapContentRef.current.getBoundingClientRect();
+            const mapSource = conquest.generatedMap.length > 0 ? conquest.generatedMap : CONQUEST_MAP_NODES;
+            const lines: typeof mapLines = [];
+            
+            mapSource.forEach(node => {
+                const el1 = mapContentRef.current!.querySelector(`[data-node-id="${node.id}"]`) as HTMLElement;
+                if (!el1) return;
+                
+                const r1 = el1.getBoundingClientRect();
+                const x1 = r1.left + r1.width / 2 - containerRect.left;
+                const y1 = r1.top + r1.height / 2 - containerRect.top;
+
+                node.connections.forEach(targetId => {
+                    const el2 = mapContentRef.current!.querySelector(`[data-node-id="${targetId}"]`) as HTMLElement;
+                    if (!el2) return;
+                    
+                    const r2 = el2.getBoundingClientRect();
+                    const x2 = r2.left + r2.width / 2 - containerRect.left;
+                    const y2 = r2.top + r2.height / 2 - containerRect.top;
+
+                    let status = 'inactive';
+                    const isTargetCompleted = conquest.completedNodes.includes(targetId) || conquest.currentNodeId === targetId;
+                    const isNodeCompleted = conquest.completedNodes.includes(node.id) || conquest.currentNodeId === node.id;
+                    
+                    if (isTargetCompleted && isNodeCompleted) {
+                        status = 'completed';
+                    } else if (reachableNodes.includes(targetId) && (isNodeCompleted || node.id === conquest.currentNodeId)) {
+                        status = 'reachable';
+                    }
+
+                    lines.push({ id1: node.id, id2: targetId, x1, y1, x2, y2, status });
+                });
+            });
+            setMapLines(lines);
+        };
+
+        const timer = setTimeout(recalculateLines, 100);
+        window.addEventListener('resize', recalculateLines);
+        let observer: ResizeObserver | null = null;
+        if (typeof ResizeObserver !== 'undefined' && mapContainerRef.current) {
+            observer = new ResizeObserver(() => recalculateLines());
+            observer.observe(mapContainerRef.current);
+        }
+
+        return () => {
+            clearTimeout(timer);
+            window.removeEventListener('resize', recalculateLines);
+            if (observer) observer.disconnect();
+        };
+    }, [conquest.currentNodeId, conquest.completedNodes, reachableNodes]);
 
     const handleNodeClick = (node: ConquestNodeData) => {
         if (!reachableNodes.includes(node.id)) return;
@@ -226,7 +282,7 @@ export const Conquest = () => {
                     const isReachable = reachableNodes.includes(node.id);
 
                     return (
-                        <div key={node.id} className="map-node-wrapper">
+                        <div key={node.id} className="map-node-wrapper" data-node-id={node.id}>
                             <motion.button
                                 className={`map-node ${node.type} ${isCurrent ? 'current' : ''} ${isCompleted ? 'completed' : ''} ${isReachable ? 'reachable' : ''}`}
                                 whileHover={isReachable ? { scale: 1.1 } : {}}
@@ -323,7 +379,17 @@ export const Conquest = () => {
 
             {/* Main Viewport Map */}
             <div className="spire-map-viewport" ref={mapContainerRef}>
-                <div className="spire-map-content">
+                <div className="spire-map-content" ref={mapContentRef}>
+                    <svg className="map-connections">
+                        {mapLines.map(line => (
+                            <line
+                                key={`${line.id1}-${line.id2}`}
+                                x1={line.x1} y1={line.y1}
+                                x2={line.x2} y2={line.y2}
+                                className={`map-line ${line.status}`}
+                            />
+                        ))}
+                    </svg>
                     {renderMapNodes()}
                 </div>
             </div>

@@ -193,10 +193,29 @@
     background: repeating-linear-gradient(45deg, #1e1b4b, #1e1b4b 5px, #312e81 5px, #312e81 10px);
 }
 .bj-card-front {
-    width: 100%; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; background: radial-gradient(circle at top left, #ffffff, #f1f5f9); border-radius: 4px;
+    width: 100%; height: 100%; 
+    background: #ffffff; /* Pure white for max contrast */
+    border-radius: 4px;
+    position: relative; 
+    display: flex; align-items: center; justify-content: center;
+    box-shadow: inset 0 0 4px rgba(0,0,0,0.1);
+    z-index: 2; /* Keep above card background */
 }
-.bj-card-rank { font-size: 1.2rem; font-weight: 900; line-height: 1; margin-bottom: 2px; }
-.bj-card-suit { font-size: 1.5rem; line-height: 1; }
+.bj-card-corner {
+    position: absolute;
+    display: flex; flex-direction: column; align-items: center;
+    line-height: 0.9; font-weight: 900;
+}
+.bj-card-corner.top-left {
+    top: 3px; left: 4px;
+}
+.bj-card-rank { font-size: 0.9rem; z-index: 3; position: relative; }
+.bj-card-suit { font-size: 0.8rem; z-index: 3; position: relative; }
+.bj-card-center-suit {
+    font-size: 2rem;
+    opacity: 0.9;
+    z-index: 3; position: relative;
+}
 
 /* ── Center Area / Branding ── */
 .bj-center-area {

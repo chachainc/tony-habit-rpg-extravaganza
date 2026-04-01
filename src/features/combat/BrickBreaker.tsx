@@ -311,72 +311,75 @@ export const BrickBreaker = ({ onClose }: { onClose: () => void }) => {
     // ── Start ─────────────────────────────────────────────────────────────────
     const startGame = useCallback(() => {
         if (!canPlay) return;
-        const canvas = canvasRef.current;
-        if (!canvas) return;
 
-        activeLevelRef.current = selectedLevel;
-        cancelAnimationFrame(animRef.current);
-
-        const ctx = canvas.getContext('2d')!;
-        const rect = canvas.getBoundingClientRect();
-        const dpr = window.devicePixelRatio || 1;
-        canvas.width = rect.width * dpr;
-        canvas.height = rect.height * dpr;
-        ctx.scale(dpr, dpr);
-        const W = rect.width;
-        const H = rect.height;
-
-        const paddle = paddleRef.current;
-        paddle.baseW = 70;
-        paddle.w = 70;
-        paddle.x = W / 2 - paddle.w / 2;
-        paddle.stretch = 0;
-
-        // Initialize primary ball
-        const primaryBall: Ball = {
-            x: W / 2, y: H - 36, r: 6,
-            vx: levelSpeed(selectedLevel, false), vy: -levelSpeed(selectedLevel, false),
-            launched: false, trailX: W / 2, trailY: H - 36,
-        };
-        ballsRef.current = [primaryBall];
-
-        if (isBossLevel(selectedLevel)) {
-            bricksRef.current = [];
-            bossRef.current = buildBossEntity(W, selectedLevel);
-        } else {
-            bricksRef.current = buildBricks(W, selectedLevel);
-            bossRef.current = null;
-        }
-
-        particlesRef.current = [];
-        droppingPowerUpsRef.current = [];
-        activeEffectsRef.current = [];
-        pickupLabelRef.current = null;
-        livesRef.current = 3;
-        scoreRef.current = 0;
-        shakeRef.current = 0;
-
-        setScore(0); setLives(3); setGameOver(false); setWon(false);
-        setActiveEffectLabels([]);
         setGameStarted(true);
         recordBreakerPlay(0);
 
-        // ── Event handlers ───────────────────────────────────────────────────
-        const handlePointer = (e: PointerEvent) => {
-            const r = canvas.getBoundingClientRect();
-            paddle.x = Math.max(0, Math.min(W - paddle.w, e.clientX - r.left - paddle.w / 2));
-            // Pre-launch: keep primary ball centered on paddle
-            const primary = ballsRef.current[0];
-            if (primary && !primary.launched) {
-                primary.x = paddle.x + paddle.w / 2;
+        setTimeout(() => {
+            const canvas = canvasRef.current;
+            if (!canvas) return;
+
+            activeLevelRef.current = selectedLevel;
+            cancelAnimationFrame(animRef.current);
+
+            const ctx = canvas.getContext('2d')!;
+            const rect = canvas.getBoundingClientRect();
+            const dpr = window.devicePixelRatio || 1;
+            canvas.width = rect.width * dpr;
+            canvas.height = rect.height * dpr;
+            ctx.scale(dpr, dpr);
+            const W = rect.width;
+            const H = rect.height;
+
+            const paddle = paddleRef.current;
+            paddle.baseW = 70;
+            paddle.w = 70;
+            paddle.x = W / 2 - paddle.w / 2;
+            paddle.stretch = 0;
+
+            // Initialize primary ball
+            const primaryBall: Ball = {
+                x: W / 2, y: H - 36, r: 6,
+                vx: levelSpeed(selectedLevel, false), vy: -levelSpeed(selectedLevel, false),
+                launched: false, trailX: W / 2, trailY: H - 36,
+            };
+            ballsRef.current = [primaryBall];
+
+            if (isBossLevel(selectedLevel)) {
+                bricksRef.current = [];
+                bossRef.current = buildBossEntity(W, selectedLevel);
+            } else {
+                bricksRef.current = buildBricks(W, selectedLevel);
+                bossRef.current = null;
             }
-        };
-        const handleClick = () => {
-            const primary = ballsRef.current[0];
-            if (primary && !primary.launched) primary.launched = true;
-        };
-        canvas.addEventListener('pointermove', handlePointer);
-        canvas.addEventListener('click', handleClick);
+
+            particlesRef.current = [];
+            droppingPowerUpsRef.current = [];
+            activeEffectsRef.current = [];
+            pickupLabelRef.current = null;
+            livesRef.current = 3;
+            scoreRef.current = 0;
+            shakeRef.current = 0;
+
+            setScore(0); setLives(3); setGameOver(false); setWon(false);
+            setActiveEffectLabels([]);
+
+            // ── Event handlers ───────────────────────────────────────────────────
+            const handlePointer = (e: PointerEvent) => {
+                const r = canvas.getBoundingClientRect();
+                paddle.x = Math.max(0, Math.min(W - paddle.w, e.clientX - r.left - paddle.w / 2));
+                // Pre-launch: keep primary ball centered on paddle
+                const primary = ballsRef.current[0];
+                if (primary && !primary.launched) {
+                    primary.x = paddle.x + paddle.w / 2;
+                }
+            };
+            const handleClick = () => {
+                const primary = ballsRef.current[0];
+                if (primary && !primary.launched) primary.launched = true;
+            };
+            canvas.onpointermove = handlePointer;
+            canvas.onclick = handleClick;
 
         // ── Draw helpers ─────────────────────────────────────────────────────
         const drawBg = () => {
@@ -737,8 +740,8 @@ export const BrickBreaker = ({ onClose }: { onClose: () => void }) => {
             if (ended) return;
             ended = true;
             cancelAnimationFrame(animRef.current);
-            canvas.removeEventListener('pointermove', handlePointer);
-            canvas.removeEventListener('click', handleClick);
+            canvas.onpointermove = null;
+            canvas.onclick = null;
             clearEffects();
             const finalScore = scoreRef.current;
             setScore(finalScore);
@@ -814,11 +817,9 @@ export const BrickBreaker = ({ onClose }: { onClose: () => void }) => {
         };
 
         animRef.current = requestAnimationFrame(loop);
-        return () => {
-            cancelAnimationFrame(animRef.current);
-            canvas.removeEventListener('pointermove', handlePointer);
-            canvas.removeEventListener('click', handleClick);
-        };
+        
+    }, 0); // End of setTimeout deferral
+
     }, [canPlay, selectedLevel, addGold, recordBreakerPlay, unlockNextLevel, spawnParticles, triggerShake, tryDropPowerUp, applyPowerUp]);
 
     const playsRemaining = Math.max(0, 3 - (useMiniGameStore.getState().breakerPlaysToday));

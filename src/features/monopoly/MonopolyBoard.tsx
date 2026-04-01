@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Info, ChevronDown, ChevronUp, X, RefreshCw, Play, Square } from 'lucide-react';
+import { Info, ChevronDown, ChevronUp, X, RefreshCw, Play, Square, Coins } from 'lucide-react';
 import { useMonopolyStore, getBoard, BOARD_ODDS, OWNERSHIP_TIERS, type BoardSpace, type MysteryRollResult, type MoveResult } from '../../store/useMonopolyStore';
 import { useCurrencyStore } from '../../store/useCurrencyStore';
 import { useConquestStore } from '../../store/useConquestStore';
@@ -46,6 +46,21 @@ const PATH_LAYOUT = [
 
 const DICE_FACES = ['⚀', '⚁', '⚂', '⚃', '⚄', '⚅'];
 
+const GoldIcon = ({ size = 16 }: { size?: number }) => (
+    <Coins size={size} color="#fbbf24" style={{ display: 'inline', verticalAlign: 'text-bottom' }} />
+);
+
+const MYSTERY_SHUFFLE_ITEMS = [
+    { type: 'gold', icon: <GoldIcon size={48} />, label: 'Small Fortune' },
+    { type: 'shmeckle', icon: <span style={{fontSize: '3rem'}}>🐌</span>, label: 'Schmeckles' },
+    { type: 'sigil', icon: <span style={{fontSize: '3rem'}}>🔱</span>, label: 'Sigils Cache' },
+    { type: 'hat', icon: <span style={{fontSize: '3rem'}}>🌾</span>, label: 'Straw Hat' },
+    { type: 'pet', img: petCowSpin, label: 'Stray Cow' },
+    { type: 'pet', img: petChickenSpin, label: 'Stray Chicken' },
+    { type: 'pet', img: petSheepSpin, label: 'Stray Sheep' },
+    { type: 'pet', img: petPigSpin, label: 'Stray Pig' }
+];
+
 // Flow phases
 type Phase = 'idle' | 'dice-spin' | 'dice-reveal' | 'moving' | 'result' | 'go-result' | 'mystery-spin' | 'mystery-result' | 'hazard-result';
 
@@ -86,7 +101,7 @@ const ODDS_ROWS = [
 // Also show base tile rewards
 const BASE_REWARDS = [
     { icon: '🏠', label: 'GO tile', note: '+25 Gold (scales +1 per lap)' },
-    { icon: '🪙', label: 'Gold tiles', note: '+3–7 Gold' },
+    { icon: <GoldIcon size={18} />, label: 'Gold tiles', note: '+3–7 Gold' },
     { icon: '🐌', label: 'Shmeckle tiles', note: '+1–5 Schmeckles' },
     { icon: '🎁', label: 'Mystery Crop tiles', note: 'Opens drop table above' },
     { icon: '🎫', label: 'Lost Ticket', note: '+1 Roll' },
@@ -121,7 +136,6 @@ export const MonopolyBoard = ({ onClose }: { onClose: () => void }) => {
     const [goRewardAmount, setGoRewardAmount] = useState(0);
     const [moveResultData, setMoveResultData] = useState<MoveResult | null>(null);
 
-    // Board refresh animation key
     const [boardKey, setBoardKey] = useState(0);
     const [isRefreshing, setIsRefreshing] = useState(false);
 
@@ -130,11 +144,8 @@ export const MonopolyBoard = ({ onClose }: { onClose: () => void }) => {
     const autoRollRef = useRef(false);
 
     // Mystery box rng
-    const JACKPOT_TARGET = 4;
-    const JACKPOT_ODDS = 100;
     const [displayedRng, setDisplayedRng] = useState<number>(0);
     const [_finalRng, setFinalRng] = useState<number | null>(null);
-    const rngIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
     const [animatingTo, setAnimatingTo] = useState<number | null>(null);
     const [showRewardsInfo, setShowRewardsInfo] = useState(false);
@@ -186,66 +197,98 @@ export const MonopolyBoard = ({ onClose }: { onClose: () => void }) => {
             setTimeout(() => {
                 setPhase('moving');
 
-                // Token movement duration
-                setTimeout(() => {
-                    const moveResult = movePlayer(roll);
-                    setLandedSpace(moveResult.landedSpace);
-                    setMoveResultData(moveResult);
-                    setAnimatingTo(null);
-
-                    // Collect rent from owned tiles
-                    if (moveResult.rentCollected > 0) {
-                        addGold(moveResult.rentCollected, { exact: true });
-                    }
-
-                    if (moveResult.passedGo) {
-                        // GO was passed — award GO gold, show GO result
-                        setGoRewardAmount(moveResult.goReward);
-                        addGold(moveResult.goReward, { exact: true });
-                        setPhase('go-result');
-                        rollingRef.current = false;
+                // Animate token movement tile-by-tile
+                let stepCount = 0;
+                let visualPosition = currentPosition;
+                
+                const moveInterval = setInterval(() => {
+                    if (stepCount < roll) {
+                        stepCount++;
+                        visualPosition = (visualPosition + 1) % 24; // 24 = TOTAL_SPACES
+                        setAnimatingTo(visualPosition);
                     } else {
-                        // Normal tile landing
-                        const space = moveResult.landedSpace;
-                        const multiplier = getTileMultiplier(space.id);
+                        // Finished visual movement
+                        clearInterval(moveInterval);
+                        
+                        // Wait briefly for impact before showing popup
+                        setTimeout(() => {
+                            const moveResult = movePlayer(roll);
+                            setLandedSpace(moveResult.landedSpace);
+                            setMoveResultData(moveResult);
+                            setAnimatingTo(null);
 
-                        if (space.baseReward.gold) addGold(Math.floor(space.baseReward.gold * multiplier));
-                        if (space.baseReward.shmeckles) addShmeckles(Math.floor(space.baseReward.shmeckles * multiplier));
-                        if (space.baseReward.tickets) addTickets(space.baseReward.tickets);
-                        if ((space.baseReward as any).sigils) addSigils((space.baseReward as any).sigils);
+                            // Collect rent from owned tiles
+                            if (moveResult.rentCollected > 0) {
+                                addGold(moveResult.rentCollected, { exact: true });
+                            }
 
-                        if (space.type === 'mystery') {
-                            const mystery = rollMysteryBox();
-                            setMysteryEvent(mystery);
-                            setPhase('mystery-spin');
+                            if (moveResult.passedGo) {
+                                // GO was passed — award GO gold, show GO result
+                                setGoRewardAmount(moveResult.goReward);
+                                addGold(moveResult.goReward, { exact: true });
+                                setPhase('go-result');
+                                rollingRef.current = false;
+                            } else {
+                                // Normal tile landing
+                                const space = moveResult.landedSpace;
+                                const multiplier = getTileMultiplier(space.id);
 
-                            let animFrame = 0;
-                            const maxFrames = 30;
-                            const actualRng = mystery.rarity === 'ultra_rare' ? JACKPOT_TARGET : Math.floor(Math.random() * JACKPOT_ODDS) + 1;
+                                if (space.baseReward.gold) addGold(Math.floor(space.baseReward.gold * multiplier));
+                                if (space.baseReward.shmeckles) addShmeckles(Math.floor(space.baseReward.shmeckles * multiplier));
+                                if (space.baseReward.tickets) addTickets(space.baseReward.tickets);
+                                if ((space.baseReward as any).sigils) addSigils((space.baseReward as any).sigils);
 
-                            rngIntervalRef.current = setInterval(() => {
-                                animFrame++;
-                                setDisplayedRng(Math.floor(Math.random() * JACKPOT_ODDS) + 1);
+                                if (space.type === 'mystery') {
+                                    const mystery = rollMysteryBox();
+                                    setMysteryEvent(mystery);
+                                    setPhase('mystery-spin');
 
-                                if (animFrame >= maxFrames) {
-                                    if (rngIntervalRef.current) clearInterval(rngIntervalRef.current);
-                                    setDisplayedRng(actualRng);
-                                    setFinalRng(actualRng);
+                                    let animFrame = 0;
+                                    const maxFrames = 30; // 30 frames total
+                                    let currentDelay = 50; // Initial fast speed
+                                    
+                                    // Custom timeout loop for slowing down over time (ease-out effect)
+                                    const runShuffle = () => {
+                                        animFrame++;
+                                        setDisplayedRng(Math.floor(Math.random() * MYSTERY_SHUFFLE_ITEMS.length));
+                                        
+                                        if (animFrame >= maxFrames) {
+                                            // Conclude spin
+                                            setFinalRng(0); // Arbitrary to trigger end visually
+                                            
+                                            // Distribute actual rewards
+                                            if (mystery.reward.gold) addGold(mystery.reward.gold);
+                                            if (mystery.reward.shmeckles) addShmeckles(mystery.reward.shmeckles);
+                                            if ((mystery.reward as any).sigils) addSigils((mystery.reward as any).sigils);
 
-                                    if (mystery.reward.gold) addGold(mystery.reward.gold);
-                                    if (mystery.reward.shmeckles) addShmeckles(mystery.reward.shmeckles);
-                                    if ((mystery.reward as any).sigils) addSigils((mystery.reward as any).sigils);
+                                            setTimeout(() => {
+                                                setPhase('mystery-result');
+                                                rollingRef.current = false;
+                                            }, 400); // Brief pause on the final frame before pop
+                                            return;
+                                        }
 
-                                    setPhase('mystery-result');
+                                        // Increase delay progressively faster near the end to simulate wheel slowing
+                                        if (animFrame > 20) {
+                                            currentDelay += 35;
+                                        } else if (animFrame > 10) {
+                                            currentDelay += 10;
+                                        }
+                                        
+                                        setTimeout(runShuffle, currentDelay);
+                                    };
+                                    
+                                    // Start shuffle
+                                    runShuffle();
+                                    
+                                } else {
+                                    setPhase('result');
                                     rollingRef.current = false;
                                 }
-                            }, 50);
-                        } else {
-                            setPhase('result');
-                            rollingRef.current = false;
-                        }
+                            }
+                        }, 800); // Increased pause on final tile so it feels physical
                     }
-                }, 1200);
+                }, 200); // 200ms per tile step
             }, 800);
         }, 900);
     };
@@ -402,7 +445,10 @@ export const MonopolyBoard = ({ onClose }: { onClose: () => void }) => {
                             const isCurrentSpace = index === playerPosition;
                             const isGoTile = space.type === 'go';
                             const ownerInfo = getOwnershipInfo(index);
-                            const emptyIcon = space.type === 'empty' ? terrainIcons[index % terrainIcons.length] : space.icon;
+                            
+                            let emptyIcon: React.ReactNode = space.icon;
+                            if (space.type === 'empty') emptyIcon = terrainIcons[index % terrainIcons.length];
+                            if (space.type === 'gold') emptyIcon = <GoldIcon size={24} />;
 
                             const ownerClass = ownerInfo ? `owned-${ownerInfo.level}` : '';
 
@@ -421,7 +467,7 @@ export const MonopolyBoard = ({ onClose }: { onClose: () => void }) => {
                                         {ownerInfo ? ownerInfo.name : (isGoTile ? 'GO' : space.name)}
                                     </div>
                                     {isGoTile && (
-                                        <div className="go-reward-label">+{getGoReward()}g</div>
+                                        <div className="go-reward-label">+{getGoReward()}<GoldIcon size={12} /></div>
                                     )}
                                     {isCurrentSpace && (
                                         <motion.div
@@ -475,21 +521,35 @@ export const MonopolyBoard = ({ onClose }: { onClose: () => void }) => {
                     </AnimatePresence>
 
                     {/* Mystery box RNG spinner (on the board) */}
-                    <AnimatePresence>
+                    <AnimatePresence mode="wait">
                         {phase === 'mystery-spin' && (
                             <motion.div
                                 className="dice-center-overlay"
                                 initial={{ opacity: 0 }}
                                 animate={{ opacity: 1 }}
                                 exit={{ opacity: 0 }}
+                                key="mystery-overlay"
                             >
-                                <div className="rng-display">
-                                    <div className="rng-header">
-                                        <span className="rng-label">🎁 Opening Mystery Crop...</span>
+                                <div className="rng-display" style={{ width: '220px', padding: '1rem', background: 'rgba(20,20,30,0.95)', border: '2px solid #6366f1', borderRadius: '16px' }}>
+                                    <div className="rng-header" style={{ marginBottom: '1rem', textAlign: 'center' }}>
+                                        <span className="rng-label" style={{ fontSize: '1rem', fontWeight: 800, color: '#a5b4fc' }}>🎁 Revealing...</span>
                                     </div>
-                                    <motion.div className="rng-number spinning">
-                                        {displayedRng.toLocaleString()}
-                                    </motion.div>
+                                    
+                                    {/* Carousel Item Render */}
+                                    {MYSTERY_SHUFFLE_ITEMS[displayedRng] && (
+                                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px' }}>
+                                            <div style={{ height: '70px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                                {MYSTERY_SHUFFLE_ITEMS[displayedRng].img ? (
+                                                    <img src={MYSTERY_SHUFFLE_ITEMS[displayedRng].img} alt="item" style={{ width: '64px', height: '64px', borderRadius: '12px', border: '2px solid #fbbf24' }} />
+                                                ) : (
+                                                    MYSTERY_SHUFFLE_ITEMS[displayedRng].icon
+                                                )}
+                                            </div>
+                                            <span style={{ fontSize: '1.1rem', fontWeight: 700, color: '#fff' }}>
+                                                {MYSTERY_SHUFFLE_ITEMS[displayedRng].label}
+                                            </span>
+                                        </div>
+                                    )}
                                 </div>
                             </motion.div>
                         )}
@@ -641,7 +701,7 @@ export const MonopolyBoard = ({ onClose }: { onClose: () => void }) => {
                                 </div>
                                 <div className="reward-card-body">
                                     <div className="reward-line gold">
-                                        <span>🪙 Gold</span>
+                                        <div style={{display: 'flex', alignItems: 'center', gap: '0.4rem'}}><GoldIcon size={18} /> <span>Gold</span></div>
                                         <span className="reward-val">+{goRewardAmount}</span>
                                     </div>
                                     {moveResultData && moveResultData.rentCollected > 0 && (
@@ -702,7 +762,7 @@ export const MonopolyBoard = ({ onClose }: { onClose: () => void }) => {
                                 <p className="luck-message">{mysteryEvent.message}</p>
                                 <div className="luck-rewards">
                                     <div className="luck-xp">
-                                        {mysteryEvent.reward.gold && <span>+{mysteryEvent.reward.gold} 🪙 Gold</span>}
+                                        {mysteryEvent.reward.gold && <span>+{mysteryEvent.reward.gold} <GoldIcon />  Gold</span>}
                                         {mysteryEvent.reward.shmeckles && <span>+{mysteryEvent.reward.shmeckles} 🐌 Schmeckles</span>}
                                         {(mysteryEvent.reward as any).sigils && <span>+{(mysteryEvent.reward as any).sigils} 🔱 Sigils</span>}
                                     </div>
@@ -733,7 +793,7 @@ export const MonopolyBoard = ({ onClose }: { onClose: () => void }) => {
                                                     )}
                                                 </div>
                                             ) : (
-                                                <div className="pet-preview">{mysteryEvent.isDuplicate ? '🪙' : '🆕'}</div>
+                                                <div className="pet-preview">{mysteryEvent.isDuplicate ? <div style={{display: 'flex', justifyContent: 'center'}}><GoldIcon size={32} /></div> : '🆕'}</div>
                                             )}
                                         </div>
                                     )}
@@ -782,7 +842,7 @@ export const MonopolyBoard = ({ onClose }: { onClose: () => void }) => {
                                         <>
                                             {landedSpace.baseReward.gold && (
                                                 <div className="reward-line gold">
-                                                    <span>🪙 Gold</span>
+                                                    <div style={{display: 'flex', alignItems: 'center', gap: '0.4rem'}}><GoldIcon size={18} /> <span>Gold</span></div>
                                                     <span className="reward-val">+{Math.floor(landedSpace.baseReward.gold * getTileMultiplier(landedSpace.id))}</span>
                                                 </div>
                                             )}
@@ -838,7 +898,12 @@ export const MonopolyBoard = ({ onClose }: { onClose: () => void }) => {
                                                 }
                                             }}
                                         >
-                                            🏡 Buy Property ({getBuyCost(landedSpace.id)} Gold)
+                                            <div style={{display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px'}}>
+                                                <span>🏡 Buy Property</span>
+                                                <span style={{display: 'flex', alignItems: 'center', gap: '4px', background: 'rgba(0,0,0,0.2)', padding: '2px 8px', borderRadius: '12px'}}>
+                                                    ({getBuyCost(landedSpace.id)} <GoldIcon size={14} />)
+                                                </span>
+                                            </div>
                                         </button>
                                     )}
 

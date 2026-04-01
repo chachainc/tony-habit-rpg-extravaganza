@@ -12,7 +12,7 @@ const playWinSound = () => { /* TODO: Hook up real SFX */ };
 const playLossSound = () => { /* TODO: Hook up real SFX */ };
 
 const SUIT_COLORS: Record<string, string> = {
-    '♠': '#1e293b', '♣': '#1e293b', '♥': '#ef4444', '♦': '#ef4444',
+    '♠': '#0f172a', '♣': '#0f172a', '♥': '#dc2626', '♦': '#dc2626',
 };
 
 const CardDisplay = ({ card, hidden = false, index, isDealer }: { card: Card; hidden?: boolean; index: number; isDealer: boolean }) => {
@@ -34,9 +34,12 @@ const CardDisplay = ({ card, hidden = false, index, isDealer }: { card: Card; hi
                     <div className="bj-card-pattern" />
                 </div>
             ) : (
-                <div className="bj-card-front">
-                    <span className="bj-card-rank">{card.rank}</span>
-                    <span className="bj-card-suit" style={{ color: SUIT_COLORS[card.suit] }}>{card.suit}</span>
+                <div className="bj-card-front" style={{ color: SUIT_COLORS[card.suit] }}>
+                    <div className="bj-card-corner top-left">
+                        <span className="bj-card-rank">{card.rank}</span>
+                        <span className="bj-card-suit">{card.suit}</span>
+                    </div>
+                    <div className="bj-card-center-suit">{card.suit}</div>
                 </div>
             )}
         </motion.div>

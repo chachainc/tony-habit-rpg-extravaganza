@@ -7,7 +7,6 @@ import { TasksPage } from './features/tasks/TasksPage';
 import { PetPage } from './features/pet/PetPage';
 import { StatsPage } from './features/stats/StatsPage';
 import { Room2D } from './features/room/Room2D';
-import { WalkableRoom } from './features/room/WalkableRoom';
 import { WakeUpModal } from './features/day/WakeUpModal';
 import { ArenaPage } from './features/arena/ArenaPage';
 import { ShopModal } from './features/shop/ShopModal';
@@ -212,7 +211,6 @@ function App() {
           <Route path="shop" element={<ShopModal category="general" onClose={() => window.history.back()} />} />
           <Route path="room" element={<RoomLobbyPage />} />
           <Route path="room/2d" element={<PlayerRoomPage />} />
-          <Route path="walkable-room" element={<WalkableRoom />} />
           <Route path="marketplace" element={<MarketplaceTown />} />
           <Route path="monopoly" element={<MonopolyBoard onClose={() => window.history.back()} />} />
           <Route path="checkin" element={<CheckInModal onClose={() => window.history.back()} />} />

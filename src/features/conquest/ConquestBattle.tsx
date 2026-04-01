@@ -1,7 +1,7 @@
 import { useNavigate } from 'react-router-dom';
 import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Heart, Swords, ChevronLeft, Sparkles, Shield, LogOut } from 'lucide-react';
+import { Heart, ChevronLeft, Shield, LogOut } from 'lucide-react';
 import { useBattleStore } from '../../store/useBattleStore';
 import { useConquestStore } from '../../store/useConquestStore';
 import { useMagicStore } from '../../store/useMagicStore';
@@ -293,7 +293,7 @@ export const ConquestBattle = () => {
             </div>
 
             {/* Action Buttons */}
-            <div className="cq-action-panel" style={{ paddingBottom: '100px' }}>
+            <div className="cq-action-panel">
                 {battle.phase === 'prep' ? (
                     <button className="cq-action-btn primary" onClick={() => battle.startBattle()}>
                         ⚔️ Start Battle
@@ -302,7 +302,7 @@ export const ConquestBattle = () => {
                     <>
                         {/* 1. Heavy Attack */}
                         <button
-                            className="cq-action-btn attack"
+                            className="cq-action-btn attack heavy"
                             disabled={!isPlayerTurn || isExecuting || isRolling || battle.heavyAttackCooldown > 0}
                             onClick={() => {
                                 if (battle.heavyAttackCooldown > 0) return;
@@ -315,25 +315,26 @@ export const ConquestBattle = () => {
                                 conquest.trackDamageDealt(finalDamage);
                                 battle.selectAbility({
                                     id: 'heavy_strike', name: 'Heavy Strike', type: 'attack',
-                                    description: '', icon: '⚔️', element: 'neutral',
+                                    description: '', icon: '💥', element: 'neutral',
                                     damageMultiplier: 1.0, cooldown: 0, energyCost: 0,
                                     customDamageConfig: { type: 'heavy', rollValue: finalDamage }
                                 });
                                 battle.executePlayerAction();
                             }}
                         >
-                            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                                <div><Swords size={18} style={{ display: 'inline', verticalAlign: 'middle', marginRight: '4px' }} /> Heavy</div>
+                            <div className="cq-btn-top">💥 Heavy</div>
+                            <div className="cq-btn-mid">Hi-Dmg</div>
+                            <div className="cq-btn-bot">
                                 {battle.heavyAttackCooldown > 0
-                                    ? <div style={{ fontSize: '0.7rem', color: '#ef4444' }}>Heavy (Cooldown)</div>
-                                    : <div style={{ fontSize: '0.7rem', opacity: 0.8 }}>50% low hit / 50% big hit</div>
+                                    ? <span style={{ color: '#ef4444' }}>⚠️ Cooldown</span>
+                                    : <span>⚠️ 50% Hit</span>
                                 }
                             </div>
                         </button>
 
                         {/* 2. Light Attack */}
                         <button
-                            className="cq-action-btn attack"
+                            className="cq-action-btn attack light"
                             disabled={!isPlayerTurn || isExecuting || isRolling}
                             onClick={() => {
                                 setIsRolling(true);
@@ -351,7 +352,7 @@ export const ConquestBattle = () => {
                                         setTimeout(() => {
                                             battle.selectAbility({
                                                 id: 'light_strike', name: 'Light Strike', type: 'attack',
-                                                description: '', icon: '🗡️', element: 'neutral',
+                                                description: '', icon: '⚡', element: 'neutral',
                                                 damageMultiplier: 1.0, cooldown: 0, energyCost: 0,
                                                 customDamageConfig: { type: 'light', rollValue: finalRoll }
                                             });
@@ -363,16 +364,11 @@ export const ConquestBattle = () => {
                                 }, 50);
                             }}
                         >
-                            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                                <div><Swords size={18} style={{ display: 'inline', verticalAlign: 'middle', marginRight: '4px' }} /> Light</div>
-                                <div style={{ fontSize: '0.7rem', opacity: 0.8 }}>
-                                    {isRolling && rollValue !== null ? (
-                                        <span style={{ color: '#fbbf24', fontWeight: 'bold', fontSize: '1rem' }}>🎲 {rollValue}</span>
-                                    ) : (
-                                        `Roll 1–${Math.max(1, Math.floor(player.atk * battle.playerDamageModifier))}`
-                                    )}
-                                </div>
+                            <div className="cq-btn-top">⚡ Light</div>
+                            <div className="cq-btn-mid" style={isRolling ? { color: '#fbbf24' } : {}}>
+                                {isRolling && rollValue !== null ? `🎲 ${rollValue}` : `1–${Math.max(1, Math.floor(player.atk * battle.playerDamageModifier))} Dmg`}
                             </div>
+                            <div className="cq-btn-bot">Always Hits</div>
                         </button>
 
                         {/* 3. Defend */}
@@ -429,11 +425,6 @@ export const ConquestBattle = () => {
                                     className={`cq-action-btn spells ${!spell ? 'disabled-spell' : ''}`}
                                     disabled={!isPlayerTurn || isExecuting || !spell || !canCast}
                                     style={{
-                                        position: 'relative', display: 'flex', flexDirection: 'column',
-                                        alignItems: 'center', gap: '4px',
-                                        background: !spell ? '#334155' : 'linear-gradient(135deg, rgba(88, 28, 135, 0.4) 0%, rgba(126, 34, 206, 0.4) 100%)',
-                                        borderColor: !spell ? '#475569' : '#a855f7',
-                                        color: !spell ? '#94a3b8' : '#e9d5ff',
                                         opacity: (!isPlayerTurn || isExecuting || !spell || !canCast) ? 0.6 : 1,
                                     }}
                                     onClick={() => {
@@ -442,24 +433,23 @@ export const ConquestBattle = () => {
                                         }
                                     }}
                                 >
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                        <Sparkles size={18} />
+                                    <div className="cq-btn-top">✨ {spell ? spell.name : 'Spell'}</div>
+                                    <div className="cq-btn-mid" style={!spell ? { fontSize: '0.85rem' } : {}}>
                                         {!spell
-                                            ? 'No Spell Equipped'
-                                            : onCooldown
-                                                ? `${spell.name} on Cooldown`
-                                                : `Cast ${spell.name} ${expectedDamage ? `(${expectedDamage} dmg)` : ''}`}
+                                            ? 'None'
+                                            : expectedDamage ? `${expectedDamage} Dmg` : 'Cast'}
                                     </div>
-                                    {spell && onCooldown && (
-                                        <div style={{ fontSize: '0.8rem', color: '#ef4444' }}>
-                                            {spellCooldownTurns} turn{spellCooldownTurns !== 1 ? 's' : ''} remaining
-                                        </div>
-                                    )}
-                                    {spell && !onCooldown && (
-                                        <div style={{ fontSize: '0.8rem', color: canCast ? '#d8b4fe' : '#ef4444' }}>
-                                            {spell.mpCost} MP
-                                        </div>
-                                    )}
+                                    <div className="cq-btn-bot">
+                                        {spell && onCooldown ? (
+                                            <span style={{ color: '#ef4444' }}>⚠️ {spellCooldownTurns}t CD</span>
+                                        ) : spell && !canCast ? (
+                                            <span style={{ color: '#ef4444' }}>{spell.mpCost} MP</span>
+                                        ) : spell ? (
+                                            <span>{spell.mpCost} MP</span>
+                                        ) : (
+                                            'Not Equipped'
+                                        )}
+                                    </div>
                                 </button>
                             );
                         })()}

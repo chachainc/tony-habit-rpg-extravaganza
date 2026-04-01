@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useRiskStore, RISK_CARDS, REGIONS, type TerritoryNode, type RegionId, type RiskBattleResult, type RiskCardId } from '../../store/useRiskStore';
 import { useConquestStore } from '../../store/useConquestStore';
 import { useCurrencyStore } from '../../store/useCurrencyStore';
+import { RISK_CAMPAIGNS, CAMPAIGN_ORDER, ALL_REGIONS } from '../../data/riskMaps';
 import { Map as MapIcon, ArrowLeft, Swords, TrendingUp, X, ShoppingCart, HelpCircle } from 'lucide-react';
 import './RiskPage.css';
 
@@ -47,60 +48,62 @@ export const RiskPage = () => {
     const [attackSourceId, setAttackSourceId] = useState<string | null>(null);
     const [isRolling, setIsRolling] = useState(false);
     const [rollAnimDice, setRollAnimDice] = useState<{p: number[], e: number[]}>({ p: [], e: [] });
+    const [showMapUnlockedToast, setShowMapUnlockedToast] = useState(false);
+
+    // Active campaign info
+    const activeCampaign = RISK_CAMPAIGNS[risk.activeMapId];
+    const mapNodes = risk.mapStates[risk.activeMapId] || {};
+
+    // Can the player go back to a previous map?
+    const currentMapIdx = CAMPAIGN_ORDER.indexOf(risk.activeMapId);
+    const hasPreviousMap = currentMapIdx > 0;
+    const previousMapId = hasPreviousMap ? CAMPAIGN_ORDER[currentMapIdx - 1] : null;
+    const previousCampaign = previousMapId ? RISK_CAMPAIGNS[previousMapId] : null;
+
+    // Is there a next map available to advance to?
+    const nextMapId = currentMapIdx >= 0 && currentMapIdx < CAMPAIGN_ORDER.length - 1 ? CAMPAIGN_ORDER[currentMapIdx + 1] : null;
+    const nextCampaign = nextMapId ? RISK_CAMPAIGNS[nextMapId] : null;
 
     useEffect(() => {
         risk.initializeMap();
-        // Start panned near bottom-center (where start node is)
+        resetViewport();
+    }, []);
+
+    const resetViewport = () => {
         if (viewportRef.current) {
             const vw = viewportRef.current.clientWidth;
             const vh = viewportRef.current.clientHeight;
-            
-            // Calculate an ideal initial zoom to fit the map width, capped at 1
             const idealScale = Math.min(1, Math.max(MIN_ZOOM, vw / CANVAS_W));
-            
-            setPanOffset({ 
-                x: -(CANVAS_W * 0.45 * idealScale) + vw / 2, 
+            setPanOffset({
+                x: -(CANVAS_W * 0.45 * idealScale) + vw / 2,
                 y: -(CANVAS_H * 0.80 * idealScale) + vh / 2,
                 scale: idealScale
             });
         }
-    }, []);
+    };
 
-    // Helper to calculate distance between two pointers
     const getPointersDist = (p1: React.PointerEvent, p2: React.PointerEvent) => {
         return Math.hypot(p1.clientX - p2.clientX, p1.clientY - p2.clientY);
     };
 
-    // Helper to clamp pan offset based on current scale
     const clampOffset = (x: number, y: number, scale: number) => {
         const vw = viewportRef.current?.clientWidth ?? 0;
         const vh = viewportRef.current?.clientHeight ?? 0;
-        
-        // Map scaled dimensions
         const scaledW = CANVAS_W * scale;
         const scaledH = CANVAS_H * scale;
-
-        // If scaled map is smaller than viewport, center it or bind it tightly.
-        // Usually, we just want to ensure we can't pan the map entirely off screen.
-        // A standard approach is limiting x between `vw - scaledW` and `0`.
-        // If scaledW < vw, this means minX > 0, which would break the math, so we handle that case.
         const minX = Math.min(0, vw - scaledW);
-        const maxX = Math.max(0, vw - scaledW); // Allow centering if smaller
-
+        const maxX = Math.max(0, vw - scaledW);
         const minY = Math.min(0, vh - scaledH);
         const maxY = Math.max(0, vh - scaledH);
-
         return {
             x: Math.max(minX, Math.min(maxX, x)),
             y: Math.max(minY, Math.min(maxY, y))
         };
     };
 
-    // Pointer pan handlers
     const onPointerDown = (e: React.PointerEvent) => {
         (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
         activePointers.current.set(e.pointerId, e);
-
         if (activePointers.current.size === 1) {
             isPanning.current = false;
             lastPanPoint.current = { x: e.clientX, y: e.clientY };
@@ -109,73 +112,49 @@ export const RiskPage = () => {
             const pts = Array.from(activePointers.current.values());
             initialPinchDist.current = getPointersDist(pts[0], pts[1]);
             initialPinchScale.current = panOffset.scale;
-            lastPanPoint.current = null; // Disable standard panning during pinch
+            lastPanPoint.current = null;
         }
     };
 
     const onPointerMove = (e: React.PointerEvent) => {
         if (!activePointers.current.has(e.pointerId)) return;
-        
-        // Update the stored pointer event
         activePointers.current.set(e.pointerId, e);
-
         if (activePointers.current.size === 1 && lastPanPoint.current) {
-            // Single finger pan
             const dx = e.clientX - lastPanPoint.current.x;
             const dy = e.clientY - lastPanPoint.current.y;
-            
             if (Math.abs(dx) > 4 || Math.abs(dy) > 4) isPanning.current = true;
             if (!isPanning.current) return;
-
             setPanOffset(prev => {
                 const newX = prev.x + dx;
                 const newY = prev.y + dy;
                 return { ...prev, ...clampOffset(newX, newY, prev.scale) };
             });
-
             lastPanPoint.current = { x: e.clientX, y: e.clientY };
-
         } else if (activePointers.current.size === 2 && initialPinchDist.current !== null) {
-            // Two finger pinch zoom
             const pts = Array.from(activePointers.current.values());
             const currentDist = getPointersDist(pts[0], pts[1]);
-            
-            // Calculate new scale
             const scaleRatio = currentDist / initialPinchDist.current;
             let newScale = initialPinchScale.current * scaleRatio;
             newScale = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, newScale));
-
-            // Determine pinch center to zoom around that point
             const centerX = (pts[0].clientX + pts[1].clientX) / 2;
             const centerY = (pts[0].clientY + pts[1].clientY) / 2;
-
             setPanOffset(prev => {
                 if (!viewportRef.current) return prev;
                 const rect = viewportRef.current.getBoundingClientRect();
-                
-                // Mouse position relative to the map container
                 const relX = centerX - rect.left;
                 const relY = centerY - rect.top;
-
-                // How much the scale changed since last frame/prev state
                 const scaleDiff = newScale / prev.scale;
-
-                // Adjust offset so the point under the fingers stays in the same place
                 const newX = relX - (relX - prev.x) * scaleDiff;
                 const newY = relY - (relY - prev.y) * scaleDiff;
-
                 return { scale: newScale, ...clampOffset(newX, newY, newScale) };
             });
         }
     };
 
-    const onPointerUp = (e: React.PointerEvent) => { 
+    const onPointerUp = (e: React.PointerEvent) => {
         activePointers.current.delete(e.pointerId);
-        if (activePointers.current.size < 2) {
-            initialPinchDist.current = null;
-        }
+        if (activePointers.current.size < 2) initialPinchDist.current = null;
         if (activePointers.current.size === 1) {
-            // Resume panning from the remaining finger
             const remaining = Array.from(activePointers.current.values())[0];
             lastPanPoint.current = { x: remaining.clientX, y: remaining.clientY };
         } else if (activePointers.current.size === 0) {
@@ -183,10 +162,9 @@ export const RiskPage = () => {
         }
     };
 
-    // Get valid source nodes for attacking a given enemy node
     const getValidSources = (targetNode: TerritoryNode) => {
         return targetNode.neighbors
-            .map(nId => risk.mapNodes[nId])
+            .map(nId => mapNodes[nId])
             .filter(n => n && n.owner === 'player' && n.soldierCount >= 2);
     };
 
@@ -195,14 +173,9 @@ export const RiskPage = () => {
         setSelectedNode(node);
         setBattleResult(null);
         setIsRolling(false);
-
-        // If enemy & attackable, auto-pick source
         if (node.owner === 'enemy') {
             const sources = getValidSources(node);
-            if (sources.length === 1) {
-                setAttackSourceId(sources[0].id);
-                setCommittedSoldiers(Math.max(1, sources[0].soldierCount - 1));
-            } else if (sources.length > 1) {
+            if (sources.length >= 1) {
                 setAttackSourceId(sources[0].id);
                 setCommittedSoldiers(Math.max(1, sources[0].soldierCount - 1));
             } else {
@@ -217,24 +190,17 @@ export const RiskPage = () => {
 
     const handleSelectSource = (sourceId: string) => {
         setAttackSourceId(sourceId);
-        const sourceNode = risk.mapNodes[sourceId];
-        if (sourceNode) {
-            setCommittedSoldiers(Math.max(1, sourceNode.soldierCount - 1));
-        }
+        const sourceNode = mapNodes[sourceId];
+        if (sourceNode) setCommittedSoldiers(Math.max(1, sourceNode.soldierCount - 1));
     };
 
     const handleAttack = (targetNodeId: string) => {
         if (!attackSourceId) return;
         const prev = risk.getActiveRegionBonuses();
-        
-        // Start animation
         setIsRolling(true);
         setBattleResult(null);
-
-        // Simulate rolling visual
         const pCount = committedSoldiers;
         const eCount = Math.max(1, selectedNode?.soldierCount || 1);
-        
         let ticks = 0;
         const sourceIdForBattle = attackSourceId;
         const rollInterval = setInterval(() => {
@@ -246,11 +212,9 @@ export const RiskPage = () => {
             if (ticks > 8) {
                 clearInterval(rollInterval);
                 setIsRolling(false);
-
                 const result = risk.resolveRiskBattle(sourceIdForBattle, targetNodeId, committedSoldiers);
                 if (!result) return;
                 setBattleResult(result);
-
                 if (result.success) {
                     const next = useRiskStore.getState().getActiveRegionBonuses();
                     const newRegion = next.find(r => !prev.includes(r));
@@ -258,16 +222,46 @@ export const RiskPage = () => {
                         setJustConqueredRegion(newRegion);
                         setTimeout(() => setJustConqueredRegion(null), 4000);
                     }
-                    setSelectedNode(useRiskStore.getState().mapNodes[targetNodeId]);
+                    // Check if this victory fully conquered the active map
+                    const freshState = useRiskStore.getState();
+                    const freshNodes = freshState.mapStates[freshState.activeMapId];
+                    if (freshNodes && Object.values(freshNodes).every(n => n.owner === 'player')) {
+                        const currentIdx = CAMPAIGN_ORDER.indexOf(freshState.activeMapId);
+                        if (currentIdx >= 0 && currentIdx < CAMPAIGN_ORDER.length - 1) {
+                            setShowMapUnlockedToast(true);
+                            setTimeout(() => setShowMapUnlockedToast(false), 5000);
+                        }
+                    }
+                    setSelectedNode(freshNodes?.[targetNodeId] || null);
                 } else {
-                    setSelectedNode(useRiskStore.getState().mapNodes[targetNodeId]);
+                    const freshNodes = useRiskStore.getState().mapStates[risk.activeMapId];
+                    setSelectedNode(freshNodes?.[targetNodeId] || null);
                 }
             }
         }, 80);
     };
 
+    const handleAdvanceToNextMap = () => {
+        if (!nextMapId) return;
+        risk.switchMap(nextMapId);
+        setSelectedNode(null);
+        setBattleResult(null);
+        setAttackSourceId(null);
+        setTimeout(resetViewport, 50);
+    };
+
+    const handleGoBackToPreviousMap = () => {
+        if (!previousMapId) return;
+        risk.switchMap(previousMapId);
+        setSelectedNode(null);
+        setBattleResult(null);
+        setAttackSourceId(null);
+        setTimeout(resetViewport, 50);
+    };
+
     const activeRegions = risk.getActiveRegionBonuses();
-    const allOwned = Object.keys(risk.mapNodes).length > 0 && Object.values(risk.mapNodes).every(n => n.owner === 'player');
+    const allOwned = Object.keys(mapNodes).length > 0 && Object.values(mapNodes).every(n => n.owner === 'player');
+    const ascLevel = risk.ascensionLevels[risk.activeMapId] || 0;
 
     const getNodeColor = (node: TerritoryNode) => {
         if (node.owner === 'player') return '#10b981';
@@ -275,15 +269,14 @@ export const RiskPage = () => {
     };
 
     const isAttackable = (node: TerritoryNode) =>
-        node.owner === 'enemy' && node.neighbors.some(n => risk.mapNodes[n]?.owner === 'player');
+        node.owner === 'enemy' && node.neighbors.some(n => mapNodes[n]?.owner === 'player');
 
     const isLocked = (node: TerritoryNode) =>
-        node.owner === 'enemy' && !isAttackable(node) && node.id !== 'vp1';
+        node.owner === 'enemy' && !isAttackable(node) && node.id !== (activeCampaign?.startNodeId ?? 'vp1');
 
-    const allNodes = Object.values(risk.mapNodes);
+    const allNodes = Object.values(mapNodes);
     const maxRevealed = risk.getMaxRevealedTiles();
     const sortedNodes = [...allNodes].sort((a, b) => a.defenseValue - b.defenseValue);
-    
     const visibleNodeIds = new Set([
         ...allNodes.filter(n => n.owner === 'player').map(n => n.id),
         ...sortedNodes.slice(0, maxRevealed).map(n => n.id)
@@ -307,6 +300,19 @@ export const RiskPage = () => {
             </div>
 
             <div className="risk-content">
+                {/* ── Map Name Banner + Back Link ── */}
+                <div className="risk-map-banner">
+                    <div className="risk-map-banner-info">
+                        <span className="risk-map-banner-name">🗺️ {activeCampaign?.name || 'Unknown'}</span>
+                        <span className="risk-map-banner-sub">{activeCampaign?.subtitle || ''}{ascLevel > 0 ? ` · Ascension ${ascLevel}` : ''}</span>
+                    </div>
+                    {hasPreviousMap && (
+                        <button className="risk-map-back-link" onClick={handleGoBackToPreviousMap}>
+                            ← {previousCampaign?.name || 'Previous'}
+                        </button>
+                    )}
+                </div>
+
                 {/* ── Army Panel ── */}
                 <div className="risk-army-panel">
                     <div className="army-info">
@@ -335,22 +341,32 @@ export const RiskPage = () => {
                 >
                     {justConqueredRegion && (
                         <div className="region-conquer-toast">
-                            🌍 Region Conquered! <strong>{REGIONS[justConqueredRegion].name}</strong>
-                            <br /><small>{REGIONS[justConqueredRegion].bonusDescription}</small>
+                            🌍 Region Conquered! <strong>{ALL_REGIONS[justConqueredRegion]?.name || justConqueredRegion}</strong>
+                            <br /><small>{ALL_REGIONS[justConqueredRegion]?.bonusDescription}</small>
+                        </div>
+                    )}
+
+                    {showMapUnlockedToast && (
+                        <div className="region-conquer-toast" style={{ background: 'rgba(139,92,246,0.95)', borderColor: '#a78bfa' }}>
+                            🏆 MAP CONQUERED! <strong>New Region Unlocked!</strong>
+                            <br /><small>A new campaign awaits beyond the rift</small>
                         </div>
                     )}
 
                     <div
                         className="risk-map-canvas"
-                        style={{ transform: `translate(${panOffset.x}px, ${panOffset.y}px) scale(${panOffset.scale})` }}
+                        style={{
+                            transform: `translate(${panOffset.x}px, ${panOffset.y}px) scale(${panOffset.scale})`,
+                            backgroundImage: `url('${activeCampaign?.backgroundImage || '/assets/risk/scadrosharial_map.png'}')`,
+                        }}
                     >
                         {/* SVG paths between connected nodes */}
                         <svg className="map-paths-svg" width={CANVAS_W} height={CANVAS_H} style={{ position: 'absolute', inset: 0, pointerEvents: 'none' }}>
-                            {Object.values(risk.mapNodes).flatMap(node =>
+                            {Object.values(mapNodes).flatMap(node =>
                                 node.neighbors
-                                    .filter(nId => nId > node.id && visibleNodeIds.has(node.id) && visibleNodeIds.has(nId)) // avoid drawing twice and only if both visible
+                                    .filter(nId => nId > node.id && visibleNodeIds.has(node.id) && visibleNodeIds.has(nId))
                                     .map(nId => {
-                                        const nb = risk.mapNodes[nId];
+                                        const nb = mapNodes[nId];
                                         if (!nb) return null;
                                         const x1 = (node.mapX ?? 50) / 100 * CANVAS_W;
                                         const y1 = (node.mapY ?? 50) / 100 * CANVAS_H;
@@ -371,7 +387,7 @@ export const RiskPage = () => {
                         </svg>
 
                         {/* Node pins */}
-                        {Object.values(risk.mapNodes).filter(node => visibleNodeIds.has(node.id)).map(node => {
+                        {Object.values(mapNodes).filter(node => visibleNodeIds.has(node.id)).map(node => {
                             const cx = (node.mapX ?? 50) / 100 * CANVAS_W;
                             const cy = (node.mapY ?? 50) / 100 * CANVAS_H;
                             const owned = node.owner === 'player';
@@ -401,21 +417,44 @@ export const RiskPage = () => {
                             );
                         })}
 
-                        {/* Ascend panel overlay */}
+                        {/* ── Total Conquest overlay ── */}
                         {allOwned && (
                             <div className="risk-ascend-panel" style={{ position: 'absolute', top: '40%', left: '50%', transform: 'translate(-50%,-50%)', zIndex: 10 }}>
-                                <h2>Total Conquest!</h2>
-                                <p>Ascend to reset the map with harder enemies and gain Sigils.</p>
-                                <button className="hire-btn" style={{ fontSize: '1rem', padding: '0.75rem 1.5rem' }}
-                                    onClick={() => {
-                                        useConquestStore.getState().addSigils(10 + risk.ascensionLevel * 5);
-                                        risk.resetAndAscendMap();
-                                        setBattleResult(null);
-                                        setSelectedNode(null);
-                                    }}>
-                                    <TrendingUp size={20} style={{ display: 'inline', verticalAlign: 'middle', marginRight: 8 }} />
-                                    Ascend (Gain {10 + risk.ascensionLevel * 5} 🔱)
-                                </button>
+                                <h2>🏆 Total Conquest!</h2>
+                                {nextCampaign ? (
+                                    <>
+                                        <p>You have conquered <strong>{activeCampaign?.name}</strong>. A darker frontier awaits.</p>
+                                        <button className="risk-advance-btn" onClick={handleAdvanceToNextMap}>
+                                            ⚔️ Advance to {nextCampaign.name}
+                                        </button>
+                                        <div style={{ marginTop: '0.75rem' }}>
+                                            <button className="hire-btn" style={{ fontSize: '0.85rem', padding: '0.5rem 1rem', opacity: 0.8 }}
+                                                onClick={() => {
+                                                    useConquestStore.getState().addSigils(10 + ascLevel * 5);
+                                                    risk.resetAndAscendMap();
+                                                    setBattleResult(null);
+                                                    setSelectedNode(null);
+                                                }}>
+                                                <TrendingUp size={16} style={{ display: 'inline', verticalAlign: 'middle', marginRight: 6 }} />
+                                                Or Ascend ({10 + ascLevel * 5} 🔱)
+                                            </button>
+                                        </div>
+                                    </>
+                                ) : (
+                                    <>
+                                        <p>Ascend to reset the map with harder enemies and gain Sigils.</p>
+                                        <button className="hire-btn" style={{ fontSize: '1rem', padding: '0.75rem 1.5rem' }}
+                                            onClick={() => {
+                                                useConquestStore.getState().addSigils(10 + ascLevel * 5);
+                                                risk.resetAndAscendMap();
+                                                setBattleResult(null);
+                                                setSelectedNode(null);
+                                            }}>
+                                            <TrendingUp size={20} style={{ display: 'inline', verticalAlign: 'middle', marginRight: 8 }} />
+                                            Ascend (Gain {10 + ascLevel * 5} 🔱)
+                                        </button>
+                                    </>
+                                )}
                             </div>
                         )}
                     </div>
@@ -457,7 +496,6 @@ export const RiskPage = () => {
                         })}
                     </div>
 
-                    {/* Owned cards — small thumbnails to equip */}
                     {risk.ownedCards.length > 0 && (
                         <div className="owned-cards-section">
                             <h4>Owned ({risk.ownedCards.length})</h4>
@@ -507,7 +545,7 @@ export const RiskPage = () => {
                                     {selectedNode.name}
                                 </h2>
                                 <div style={{ fontSize: '0.8rem', color: '#94a3b8' }}>
-                                    {REGIONS[selectedNode.region]?.name} · {selectedNode.nodeType.toUpperCase()}
+                                    {ALL_REGIONS[selectedNode.region]?.name || REGIONS[selectedNode.region]?.name} · {selectedNode.nodeType.toUpperCase()}
                                     {selectedNode.trait && selectedNode.trait !== 'none' && ` · ${selectedNode.trait}`}
                                 </div>
                             </div>
@@ -516,7 +554,7 @@ export const RiskPage = () => {
                         {/* ── Enemy node attack UI ── */}
                         {selectedNode.owner === 'enemy' && selectedNode.nodeType !== 'shop' && (() => {
                             const validSources = getValidSources(selectedNode);
-                            const sourceNode = attackSourceId ? risk.mapNodes[attackSourceId] : null;
+                            const sourceNode = attackSourceId ? mapNodes[attackSourceId] : null;
                             const maxSendable = sourceNode ? sourceNode.soldierCount - 1 : 0;
                             const canAttack = isAttackable(selectedNode) && sourceNode && maxSendable > 0;
 
@@ -532,7 +570,6 @@ export const RiskPage = () => {
 
                                     {isAttackable(selectedNode) && !isRolling && !battleResult && (
                                         <>
-                                            {/* Source node selector */}
                                             {validSources.length > 0 && (
                                                 <div style={{ marginTop: '0.75rem' }}>
                                                     <label style={{ fontSize: '0.85rem', fontWeight: 600, marginBottom: '0.4rem', display: 'block', color: '#e2e8f0' }}>Attack from:</label>
@@ -566,17 +603,14 @@ export const RiskPage = () => {
                                                 </p>
                                             )}
 
-                                            {/* Troop commitment slider */}
                                             {canAttack && (
                                                 <div className="soldier-commit-section" style={{ marginTop: '1rem' }}>
                                                     <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem', marginBottom: '0.3rem' }}>
                                                         <span style={{ color: '#e2e8f0' }}>Soldiers to send</span>
                                                         <span style={{ color: '#f59e0b', fontWeight: 700 }}>{committedSoldiers} / {maxSendable} max</span>
                                                     </div>
-                                                    <input 
-                                                        type="range" 
-                                                        min="1" 
-                                                        max={maxSendable}
+                                                    <input
+                                                        type="range" min="1" max={maxSendable}
                                                         value={Math.min(committedSoldiers, maxSendable)}
                                                         onChange={(e) => setCommittedSoldiers(parseInt(e.target.value))}
                                                         style={{ width: '100%', accentColor: '#f59e0b' }}
@@ -611,7 +645,6 @@ export const RiskPage = () => {
                             </div>
                         )}
 
-                        {/* ── Owned node info + deploy ── */}
                         {selectedNode.owner === 'player' && (
                             <div style={{ marginBottom: '0.75rem' }}>
                                 <div style={{ color: '#10b981', fontWeight: 700 }}>✅ Controlled by your army</div>
@@ -620,14 +653,12 @@ export const RiskPage = () => {
                                 </div>
                                 {risk.playerSoldiers > 0 && (
                                     <div style={{ marginTop: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                                        <button
-                                            className="hire-btn"
-                                            style={{ fontSize: '0.8rem', padding: '0.35rem 0.75rem' }}
+                                        <button className="hire-btn" style={{ fontSize: '0.8rem', padding: '0.35rem 0.75rem' }}
                                             onClick={() => {
                                                 risk.deploySoldiers(selectedNode.id, 1);
-                                                setSelectedNode(useRiskStore.getState().mapNodes[selectedNode.id]);
-                                            }}
-                                        >
+                                                const freshNodes = useRiskStore.getState().mapStates[risk.activeMapId];
+                                                setSelectedNode(freshNodes?.[selectedNode.id] || null);
+                                            }}>
                                             Deploy +1 from reserve ({risk.playerSoldiers} available)
                                         </button>
                                     </div>
@@ -637,17 +668,12 @@ export const RiskPage = () => {
 
                         {/* ── Attack / Can't attack buttons ── */}
                         {selectedNode.owner === 'enemy' && selectedNode.nodeType !== 'shop' && (() => {
-                            const sourceNode = attackSourceId ? risk.mapNodes[attackSourceId] : null;
+                            const sourceNode = attackSourceId ? mapNodes[attackSourceId] : null;
                             const maxSendable = sourceNode ? sourceNode.soldierCount - 1 : 0;
                             const canAttack = isAttackable(selectedNode) && sourceNode && maxSendable > 0;
-
                             return canAttack ? (
-                                <button 
-                                    className="risk-attack-btn" 
-                                    onClick={() => handleAttack(selectedNode.id)}
-                                    disabled={isRolling}
-                                    style={{ opacity: isRolling ? 0.5 : 1 }}
-                                >
+                                <button className="risk-attack-btn" onClick={() => handleAttack(selectedNode.id)}
+                                    disabled={isRolling} style={{ opacity: isRolling ? 0.5 : 1 }}>
                                     {isRolling ? 'Rolling...' : <><Swords size={20} /> 🎲 Attack! ({committedSoldiers} vs {selectedNode.soldierCount})</>}
                                 </button>
                             ) : !isAttackable(selectedNode) ? (
@@ -659,10 +685,9 @@ export const RiskPage = () => {
 
                         {selectedNode.owner === 'enemy' && selectedNode.nodeType === 'shop' && isAttackable(selectedNode) && (() => {
                             const validSources = getValidSources(selectedNode);
-                            const sourceNode = attackSourceId ? risk.mapNodes[attackSourceId] : null;
+                            const sourceNode = attackSourceId ? mapNodes[attackSourceId] : null;
                             const maxSendable = sourceNode ? sourceNode.soldierCount - 1 : 0;
                             const canAttack = sourceNode && maxSendable > 0;
-
                             return canAttack ? (
                                 <button className="risk-attack-btn" style={{ background: '#10b981' }} onClick={() => handleAttack(selectedNode.id)}>
                                     <ShoppingCart size={18} /> Seize Supply Post
@@ -674,7 +699,6 @@ export const RiskPage = () => {
                             ) : null;
                         })()}
 
-                        {/* Rolling Animation Overlay */}
                         {isRolling && (
                             <div className="risk-rolling-anim" style={{ marginTop: '1rem', textAlign: 'center' }}>
                                 <h4 style={{ margin: '0 0 0.5rem', color: '#f59e0b' }}>🎲 ROLLING...</h4>
@@ -686,7 +710,6 @@ export const RiskPage = () => {
                             </div>
                         )}
 
-                        {/* Battle Result */}
                         {!isRolling && battleResult && (
                             <div className={`risk-battle-result modal-result ${battleResult.success ? 'victory' : 'defeat'}`} style={{ marginTop: '1rem' }}>
                                 <h4 style={{ margin: '0 0 0.5rem' }}>{battleResult.success ? '⚔️ VICTORY' : '💀 DEFEAT'}</h4>
@@ -711,7 +734,7 @@ export const RiskPage = () => {
                                 )}
                                 {battleResult.success && attackSourceId && (
                                     <div style={{ fontSize: '0.8rem', color: '#10b981', marginTop: '0.3rem' }}>
-                                        ✅ {risk.mapNodes[attackSourceId]?.name}: {risk.mapNodes[attackSourceId]?.soldierCount} remaining · {selectedNode.name}: {committedSoldiers} deployed
+                                        ✅ {mapNodes[attackSourceId]?.name}: {mapNodes[attackSourceId]?.soldierCount} remaining · {selectedNode.name}: {committedSoldiers} deployed
                                     </div>
                                 )}
                             </div>
@@ -737,12 +760,11 @@ export const RiskPage = () => {
                                 let canBuy = !owned;
                                 if (!owned) {
                                     if (def.currency === 'sigils') canBuy = conquest.sigils >= def.cost;
-                                    if (def.currency === 'gold') canBuy = (useCurrencyStore.getState().gold ?? 0) >= def.cost;
-                                    if (def.currency === 'shmeckles') canBuy = (useCurrencyStore.getState().shmeckles ?? 0) >= def.cost;
+                                    if (def.currency === 'gold') canBuy = useCurrencyStore.getState().gold >= def.cost;
+                                    if (def.currency === 'shmeckles') canBuy = useCurrencyStore.getState().shmeckles >= def.cost;
                                 }
-                                const cIcon = def.currency === 'sigils' ? '🔱' : def.currency === 'gold' ? '🪙' : '💰';
-                                const cLabel = def.currency === 'sigils' ? 'Sigils' : def.currency === 'gold' ? 'Gold' : 'Coins';
-                                
+                                const cIcon = def.currency === 'sigils' ? '🔱' : def.currency === 'gold' ? '💰' : '🐌';
+                                const cLabel = def.currency === 'sigils' ? 'Sigils' : def.currency === 'gold' ? 'Gold' : 'Shmeckles';
                                 return (
                                     <div key={def.id} className={`card-item-rich rarity-common ${owned ? 'owned-card-row' : ''}`} style={{ borderLeftColor: owned ? '#10b981' : '#60a5fa' }}>
                                         <span className="card-icon-lg">{def.icon}</span>
@@ -756,12 +778,8 @@ export const RiskPage = () => {
                                         {owned ? (
                                             <span style={{ color: '#10b981', fontWeight: 700, fontSize: '0.75rem', flexShrink: 0 }}>Owned ✓</span>
                                         ) : (
-                                            <button
-                                                className="card-equip-btn"
-                                                disabled={!canBuy}
-                                                onClick={() => risk.buyCard(def.id)}
-                                                title={!canBuy ? `Need ${def.cost} ${cLabel}` : `Buy for ${def.cost} ${cLabel}`}
-                                            >
+                                            <button className="card-equip-btn" disabled={!canBuy} onClick={() => risk.buyCard(def.id)}
+                                                title={!canBuy ? `Need ${def.cost} ${cLabel}` : `Buy for ${def.cost} ${cLabel}`}>
                                                 {def.cost} {cIcon}
                                             </button>
                                         )}

@@ -1,5 +1,5 @@
 import { useEffect, useState, useRef, useCallback } from 'react';
-import { Heart, Play, Pause, Save, FolderOpen } from 'lucide-react';
+import { Heart, Play, Pause, Inbox } from 'lucide-react';
 import { useStormStore, STORM_ENEMY_DEFS, DEFENDER_ABILITIES, getStormWavePreview } from '../../store/useStormStore';
 import type { StormEnemyType, DefenderType } from '../../store/useStormStore';
 import { useCurrencyStore } from '../../store/useCurrencyStore';
@@ -23,7 +23,6 @@ export const StormTheFort = () => {
         damagePopups,
         bossWarningActive,
         rallyUntil,
-        savedFormation,
         pauseGame,
         resumeGame,
         gameTick,
@@ -32,13 +31,14 @@ export const StormTheFort = () => {
         buyUpgrade,
         moveDefender,
         activateAbility,
-        saveFormation,
-        loadFormation,
         startNextWave,
         defenderInventory,
         obstacleInventory,
         storeDefender,
         storeObstacle,
+        storeAllDefenders,
+        storeAllObstacles,
+        resetToIdle,
     } = useStormStore();
 
     const { shmeckles } = useCurrencyStore();
@@ -68,6 +68,11 @@ export const StormTheFort = () => {
         if (gameState === 'playing') {
             requestRef.current = requestAnimationFrame(animate);
         }
+        
+        if (gameState === 'defeat' || gameState === 'victory') {
+            resetToIdle();
+        }
+        
         return () => {
             if (requestRef.current) cancelAnimationFrame(requestRef.current);
             previousTimeRef.current = undefined;
@@ -486,13 +491,17 @@ export const StormTheFort = () => {
                                 );
                             })}
 
-                            {/* Formation buttons */}
                             <div className="storm-formation-btns">
-                                <button className="storm-btn secondary small" onClick={saveFormation} disabled={defenders.length === 0}>
-                                    <Save size={14} /> Save
-                                </button>
-                                <button className="storm-btn secondary small" onClick={loadFormation} disabled={savedFormation.length === 0}>
-                                    <FolderOpen size={14} /> Load
+                                <button 
+                                    className="storm-btn primary auto-compact" 
+                                    onClick={() => {
+                                        storeAllDefenders();
+                                        storeAllObstacles();
+                                    }} 
+                                    disabled={defenders.length === 0 && obstacles.length === 0}
+                                    style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', padding: '12px' }}
+                                >
+                                    <Inbox size={18} /> Store All
                                 </button>
                             </div>
                         </div>

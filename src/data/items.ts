@@ -12,6 +12,7 @@ import petGiraffeImg from '../assets/pets/pet_giraffe.jpg';
 import petRavenImg from '../assets/pets/pet_raven.jpg';
 import petElephantImg from '../assets/pets/pet_elephant.jpg';
 import petRhinoImg from '../assets/pets/pet_rhino.jpg';
+import petBearImg from '../assets/pets/pet_bear.jpg';
 
 export type ItemType = 'armor' | 'weapon' | 'pet' | 'furniture' | 'consumable' | 'cosmetic' | 'pet_accessory';
 export type ItemCategory = 'hygiene' | 'sleep' | 'general' | 'combat' | 'social';
@@ -368,16 +369,17 @@ const PET_ITEMS: Item[] = [
         cost: { gold: 60000, diamonds: 25 },
         rarity: 'epic' },
     {
-        id: 'pet_dog',
-        name: 'Dog',
-        description: 'Loyal and friendly',
-        icon: '🐕',
+        id: 'pet_bear',
+        name: 'Bear',
+        description: 'A powerful, grounded companion with unyielding endurance.',
+        icon: '🐻',
+        image: petBearImg,
         type: 'pet',
         category: 'social',
         unlockRequirement: { skills: [{ skill: 'Social', level: 12 }] },
         cost: { gold: 10000 },
         stats: { defense: 5 },
-        rarity: 'uncommon' }, // Cyber Dog handles the dog role in battle
+        rarity: 'uncommon' },
     {
         id: 'cyber_dog', // Added to shop
         name: 'Cyber Dog',

@@ -1071,15 +1071,72 @@
     font-weight: 800;
 }
 
-.btn-icon {
-    font-size: 3rem;
-    margin-bottom: 0.5rem;
+.btn-top {
+    font-size: 0.95rem; /* +25% from 0.75 base roughly, maybe 1rem */
+    font-weight: 800;
+    text-transform: uppercase;
+    color: #f8fafc;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    letter-spacing: 0.5px;
+    text-shadow: 0 1px 2px rgba(0,0,0,0.8);
 }
 
-.btn-label {
-    font-weight: 700;
-    font-size: 1rem;
+.btn-mid {
+    font-size: 1.15rem; /* Largest text */
+    font-weight: 900;
+    color: white;
+    margin: 4px 0;
+    text-shadow: 0 2px 4px rgba(0,0,0,0.8);
+}
+
+.btn-bot {
+    font-size: 0.7rem;
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.6);
     text-transform: uppercase;
+}
+
+.command-btn.attack.heavy {
+    border-bottom: 4px solid #ef4444;
+    background: linear-gradient(135deg, rgba(127, 29, 29, 0.8), rgba(69, 10, 10, 0.9));
+}
+.command-btn.attack.heavy:hover:not(:disabled), .command-btn.attack.heavy:active:not(:disabled) {
+    box-shadow: 0 0 20px rgba(239, 68, 68, 0.4);
+    background: linear-gradient(135deg, rgba(185, 28, 28, 0.9), rgba(127, 29, 29, 1));
+}
+
+.command-btn.attack.light {
+    border-bottom: 4px solid #3b82f6;
+    background: linear-gradient(135deg, rgba(30, 58, 138, 0.8), rgba(15, 23, 42, 0.9));
+}
+.command-btn.attack.light:hover:not(:disabled), .command-btn.attack.light:active:not(:disabled) {
+    box-shadow: 0 0 20px rgba(59, 130, 246, 0.4);
+    background: linear-gradient(135deg, rgba(29, 78, 216, 0.9), rgba(30, 58, 138, 1));
+}
+
+.command-btn.spells {
+    border-bottom: 4px solid #a855f7;
+    background: linear-gradient(135deg, rgba(88, 28, 135, 0.8), rgba(59, 7, 100, 0.9));
+}
+.command-btn.spells:hover:not(:disabled), .command-btn.spells:active:not(:disabled) {
+    box-shadow: 0 0 20px rgba(168, 85, 247, 0.4);
+    background: linear-gradient(135deg, rgba(126, 34, 206, 0.9), rgba(88, 28, 135, 1));
+}
+
+/* Tap Feedback */
+.command-btn:active:not(:disabled) {
+    transform: scale(0.95);
+    filter: brightness(1.2);
+}
+
+.command-btn {
+    padding: 0.5rem;
+    cursor: pointer;
+    border-radius: 12px;
+    width: 105px !important;
+    height: 95px !important;
 }
 
 .rage-cost {

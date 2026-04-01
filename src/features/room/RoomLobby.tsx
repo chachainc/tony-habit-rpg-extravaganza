@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { BedDouble, BookOpen, Shirt, Scale, Dumbbell, DollarSign } from 'lucide-react';
+import { BedDouble, BookOpen, Shirt, Scale, Dumbbell, DollarSign, Edit3 } from 'lucide-react';
 import { usePetStore } from '../../store/usePetStore';
 import { ITEM_DATABASE } from '../../data/items';
 import { useHeroImage } from '../../hooks/useHeroImage';
@@ -18,7 +18,7 @@ const ROOM_CARDS = [
         subtitle: 'Titles, Auras, Pets',
         color: 'rgba(139, 92, 246, 0.35)',
         borderColor: 'rgba(139, 92, 246, 0.5)',
-        route: '/room/2d',
+        route: null,
         panelHint: 'wardrobe',
     },
     {
@@ -68,6 +68,16 @@ const ROOM_CARDS = [
         route: '/budget',
     },
     {
+        id: 'arrange',
+        icon: <Edit3 size={28} />,
+        title: 'Arrange',
+        subtitle: 'Place & Move Items',
+        color: 'rgba(59, 130, 246, 0.4)',
+        borderColor: 'rgba(59, 130, 246, 0.6)',
+        route: '/room/2d',
+        state: { autoEdit: true },
+    },
+    {
         id: 'pet',
         icon: null, // filled dynamically
         title: 'Pet',
@@ -85,6 +95,7 @@ const ROOM_CARDS = [
         color: 'rgba(30, 58, 90, 0.6)',
         borderColor: 'rgba(59, 130, 246, 0.4)',
         route: '/room/2d',
+        state: { autoEdit: false },
     },
 ];
 
@@ -134,8 +145,8 @@ export const RoomLobby = ({ onClose: _onClose }: { onClose: () => void }) => {
                             onClick={() => {
                                 if (card.id === 'closet') {
                                     setShowLoadout(true);
-                                } else {
-                                    navigate(card.route);
+                                } else if (card.route) {
+                                    navigate(card.route, card.state ? { state: card.state } : undefined);
                                 }
                             }}
                         >

@@ -413,6 +413,15 @@ const WEEKLY_TASKS_TEMPLATE: Omit<RecurringTask, 'completed'>[] = [
         type: 'weekly',
         rewards: [{ skillId: 'Housemaid', xp: 1 }],
     },
+    {
+        id: 'weekly-vacuum',
+        title: 'Vacuum',
+        type: 'weekly',
+        rewards: [
+            { skillId: 'Hygiene', xp: 1 },
+            { skillId: 'Housemaid', xp: 2 }
+        ],
+    },
 ];
 
 export const useRecurringTasksStore = create<RecurringTasksState>()(

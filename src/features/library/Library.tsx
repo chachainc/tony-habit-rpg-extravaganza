@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-    BookOpen, Plus, Check, Trash2, Sparkles, Brain, Zap
+    BookOpen, Plus, Check, Trash2, Sparkles, Brain
 } from 'lucide-react';
 
 import { useBookStore, BOOK_GLOBAL_XP_REWARD, BOOK_TYPES, BOOK_TYPE_MAP, type BookType } from '../../store/useBookStore';
@@ -11,14 +11,14 @@ import { Card } from '../../components/ui';
 import { SharedFusionPanel } from '../fusion/SharedFusionPanel';
 import './Library.css';
 
-type LibraryTab = 'reading' | 'fusion';
+type LibraryTab = 'library' | 'fusion' | 'reading' | 'completed';
 
 export const Library = () => {
     const { currentBooks, completedBooks, addBook, completeBook, removeBook } = useBookStore();
     const { skills, getXpProgress } = useGameStore();
     const { items } = useInventoryStore();
 
-    const [activeTab, setActiveTab] = useState<LibraryTab>('reading');
+    const [activeTab, setActiveTab] = useState<LibraryTab>('library');
     const [newTitle, setNewTitle] = useState('');
     const [newAuthor, setNewAuthor] = useState('');
     const [newBookType, setNewBookType] = useState<BookType>('fantasy');
@@ -143,48 +143,63 @@ export const Library = () => {
 
                     <p className="library-subtitle">Reading fuels your magical power</p>
 
-                    {/* Intelligence Stat */}
-                    <div className="intelligence-stat">
-                        <div className="intelligence-header">
-                            <span className="intelligence-icon">🧠</span>
-                            <span className="intelligence-label">Intelligence</span>
-                            <span className="intelligence-level">Lv. {skills['Intelligence'].level}</span>
-                        </div>
-                        <div className="intelligence-bar">
-                            <motion.div
-                                className="intelligence-fill"
-                                initial={{ width: 0 }}
-                                animate={{ width: `${intelligenceProgress.percentage}%` }}
-                            />
-                        </div>
-                        <div className="intelligence-xp">
-                            {intelligenceProgress.current} / {intelligenceProgress.required} XP
-                        </div>
-                    </div>
                 </motion.div>
 
                 {/* Tab Toggle */}
                 <div className="lib-tabs">
                     <button
-                        className={`lib-tab ${activeTab === 'reading' ? 'active' : ''}`}
-                        onClick={() => setActiveTab('reading')}
+                        className={`lib-tab ${activeTab === 'library' ? 'active' : ''}`}
+                        onClick={() => setActiveTab('library')}
                     >
-                        <BookOpen size={15} /> Library
+                        📚 Library
                     </button>
                     <button
                         className={`lib-tab ${activeTab === 'fusion' ? 'active' : ''}`}
                         onClick={() => setActiveTab('fusion')}
                     >
-                        <Zap size={15} /> Book Codex
+                        ⚡ Codex
                         {hasBooks && (
                             <span className="lib-tab-badge">!</span>
                         )}
                     </button>
+                    <button
+                        className={`lib-tab ${activeTab === 'reading' ? 'active' : ''}`}
+                        onClick={() => setActiveTab('reading')}
+                    >
+                        📖 Reading
+                    </button>
+                    <button
+                        className={`lib-tab ${activeTab === 'completed' ? 'active' : ''}`}
+                        onClick={() => setActiveTab('completed')}
+                    >
+                        ✅ Done
+                    </button>
                 </div>
 
-                {/* ── READING TAB ── */}
-                {activeTab === 'reading' && (
+                {/* ── LIBRARY TAB ── */}
+                {activeTab === 'library' && (
                     <>
+                        {/* Intelligence Stat */}
+                        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
+                            <div className="intelligence-stat">
+                                <div className="intelligence-header">
+                                    <span className="intelligence-icon">🧠</span>
+                                    <span className="intelligence-label">Intelligence</span>
+                                    <span className="intelligence-level">Lv. {skills['Intelligence'].level}</span>
+                                </div>
+                                <div className="intelligence-bar">
+                                    <motion.div
+                                        className="intelligence-fill"
+                                        initial={{ width: 0 }}
+                                        animate={{ width: `${intelligenceProgress.percentage}%` }}
+                                    />
+                                </div>
+                                <div className="intelligence-xp">
+                                    {intelligenceProgress.current} / {intelligenceProgress.required} XP
+                                </div>
+                            </div>
+                        </motion.div>
+
                         {/* Add New Book */}
                         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
                             <Card variant="elevated" className="add-book-card">
@@ -260,76 +275,92 @@ export const Library = () => {
                                 </form>
                             </Card>
                         </motion.div>
-
-                        {/* Currently Reading */}
+                        {/* Info Card */}
                         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
-                            <Card variant="elevated" className="current-books">
-                                <h2>📕 Currently Reading</h2>
-                                {currentBooks.length === 0 ? (
-                                    <p className="empty-message">No books in progress. Start reading something!</p>
-                                ) : (
-                                    <div className="books-list">
-                                        {currentBooks.map(book => {
-                                            const typeDef = BOOK_TYPE_MAP[book.bookType];
-                                            return (
-                                                <div key={book.id} className="book-item in-progress">
-                                                    <div
-                                                        className="book-cover"
-                                                        style={{ color: typeDef?.color }}
-                                                    >
-                                                        {typeDef?.icon ?? '📙'}
-                                                    </div>
-                                                    <div className="book-info">
-                                                        <h3 className="book-title">{book.title}</h3>
-                                                        <p className="book-author">by {book.author}</p>
-                                                        <div className="book-meta-row">
-                                                            <span
-                                                                className="book-type-badge"
-                                                                style={{
-                                                                    background: `${typeDef?.color ?? '#666'}22`,
-                                                                    color: typeDef?.color ?? '#aaa',
-                                                                    border: `1px solid ${typeDef?.color ?? '#666'}44`
-                                                                }}
-                                                            >
-                                                                {typeDef?.label ?? book.bookType}
-                                                            </span>
-                                                            <span
-                                                                className="book-type-badge"
-                                                                style={{
-                                                                    background: `#3332`,
-                                                                    color: `#ccc`,
-                                                                    border: `1px solid #555`
-                                                                }}
-                                                            >
-                                                                {book.format === 'audiobook' ? '🎧 Audiobook' : '📚 Physical'}
-                                                            </span>
-                                                            <span className="book-started">
-                                                                Started: {new Date(book.startedAt).toLocaleDateString()}
-                                                            </span>
-                                                        </div>
-                                                    </div>
-                                                    <div className="book-actions">
-                                                        <button
-                                                            className="complete-btn"
-                                                            onClick={() => handleCompleteBook(book.id, book.title, book.bookType, book.format || 'physical')}
-                                                        >
-                                                            <Check size={18} />
-                                                            Complete
-                                                        </button>
-                                                        <button className="remove-btn" onClick={() => removeBook(book.id)}>
-                                                            <Trash2 size={18} />
-                                                        </button>
-                                                    </div>
-                                                </div>
-                                            );
-                                        })}
-                                    </div>
-                                )}
+                            <Card variant="glass" className="info-card">
+                                <h3>📖 Books & Intelligence</h3>
+                                <ul className="info-list">
+                                    <li><strong>Complete a Book:</strong> Experience points added to Intelligence</li>
+                                    <li><strong>Earn items:</strong> You gain a Level 1 Tome after a book is completed</li>
+                                    <li><strong>Fuse Tomes:</strong> 3 copies of a Level N book fuse into a Level N+1 in your Book Codex</li>
+                                    <li><strong>Business Category 📓:</strong> Completing Business books additionally yields Strategy XP</li>
+                                </ul>
                             </Card>
                         </motion.div>
+                    </>
+                )}
 
-                        {/* Completed Books Shelf */}
-                        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}>
+                {/* ── READING TAB ── */}
+                {activeTab === 'reading' && (
+                    <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
+                        <Card variant="elevated" className="current-books">
+                            <h2>📕 Currently Reading</h2>
+                            {currentBooks.length === 0 ? (
+                                <p className="empty-message">No books in progress. Start reading something!</p>
+                            ) : (
+                                <div className="books-list">
+                                    {currentBooks.map(book => {
+                                        const typeDef = BOOK_TYPE_MAP[book.bookType];
+                                        return (
+                                            <div key={book.id} className="book-item in-progress">
+                                                <div
+                                                    className="book-cover"
+                                                    style={{ color: typeDef?.color }}
+                                                >
+                                                    {typeDef?.icon ?? '📙'}
+                                                </div>
+                                                <div className="book-info">
+                                                    <h3 className="book-title">{book.title}</h3>
+                                                    <p className="book-author">by {book.author}</p>
+                                                    <div className="book-meta-row">
+                                                        <span
+                                                            className="book-type-badge"
+                                                            style={{
+                                                                background: `${typeDef?.color ?? '#666'}22`,
+                                                                color: typeDef?.color ?? '#aaa',
+                                                                border: `1px solid ${typeDef?.color ?? '#666'}44`
+                                                            }}
+                                                        >
+                                                            {typeDef?.label ?? book.bookType}
+                                                        </span>
+                                                        <span
+                                                            className="book-type-badge"
+                                                            style={{
+                                                                background: `#3332`,
+                                                                color: `#ccc`,
+                                                                border: `1px solid #555`
+                                                            }}
+                                                        >
+                                                            {book.format === 'audiobook' ? '🎧 Audiobook' : '📚 Physical'}
+                                                        </span>
+                                                        <span className="book-started">
+                                                            Started: {new Date(book.startedAt).toLocaleDateString()}
+                                                        </span>
+                                                    </div>
+                                                </div>
+                                                <div className="book-actions">
+                                                    <button
+                                                        className="complete-btn"
+                                                        onClick={() => handleCompleteBook(book.id, book.title, book.bookType, book.format || 'physical')}
+                                                    >
+                                                        <Check size={18} />
+                                                        Complete
+                                                    </button>
+                                                    <button className="remove-btn" onClick={() => removeBook(book.id)}>
+                                                        <Trash2 size={18} />
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                            )}
+                        </Card>
+                    </motion.div>
+                )}
+
+                {/* ── COMPLETED TAB ── */}
+                {activeTab === 'completed' && (
                             <Card variant="elevated" className="completed-shelf">
                                 <h2>📚 Completed Books ({completedBooks.length})</h2>
                                 <p className="shelf-subtitle">Your permanent collection of knowledge</p>
@@ -395,21 +426,6 @@ export const Library = () => {
                                     </div>
                                 )}
                             </Card>
-                        </motion.div>
-
-                        {/* Info Card */}
-                        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }}>
-                            <Card variant="glass" className="info-card">
-                                <h3>📖 Books & Intelligence</h3>
-                                <ul className="info-list">
-                                    <li><strong>Complete a Book:</strong> Experience points added to Intelligence</li>
-                                    <li><strong>Earn items:</strong> You gain a Level 1 Tome after a book is completed</li>
-                                    <li><strong>Fuse Tomes:</strong> 3 copies of a Level N book fuse into a Level N+1 in your Book Codex</li>
-                                    <li><strong>Business Category 📓:</strong> Completing Business books additionally yields Strategy XP</li>
-                                </ul>
-                            </Card>
-                        </motion.div>
-                    </>
                 )}
 
                 {/* ── FUSION TAB ── */}

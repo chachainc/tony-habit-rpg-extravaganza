@@ -3,10 +3,11 @@ import { persist } from 'zustand/middleware';
 import { PERSIST_REGISTRY } from '../data/persistRegistry';
 import { useConquestStore } from './useConquestStore';
 import { useCurrencyStore } from './useCurrencyStore';
+import { RISK_CAMPAIGNS, ALL_REGIONS, CAMPAIGN_ORDER, type RegionId, type RiskCampaignDef } from '../data/riskMaps';
 
 export type TerritoryTrait = 'fortified' | 'resource' | 'mystic' | 'none';
-export type RegionId = 'ashlands' | 'iron_highlands' | 'verdant_plains' | 'crystal_coast' | 'frozen_north' | 'sunken_expanse';
 export type NodeType = 'combat' | 'elite' | 'boss' | 'shop' | 'treasure' | 'event';
+export type { RegionId } from '../data/riskMaps';
 
 export type RiskCardId =
     | 'blitz' | 'iron_discipline' | 'medic' | 'war_banner'
@@ -43,6 +44,11 @@ export interface RegionDef {
     bonusDescription: string;
 }
 
+/** Legacy REGIONS constant that maps region IDs for Map 1 — kept for backward compat */
+export const REGIONS: Record<string, RegionDef> = Object.fromEntries(
+    Object.entries(ALL_REGIONS).map(([k, v]) => [k, { id: v.id, name: v.name, bonusDescription: v.bonusDescription }])
+) as Record<string, RegionDef>;
+
 export interface TerritoryNode {
     id: string;
     name: string;
@@ -70,13 +76,25 @@ export interface RiskBattleResult {
 }
 
 export interface RiskState {
-    mapNodes: Record<string, TerritoryNode>;
+    // Multi-map state
+    mapStates: Record<string, Record<string, TerritoryNode>>;
+    activeMapId: string;
+    ascensionLevels: Record<string, number>;
+
+    // Global (shared across maps)
     playerSoldiers: number;
     ownedCards: RiskCardId[];
     equippedCards: RiskCardId[];
-    ascensionLevel: number;
+
+    // Legacy compat — kept for migration only
+    mapNodes?: Record<string, TerritoryNode>;
+    ascensionLevel?: number;
+
+    // Computed convenience getter
+    readonly currentMapNodes: Record<string, TerritoryNode>;
 
     initializeMap: () => void;
+    switchMap: (mapId: string) => void;
     resetAndAscendMap: () => void;
     resolveRiskBattle: (sourceNodeId: string, targetNodeId: string, attackingSoldiers: number) => RiskBattleResult | null;
     deploySoldiers: (nodeId: string, count: number) => boolean;
@@ -88,119 +106,25 @@ export interface RiskState {
     getSoldierLabel: (count: number) => string;
     getActiveRegionBonuses: () => RegionId[];
     getMaxRevealedTiles: () => number;
+    isMapFullyConquered: (mapId: string) => boolean;
 }
-
-export const REGIONS: Record<RegionId, RegionDef> = {
-    ashlands:       { id: 'ashlands',       name: 'Ashlands',      bonusDescription: '+10% Gold' },
-    iron_highlands: { id: 'iron_highlands',  name: 'Iron Highlands', bonusDescription: '+10% DEF' },
-    verdant_plains: { id: 'verdant_plains',  name: 'Verdant Plains', bonusDescription: '+5% ATK' },
-    crystal_coast:  { id: 'crystal_coast',   name: 'Crystal Coast',  bonusDescription: '+1 Sigil Per Win' },
-    frozen_north:   { id: 'frozen_north',    name: 'Frozen North',   bonusDescription: '+10% XP' },
-    sunken_expanse: { id: 'sunken_expanse',  name: 'Sunken Expanse', bonusDescription: '+5 Max HP' },
-};
 
 function defToSoldiers(defVal: number): number {
     return Math.max(1, Math.ceil(defVal / 10));
 }
 
-const NODE_DEFS: Omit<TerritoryNode, 'owner' | 'neighbors' | 'soldierCount'>[] = [
-    // Verdant Plains — starting area
-    { id: 'vp1',     name: 'Start Hold',       defenseValue: 0,   nodeType: 'combat',  trait: 'none',      region: 'verdant_plains', mapX: 45, mapY: 80 },
-    { id: 'vp2',     name: 'Greenveil',         defenseValue: 8,   nodeType: 'combat',  trait: 'resource',  region: 'verdant_plains', mapX: 60, mapY: 74 },
-    { id: 'vp3',     name: 'Windswept Fields',  defenseValue: 12,  nodeType: 'combat',  trait: 'none',      region: 'verdant_plains', mapX: 30, mapY: 72 },
-    { id: 'vp4',     name: 'Thornhaven',        defenseValue: 10,  nodeType: 'combat',  trait: 'resource',  region: 'verdant_plains', mapX: 50, mapY: 65 },
-
-    // Ashlands — mid-left
-    { id: 'al1',     name: 'Valley of Ash',     defenseValue: 15,  nodeType: 'combat',  trait: 'none',      region: 'ashlands',       mapX: 22, mapY: 58 },
-    { id: 'al2',     name: 'Cinder Ruins',      defenseValue: 20,  nodeType: 'elite',   trait: 'mystic',    region: 'ashlands',       mapX: 12, mapY: 47 },
-    { id: 'al3',     name: 'Black Dunes',       defenseValue: 25,  nodeType: 'elite',   trait: 'fortified', region: 'ashlands',       mapX: 28, mapY: 37 },
-    { id: 'al4',     name: 'Embervast',         defenseValue: 32,  nodeType: 'elite',   trait: 'none',      region: 'ashlands',       mapX: 8,  mapY: 32 },
-    { id: 'al5',     name: 'Scorchwall',        defenseValue: 45,  nodeType: 'elite',   trait: 'fortified', region: 'ashlands',       mapX: 18, mapY: 22 },
-
-    // Iron Highlands — center
-    { id: 'ih1',     name: 'Iron Ridge',        defenseValue: 18,  nodeType: 'combat',  trait: 'fortified', region: 'iron_highlands', mapX: 50, mapY: 58 },
-    { id: 'ih2',     name: 'Rust Canyon',       defenseValue: 28,  nodeType: 'elite',   trait: 'resource',  region: 'iron_highlands', mapX: 65, mapY: 48 },
-    { id: 'ih3',     name: 'Granite Peaks',     defenseValue: 35,  nodeType: 'elite',   trait: 'none',      region: 'iron_highlands', mapX: 48, mapY: 40 },
-    { id: 'ih4',     name: 'Irongate Watch',    defenseValue: 40,  nodeType: 'elite',   trait: 'fortified', region: 'iron_highlands', mapX: 62, mapY: 35 },
-    { id: 'ih_boss', name: 'Iron Citadel',      defenseValue: 55,  nodeType: 'boss',    trait: 'fortified', region: 'iron_highlands', mapX: 55, mapY: 27 },
-
-    // Crystal Coast — right
-    { id: 'cc1',     name: 'Storm Coast',       defenseValue: 22,  nodeType: 'combat',  trait: 'none',      region: 'crystal_coast',  mapX: 78, mapY: 68 },
-    { id: 'cc2',     name: 'Lighthouse Watch',  defenseValue: 30,  nodeType: 'elite',   trait: 'mystic',    region: 'crystal_coast',  mapX: 88, mapY: 55 },
-    { id: 'cc3',     name: 'Siren Break',       defenseValue: 38,  nodeType: 'elite',   trait: 'fortified', region: 'crystal_coast',  mapX: 82, mapY: 42 },
-    { id: 'cc4',     name: 'Tidewall Keep',     defenseValue: 50,  nodeType: 'elite',   trait: 'resource',  region: 'crystal_coast',  mapX: 92, mapY: 30 },
-    { id: 'cc_boss', name: 'Abyssal Gate',      defenseValue: 72,  nodeType: 'boss',    trait: 'mystic',    region: 'crystal_coast',  mapX: 88, mapY: 18 },
-
-    // Frozen North — upper
-    { id: 'fn1',     name: 'Frostmarch',        defenseValue: 35,  nodeType: 'elite',   trait: 'none',      region: 'frozen_north',   mapX: 38, mapY: 22 },
-    { id: 'fn2',     name: 'Glacier Peak',      defenseValue: 42,  nodeType: 'elite',   trait: 'mystic',    region: 'frozen_north',   mapX: 55, mapY: 15 },
-    { id: 'fn3',     name: 'Howling Pass',      defenseValue: 45,  nodeType: 'elite',   trait: 'fortified', region: 'frozen_north',   mapX: 22, mapY: 17 },
-    { id: 'fn4',     name: 'Rimspire',          defenseValue: 58,  nodeType: 'elite',   trait: 'none',      region: 'frozen_north',   mapX: 10, mapY: 10 },
-    { id: 'fn_boss', name: 'Frost Throne',      defenseValue: 85,  nodeType: 'boss',    trait: 'fortified', region: 'frozen_north',   mapX: 32, mapY: 8  },
-
-    // Sunken Expanse — far upper-right, hardest zone
-    { id: 'se1',     name: 'Sunken Delta',      defenseValue: 52,  nodeType: 'elite',   trait: 'resource',  region: 'sunken_expanse', mapX: 72, mapY: 22 },
-    { id: 'se2',     name: 'Abyssal Trench',    defenseValue: 62,  nodeType: 'elite',   trait: 'fortified', region: 'sunken_expanse', mapX: 82, mapY: 10 },
-    { id: 'se3',     name: 'Drowned Vault',     defenseValue: 75,  nodeType: 'elite',   trait: 'mystic',    region: 'sunken_expanse', mapX: 65, mapY: 8  },
-    { id: 'se4',     name: 'Maelstrom Reef',    defenseValue: 90,  nodeType: 'elite',   trait: 'fortified', region: 'sunken_expanse', mapX: 78, mapY: 4  },
-    { id: 'se_boss', name: 'Void Sovereign',    defenseValue: 120, nodeType: 'boss',    trait: 'mystic',    region: 'sunken_expanse', mapX: 90, mapY: 6  },
-];
-
-const ADJACENCY_MAP: Record<string, string[]> = {
-    // Verdant Plains hub
-    vp1:     ['vp2', 'vp3', 'vp4', 'ih1'],
-    vp2:     ['vp1', 'vp4', 'ih1', 'cc1'],
-    vp3:     ['vp1', 'vp4', 'al1', 'ih1'],
-    vp4:     ['vp1', 'vp2', 'vp3', 'ih1', 'ih2'],
-
-    // Ashlands chain
-    al1:     ['vp3', 'al2', 'al3', 'ih1'],
-    al2:     ['al1', 'al3', 'al4'],
-    al3:     ['al1', 'al2', 'al4', 'ih3', 'fn3'],
-    al4:     ['al2', 'al3', 'al5'],
-    al5:     ['al4', 'fn3', 'fn4'],
-
-    // Iron Highlands chain
-    ih1:     ['vp1', 'vp2', 'vp3', 'vp4', 'al1', 'ih2', 'ih3'],
-    ih2:     ['vp4', 'ih1', 'ih3', 'ih4', 'cc1', 'cc2'],
-    ih3:     ['ih1', 'ih2', 'ih4', 'al3', 'fn1', 'ih_boss'],
-    ih4:     ['ih2', 'ih3', 'ih_boss', 'cc3', 'fn2'],
-    ih_boss: ['ih3', 'ih4', 'fn1', 'fn2'],
-
-    // Crystal Coast chain
-    cc1:     ['vp2', 'ih2', 'cc2'],
-    cc2:     ['cc1', 'ih2', 'cc3'],
-    cc3:     ['cc2', 'ih4', 'cc4', 'se1'],
-    cc4:     ['cc3', 'cc_boss', 'se2'],
-    cc_boss: ['cc4', 'se2', 'se_boss'],
-
-    // Frozen North chain
-    fn1:     ['ih3', 'fn2', 'fn3', 'se1', 'fn_boss', 'ih_boss'],
-    fn2:     ['fn1', 'fn3', 'ih4', 'ih_boss', 'se1', 'se3', 'fn_boss'],
-    fn3:     ['al3', 'al5', 'fn1', 'fn2', 'fn4'],
-    fn4:     ['al5', 'fn3', 'fn_boss'],
-    fn_boss: ['fn1', 'fn2', 'fn4', 'se3'],
-
-    // Sunken Expanse (farthest)
-    se1:     ['fn1', 'fn2', 'cc3', 'se2', 'se3', 'se_boss'],
-    se2:     ['se1', 'cc4', 'cc_boss', 'se4', 'se_boss'],
-    se3:     ['fn2', 'fn_boss', 'se1', 'se4'],
-    se4:     ['se2', 'se3', 'se_boss'],
-    se_boss: ['se1', 'se2', 'se4', 'cc_boss'],
-};
-
-function generateMap(ascensionLevel: number): Record<string, TerritoryNode> {
+function generateMapFromCampaign(campaign: RiskCampaignDef, ascensionLevel: number): Record<string, TerritoryNode> {
     const mapNodes: Record<string, TerritoryNode> = {};
-    NODE_DEFS.forEach(def => {
+    campaign.nodes.forEach(def => {
         let soldiers = defToSoldiers(def.defenseValue);
-        if (def.id !== 'vp1') {
+        if (def.id !== campaign.startNodeId) {
             soldiers = Math.max(1, Math.floor(soldiers * (1 + ascensionLevel * 0.5)));
         }
         mapNodes[def.id] = {
             ...def,
             soldierCount: soldiers,
-            owner: def.id === 'vp1' ? 'player' : 'enemy',
-            neighbors: ADJACENCY_MAP[def.id] || [],
+            owner: def.id === campaign.startNodeId ? 'player' : 'enemy',
+            neighbors: campaign.adjacency[def.id] || [],
         };
     });
     return mapNodes;
@@ -209,25 +133,72 @@ function generateMap(ascensionLevel: number): Record<string, TerritoryNode> {
 export const useRiskStore = create<RiskState>()(
     persist(
         (set, get) => ({
-            mapNodes: {},
+            mapStates: {},
+            activeMapId: 'map1',
+            ascensionLevels: {},
             playerSoldiers: 1,
             ownedCards: [],
             equippedCards: [],
-            ascensionLevel: 0,
+
+            get currentMapNodes(): Record<string, TerritoryNode> {
+                const state = get();
+                return state.mapStates[state.activeMapId] || {};
+            },
 
             initializeMap: () => {
-                const { mapNodes, ascensionLevel } = get();
-                const nodeCount = Object.keys(mapNodes).length;
-                // Re-init if: empty, legacy format (t1), missing type, or stale node count (< current NODE_DEFS size)
-                if (nodeCount === 0 || mapNodes['t1'] || !Object.values(mapNodes)[0]?.nodeType || nodeCount < NODE_DEFS.length) {
-                    set({ mapNodes: generateMap(ascensionLevel || 0) });
+                const state = get();
+                let { mapStates, ascensionLevels } = state;
+                let needsUpdate = false;
+
+                // Migration: move legacy mapNodes into mapStates['map1']
+                if (state.mapNodes && Object.keys(state.mapNodes).length > 0 && (!mapStates['map1'] || Object.keys(mapStates['map1']).length === 0)) {
+                    mapStates = { ...mapStates, map1: state.mapNodes };
+                    ascensionLevels = { ...ascensionLevels, map1: state.ascensionLevel || 0 };
+                    needsUpdate = true;
+                }
+
+                // Initialize each campaign map if missing or stale
+                for (const campId of CAMPAIGN_ORDER) {
+                    const campaign = RISK_CAMPAIGNS[campId];
+                    if (!campaign) continue;
+                    const existing = mapStates[campId];
+                    const nodeCount = existing ? Object.keys(existing).length : 0;
+                    const expectedCount = campaign.nodes.length;
+
+                    // Re-init if: empty, legacy format, missing type, or stale node count
+                    if (nodeCount === 0 || (existing && existing['t1']) || (existing && !Object.values(existing)[0]?.nodeType) || nodeCount < expectedCount) {
+                        const asc = ascensionLevels[campId] || 0;
+                        mapStates = { ...mapStates, [campId]: generateMapFromCampaign(campaign, asc) };
+                        needsUpdate = true;
+                    }
+                }
+
+                if (needsUpdate) {
+                    set({
+                        mapStates,
+                        ascensionLevels,
+                        // Clear legacy fields after migration
+                        mapNodes: undefined,
+                        ascensionLevel: undefined,
+                    });
+                }
+            },
+
+            switchMap: (mapId: string) => {
+                if (RISK_CAMPAIGNS[mapId]) {
+                    set({ activeMapId: mapId });
                 }
             },
 
             resetAndAscendMap: () => {
-                const { ascensionLevel } = get();
-                const newLevel = ascensionLevel + 1;
-                set({ mapNodes: generateMap(newLevel), ascensionLevel: newLevel });
+                const { activeMapId, ascensionLevels, mapStates } = get();
+                const campaign = RISK_CAMPAIGNS[activeMapId];
+                if (!campaign) return;
+                const newLevel = (ascensionLevels[activeMapId] || 0) + 1;
+                set({
+                    mapStates: { ...mapStates, [activeMapId]: generateMapFromCampaign(campaign, newLevel) },
+                    ascensionLevels: { ...ascensionLevels, [activeMapId]: newLevel },
+                });
             },
 
             getSoldierLabel: (count: number) => {
@@ -252,15 +223,21 @@ export const useRiskStore = create<RiskState>()(
 
             deploySoldiers: (nodeId: string, count: number) => {
                 const state = get();
-                const node = state.mapNodes[nodeId];
+                const mapId = state.activeMapId;
+                const nodes = state.mapStates[mapId];
+                if (!nodes) return false;
+                const node = nodes[nodeId];
                 if (!node || node.owner !== 'player') return false;
                 const deployable = Math.min(count, state.playerSoldiers);
                 if (deployable <= 0) return false;
                 set(s => ({
                     playerSoldiers: s.playerSoldiers - deployable,
-                    mapNodes: {
-                        ...s.mapNodes,
-                        [nodeId]: { ...s.mapNodes[nodeId], soldierCount: s.mapNodes[nodeId].soldierCount + deployable }
+                    mapStates: {
+                        ...s.mapStates,
+                        [mapId]: {
+                            ...s.mapStates[mapId],
+                            [nodeId]: { ...s.mapStates[mapId][nodeId], soldierCount: s.mapStates[mapId][nodeId].soldierCount + deployable }
+                        }
                     }
                 }));
                 return true;
@@ -279,12 +256,10 @@ export const useRiskStore = create<RiskState>()(
                     cs.addSigils(-cost);
                 } else if (currency === 'gold') {
                     const curr = useCurrencyStore.getState();
-                    if ((curr.gold ?? 0) < cost) return false;
-                    curr.addGold(-cost);
+                    if (!curr.spendGold(cost)) return false;
                 } else if (currency === 'shmeckles') {
                     const curr = useCurrencyStore.getState();
-                    if ((curr.shmeckles ?? 0) < cost) return false;
-                    curr.addShmeckles(-cost);
+                    if (!curr.spendShmeckles(cost)) return false;
                 } else {
                     return false;
                 }
@@ -312,8 +287,12 @@ export const useRiskStore = create<RiskState>()(
 
             resolveRiskBattle: (sourceNodeId: string, targetNodeId: string, attackingSoldiers: number) => {
                 const state = get();
-                const sourceNode = state.mapNodes[sourceNodeId];
-                const targetNode = state.mapNodes[targetNodeId];
+                const mapId = state.activeMapId;
+                const nodes = state.mapStates[mapId];
+                if (!nodes) return null;
+
+                const sourceNode = nodes[sourceNodeId];
+                const targetNode = nodes[targetNodeId];
                 if (!sourceNode || sourceNode.owner !== 'player') return null;
                 if (!targetNode || targetNode.owner === 'player' || targetNode.nodeType === 'shop') return null;
                 if (!sourceNode.neighbors.includes(targetNodeId)) return null;
@@ -325,9 +304,12 @@ export const useRiskStore = create<RiskState>()(
 
                 // Deduct soldiers from source BEFORE battle
                 set(s => ({
-                    mapNodes: {
-                        ...s.mapNodes,
-                        [sourceNodeId]: { ...s.mapNodes[sourceNodeId], soldierCount: s.mapNodes[sourceNodeId].soldierCount - actualAttacking }
+                    mapStates: {
+                        ...s.mapStates,
+                        [mapId]: {
+                            ...s.mapStates[mapId],
+                            [sourceNodeId]: { ...s.mapStates[mapId][sourceNodeId], soldierCount: s.mapStates[mapId][sourceNodeId].soldierCount - actualAttacking }
+                        }
                     }
                 }));
 
@@ -384,9 +366,12 @@ export const useRiskStore = create<RiskState>()(
                     // Medic Corps: recover 1 soldier back to source node on victory
                     if (equipped.includes('medic')) {
                         set(s => ({
-                            mapNodes: {
-                                ...s.mapNodes,
-                                [sourceNodeId]: { ...s.mapNodes[sourceNodeId], soldierCount: s.mapNodes[sourceNodeId].soldierCount + 1 }
+                            mapStates: {
+                                ...s.mapStates,
+                                [mapId]: {
+                                    ...s.mapStates[mapId],
+                                    [sourceNodeId]: { ...s.mapStates[mapId][sourceNodeId], soldierCount: s.mapStates[mapId][sourceNodeId].soldierCount + 1 }
+                                }
                             }
                         }));
                         triggeredEffects.push('Medic Corps: +1 soldier recovered to source');
@@ -398,9 +383,12 @@ export const useRiskStore = create<RiskState>()(
 
                     // Capture target: set owner to player, soldiers = attacking force
                     set(s => ({
-                        mapNodes: {
-                            ...s.mapNodes,
-                            [targetNodeId]: { ...s.mapNodes[targetNodeId], owner: 'player', soldierCount: actualAttacking }
+                        mapStates: {
+                            ...s.mapStates,
+                            [mapId]: {
+                                ...s.mapStates[mapId],
+                                [targetNodeId]: { ...s.mapStates[mapId][targetNodeId], owner: 'player', soldierCount: actualAttacking }
+                            }
                         }
                     }));
 
@@ -411,9 +399,12 @@ export const useRiskStore = create<RiskState>()(
                     // Defeat: attacking soldiers are lost (already deducted from source).
                     // Enemy node takes 1 attrition.
                     set(s => ({
-                        mapNodes: {
-                            ...s.mapNodes,
-                            [targetNodeId]: { ...s.mapNodes[targetNodeId], soldierCount: Math.max(1, s.mapNodes[targetNodeId].soldierCount - 1) }
+                        mapStates: {
+                            ...s.mapStates,
+                            [mapId]: {
+                                ...s.mapStates[mapId],
+                                [targetNodeId]: { ...s.mapStates[mapId][targetNodeId], soldierCount: Math.max(1, s.mapStates[mapId][targetNodeId].soldierCount - 1) }
+                            }
                         }
                     }));
                 }
@@ -421,14 +412,14 @@ export const useRiskStore = create<RiskState>()(
                 // Enemy AI: 10% chance adjacent enemy nodes reinforce
                 const fortifiedEnemyNodes: string[] = [];
                 set(s => {
-                    const next = { ...s.mapNodes };
+                    const currentNodes = { ...s.mapStates[mapId] };
                     targetNode.neighbors.forEach(nId => {
-                        if (next[nId]?.owner === 'enemy' && Math.random() < 0.1) {
-                            next[nId] = { ...next[nId], soldierCount: next[nId].soldierCount + 1 };
+                        if (currentNodes[nId]?.owner === 'enemy' && Math.random() < 0.1) {
+                            currentNodes[nId] = { ...currentNodes[nId], soldierCount: currentNodes[nId].soldierCount + 1 };
                             fortifiedEnemyNodes.push(nId);
                         }
                     });
-                    return { mapNodes: next };
+                    return { mapStates: { ...s.mapStates, [mapId]: currentNodes } };
                 });
 
                 const reward: RiskBattleResult['reward'] = success
@@ -439,11 +430,23 @@ export const useRiskStore = create<RiskState>()(
             },
 
             getActiveRegionBonuses: () => {
-                const { mapNodes } = get();
-                const groups: Record<RegionId, string[]> = {
-                    ashlands: [], iron_highlands: [], verdant_plains: [], crystal_coast: [], frozen_north: [], sunken_expanse: []
-                };
-                Object.values(mapNodes).forEach(n => groups[n.region].push(n.owner));
+                const { mapStates } = get();
+                // Aggregate across ALL maps
+                const groups: Record<string, string[]> = {};
+                for (const rId of Object.keys(ALL_REGIONS)) {
+                    groups[rId] = [];
+                }
+
+                for (const mapId of CAMPAIGN_ORDER) {
+                    const nodes = mapStates[mapId];
+                    if (!nodes) continue;
+                    Object.values(nodes).forEach(n => {
+                        if (groups[n.region]) {
+                            groups[n.region].push(n.owner);
+                        }
+                    });
+                }
+
                 return (Object.keys(groups) as RegionId[]).filter(rId => {
                     const owners = groups[rId];
                     return owners.length > 0 && owners.every(o => o === 'player');
@@ -451,20 +454,33 @@ export const useRiskStore = create<RiskState>()(
             },
 
             getMaxRevealedTiles: () => {
-                const { mapNodes } = get();
-                const allNodes = Object.values(mapNodes);
+                const state = get();
+                const nodes = state.mapStates[state.activeMapId];
+                if (!nodes) return 3;
+                const allNodes = Object.values(nodes);
                 const ownedCount = allNodes.filter(n => n.owner === 'player').length;
                 return Math.min(allNodes.length, 3 + ownedCount * 2);
+            },
+
+            isMapFullyConquered: (mapId: string) => {
+                const { mapStates } = get();
+                const nodes = mapStates[mapId];
+                if (!nodes || Object.keys(nodes).length === 0) return false;
+                return Object.values(nodes).every(n => n.owner === 'player');
             },
         }),
         {
             name: PERSIST_REGISTRY.risk.persistKey,
             partialize: (state) => ({
-                mapNodes: state.mapNodes,
+                mapStates: state.mapStates,
+                activeMapId: state.activeMapId,
+                ascensionLevels: state.ascensionLevels,
                 playerSoldiers: state.playerSoldiers,
                 ownedCards: state.ownedCards,
                 equippedCards: state.equippedCards,
-                ascensionLevel: state.ascensionLevel || 0,
+                // Keep legacy fields for migration on next load
+                mapNodes: state.mapNodes,
+                ascensionLevel: state.ascensionLevel,
             }),
         }
     )

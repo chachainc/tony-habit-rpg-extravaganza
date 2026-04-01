@@ -51,7 +51,7 @@ const TOME_TREES = [
     },
 ];
 
-type Tab = 'books' | 'log' | 'tomes' | 'fusion';
+type Tab = 'library' | 'codex' | 'reading' | 'completed';
 
 const getXpPreview = (bookType: BookType, format: 'physical' | 'audiobook') => {
     if (bookType === 'fantasy') {
@@ -73,7 +73,7 @@ const getXpPreview = (bookType: BookType, format: 'physical' | 'audiobook') => {
 };
 
 export const LibraryCodex = ({ onClose }: { onClose: () => void }) => {
-    const [activeTab, setActiveTab] = useState<Tab>('log');
+    const [activeTab, setActiveTab] = useState<Tab>('library');
     const { completedBooks, logCompletedBook, currentBooks, addBook, completeBook } = useBookStore();
     const { items, removeItem, addItem } = useInventoryStore();
     useBookTrophyStore(); // subscribed for side effects via useBookStore
@@ -103,7 +103,7 @@ export const LibraryCodex = ({ onClose }: { onClose: () => void }) => {
             logCompletedBook(title, '', bookType, format);
         }
         setTitle('');
-        setActiveTab('books');
+        setActiveTab(isCurrentlyReading ? 'reading' : 'completed');
         showToast(isCurrentlyReading ? 'Book added to reading list!' : '📚 Book logged! Tome & XP awarded!');
     };
 
@@ -141,10 +141,10 @@ export const LibraryCodex = ({ onClose }: { onClose: () => void }) => {
     const tomePreview = BOOK_TYPES.find(t => t.id === bookType);
 
     const tabs: { key: Tab; icon: React.ReactNode; label: string }[] = [
-        { key: 'log',   icon: <Plus size={15} />,     label: 'Log Book' },
-        { key: 'books', icon: <BookOpen size={15} />, label: 'My Books' },
-        { key: 'tomes', icon: <Library size={15} />,  label: 'Tomes' },
-        { key: 'fusion',icon: <Zap size={15} />,      label: 'Fusion' },
+        { key: 'library', icon: <Plus size={15} />,     label: 'Log Book' },
+        { key: 'reading', icon: <BookOpen size={15} />, label: 'Reading' },
+        { key: 'completed', icon: <Library size={15} />,label: 'Completed' },
+        { key: 'codex',   icon: <Zap size={15} />,      label: 'Tome Codex' },
     ];
 
     return (
@@ -177,7 +177,7 @@ export const LibraryCodex = ({ onClose }: { onClose: () => void }) => {
                         >
                             {tab.icon}
                             <span>{tab.label}</span>
-                            {tab.key === 'fusion' && fusablePairs.length > 0 && (
+                            {tab.key === 'codex' && fusablePairs.length > 0 && (
                                 <span className="lc-tab-badge">{fusablePairs.length}</span>
                             )}
                         </button>
@@ -187,8 +187,8 @@ export const LibraryCodex = ({ onClose }: { onClose: () => void }) => {
                 {/* Content */}
                 <div className="lc-content">
 
-                    {/* ── LOG BOOK TAB ── */}
-                    {activeTab === 'log' && (
+                    {/* ── LOG BOOK TAB (Library) ── */}
+                    {activeTab === 'library' && (
                         <div className="lc-log-tab">
                             <form className="lc-log-form" onSubmit={handleLogBook}>
                                 <div className="lc-form-group">
@@ -272,16 +272,23 @@ export const LibraryCodex = ({ onClose }: { onClose: () => void }) => {
                                     {isCurrentlyReading ? '+ Add to Reading List' : '📚 Log Complete & Earn Rewards'}
                                 </button>
                             </form>
-
-                            {/* In-progress books */}
-                            {currentBooks.length > 0 && (
+                        </div>
+                    )}
+                    
+                    {/* ── READING NOW TAB ── */}
+                    {activeTab === 'reading' && (
+                        <div className="lc-reading-tab">
+                            {currentBooks.length > 0 ? (
                                 <div className="lc-in-progress">
-                                    <h4>Reading Now</h4>
+                                    <h4>Books In Progress</h4>
                                     {currentBooks.map(book => {
                                         const bt = BOOK_TYPES.find(t => t.id === book.bookType);
                                         return (
                                             <div key={book.id} className="lc-progress-card">
-                                                <span>{bt?.icon} {book.title}</span>
+                                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                                    <span style={{ fontSize: '1.2rem' }}>{bt?.icon}</span> 
+                                                    <span style={{ fontWeight: 600 }}>{book.title}</span>
+                                                </div>
                                                 <button
                                                     className="lc-complete-btn"
                                                     onClick={() => completeBook(book.id)}
@@ -292,12 +299,17 @@ export const LibraryCodex = ({ onClose }: { onClose: () => void }) => {
                                         );
                                     })}
                                 </div>
+                            ) : (
+                                <div className="lc-empty">
+                                    <span className="lc-empty-icon">📖</span>
+                                    <p>Not reading anything currently.<br />Add a book from the Log tab.</p>
+                                </div>
                             )}
                         </div>
                     )}
 
-                    {/* ── MY BOOKS TAB ── */}
-                    {activeTab === 'books' && (
+                    {/* ── COMPLETED BOOKS TAB ── */}
+                    {activeTab === 'completed' && (
                         <div className="lc-books-tab">
                             {completedBooks.length === 0 ? (
                                 <div className="lc-empty">
@@ -335,9 +347,71 @@ export const LibraryCodex = ({ onClose }: { onClose: () => void }) => {
                         </div>
                     )}
 
-                    {/* ── TOMES TAB ── */}
-                    {activeTab === 'tomes' && (
+                    {/* ── CODEX TAB (Tomes + Fusion) ── */}
+                    {activeTab === 'codex' && (
                         <div className="lc-tomes-tab">
+                            {/* Fusion Section */}
+                            <div className="lc-fusion-section">
+                                <div className="lc-fusion-header">
+                                    <h4>Tome Fusion Laboratory</h4>
+                                    <p>Combine <strong>3 tomes of the same type & tier</strong> to upgrade to the next tier.</p>
+                                </div>
+                                
+                                {fusablePairs.length > 0 && (
+                                    <div className="lc-fusion-list">
+                                        {fusablePairs.map(pair => {
+                                            const tree = TOME_TREES.find(t =>
+                                                pair.def.category === t.category
+                                            );
+                                            const glow = tree?.glow ?? '#60a5fa';
+                                            const isFlashing = fuseFlash === pair.nextId;
+                                            return (
+                                                <motion.div
+                                                    key={pair.id}
+                                                    className={`lc-fuse-card ${isFlashing ? 'flash' : ''}`}
+                                                    style={{ '--glow': glow } as React.CSSProperties}
+                                                    layout
+                                                >
+                                                    <div className="lc-fuse-slots">
+                                                        {[0, 1, 2].map(i => (
+                                                            <div key={i} className="lc-fuse-slot" style={{ borderColor: glow }}>
+                                                                <span style={{ color: glow }}>{tree?.icon ?? '📚'}</span>
+                                                                <span className="lc-fuse-slot-label">{pair.def.name?.replace(' Tome', '')}</span>
+                                                            </div>
+                                                        ))}
+                                                    </div>
+
+                                                    <div className="lc-fuse-arrow">→</div>
+
+                                                    <div className="lc-fuse-result" style={{ borderColor: glow }}>
+                                                        <span style={{ color: glow }}>{tree?.icon ?? '📚'}</span>
+                                                        <span className="lc-fuse-result-name">{pair.nextDef?.name}</span>
+                                                        <span className="lc-fuse-result-effect" style={{ color: glow }}>{pair.nextDef?.effect}</span>
+                                                    </div>
+
+                                                    <div className="lc-fuse-info">
+                                                        <span className="lc-fuse-count">×{Math.min(pair.count, 3)} / 3</span>
+                                                        <motion.button
+                                                            className="lc-fuse-btn"
+                                                            style={{ background: glow }}
+                                                            whileHover={{ scale: 1.05 }}
+                                                            whileTap={{ scale: 0.95 }}
+                                                            onClick={() => handleFuse(pair.id, pair.nextId)}
+                                                        >
+                                                            ⚗️ Fuse
+                                                        </motion.button>
+                                                    </div>
+                                                </motion.div>
+                                            );
+                                        })}
+                                    </div>
+                                )}
+                            </div>
+
+                            <hr style={{ borderColor: '#333', margin: '1.5rem 0' }} />
+
+                            {/* Tomes Collection */}
+                            <h4 style={{ color: '#fff', marginBottom: '1rem', paddingLeft: '0.5rem' }}>Collection Trees</h4>
                             {TOME_TREES.map(tree => (
                                 <div key={tree.category} className="lc-tome-tree">
                                     <div className="lc-tome-tree-header" style={{ color: tree.glow }}>
@@ -369,93 +443,6 @@ export const LibraryCodex = ({ onClose }: { onClose: () => void }) => {
                                     </div>
                                 </div>
                             ))}
-                        </div>
-                    )}
-
-                    {/* ── FUSION TAB ── */}
-                    {activeTab === 'fusion' && (
-                        <div className="lc-fusion-tab">
-                            <div className="lc-fusion-header">
-                                <p>Combine <strong>3 tomes of the same type & tier</strong> to upgrade to the next tier.</p>
-                            </div>
-                            {fusablePairs.length === 0 ? (
-                                <div className="lc-empty">
-                                    <span className="lc-empty-icon">⚗️</span>
-                                    <p>No tomes ready to fuse.<br />Complete books to earn more tomes!</p>
-                                </div>
-                            ) : (
-                                <div className="lc-fusion-list">
-                                    {fusablePairs.map(pair => {
-                                        const tree = TOME_TREES.find(t =>
-                                            pair.def.category === t.category
-                                        );
-                                        const glow = tree?.glow ?? '#60a5fa';
-                                        const isFlashing = fuseFlash === pair.nextId;
-                                        return (
-                                            <motion.div
-                                                key={pair.id}
-                                                className={`lc-fuse-card ${isFlashing ? 'flash' : ''}`}
-                                                style={{ '--glow': glow } as React.CSSProperties}
-                                                layout
-                                            >
-                                                {/* 3 slots visual */}
-                                                <div className="lc-fuse-slots">
-                                                    {[0, 1, 2].map(i => (
-                                                        <div key={i} className="lc-fuse-slot" style={{ borderColor: glow }}>
-                                                            <span style={{ color: glow }}>{tree?.icon ?? '📚'}</span>
-                                                            <span className="lc-fuse-slot-label">{pair.def.name?.replace(' Tome', '')} Tome</span>
-                                                        </div>
-                                                    ))}
-                                                </div>
-
-                                                <div className="lc-fuse-arrow">→</div>
-
-                                                {/* Result preview */}
-                                                <div className="lc-fuse-result" style={{ borderColor: glow }}>
-                                                    <span style={{ color: glow }}>{tree?.icon ?? '📚'}</span>
-                                                    <span className="lc-fuse-result-name">{pair.nextDef?.name}</span>
-                                                    <span className="lc-fuse-result-effect" style={{ color: glow }}>{pair.nextDef?.effect}</span>
-                                                </div>
-
-                                                <div className="lc-fuse-info">
-                                                    <span className="lc-fuse-count">×{Math.min(pair.count, 3)} / 3</span>
-                                                    <motion.button
-                                                        className="lc-fuse-btn"
-                                                        style={{ background: glow }}
-                                                        whileHover={{ scale: 1.05 }}
-                                                        whileTap={{ scale: 0.95 }}
-                                                        onClick={() => handleFuse(pair.id, pair.nextId)}
-                                                    >
-                                                        ⚗️ Fuse
-                                                    </motion.button>
-                                                </div>
-                                            </motion.div>
-                                        );
-                                    })}
-                                </div>
-                            )}
-
-                            {/* All owned tomes overview */}
-                            <div className="lc-owned-tomes">
-                                <h4>Your Tome Collection</h4>
-                                {Object.entries(items)
-                                    .filter(([id]) => ITEM_DB[id]?.type === 'book')
-                                    .map(([id, count]) => {
-                                        const def = ITEM_DB[id];
-                                        const tree = TOME_TREES.find(t => def.category === t.category);
-                                        return (
-                                            <div key={id} className="lc-owned-tome-row">
-                                                <span style={{ color: tree?.glow }}>{tree?.icon} {def.name}</span>
-                                                <span className="lc-owned-tome-count">×{count}</span>
-                                                <span className="lc-owned-tome-effect">{def.effect}</span>
-                                            </div>
-                                        );
-                                    })
-                                }
-                                {Object.entries(items).filter(([id]) => ITEM_DB[id]?.type === 'book').length === 0 && (
-                                    <p className="lc-empty-small">No tomes yet — log a book to earn your first!</p>
-                                )}
-                            </div>
                         </div>
                     )}
 
