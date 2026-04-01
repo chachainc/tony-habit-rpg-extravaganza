@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Info } from 'lucide-react';
 import { useGardenStore, SEEDS } from '../../store/useGardenStore';
@@ -50,8 +50,7 @@ const SeedModal = ({
                                 <span className="seed-modal-time">⏱ {hrs}h</span>
                                 <span className="seed-modal-yield">
                                     {seed.yields.map(y =>
-                                        y.type === 'gold' ? `+${y.value}🪙` :
-                                            `+${y.value} 📦`
+                                        y.type === 'gold' ? `+${y.value}🪙` : `+${y.value} 📦`
                                     ).join(' ')}
                                 </span>
                             </button>
@@ -106,6 +105,8 @@ export const GardenPanel = ({ onClose }: { onClose: () => void }) => {
     const [popPlots, setPopPlots] = useState<Set<number>>(new Set());
     const [waterPlots, setWaterPlots] = useState<Set<number>>(new Set());
     const [harvestPlots, setHarvestPlots] = useState<Set<number>>(new Set());
+
+    const isProcessingRef = useRef(false);
 
     const [, setTick] = useState(0);
 
@@ -185,19 +186,27 @@ export const GardenPanel = ({ onClose }: { onClose: () => void }) => {
     }, [tool, garden, addFloat, currencyStore, addToast]);
 
     const handleSeedSelect = useCallback((seedId: string) => {
-        if (pendingSeedPlotIdx === null) return;
+        if (pendingSeedPlotIdx === null || isProcessingRef.current) return;
+        isProcessingRef.current = true;
+
         const seed = SEEDS.find(s => s.id === seedId);
         if (!seed || gold < seed.cost) {
             addToast({ message: `Not enough gold! Need ${seed?.cost}🪙`, type: 'error' });
+            setTimeout(() => { isProcessingRef.current = false; }, 300);
             return;
         }
-        currencyStore.spendGold(seed.cost);
-        garden.plantSeed(pendingSeedPlotIdx, seedId);
-        setPopPlots(prev => new Set(prev).add(pendingSeedPlotIdx));
-        setTimeout(() => setPopPlots(prev => { const s = new Set(prev); s.delete(pendingSeedPlotIdx!); return s; }), 600);
-        const h = Math.floor(seed.growTimeMs / 3600000);
-        addToast({ message: `🌱 ${seed.name} planted! Ready in ~${h}h.`, type: 'success', duration: 3000 });
+
+        const plotIdx = pendingSeedPlotIdx;
         setPendingSeedPlotIdx(null);
+
+        currencyStore.spendGold(seed.cost);
+        garden.plantSeed(plotIdx, seedId);
+        setPopPlots(prev => new Set(prev).add(plotIdx));
+        setTimeout(() => setPopPlots(prev => { const s = new Set(prev); s.delete(plotIdx); return s; }), 600);
+        const h = Math.floor(seed.growTimeMs / 3600000);
+        addToast({ message: `🌱 Bought & planted ${seed.name} (-${seed.cost} 🪙). Ready in ~${h}h.`, type: 'success', duration: 3500 });
+        
+        setTimeout(() => { isProcessingRef.current = false; }, 300);
     }, [pendingSeedPlotIdx, gold, currencyStore, garden, addToast]);
 
     const readyCount = garden.plots.slice(0, garden.maxPlots).filter((_, i) => garden.isPlotReady(i)).length;

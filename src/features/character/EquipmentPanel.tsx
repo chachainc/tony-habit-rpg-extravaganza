@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useInventoryStore, ITEM_DB, type EquipmentSlot, type ItemDef, formatStatBonuses, getStatDelta } from '../../store/useInventoryStore';
-import { useGachaStore, PET_DB } from '../../store/useGachaStore';
+import { PET_DATABASE } from '../../data/pets';
+import { usePetStore } from '../../store/usePetStore';
 import { useHeroImage } from '../../hooks/useHeroImage';
 import { Sword, Shield, Gem, Sparkles, Dog, X, BookOpen, Gem as JewelIcon, Badge } from 'lucide-react';
 import './EquipmentPanel.css';
@@ -31,7 +32,7 @@ interface DisplayItem {
 
 export const EquipmentPanel = () => {
     const inventory = useInventoryStore();
-    const gacha = useGachaStore();
+    const petStore = usePetStore();
     const heroImage = useHeroImage();
     const [activeModalSlot, setActiveModalSlot] = useState<EquipmentSlot | null>(null);
 
@@ -47,16 +48,16 @@ export const EquipmentPanel = () => {
 
     const getAvailableItemsForSlot = (slot: EquipmentSlot): (DisplayItem & { isLocked?: boolean })[] => {
         if (slot === 'pet') {
-            const allPets = Object.keys(PET_DB);
+            const allPets = Object.keys(PET_DATABASE);
             return allPets.map(id => ({
                 id,
-                name: PET_DB[id]?.name || 'Unknown Pet',
-                icon: PET_DB[id]?.icon || '🐾',
-                rarity: PET_DB[id]?.rarity || 'common',
-                effectText: `Passive: ${PET_DB[id]?.passiveBonus?.type || 'none'}`,
-                description: PET_DB[id]?.description,
+                name: PET_DATABASE[id]?.name || 'Unknown Pet',
+                icon: PET_DATABASE[id]?.icon || '🐾',
+                rarity: PET_DATABASE[id]?.rarity || 'common',
+                effectText: `Passive: ${PET_DATABASE[id]?.passive?.name || 'none'}`,
+                description: PET_DATABASE[id]?.obtainMethod ? `Obtain: ${PET_DATABASE[id]?.obtainMethod}` : undefined,
                 itemDef: null,
-                isLocked: !gacha.ownedPets.includes(id),
+                isLocked: !petStore.ownedPets.includes(id),
             })).sort((a, b) => Number(a.isLocked) - Number(b.isLocked)); // Unlocked first
         }
 
@@ -99,15 +100,15 @@ export const EquipmentPanel = () => {
         if (!equippedId) return null;
 
         if (slot === 'pet') {
-            const pet = PET_DB[equippedId];
+            const pet = PET_DATABASE[equippedId];
             if (!pet) return null;
             return {
                 id: equippedId,
                 name: pet.name,
                 icon: pet.icon,
                 rarity: pet.rarity,
-                effectText: `Passive: ${pet.passiveBonus?.type || 'none'}`,
-                description: pet.description,
+                effectText: `Passive: ${pet.passive?.name || 'none'}`,
+                description: pet.obtainMethod ? `Obtain: ${pet.obtainMethod}` : undefined,
                 itemDef: null,
             };
         }

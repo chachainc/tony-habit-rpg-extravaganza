@@ -1,8 +1,7 @@
-import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, BedDouble, BookOpen, Shirt, Scale, Dumbbell, Pencil, Check, DollarSign, Menu } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
-import { useRoomStore } from '../../store/useRoomStore';
+import { X, ArrowLeft, Dumbbell, Scale, BedDouble, BookOpen, Shirt } from 'lucide-react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { usePetStore } from '../../store/usePetStore';
 import { useTitleStore } from '../../store/useTitleStore';
 import { useAuraStore, AURAS } from '../../store/useAuraStore';
@@ -12,31 +11,15 @@ import { SceneShell } from '../../components/scene';
 import { WardrobePanel } from './WardrobePanel';
 import { LibraryCodex } from '../library/LibraryCodex';
 import { SleepPanel } from './SleepPanel';
-import { TrophyHall } from './TrophyHall';
-import { FurniturePlacementPanel, DraggableFurniturePiece } from './FurniturePlacementPanel';
 import { LoadoutPanel } from '../character/LoadoutPanel';
-import { WorkshopPanel } from './WorkshopPanel';
-import { GardenPanel } from './GardenPanel';
-import { CellarPanel } from './CellarPanel';
-import { PetInteractionPanel } from './PetInteractionPanel';
+import { FurniturePlacementPanel, DraggableFurniturePiece } from './FurniturePlacementPanel';
+import { useRoomStore } from '../../store/useRoomStore';
 
-// --- CAMERA CONSTANTS ---
-const CANVAS_W = 2048;
-const CANVAS_H = 2048;
-const MIN_ZOOM = 0.35;
-const MAX_ZOOM = 2.0;
-const TAP_THRESHOLD = 8;
-const TILE = 64; // Grid tile size
-
-// AI-generated assets
 import homeCampBg from '../../assets/room-bg.jpg';
-import bookshelfBg from '../../assets/backgrounds/bookshelf_display.png';
 import { useHeroImage } from '../../hooks/useHeroImage';
-import './WalkableRoom.css';
 import './PlayerRoom.css';
-import './FurniturePlacementPanel.css';
 
-type ActivePanel = 'wardrobe' | 'bookshelf' | 'sleep' | 'body' | 'furniture_edit' | 'loadout' | 'trophies' | 'workshop' | 'garden' | 'cellar' | 'pet' | null;
+type ActivePanel = 'wardrobe' | 'bookshelf' | 'sleep' | 'body' | 'loadout' | 'furniture_edit' | null;
 
 /* ── Inline Body Panel (calorie + weight + water tracker) ── */
 const WATER_GLASSES = 8;
@@ -145,1085 +128,305 @@ const BodyPanel = ({ onClose }: { onClose: () => void }) => {
     );
 };
 
-// Room layout config
-const ROOM_LAYOUT = {
-    gridSize: { width: 32, height: 32 },
-    tileSize: TILE,
+type Hotspot = {
+    id: string;
+    label: string;
+    icon: React.ReactNode | string;
+    top: number; // Percentage
+    left: number; // Percentage
+    action: { type: 'panel', panel: ActivePanel } | { type: 'route', path: string };
 };
 
-const isWalkable = (x: number, y: number, placedFurniture: { gridX: number; gridY: number }[]): boolean => {
-    if (x < 0 || x >= ROOM_LAYOUT.gridSize.width) return false;
-    if (y < 0 || y >= ROOM_LAYOUT.gridSize.height) return false;
-    for (const furniture of placedFurniture) {
-        if (furniture.gridX === x && furniture.gridY === y) {
-            return false;
-        }
-    }
-    return true;
-};
-
-/* ══════ FURNITURE → PANEL INTERACTION MAPPING ══════
-   When tapping a placed furniture piece (NOT in edit mode),
-   this map determines which panel to open. */
-const FURNITURE_INTERACTIONS: Record<string, ActivePanel> = {
-    basic_bed:    'sleep',
-    comfy_bed:    'sleep',
-    premium_bed:  'sleep',
-    ornate_bed:   'sleep',
-    royal_canopy: 'sleep',
-    pet_bed:      'pet',
-    arcane_bookshelf: 'bookshelf',
-    writing_desk: 'bookshelf',
-    archmage_desk: 'bookshelf',
-    // Decorative — no interaction yet
-    guitar: null,
-    fireplace: null,
-    grandfather_clock: null,
-    magic_hearth: null,
-    celestial_chandelier: null,
-    enchanted_mirror: 'wardrobe',
-    enchanted_mirror_prestige: 'wardrobe',
-};
-
-/* ══════ DECORATIVE WORLD ELEMENTS ══════ */
-type DecoItem = { emoji: string; x: number; y: number; size: number; flicker?: boolean };
-const DECO_ITEMS: DecoItem[] = [
-    // ── North wall storage row ──
-    { emoji: '🪵', x: 0, y: 0, size: 1.8 },
-    { emoji: '🛢️', x: 1, y: 0, size: 1.5 },
-    { emoji: '📦', x: 2, y: 0, size: 1.3 },
-    { emoji: '🧱', x: 10, y: 0, size: 1.2 },
-    { emoji: '🪴', x: 14, y: 0, size: 1.8 },
-    { emoji: '🏴', x: 19, y: 0, size: 1.6 },
-    { emoji: '📦', x: 29, y: 0, size: 1.4 },
-    { emoji: '📦', x: 30, y: 0, size: 1.3 },
-    { emoji: '🪵', x: 31, y: 0, size: 1.6 },
-
-    // ── South wall storage row ──
-    { emoji: '🪣', x: 0, y: 31, size: 1.3 },
-    { emoji: '🧺', x: 1, y: 31, size: 1.4 },
-    { emoji: '🪵', x: 2, y: 31, size: 1.2 },
-    { emoji: '🛢️', x: 9, y: 31, size: 1.3 },
-    { emoji: '🪴', x: 15, y: 31, size: 1.7 },
-    { emoji: '📦', x: 22, y: 31, size: 1.4 },
-    { emoji: '🧱', x: 28, y: 31, size: 1.2 },
-    { emoji: '📦', x: 30, y: 31, size: 1.5 },
-    { emoji: '🛢️', x: 31, y: 31, size: 1.4 },
-
-    // ── East wall accents ──
-    { emoji: '🪵', x: 31, y: 1, size: 1.4 },
-    { emoji: '🧱', x: 31, y: 17, size: 1.2 },
-    { emoji: '📦', x: 31, y: 28, size: 1.3 },
-
-    // ── West wall accents ──
-    { emoji: '🧱', x: 0, y: 3, size: 1.2 },
-    { emoji: '📦', x: 0, y: 28, size: 1.3 },
-
-    // ── Wall torches (left) ──
-    { emoji: '🕯️', x: 0, y: 6, size: 1.6, flicker: true },
-    { emoji: '🕯️', x: 0, y: 14, size: 1.6, flicker: true },
-    { emoji: '🕯️', x: 0, y: 22, size: 1.6, flicker: true },
-
-    // ── Wall torches (right) ──
-    { emoji: '🕯️', x: 31, y: 6, size: 1.6, flicker: true },
-    { emoji: '🕯️', x: 31, y: 14, size: 1.6, flicker: true },
-    { emoji: '🕯️', x: 31, y: 22, size: 1.6, flicker: true },
-
-    // ── Wall torches (top) ──
-    { emoji: '🕯️', x: 8, y: 0, size: 1.4, flicker: true },
-    { emoji: '🕯️', x: 23, y: 0, size: 1.4, flicker: true },
-
-    // ── Wall torches (bottom) ──
-    { emoji: '🕯️', x: 6, y: 31, size: 1.4, flicker: true },
-    { emoji: '🕯️', x: 25, y: 31, size: 1.4, flicker: true },
-
-    // ── Courtyard greenery (between zones) ──
-    { emoji: '🌿', x: 7, y: 1, size: 1.5 },
-    { emoji: '🌿', x: 22, y: 1, size: 1.4 },
-    { emoji: '🪴', x: 10, y: 8, size: 1.5 },
-    { emoji: '🌿', x: 20, y: 8, size: 1.3 },
-    { emoji: '🪴', x: 9, y: 17, size: 1.4 },
-    { emoji: '🌿', x: 21, y: 17, size: 1.3 },
-    { emoji: '🌿', x: 8, y: 29, size: 1.2 },
-    { emoji: '🌿', x: 23, y: 29, size: 1.3 },
-
-    // ── Courtyard furniture (outdoor common area) ──
-    { emoji: '🪑', x: 12, y: 9, size: 1.4 },
-    { emoji: '🪑', x: 13, y: 9, size: 1.4 },
-    { emoji: '🍽️', x: 12, y: 10, size: 1.8 },  // outdoor table
-    { emoji: '🪑', x: 14, y: 10, size: 1.4 },
-    { emoji: '🕯️', x: 13, y: 10, size: 1.2, flicker: true },
-
-    // ── Well area (center-south) ──
-    { emoji: '🪨', x: 14, y: 19, size: 1.5 },
-    { emoji: '💧', x: 15, y: 19, size: 1.8 },
-    { emoji: '🪨', x: 16, y: 19, size: 1.5 },
-    { emoji: '🪣', x: 17, y: 19, size: 1.2 },
-
-    // ── Central campfire pit ──
-    { emoji: '🪨', x: 14, y: 14, size: 1.1 },
-    { emoji: '🔥', x: 15, y: 15, size: 2.4, flicker: true },
-    { emoji: '🪨', x: 16, y: 14, size: 1.1 },
-    { emoji: '🪵', x: 14, y: 16, size: 1.3 },
-    { emoji: '🪵', x: 16, y: 16, size: 1.3 },
-    { emoji: '🪑', x: 13, y: 15, size: 1.3 },
-    { emoji: '🪑', x: 17, y: 15, size: 1.3 },
-
-    // ── Hay bales & farm props (near garden) ──
-    { emoji: '🌾', x: 10, y: 23, size: 1.5 },
-    { emoji: '🌾', x: 21, y: 23, size: 1.4 },
-    { emoji: '🌾', x: 9, y: 28, size: 1.3 },
-    { emoji: '🌾', x: 22, y: 28, size: 1.4 },
-
-    // ── Scattered floor props ──
-    { emoji: '🗝️', x: 16, y: 10, size: 1.0 },
-    { emoji: '📜', x: 6, y: 18, size: 1.1 },
-    { emoji: '🧪', x: 23, y: 18, size: 1.2 },
-    { emoji: '⚗️', x: 24, y: 18, size: 1.2 },
-    { emoji: '🍄', x: 13, y: 20, size: 1.3 },
-    { emoji: '🪨', x: 20, y: 20, size: 1.2 },
-    { emoji: '📜', x: 17, y: 22, size: 1.0 },
-
-    // ── Bench row near workshop ──
-    { emoji: '🪑', x: 11, y: 8, size: 1.3 },
-    { emoji: '🪑', x: 18, y: 8, size: 1.3 },
-
-    // ── Cooking station (east side) ──
-    { emoji: '🍲', x: 27, y: 18, size: 1.8, flicker: true },
-    { emoji: '🪵', x: 28, y: 18, size: 1.2 },
-    { emoji: '🧅', x: 27, y: 19, size: 1.1 },
-    { emoji: '🥕', x: 28, y: 19, size: 1.1 },
-
-    // ── Notice board / signpost ──
-    { emoji: '🪧', x: 15, y: 12, size: 1.8 },
-
-    // ── Fencing along garden perimeter ──
-    { emoji: '🏗️', x: 10, y: 23, size: 0.9 },
-    { emoji: '🏗️', x: 20, y: 23, size: 0.9 },
-
-    // ── Flags & banners ──
-    { emoji: '🚩', x: 9, y: 2, size: 1.6 },
-    { emoji: '🚩', x: 21, y: 2, size: 1.6 },
-    { emoji: '🏳️', x: 9, y: 15, size: 1.4 },
-    { emoji: '🏳️', x: 21, y: 15, size: 1.4 },
-];
-
-/* ══════ WORLD ZONE DEFINITIONS ══════ */
-const ZONES = {
-    bedroom: {
-        x: 2, y: 2, w: 7, h: 5,
-        panel: 'sleep' as ActivePanel,
-        label: 'Bedroom',
-        sublabel: 'Sleep Log',
-        theme: 'zone-bedroom',
-        deco: [
-            { emoji: '🛏️', ox: 1, oy: 1, size: 3.5 },
-            { emoji: '🕯️', ox: 5, oy: 0, size: 1.8, flicker: true },
-            { emoji: '🛋️', ox: 0, oy: 3, size: 2.0 },
-            { emoji: '✨', ox: 3, oy: 0, size: 1.2 },
-            { emoji: '🧸', ox: 5, oy: 3, size: 1.5 },
-            // Added depth
-            { emoji: '🖼️', ox: 0, oy: 0, size: 1.8 },  // wall painting
-            { emoji: '🕰️', ox: 6, oy: 1, size: 1.4 },  // clock
-            { emoji: '🌙', ox: 4, oy: 0, size: 1.0 },   // night accent
-        ],
-    },
-    library: {
-        x: 2, y: 9, w: 8, h: 5,
-        panel: 'bookshelf' as ActivePanel,
+const HOTSPOTS: Hotspot[] = [
+    {
+        id: 'library',
         label: 'Library',
-        sublabel: 'Book Collection',
-        theme: 'zone-library',
-        deco: [
-            // Back wall bookshelves
-            { emoji: '📚', ox: 0, oy: 0, size: 2.8 },
-            { emoji: '📚', ox: 2, oy: 0, size: 2.5 },
-            { emoji: '📚', ox: 7, oy: 0, size: 2.4 },
-            // Reading area
-            { emoji: '📖', ox: 3, oy: 2, size: 2.0 },
-            { emoji: '🪑', ox: 4, oy: 2, size: 1.5 },
-            { emoji: '🪑', ox: 2, oy: 2, size: 1.4 },
-            // Desk & lamp
-            { emoji: '📝', ox: 5, oy: 3, size: 1.4 },
-            { emoji: '🕯️', ox: 6, oy: 0, size: 1.6, flicker: true },
-            { emoji: '🕯️', ox: 3, oy: 1, size: 1.2, flicker: true },
-            // Globe & scroll accents
-            { emoji: '🌍', ox: 7, oy: 3, size: 1.5 },
-            { emoji: '📜', ox: 1, oy: 3, size: 1.2 },
-            { emoji: '🪶', ox: 5, oy: 2, size: 1.0 },
-        ],
-        hasImage: true,
+        icon: <BookOpen size={24} />,
+        top: 25,
+        left: 20,
+        action: { type: 'route', path: '/library' },
     },
-    wardrobe: {
-        x: 22, y: 2, w: 7, h: 6,
-        panel: 'wardrobe' as ActivePanel,
-        label: 'Wardrobe',
-        sublabel: 'Titles, Auras, Pets',
-        theme: 'zone-wardrobe',
-        deco: [
-            // Armor stands
-            { emoji: '🪞', ox: 0, oy: 0, size: 2.5 },
-            { emoji: '👗', ox: 3, oy: 0, size: 2.8 },
-            { emoji: '⚔️', ox: 5, oy: 0, size: 2.2 },
-            // Weapon rack
-            { emoji: '🏹', ox: 6, oy: 2, size: 1.8 },
-            { emoji: '🛡️', ox: 5, oy: 3, size: 2.0 },
-            { emoji: '🗡️', ox: 6, oy: 4, size: 1.6 },
-            // Accessories
-            { emoji: '👑', ox: 2, oy: 4, size: 1.6 },
-            { emoji: '💍', ox: 1, oy: 4, size: 1.2 },
-            { emoji: '🕯️', ox: 0, oy: 4, size: 1.5, flicker: true },
-            { emoji: '🕯️', ox: 6, oy: 0, size: 1.3, flicker: true },
-            // Hanging banner
-            { emoji: '🎪', ox: 3, oy: 2, size: 1.6 },
-        ],
+    {
+        id: 'wardrobe',
+        label: 'Closet',
+        icon: <Shirt size={24} />,
+        top: 25,
+        left: 80,
+        action: { type: 'panel', panel: 'loadout' },
     },
-    trophy: {
-        x: 22, y: 10, w: 7, h: 5,
-        panel: 'trophies' as ActivePanel,
-        label: 'Trophy Hall',
-        sublabel: 'Display Case',
-        theme: 'zone-trophy',
-        deco: [
-            // Central trophy
-            { emoji: '🏆', ox: 3, oy: 1, size: 3.5 },
-            // Medal pedestals
-            { emoji: '🥇', ox: 0, oy: 0, size: 2.0 },
-            { emoji: '🥈', ox: 1, oy: 2, size: 1.6 },
-            { emoji: '🥉', ox: 0, oy: 3, size: 1.5 },
-            { emoji: '🏅', ox: 5, oy: 0, size: 1.8 },
-            { emoji: '🎖️', ox: 6, oy: 2, size: 1.5 },
-            // Sparkle accents
-            { emoji: '✨', ox: 2, oy: 0, size: 1.3 },
-            { emoji: '✨', ox: 4, oy: 0, size: 1.3 },
-            { emoji: '✨', ox: 3, oy: 3, size: 1.0 },
-            // Candles
-            { emoji: '🕯️', ox: 6, oy: 3, size: 1.5, flicker: true },
-            { emoji: '🕯️', ox: 0, oy: 1, size: 1.3, flicker: true },
-            // Display shelf
-            { emoji: '🗄️', ox: 5, oy: 3, size: 1.4 },
-        ],
+    {
+        id: 'bed',
+        label: 'Bed',
+        icon: <BedDouble size={24} />,
+        top: 65,
+        left: 25,
+        action: { type: 'panel', panel: 'sleep' },
     },
-    body: {
-        x: 2, y: 22, w: 6, h: 5,
-        panel: 'body' as ActivePanel,
-        label: 'Body Station',
-        sublabel: 'Weight & Fitness',
-        theme: 'zone-body',
-        deco: [
-            { emoji: '⚖️', ox: 1, oy: 1, size: 2.8 },
-            { emoji: '🏋️', ox: 4, oy: 1, size: 2.5 },
-            { emoji: '🎯', ox: 3, oy: 3, size: 1.8 },
-            { emoji: '💪', ox: 0, oy: 3, size: 1.6 },
-            // Gym accents
-            { emoji: '🥊', ox: 5, oy: 0, size: 1.5 },
-            { emoji: '🧘', ox: 0, oy: 0, size: 1.6 },
-            { emoji: '💧', ox: 5, oy: 3, size: 1.2 },
-            { emoji: '🪑', ox: 2, oy: 3, size: 1.3 },
-        ],
+    {
+        id: 'pet_bed',
+        label: 'Pet Bed',
+        icon: '🧺',
+        top: 75,
+        left: 40,
+        action: { type: 'route', path: '/pet' },
     },
-    // ── Decorative-only zones (future hooks) ──
-    workshop: {
-        x: 11, y: 2, w: 8, h: 5,
-        panel: 'workshop' as ActivePanel,
-        label: 'Workshop',
-        sublabel: 'Forge & Enchant',
-        theme: 'zone-workshop',
-        deco: [
-            { emoji: '⚒️', ox: 1, oy: 1, size: 2.8 },
-            { emoji: '🔨', ox: 4, oy: 0, size: 2.0 },
-            { emoji: '📦', ox: 6, oy: 2, size: 1.8 },
-            { emoji: '🧱', ox: 0, oy: 3, size: 1.5 },
-            { emoji: '🪵', ox: 5, oy: 3, size: 1.6 },
-            // Anvil & forge
-            { emoji: '🔥', ox: 7, oy: 0, size: 1.5, flicker: true },
-            { emoji: '⚙️', ox: 3, oy: 3, size: 1.4 },
-            { emoji: '🔩', ox: 2, oy: 2, size: 1.1 },
-            { emoji: '📐', ox: 6, oy: 0, size: 1.2 },
-        ],
+    {
+        id: 'dumbbell',
+        label: 'Gym',
+        icon: <Dumbbell size={24} />,
+        top: 75,
+        left: 65,
+        action: { type: 'panel', panel: 'body' },
     },
-    garden: {
-        x: 11, y: 24, w: 9, h: 6,
-        panel: 'garden' as ActivePanel,
-        label: 'Garden',
-        sublabel: 'Plant & Harvest',
-        theme: 'zone-garden',
-        deco: [
-            { emoji: '🪴', ox: 1, oy: 1, size: 2.5 },
-            { emoji: '🌻', ox: 3, oy: 0, size: 2.2 },
-            { emoji: '🌿', ox: 5, oy: 1, size: 2.0 },
-            { emoji: '🌸', ox: 0, oy: 3, size: 1.8 },
-            { emoji: '🪻', ox: 7, oy: 2, size: 2.0 },
-            // More garden depth
-            { emoji: '🌷', ox: 2, oy: 4, size: 1.6 },
-            { emoji: '🌼', ox: 6, oy: 4, size: 1.5 },
-            { emoji: '🪨', ox: 7, oy: 4, size: 1.5 },
-            { emoji: '🦋', ox: 4, oy: 1, size: 1.3 },
-            { emoji: '🐝', ox: 8, oy: 0, size: 1.0 },
-            { emoji: '💧', ox: 4, oy: 3, size: 1.8 },
-            { emoji: '🌱', ox: 1, oy: 4, size: 1.3 },
-            { emoji: '🧑‍🌾', ox: 5, oy: 3, size: 1.6 },
-        ],
-    },
-    // ── Storage Cellar (bottom-right, decorative) ──
-    cellar: {
-        x: 22, y: 22, w: 7, h: 5,
-        panel: 'cellar' as ActivePanel,
-        label: 'Cellar',
-        sublabel: 'Inventory Vault',
-        theme: 'zone-cellar',
-        deco: [
-            { emoji: '🛢️', ox: 0, oy: 0, size: 2.2 },
-            { emoji: '🛢️', ox: 2, oy: 0, size: 2.0 },
-            { emoji: '📦', ox: 4, oy: 0, size: 2.0 },
-            { emoji: '📦', ox: 5, oy: 1, size: 1.8 },
-            { emoji: '🧰', ox: 0, oy: 2, size: 1.8 },
-            { emoji: '🕸️', ox: 6, oy: 0, size: 1.5 },
-            { emoji: '🕯️', ox: 3, oy: 3, size: 1.4, flicker: true },
-            { emoji: '🗝️', ox: 5, oy: 3, size: 1.2 },
-            { emoji: '🧱', ox: 1, oy: 3, size: 1.3 },
-        ],
-    },
-    // ── DOORWAY ZONES (multi-room exits) ──
-    gardenDoor: {
-        x: 0, y: 14, w: 2, h: 5,
-        panel: 'garden' as ActivePanel,
-        label: '→ Garden',
-        sublabel: 'Exit',
-        theme: 'zone-door-garden',
-        deco: [
-            { emoji: '🌿', ox: 0, oy: 0, size: 1.8 },
-            { emoji: '🍃', ox: 1, oy: 3, size: 1.4 },
-            { emoji: '🌱', ox: 0, oy: 4, size: 1.2 },
-        ],
-    },
-    trainingDoor: {
-        x: 30, y: 14, w: 2, h: 5,
-        panel: null as ActivePanel,
-        label: '→ Training',
-        sublabel: 'Locked',
-        theme: 'zone-door-training',
-        deco: [
-            { emoji: '🔒', ox: 0, oy: 1, size: 2.0 },
-            { emoji: '⚔️', ox: 1, oy: 3, size: 1.5 },
-        ],
-    },
-    studyDoor: {
-        x: 14, y: 30, w: 4, h: 2,
-        panel: 'workshop' as ActivePanel,
-        label: '→ Study',
-        sublabel: 'Exit',
-        theme: 'zone-door-garden',
-        deco: [
-            { emoji: '📜', ox: 0, oy: 0, size: 1.4 },
-            { emoji: '🕯️', ox: 3, oy: 0, size: 1.3, flicker: true },
-        ],
-    },
-};
-
-/* ══════ PATH SEGMENTS (connecting zones) ══════ */
-const PATHS = [
-    // ── Horizontal main road ──
-    { x: 9, y: 4, w: 2, h: 1 },    // bedroom → workshop
-    { x: 19, y: 4, w: 3, h: 1 },   // workshop → wardrobe
-    { x: 10, y: 11, w: 12, h: 1 }, // library → trophy (main cross corridor)
-    { x: 8, y: 24, w: 3, h: 1 },   // body → garden
-    { x: 20, y: 24, w: 2, h: 1 },  // garden → cellar
-
-    // ── Vertical main road ──
-    { x: 5, y: 7, w: 1, h: 2 },    // bedroom → library
-    { x: 5, y: 14, w: 1, h: 8 },   // library → body
-    { x: 25, y: 8, w: 1, h: 2 },   // wardrobe → trophy
-    { x: 25, y: 15, w: 1, h: 7 },  // trophy → cellar
-    { x: 15, y: 7, w: 1, h: 4 },   // workshop → center
-    { x: 15, y: 17, w: 1, h: 7 },  // center → garden
-
-    // ── Narrow alleys (cross-connections) ──
-    { x: 9, y: 14, w: 1, h: 1 },   // library side exit
-    { x: 20, y: 14, w: 1, h: 1 },  // trophy side exit
-    { x: 9, y: 22, w: 1, h: 2 },   // west alley to body
-    { x: 20, y: 22, w: 1, h: 2 },  // east alley to garden
-
-    // ── Perimeter walkway ──
-    { x: 2, y: 18, w: 1, h: 4 },   // west wall path
-    { x: 29, y: 18, w: 1, h: 4 },  // east wall path
-
-    // ── Doorway approach paths ──
-    { x: 2, y: 15, w: 1, h: 3 },   // to garden door
-    { x: 29, y: 15, w: 1, h: 3 },  // to training door
-    { x: 14, y: 28, w: 4, h: 2 },  // to study door
+    {
+        id: 'scale',
+        label: 'Health',
+        icon: '⚖️',
+        top: 75,
+        left: 85,
+        action: { type: 'route', path: '/health' },
+    }
 ];
 
-export const PlayerRoom = ({ onClose }: { onClose: () => void }) => {
-    const {
-        playerPosition, setPlayerPosition,
-        placedRoomFurniture, placeRoomFurniture,
-        getPlacedBonusSummary,
-    } = useRoomStore();
+export const PlayerRoom = ({ onClose: _onClose }: { onClose: () => void }) => {
+    const navigate = useNavigate();
 
-
-    const { activePet, name: petName } = usePetStore();
+    const { equippedPetId, name: petName } = usePetStore();
     const { activeTitle, getUnlockedTitleDefs } = useTitleStore();
     const { activeAuraId } = useAuraStore();
-    const navigate = useNavigate();
+    const { placedRoomFurniture } = useRoomStore();
     const heroImage = useHeroImage();
 
-    const [activePanel, setActivePanel] = useState<ActivePanel>(null);
-    const keysPressed = useRef<Set<string>>(new Set());
-    const [editMode, setEditMode] = useState(false);
-    const [placingFurnitureId, setPlacingFurnitureId] = useState<string | null>(null);
-    const [showQuickMenu, setShowQuickMenu] = useState(false);
-    const [showRoomFab, setShowRoomFab] = useState(false);
-    const viewportRef = useRef<HTMLDivElement>(null);
-    const containerRef = useRef<HTMLDivElement>(null);
+    const { editMode, setEditMode } = useRoomStore();
+    const [activePanel, setActivePanel] = useState<ActivePanel>(editMode ? 'furniture_edit' : null);
 
-    // Camera State
-    const [panOffset, setPanOffset] = useState({ x: 0, y: 0, scale: 0.5 });
-    const isPanning = useRef(false);
+    const [playerPos, setPlayerPos] = useState({ top: 50, left: 50 }); // Center of room naturally
+    const [isMoving, setIsMoving] = useState(false);
+    
+    const location = useLocation();
 
-    // Multi-touch tracking
-    const activePointers = useRef<Map<number, React.PointerEvent>>(new Map());
-    const initialPinchDist = useRef<number | null>(null);
-    const initialPinchScale = useRef<number>(1);
-    const lastPanPoint = useRef<{ x: number, y: number } | null>(null);
-    const touchStartOffset = useRef<{ x: number, y: number } | null>(null);
+    useEffect(() => {
+        if (location.state?.autoEdit) {
+            setEditMode(true);
+            setActivePanel('furniture_edit');
+        }
+    }, [location.state]);
 
     // Get active aura and titles
     const activeAura = useMemo(() => AURAS.find(a => a.id === activeAuraId), [activeAuraId]);
     const activeTitleDef = useMemo(() => getUnlockedTitleDefs().find(t => t.id === activeTitle), [activeTitle, getUnlockedTitleDefs]);
 
     // Pet Sprite
-    const petData = ITEM_DATABASE[activePet];
+    const petData = equippedPetId ? ITEM_DATABASE[equippedPetId] : null;
     const petSprite = petData?.icon || '🐮';
 
-    // Placement click handler
-    const handlePlacementClick = useCallback((e: React.MouseEvent) => {
-        if (!placingFurnitureId || !containerRef.current) return;
-        e.stopPropagation();
+    const handleHotspotTap = (hotspot: Hotspot) => {
+        if (isMoving) return;
+        
+        setIsMoving(true);
+        // Move towards hotspot slightly offset to stand "next" to it
+        setPlayerPos({ 
+            top: hotspot.top + 5, 
+            left: hotspot.left 
+        });
 
-        const rect = containerRef.current.getBoundingClientRect();
-        const clientX = e.clientX - rect.left;
-        const clientY = e.clientY - rect.top;
-        const worldX = clientX / panOffset.scale;
-        const worldY = clientY / panOffset.scale;
-        const xPercent = Math.max(0, Math.min(100, (worldX / CANVAS_W) * 100));
-        const yPercent = Math.max(0, Math.min(100, (worldY / CANVAS_H) * 100));
-
-        placeRoomFurniture(placingFurnitureId, xPercent, yPercent);
-        setPlacingFurnitureId(null);
-    }, [placingFurnitureId, placeRoomFurniture, panOffset.scale]);
-
-    const bonusSummary = useMemo(() => getPlacedBonusSummary(), [placedRoomFurniture]);
-
-    // Keyboard Movement
-    useEffect(() => {
-        if (activePanel) return;
-
-        const handleKeyDown = (e: KeyboardEvent) => {
-            const key = e.key.toLowerCase();
-            if (['w', 'a', 's', 'd', 'arrowup', 'arrowleft', 'arrowdown', 'arrowright'].includes(key)) {
-                e.preventDefault();
-                keysPressed.current.add(key);
+        // Panel opens after brief delay
+        setTimeout(() => {
+            setIsMoving(false);
+            if (hotspot.action.type === 'route') {
+                navigate(hotspot.action.path);
+            } else {
+                setActivePanel(hotspot.action.panel);
             }
-            if (key === 'escape') {
-                setActivePanel(null);
-                setShowQuickMenu(false);
-            }
-            if (key === 'e') {
-                handleInteract();
-            }
-        };
-
-        const handleKeyUp = (e: KeyboardEvent) => {
-            keysPressed.current.delete(e.key.toLowerCase());
-        };
-
-        window.addEventListener('keydown', handleKeyDown);
-        window.addEventListener('keyup', handleKeyUp);
-        return () => {
-            window.removeEventListener('keydown', handleKeyDown);
-            window.removeEventListener('keyup', handleKeyUp);
-        };
-    }, [activePanel]);
-
-    // Movement Loop
-    useEffect(() => {
-        if (activePanel) return;
-
-        const intervalId = setInterval(() => {
-            let dx = 0;
-            let dy = 0;
-            if (keysPressed.current.has('w') || keysPressed.current.has('arrowup')) dy -= 1;
-            if (keysPressed.current.has('s') || keysPressed.current.has('arrowdown')) dy += 1;
-            if (keysPressed.current.has('a') || keysPressed.current.has('arrowleft')) dx -= 1;
-            if (keysPressed.current.has('d') || keysPressed.current.has('arrowright')) dx += 1;
-
-            if (dx !== 0 || dy !== 0) {
-                const newX = playerPosition.x + dx;
-                const newY = playerPosition.y + dy;
-                if (isWalkable(newX, newY, [])) {
-                    setPlayerPosition(newX, newY);
-                }
-            }
-        }, 150);
-        return () => clearInterval(intervalId);
-    }, [playerPosition, setPlayerPosition, activePanel]);
-
-    // Interactable proximity — checks zones
-    const interactables = Object.values(ZONES).filter(z => z.panel !== null);
-
-    const getNearbyInteractable = () => {
-        for (const zone of interactables) {
-            const cx = zone.x + zone.w / 2;
-            const cy = zone.y + zone.h / 2;
-            const dist = Math.abs(cx - playerPosition.x) + Math.abs(cy - playerPosition.y);
-            if (dist <= zone.w) return zone;
-        }
-        return null;
-    };
-
-    const nearbyObj = getNearbyInteractable();
-
-    const handleInteract = () => {
-        if (nearbyObj && nearbyObj.panel) {
-            setActivePanel(nearbyObj.panel);
-            keysPressed.current.clear();
-        }
-    };
-
-    // Initialize Camera — center on player
-    useEffect(() => {
-        if (viewportRef.current) {
-            const vw = viewportRef.current.clientWidth;
-            const vh = viewportRef.current.clientHeight;
-            const px = playerPosition.x * TILE;
-            const py = playerPosition.y * TILE;
-            const scale = 0.5;
-            const x = vw / 2 - px * scale;
-            const y = vh / 2 - py * scale;
-            setPanOffset({ x, y, scale });
-        }
-    }, []);
-
-    // ─── CAMERA LOGIC ───────────────────────────────────
-    const getPointersDist = (p1: React.PointerEvent, p2: React.PointerEvent) => {
-        return Math.hypot(p1.clientX - p2.clientX, p1.clientY - p2.clientY);
-    };
-
-    const clampOffset = (x: number, y: number, scale: number) => {
-        const vw = viewportRef.current?.clientWidth ?? 0;
-        const vh = viewportRef.current?.clientHeight ?? 0;
-        const scaledW = CANVAS_W * scale;
-        const scaledH = CANVAS_H * scale;
-        const minX = Math.min(0, vw - scaledW);
-        const maxX = Math.max(0, vw - scaledW);
-        const minY = Math.min(0, vh - scaledH);
-        const maxY = Math.max(0, vh - scaledH);
-        return {
-            x: Math.max(minX - 50, Math.min(maxX + 50, x)),
-            y: Math.max(minY - 50, Math.min(maxY + 50, y))
-        };
-    };
-
-    const onPointerDown = (e: React.PointerEvent) => {
-        activePointers.current.set(e.pointerId, e);
-        if (activePointers.current.size === 1) {
-            isPanning.current = false;
-            lastPanPoint.current = { x: e.clientX, y: e.clientY };
-            touchStartOffset.current = { x: e.clientX, y: e.clientY };
-        } else if (activePointers.current.size === 2) {
-            isPanning.current = true;
-            const pts = Array.from(activePointers.current.values());
-            initialPinchDist.current = getPointersDist(pts[0], pts[1]);
-            initialPinchScale.current = panOffset.scale;
-            lastPanPoint.current = null;
-        }
-    };
-
-    const onPointerMove = (e: React.PointerEvent) => {
-        if (!activePointers.current.has(e.pointerId)) return;
-        activePointers.current.set(e.pointerId, e);
-
-        if (activePointers.current.size === 1 && lastPanPoint.current) {
-            const dx = e.clientX - lastPanPoint.current.x;
-            const dy = e.clientY - lastPanPoint.current.y;
-
-            if (!isPanning.current && touchStartOffset.current) {
-                const totalDist = Math.hypot(e.clientX - touchStartOffset.current.x, e.clientY - touchStartOffset.current.y);
-                if (totalDist > TAP_THRESHOLD) {
-                    isPanning.current = true;
-                }
-            }
-            if (!isPanning.current) return;
-
-            setPanOffset(prev => {
-                const newX = prev.x + dx;
-                const newY = prev.y + dy;
-                return { ...prev, ...clampOffset(newX, newY, prev.scale) };
-            });
-            lastPanPoint.current = { x: e.clientX, y: e.clientY };
-
-        } else if (activePointers.current.size === 2 && initialPinchDist.current !== null) {
-            const pts = Array.from(activePointers.current.values());
-            const currentDist = getPointersDist(pts[0], pts[1]);
-            const scaleRatio = currentDist / initialPinchDist.current;
-            let newScale = initialPinchScale.current * scaleRatio;
-            newScale = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, newScale));
-
-            const centerX = (pts[0].clientX + pts[1].clientX) / 2;
-            const centerY = (pts[0].clientY + pts[1].clientY) / 2;
-
-            setPanOffset(prev => {
-                if (!viewportRef.current) return prev;
-                const rect = viewportRef.current.getBoundingClientRect();
-                const relX = centerX - rect.left;
-                const relY = centerY - rect.top;
-                const scaleDiff = newScale / prev.scale;
-                const newX = relX - (relX - prev.x) * scaleDiff;
-                const newY = relY - (relY - prev.y) * scaleDiff;
-                return { scale: newScale, ...clampOffset(newX, newY, newScale) };
-            });
-        }
-    };
-
-    const onPointerUp = (e: React.PointerEvent) => {
-        activePointers.current.delete(e.pointerId);
-        if (activePointers.current.size < 2) {
-            initialPinchDist.current = null;
-        }
-        if (activePointers.current.size === 1) {
-            const remaining = Array.from(activePointers.current.values())[0];
-            lastPanPoint.current = { x: remaining.clientX, y: remaining.clientY };
-        } else if (activePointers.current.size === 0) {
-            lastPanPoint.current = null;
-        }
-    };
-
-    // Grid Tap-To-Move
-    const handleGridTap = (e: React.MouseEvent) => {
-        if (isPanning.current) return;
-        if (placingFurnitureId) {
-            handlePlacementClick(e);
-            return;
-        }
-        if (activePanel || editMode) return;
-        if (!containerRef.current) return;
-
-        const rect = containerRef.current.getBoundingClientRect();
-        const clientX = e.clientX - rect.left;
-        const clientY = e.clientY - rect.top;
-        const absoluteX = clientX / panOffset.scale;
-        const absoluteY = clientY / panOffset.scale;
-        const gridX = Math.floor(absoluteX / TILE);
-        const gridY = Math.floor(absoluteY / TILE);
-        const boundedX = Math.max(0, Math.min(ROOM_LAYOUT.gridSize.width - 1, gridX));
-        const boundedY = Math.max(0, Math.min(ROOM_LAYOUT.gridSize.height - 1, gridY));
-
-        if (isWalkable(boundedX, boundedY, [])) {
-            setPlayerPosition(boundedX, boundedY);
-        }
+        }, 400); // 400ms movement time
     };
 
     return (
-        <div className="player-room-container">
+        <div className="player-room-container" style={{ width: '100%', height: '100%', position: 'relative', overflow: 'hidden' }}>
             <SceneShell
                 backgroundImage={homeCampBg}
                 showFog={true}
                 showVignette={true}
                 showEmbers={true}
             >
-                <div className="walkable-room">
-                    {/* ── Top Action Bar ── */}
-                    <div className="room-top-bar">
-                        <button className="room-exit-btn" onClick={onClose}>
-                            <X size={20} /> Exit
-                        </button>
-                        <button className="room-exit-btn" onClick={() => navigate('/budget')}>
-                            <DollarSign size={20} /> Budget
-                        </button>
-
-                        {bonusSummary.length > 0 && !editMode && (
-                            <div className="room-bonus-chip" onClick={() => setActivePanel('furniture_edit')}>
-                                ✨ {bonusSummary.length} bonus{bonusSummary.length > 1 ? 'es' : ''} active
-                            </div>
-                        )}
-                        {!editMode && (() => {
-                            const comfort = useRoomStore.getState().getComfortScore();
-                            return comfort.score > 0 ? (
-                                <div className="room-comfort-chip" onClick={() => setActivePanel('furniture_edit')}>
-                                    🏠 {comfort.tier} ({comfort.score})
-                                    {comfort.xpMultiplier > 1 && <small> +{Math.round((comfort.xpMultiplier - 1) * 100)}% XP/Gold</small>}
-                                </div>
-                            ) : null;
-                        })()}
-                        <button
-                            className={`room-edit-btn ${editMode ? 'active' : ''}`}
-                            onClick={() => { setEditMode(v => !v); setPlacingFurnitureId(null); setActivePanel(editMode ? null : 'furniture_edit'); }}
-                        >
-                            {editMode ? <><Check size={16} /> Done</> : <><Pencil size={16} /> Edit Room</>}
+                <div className="room-visual-hub" style={{ position: 'absolute', inset: 0, zIndex: 10 }}>
+                    {/* Top Action Bar */}
+                    <div className="room-top-bar" style={{ position: 'absolute', top: 16, left: 16, zIndex: 50 }}>
+                        <button className="room-exit-btn" onClick={() => navigate('/room')} style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', background: 'rgba(15, 23, 42, 0.85)', padding: '8px 16px', borderRadius: '12px', color: 'white', border: '1px solid rgba(255,255,255,0.1)' }}>
+                            <ArrowLeft size={18} /> Room Menu
                         </button>
                     </div>
 
-                    {/* ── Room Panels FAB (orange) ── */}
-                    <AnimatePresence>
-                        {showRoomFab && (
-                            <motion.div
-                                initial={{ opacity: 0, y: 10 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                exit={{ opacity: 0, y: 10 }}
-                                style={{
-                                    position: 'absolute', bottom: 70, right: 12, zIndex: 30,
-                                    display: 'flex', flexDirection: 'column', gap: '0.4rem', alignItems: 'flex-end',
-                                }}
-                            >
-                                {([
-                                    { label: '🌱 Garden', panel: 'garden' as ActivePanel },
-                                    { label: '⚒️ Workshop', panel: 'workshop' as ActivePanel },
-                                    { label: '🛢 Cellar', panel: 'cellar' as ActivePanel },
-                                    { label: '🐾 Pet', panel: 'pet' as ActivePanel },
-                                ] as const).map(({ label, panel }) => (
-                                    <button
-                                        key={panel}
-                                        onClick={() => { setActivePanel(panel); setShowRoomFab(false); }}
-                                        style={{
-                                            background: 'rgba(15,23,42,0.95)',
-                                            border: '1px solid rgba(255,255,255,0.15)',
-                                            borderRadius: 10,
-                                            color: '#e2e8f0',
-                                            padding: '0.45rem 1rem',
-                                            fontSize: '0.8rem',
-                                            fontWeight: 700,
-                                            cursor: 'pointer',
-                                            whiteSpace: 'nowrap' as const,
-                                            boxShadow: '0 4px 12px rgba(0,0,0,0.5)',
-                                        }}
-                                    >
-                                        {label}
-                                    </button>
-                                ))}
-                            </motion.div>
-                        )}
-                    </AnimatePresence>
-                    <button
-                        onClick={() => setShowRoomFab(v => !v)}
-                        style={{
-                            position: 'absolute', bottom: 16, right: 12, zIndex: 30,
-                            width: 48, height: 48, borderRadius: '50%',
-                            background: showRoomFab
-                                ? 'linear-gradient(135deg, #ef4444, #dc2626)'
-                                : 'linear-gradient(135deg, #f59e0b, #d97706)',
-                            border: 'none', color: 'white',
-                            fontSize: showRoomFab ? '1.5rem' : '1.8rem',
-                            fontWeight: 700, cursor: 'pointer',
-                            boxShadow: '0 4px 16px rgba(0,0,0,0.5)',
-                            display: 'flex', alignItems: 'center', justifyContent: 'center',
-                            transition: 'all 0.2s',
+                    {/* Edit Room Button */}
+                    <button 
+                        className={`room-edit-btn ${editMode ? 'active' : ''}`}
+                        style={{ position: 'absolute', top: 16, right: 16, zIndex: 50, background: 'rgba(15, 23, 42, 0.85)', padding: '8px 16px', borderRadius: '12px', color: 'white', border: '1px solid rgba(255,255,255,0.1)' }}
+                        onClick={() => { 
+                            setEditMode(v => !v); 
+                            setActivePanel(editMode ? null : 'furniture_edit'); 
                         }}
-                        title={showRoomFab ? 'Close' : 'Open Panels'}
                     >
-                        {showRoomFab ? '✕' : '+'}
+                        {editMode ? 'Done Editing' : '✏️ Edit Room'}
                     </button>
 
-                    {/* ── Viewport / Camera ── */}
-                    <div
-                        className="walkable-room-viewport"
-                        ref={viewportRef}
-                        style={{ width: '100%', height: '100%', position: 'relative', overflow: 'hidden', touchAction: 'none' }}
-                        onPointerDown={onPointerDown}
-                        onPointerMove={onPointerMove}
-                        onPointerUp={onPointerUp}
-                        onPointerCancel={onPointerUp}
-                        onClick={handleGridTap}
-                    >
+                    {/* Draggable Furniture Area */}
+                    <div style={{ position: 'absolute', inset: 0, pointerEvents: editMode ? 'auto' : 'none', zIndex: 15 }}>
+                        {placedRoomFurniture.map((p) => (
+                            <DraggableFurniturePiece
+                                key={p.id}
+                                placed={p}
+                                editMode={editMode}
+                            />
+                        ))}
+                    </div>
+
+                    {/* Room Hotspots */}
+                    {HOTSPOTS.map((hotspot) => (
                         <div
-                            ref={containerRef}
-                            className={`room-grid world-grid ${placingFurnitureId ? 'placing-mode' : ''}`}
+                            key={hotspot.id}
                             style={{
-                                width: CANVAS_W,
-                                height: CANVAS_H,
                                 position: 'absolute',
-                                transform: `translate(${panOffset.x}px, ${panOffset.y}px) scale(${panOffset.scale})`,
-                                transformOrigin: '0 0',
-                                willChange: 'transform'
+                                top: `${hotspot.top}%`,
+                                left: `${hotspot.left}%`,
+                                transform: 'translate(-50%, -50%)',
+                                zIndex: 10,
+                                display: 'flex',
+                                flexDirection: 'column',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                cursor: 'pointer',
                             }}
                         >
-                            {/* Grid lines (subtle) */}
-                            <div style={{ position: 'absolute', inset: 0, opacity: editMode ? 0.2 : 0.04, backgroundSize: `${TILE}px ${TILE}px`, backgroundImage: 'linear-gradient(to right, rgba(255,255,255,0.3) 1px, transparent 1px), linear-gradient(to bottom, rgba(255,255,255,0.3) 1px, transparent 1px)' }} />
-
-                            {/* Edit mode label */}
-                            {editMode && (
-                                <div className="fp-edit-mode-badge">
-                                    {placingFurnitureId ? 'Tap to place furniture' : 'Drag furniture to reposition'}
-                                </div>
-                            )}
-
-                            {/* ═══ STONE WALLS ═══ */}
-                            <div className="world-wall world-wall--top" />
-                            <div className="world-wall world-wall--bottom" />
-                            <div className="world-wall world-wall--left" />
-                            <div className="world-wall world-wall--right" />
-
-                            {/* ═══ WALKABLE PATHS ═══ */}
-                            {PATHS.map((p, i) => (
-                                <div
-                                    key={`path-${i}`}
-                                    className="world-path"
+                            <motion.div
+                                onClick={(e) => { e.stopPropagation(); handleHotspotTap(hotspot); }}
+                                whileHover={{ scale: 1.15, filter: 'drop-shadow(0 0 12px rgba(251, 191, 36, 0.6))' }}
+                                whileTap={{ scale: 0.9 }}
+                                style={{
+                                    background: 'radial-gradient(circle, rgba(251,191,36,0.15) 0%, transparent 70%)',
+                                    padding: '1.5rem',
+                                    borderRadius: '50%',
+                                    transition: 'background 0.2s',
+                                    display: 'flex',
+                                    flexDirection: 'column',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                }}
+                            >
+                                <motion.div
+                                    animate={{ y: [0, -4, 0] }}
+                                    transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
                                     style={{
-                                        left: p.x * TILE,
-                                        top: p.y * TILE,
-                                        width: p.w * TILE,
-                                        height: p.h * TILE,
-                                    }}
-                                />
-                            ))}
-
-                            {/* ═══ WORLD ZONES ═══ */}
-                            {Object.entries(ZONES).map(([key, zone]) => (
-                                <div
-                                    key={key}
-                                    className={`world-zone ${zone.theme} ${zone.panel ? 'world-zone--interactive' : 'world-zone--decorative'}`}
-                                    style={{
-                                        left: zone.x * TILE,
-                                        top: zone.y * TILE,
-                                        width: zone.w * TILE,
-                                        height: zone.h * TILE,
-                                    }}
-                                    onClick={(e) => {
-                                        if (isPanning.current || !zone.panel) return;
-                                        e.stopPropagation();
-                                        setActivePanel(zone.panel);
+                                        fontSize: '2rem',
+                                        filter: 'drop-shadow(0 4px 6px rgba(0,0,0,0.6))',
+                                        color: '#e2e8f0',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center'
                                     }}
                                 >
-                                    {/* Zone background image (library bookshelf) */}
-                                    {'hasImage' in zone && zone.hasImage && (
-                                        <img src={bookshelfBg} alt="" className="zone-bg-image" />
-                                    )}
-
-                                    {/* Zone decorative emoji */}
-                                    {zone.deco.map((d, i) => (
-                                        <span
-                                            key={i}
-                                            className={`zone-deco-item ${'flicker' in d && d.flicker ? 'deco-flicker' : ''}`}
-                                            style={{
-                                                left: d.ox * TILE,
-                                                top: d.oy * TILE,
-                                                fontSize: `${d.size}rem`,
-                                            }}
-                                        >
-                                            {d.emoji}
-                                        </span>
-                                    ))}
-
-                                    {/* Zone label */}
-                                    <div className="zone-label-plate">
-                                        <span className="zone-label-name">{zone.label}</span>
-                                        <span className="zone-label-sub">{zone.sublabel}</span>
-                                    </div>
-                                </div>
-                            ))}
-
-                            {/* ═══ DECORATIVE CLUTTER ═══ */}
-                            {DECO_ITEMS.map((item, i) => (
-                                <span
-                                    key={`deco-${i}`}
-                                    className={`deco-world-item ${item.flicker ? 'deco-flicker' : ''}`}
-                                    style={{
-                                        left: item.x * TILE + TILE * 0.15,
-                                        top: item.y * TILE + TILE * 0.15,
-                                        fontSize: `${item.size}rem`,
-                                    }}
-                                >
-                                    {item.emoji}
+                                    {hotspot.icon}
+                                </motion.div>
+                                <span style={{
+                                    fontSize: '0.65rem',
+                                    color: '#fbbf24',
+                                    fontWeight: 700,
+                                    textShadow: '0 2px 4px rgba(0,0,0,1)',
+                                    marginTop: '6px',
+                                    letterSpacing: '0.05em',
+                                    textTransform: 'uppercase',
+                                    background: 'rgba(0,0,0,0.6)',
+                                    padding: '4px 8px',
+                                    borderRadius: '6px'
+                                }}>
+                                    {hotspot.label}
                                 </span>
-                            ))}
-
-                            {/* ═══ PLACED FURNITURE ═══ */}
-                            {placedRoomFurniture.map((placed) => {
-                                const interaction = FURNITURE_INTERACTIONS[placed.furnitureId] ?? null;
-                                return (
-                                    <DraggableFurniturePiece
-                                        key={placed.id}
-                                        placed={placed}
-                                        editMode={editMode}
-                                        containerRef={containerRef}
-                                        onInteract={interaction ? () => {
-                                            setActivePanel(interaction);
-                                            keysPressed.current.clear();
-                                        } : undefined}
-                                    />
-                                );
-                            })}
-
-                            {/* ═══ PET FOLLOWER ═══ */}
-                            <motion.div
-                                className="room-pet-follower"
-                                animate={{
-                                    left: (playerPosition.x - 1) * TILE,
-                                    top: playerPosition.y * TILE
-                                }}
-                                transition={{ type: "tween", ease: "linear", duration: 0.35 }}
-                                style={{
-                                    position: 'absolute',
-                                    width: TILE,
-                                    height: TILE,
-                                }}
-                            >
-                                <motion.div animate={{ y: [0, -4, 0] }} transition={{ duration: 1.5, repeat: Infinity }} style={{ position: 'relative', width: '100%', height: '100%' }}>
-                                    <span className="pet-emoji" style={{ position: 'absolute', bottom: '10px', left: 0, width: '100%', textAlign: 'center' }}>{petSprite}</span>
-                                    <span className="pet-name-tag" style={{ position: 'absolute', bottom: '-15px', width: '150%', left: '-25%', textAlign: 'center' }}>{petName}</span>
-                                </motion.div>
-                            </motion.div>
-
-                            {/* ═══ PLAYER CHARACTER ═══ */}
-                            <motion.div
-                                className="room-player"
-                                animate={{
-                                    left: playerPosition.x * TILE,
-                                    top: playerPosition.y * TILE
-                                }}
-                                transition={{ type: "tween", ease: "linear", duration: 0.25 }}
-                                style={{
-                                    position: 'absolute',
-                                    width: TILE,
-                                    height: TILE,
-                                }}
-                            >
-                                <motion.div animate={{ y: [0, -3, 0] }} transition={{ duration: 0.8, repeat: Infinity }} style={{ position: 'relative', width: '100%', height: '100%' }}>
-                                    <AnimatePresence>
-                                        {activeAura && activeAura.id !== 'none' && (
-                                            <motion.div
-                                                className="player-aura-effect"
-                                                initial={{ opacity: 0, scale: 0.8 }}
-                                                animate={{
-                                                    opacity: [0.4, 0.7, 0.4],
-                                                    scale: [1, 1.2, 1],
-                                                    background: `radial-gradient(circle, ${activeAura.color} 0%, transparent 70%)`
-                                                }}
-                                                transition={{ duration: 2, repeat: Infinity }}
-                                            />
-                                        )}
-                                    </AnimatePresence>
-                                    <img src={heroImage} alt="Player" className="player-sprite" />
-                                    {activeTitleDef && (
-                                        <span className="player-title-tag">{activeTitleDef.name}</span>
-                                    )}
-                                </motion.div>
                             </motion.div>
                         </div>
-                    </div>
+                    ))}
 
-                    {/* ── Proximity Interaction Prompt (subtle chip, no keyboard hints) ── */}
-                    <AnimatePresence>
-                        {nearbyObj && nearbyObj.panel && !activePanel && (
-                            <motion.div
-                                className="room-zone-chip"
-                                initial={{ opacity: 0, y: 8 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                exit={{ opacity: 0, y: 8 }}
-                                onClick={() => {
-                                    if (nearbyObj.panel) {
-                                        setActivePanel(nearbyObj.panel);
-                                        keysPressed.current.clear();
-                                    }
-                                }}
-                                style={{ cursor: 'pointer' }}
-                            >
-                                <span>{nearbyObj.label}</span>
-                                <small>Tap to open</small>
-                            </motion.div>
-                        )}
-                    </AnimatePresence>
-
-                    {/* ── Mobile Quick Menu FAB ── */}
-                    <button
-                        className="quick-menu-fab"
-                        onClick={() => setShowQuickMenu(v => !v)}
-                        aria-label="Quick Menu"
+                    {/* Character Sprite & Pet */}
+                    <motion.div
+                        className="room-player-container"
+                        animate={{
+                            top: `${playerPos.top}%`,
+                            left: `${playerPos.left}%`,
+                            x: '-50%',
+                            y: '-100%' // anchor to bottom feet
+                        }}
+                        transition={{ duration: 0.4, ease: "easeInOut" }}
+                        style={{
+                            position: 'absolute',
+                            zIndex: 20,
+                            pointerEvents: 'none',
+                        }}
                     >
-                        <Menu size={24} />
-                    </button>
+                         {/* Idle breathing animation container */}
+                        <motion.div 
+                            animate={{ y: [0, -2, 0] }} 
+                            transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }} 
+                            style={{ position: 'relative', display: 'flex', flexDirection: 'column', alignItems: 'center' }}
+                        >
+                            <AnimatePresence>
+                                {activeAura && activeAura.id !== 'none' && (
+                                    <motion.div
+                                        className="player-aura-effect"
+                                        initial={{ opacity: 0, scale: 0.8 }}
+                                        animate={{
+                                            opacity: [0.4, 0.7, 0.4],
+                                            scale: [1, 1.2, 1],
+                                            background: `radial-gradient(circle, ${activeAura.color} 0%, transparent 70%)`
+                                        }}
+                                        transition={{ duration: 2, repeat: Infinity }}
+                                        style={{
+                                            position: 'absolute',
+                                            width: '120px',
+                                            height: '120px',
+                                            bottom: '-20px',
+                                            borderRadius: '50%',
+                                            zIndex: -1
+                                        }}
+                                    />
+                                )}
+                            </AnimatePresence>
+                            
+                            {/* Pet follows slightly strictly behind/left */}
+                            <motion.div
+                                animate={{ y: [0, -4, 0] }}
+                                transition={{ duration: 1.5, repeat: Infinity }}
+                                style={{
+                                    position: 'absolute',
+                                    left: '-50px',
+                                    bottom: '10px',
+                                    fontSize: '1.8rem',
+                                    filter: 'drop-shadow(0 4px 6px rgba(0,0,0,0.6))',
+                                    display: 'flex',
+                                    flexDirection: 'column',
+                                    alignItems: 'center'
+                                }}
+                            >
+                                {petSprite}
+                                <span style={{ fontSize: '0.55rem', background: 'rgba(0,0,0,0.7)', padding: '2px 6px', borderRadius: '4px', color: '#cbd5e1', marginTop: '4px', whiteSpace: 'nowrap', border: '1px solid rgba(255,255,255,0.1)' }}>
+                                    {petName}
+                                </span>
+                            </motion.div>
+
+                            <img src={heroImage} alt="Player" style={{ height: '110px', objectFit: 'contain', filter: 'drop-shadow(0 6px 8px rgba(0,0,0,0.6))' }} />
+                            
+                            {activeTitleDef && (
+                                <span style={{ 
+                                    background: 'rgba(0,0,0,0.7)', padding: '3px 10px', borderRadius: '6px', 
+                                    fontSize: '0.6rem', color: '#cbd5e1', fontWeight: 600, marginTop: '6px',
+                                    border: '1px solid rgba(255,255,255,0.15)' 
+                                }}>
+                                    {activeTitleDef.name}
+                                </span>
+                            )}
+                        </motion.div>
+                    </motion.div>
                 </div>
             </SceneShell>
 
-            {/* ═══ QUICK MENU SHEET ═══ */}
-            <AnimatePresence>
-                {showQuickMenu && (
-                    <motion.div
-                        className="quick-menu-overlay"
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        exit={{ opacity: 0 }}
-                        onClick={() => setShowQuickMenu(false)}
-                    >
-                        <motion.div
-                            className="quick-menu-sheet"
-                            initial={{ y: '100%' }}
-                            animate={{ y: 0 }}
-                            exit={{ y: '100%' }}
-                            transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-                            onClick={(e) => e.stopPropagation()}
-                        >
-                            <div className="quick-menu-handle" />
-                            <div className="quick-menu-grid">
-                                <button className="room-feature-btn room-feature-btn--wardrobe" onClick={() => { setShowQuickMenu(false); setActivePanel('wardrobe'); }}>
-                                    <Shirt size={24} />
-                                    <span>Closet</span>
-                                    <small>Titles, Auras, Pets</small>
-                                </button>
-                                <button className="room-feature-btn room-feature-btn--sleep" onClick={() => { setShowQuickMenu(false); setActivePanel('sleep'); }}>
-                                    <BedDouble size={24} />
-                                    <span>Bed</span>
-                                    <small>Sleep Log</small>
-                                </button>
-                                <button className="room-feature-btn room-feature-btn--bookshelf" onClick={() => { setShowQuickMenu(false); setActivePanel('bookshelf'); }}>
-                                    <BookOpen size={24} />
-                                    <span>Library</span>
-                                    <small>Books</small>
-                                </button>
-                                <button className="room-feature-btn room-feature-btn--body" onClick={() => { setShowQuickMenu(false); setActivePanel('body'); }}>
-                                    <Scale size={24} />
-                                    <span>Body</span>
-                                    <small>Weight & Fitness</small>
-                                </button>
-                                <button className="room-feature-btn room-feature-btn--gym" onClick={() => { setShowQuickMenu(false); navigate('/gym'); }}>
-                                    <Dumbbell size={24} />
-                                    <span>Gym</span>
-                                    <small>Tracker</small>
-                                </button>
-                                <button className="room-feature-btn room-feature-btn--budget" onClick={() => { setShowQuickMenu(false); navigate('/budget'); }}>
-                                    <DollarSign size={24} />
-                                    <span>Budget</span>
-                                    <small>Finances</small>
-                                </button>
-                                <button className="room-feature-btn room-feature-btn--pet" onClick={() => { setShowQuickMenu(false); setActivePanel('pet'); }}>
-                                    <span style={{ fontSize: '1.5rem' }}>{petSprite || '🐾'}</span>
-                                    <span>Pet</span>
-                                    <small>Feed & Play</small>
-                                </button>
-                                <button className="room-feature-btn room-feature-btn--wardrobe" onClick={() => { setShowQuickMenu(false); setActivePanel('loadout'); }}>
-                                    <span style={{ fontSize: '1.5rem' }}>⚔️</span>
-                                    <span>Loadout</span>
-                                    <small>Equipment</small>
-                                </button>
-                                <button
-                                    className="room-feature-btn"
-                                    style={{ borderColor: 'rgba(251,191,36,0.3)' }}
-                                    onClick={() => { setShowQuickMenu(false); setActivePanel('trophies'); }}
-                                >
-                                    <span style={{ fontSize: '1.5rem' }}>🏆</span>
-                                    <span>Trophies</span>
-                                    <small>Display</small>
-                                </button>
-
-
-
-                            </div>
-                        </motion.div>
-                    </motion.div>
-                )}
-            </AnimatePresence>
-
-            {/* ═══ PANEL MODALS ═══ */}
+            {/* Panel Modals */}
             <AnimatePresence>
                 {activePanel && (
                     <motion.div
@@ -1232,6 +435,12 @@ export const PlayerRoom = ({ onClose }: { onClose: () => void }) => {
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
                         onClick={() => setActivePanel(null)}
+                        style={{
+                            position: 'fixed', inset: 0, zIndex: 100,
+                            background: 'rgba(15, 23, 42, 0.85)',
+                            display: 'flex', alignItems: 'center', justifyContent: 'center',
+                            backdropFilter: 'blur(4px)'
+                        }}
                     >
                         <motion.div
                             className="room-modal-container"
@@ -1239,32 +448,40 @@ export const PlayerRoom = ({ onClose }: { onClose: () => void }) => {
                             animate={{ scale: 1, y: 0, opacity: 1 }}
                             exit={{ scale: 0.9, y: 30, opacity: 0 }}
                             onClick={(e) => e.stopPropagation()}
+                            style={{
+                                width: '100%', maxWidth: '600px',
+                                maxHeight: '90vh', overflowY: 'auto'
+                            }}
                         >
                             {activePanel === 'wardrobe' && <WardrobePanel onClose={() => setActivePanel(null)} />}
                             {activePanel === 'bookshelf' && <LibraryCodex onClose={() => setActivePanel(null)} />}
                             {activePanel === 'sleep' && <SleepPanel onClose={() => setActivePanel(null)} />}
                             {activePanel === 'body' && <BodyPanel onClose={() => setActivePanel(null)} />}
                             {activePanel === 'loadout' && <LoadoutPanel onClose={() => setActivePanel(null)} />}
-                            {activePanel === 'trophies' && (
-                                <div style={{ background: 'var(--gacha-bg-panel)', borderRadius: '1rem', padding: '1.5rem', maxHeight: '80vh', overflowY: 'auto' }}>
-                                    <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '0.5rem' }}>
-                                        <button className="room-close-btn" onClick={() => setActivePanel(null)}><X size={18} /></button>
-                                    </div>
-                                    <TrophyHall />
-                                </div>
-                            )}
-                            {activePanel === 'furniture_edit' && (
-                                <FurniturePlacementPanel
-                                    onClose={() => { setActivePanel(null); }}
-                                    onEnterPlacementMode={(id) => { setPlacingFurnitureId(id); setActivePanel(null); }}
-                                    placingFurnitureId={placingFurnitureId}
-                                />
-                            )}
-                            {activePanel === 'workshop' && <WorkshopPanel onClose={() => setActivePanel(null)} />}
-                            {activePanel === 'garden' && <GardenPanel onClose={() => setActivePanel(null)} />}
-                            {activePanel === 'cellar' && <CellarPanel onClose={() => setActivePanel(null)} />}
-                            {activePanel === 'pet' && <PetInteractionPanel onClose={() => setActivePanel(null)} />}
                         </motion.div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
+
+            <AnimatePresence>
+                {activePanel === 'furniture_edit' && (
+                    <motion.div
+                        initial={{ opacity: 0, y: 100 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: 100 }}
+                        style={{
+                            position: 'absolute',
+                            left: 0,
+                            right: 0,
+                            bottom: 0,
+                            zIndex: 100,
+                            height: 'auto',
+                            maxHeight: '40vh'
+                        }}
+                    >
+                        <FurniturePlacementPanel
+                            onClose={() => { setActivePanel(null); setEditMode(false); }}
+                        />
                     </motion.div>
                 )}
             </AnimatePresence>

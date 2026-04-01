@@ -1,0 +1,1609 @@
+{
+  "pets": [
+    {
+      "id": "pet_cow",
+      "name": "Cow",
+      "rarity": "common",
+      "obtainMethod": "shop_purchase",
+      "cost": {
+        "gold": 0,
+        "gems": null,
+        "other": null
+      },
+      "baseStats": {
+        "hp": 95,
+        "attack": 11,
+        "defense": 13,
+        "speed": 0.9,
+        "mana": null
+      },
+      "scaling": {
+        "hasLevelScaling": true,
+        "levelFormula": "+3 HP and +0.5 ATK per level over 1",
+        "ascensionScaling": "+10% HP/ATK/DEF per star (max 5)",
+        "rarityMultiplier": "+15% HP/ATK/DEF for rare catch"
+      },
+      "element": {
+        "type": "Earth",
+        "description": "Strong against Air, weak against Water."
+      },
+      "passive": {
+        "name": "Gold Finder",
+        "description": "+3% Gold Gain",
+        "trigger": "passive multiplier"
+      },
+      "abilities": [
+        {
+          "name": "Tackle",
+          "description": "Deals basic damage.",
+          "damageType": "damage",
+          "cost": {
+            "mana": null,
+            "cooldown": 2
+          }
+        },
+        {
+          "name": "Harden",
+          "description": "Reduces damage by 20% for 2 turns.",
+          "damageType": "reduce_damage",
+          "cost": {
+            "mana": null,
+            "cooldown": 4
+          }
+        }
+      ],
+      "statusEffects": [],
+      "isActiveInGame": true,
+      "notes": "Free starter. Defined in usePetStore, shop, and items."
+    },
+    {
+      "id": "ethereal_cow",
+      "name": "Ethereal Cow",
+      "rarity": "legendary",
+      "obtainMethod": "jackpot",
+      "cost": {
+        "gold": null,
+        "gems": null,
+        "other": null
+      },
+      "baseStats": {
+        "hp": 130,
+        "attack": 20,
+        "defense": 16,
+        "speed": 1.2,
+        "mana": null
+      },
+      "scaling": {
+        "hasLevelScaling": true,
+        "levelFormula": "+3 HP and +0.5 ATK per level over 1",
+        "ascensionScaling": "+10% HP/ATK/DEF per star (max 5)",
+        "rarityMultiplier": "+15% HP/ATK/DEF for rare catch"
+      },
+      "element": {
+        "type": "Aether",
+        "description": "Transcends type matchups. Deals +20% damage to all types and takes -10% from all."
+      },
+      "passive": {
+        "name": "Cosmic Blessing",
+        "description": "+15% ALL rewards",
+        "trigger": "passive multiplier"
+      },
+      "abilities": [
+        {
+          "name": "Star Flare",
+          "description": "Cosmic blast.",
+          "damageType": "damage",
+          "cost": {
+            "mana": null,
+            "cooldown": 2
+          }
+        },
+        {
+          "name": "Aether Veil",
+          "description": "Reduces damage by 30%.",
+          "damageType": "reduce_damage",
+          "cost": {
+            "mana": null,
+            "cooldown": 5
+          }
+        }
+      ],
+      "statusEffects": [],
+      "isActiveInGame": true,
+      "notes": "Power ceiling. Won from the 1 in 250,000 Jackpot!"
+    },
+    {
+      "id": "wizard_cow",
+      "name": "Wizard Cow",
+      "rarity": "rare",
+      "obtainMethod": "shop_purchase",
+      "cost": {
+        "gold": 25000,
+        "gems": 25,
+        "other": null
+      },
+      "baseStats": {
+        "hp": 105,
+        "attack": 17,
+        "defense": 11,
+        "speed": 1.2,
+        "mana": 10
+      },
+      "scaling": {
+        "hasLevelScaling": true,
+        "levelFormula": "+3 HP and +0.5 ATK per level over 1",
+        "ascensionScaling": "+10% HP/ATK/DEF per star (max 5)",
+        "rarityMultiplier": "+15% HP/ATK/DEF for rare catch"
+      },
+      "element": {
+        "type": "Water",
+        "description": "Strong against Fire and Earth, weak against Air and Nature."
+      },
+      "passive": {
+        "name": "Arcane Foraging",
+        "description": "+9% Resource Gain",
+        "trigger": "passive multiplier"
+      },
+      "abilities": [
+        {
+          "name": "Water Gun",
+          "description": "Shoots water.",
+          "damageType": "damage",
+          "cost": {
+            "mana": null,
+            "cooldown": 2
+          }
+        },
+        {
+          "name": "Bubble",
+          "description": "Lowers enemy defense slightly.",
+          "damageType": "debuff_def",
+          "cost": {
+            "mana": null,
+            "cooldown": 3
+          }
+        }
+      ],
+      "statusEffects": [],
+      "isActiveInGame": true,
+      "notes": "Shop purchasable Cow Family variant."
+    },
+    {
+      "id": "highland_archer_cow",
+      "name": "Highland Archer Cow",
+      "rarity": "rare",
+      "obtainMethod": "shop_purchase",
+      "cost": {
+        "gold": 25000,
+        "gems": 25,
+        "other": null
+      },
+      "baseStats": {
+        "hp": 95,
+        "attack": 18,
+        "defense": 10,
+        "speed": 1.4,
+        "mana": null
+      },
+      "scaling": {
+        "hasLevelScaling": true,
+        "levelFormula": "+3 HP and +0.5 ATK per level over 1",
+        "ascensionScaling": "+10% HP/ATK/DEF per star (max 5)",
+        "rarityMultiplier": "+15% HP/ATK/DEF for rare catch"
+      },
+      "element": {
+        "type": "Air",
+        "description": "Strong against Water, weak against Earth."
+      },
+      "passive": {
+        "name": "Swift Draw",
+        "description": "+9% Attack Speed",
+        "trigger": "passive multiplier"
+      },
+      "abilities": [
+        {
+          "name": "Peck",
+          "description": "Quick strike.",
+          "damageType": "damage",
+          "cost": {
+            "mana": null,
+            "cooldown": 1
+          }
+        },
+        {
+          "name": "Tailwind",
+          "description": "Boosts attack speed temporarily.",
+          "damageType": "buff_atk",
+          "cost": {
+            "mana": null,
+            "cooldown": 3
+          }
+        }
+      ],
+      "statusEffects": [],
+      "isActiveInGame": true,
+      "notes": "Shop purchasable Cow Family variant."
+    },
+    {
+      "id": "meditating_war_cow",
+      "name": "Meditating War Cow",
+      "rarity": "epic",
+      "obtainMethod": "shop_purchase",
+      "cost": {
+        "gold": 25000,
+        "gems": 25,
+        "other": null
+      },
+      "baseStats": {
+        "hp": 120,
+        "attack": 16,
+        "defense": 15,
+        "speed": 1.1,
+        "mana": null
+      },
+      "scaling": {
+        "hasLevelScaling": true,
+        "levelFormula": "+3 HP and +0.5 ATK per level over 1",
+        "ascensionScaling": "+10% HP/ATK/DEF per star (max 5)",
+        "rarityMultiplier": "+15% HP/ATK/DEF for rare catch"
+      },
+      "element": {
+        "type": "Nature",
+        "description": "Strong against Water, weak against Fire."
+      },
+      "passive": {
+        "name": "Zen Mind",
+        "description": "+12% XP Gain",
+        "trigger": "passive multiplier"
+      },
+      "abilities": [
+        {
+          "name": "Vine Whip",
+          "description": "Whips the enemy.",
+          "damageType": "damage",
+          "cost": {
+            "mana": null,
+            "cooldown": 2
+          }
+        },
+        {
+          "name": "Synthesis",
+          "description": "Heals 25 HP.",
+          "damageType": "heal",
+          "cost": {
+            "mana": null,
+            "cooldown": 5
+          }
+        }
+      ],
+      "statusEffects": [],
+      "isActiveInGame": true,
+      "notes": "Shop purchasable Cow Family variant."
+    },
+    {
+      "id": "cow_king",
+      "name": "Cow King",
+      "rarity": "legendary",
+      "obtainMethod": "other",
+      "cost": {
+        "gold": 0,
+        "gems": null,
+        "other": null
+      },
+      "baseStats": {
+        "hp": 0,
+        "attack": 20,
+        "defense": 20,
+        "speed": null,
+        "mana": null
+      },
+      "scaling": {
+        "hasLevelScaling": false,
+        "levelFormula": null,
+        "ascensionScaling": null,
+        "rarityMultiplier": null
+      },
+      "element": {
+        "type": "none",
+        "description": "No combat integration present in pet store codebase."
+      },
+      "passive": null,
+      "abilities": [],
+      "statusEffects": [],
+      "isActiveInGame": true,
+      "notes": "Unlockable via owning all three variant cows (wizard, highland, meditating). Only exists in items store."
+    },
+    {
+      "id": "pet_chicken",
+      "name": "Chicken",
+      "rarity": "common",
+      "obtainMethod": "board_drop",
+      "cost": {
+        "gold": null,
+        "gems": null,
+        "other": null
+      },
+      "baseStats": {
+        "hp": 70,
+        "attack": 11,
+        "defense": 8,
+        "speed": 1.3,
+        "mana": null
+      },
+      "scaling": {
+        "hasLevelScaling": true,
+        "levelFormula": "+3 HP and +0.5 ATK per level over 1",
+        "ascensionScaling": "+10% HP/ATK/DEF per star (max 5)",
+        "rarityMultiplier": "+15% HP/ATK/DEF for rare catch"
+      },
+      "element": {
+        "type": "Air",
+        "description": "Strong against Water, weak against Earth."
+      },
+      "passive": {
+        "name": "Quick Beak",
+        "description": "+3% Attack Speed",
+        "trigger": "passive multiplier"
+      },
+      "abilities": [
+        {
+          "name": "Peck",
+          "description": "Quick strike.",
+          "damageType": "damage",
+          "cost": {
+            "mana": null,
+            "cooldown": 1
+          }
+        },
+        {
+          "name": "Tailwind",
+          "description": "Boosts attack speed temporarily.",
+          "damageType": "buff_atk",
+          "cost": {
+            "mana": null,
+            "cooldown": 3
+          }
+        }
+      ],
+      "statusEffects": [],
+      "isActiveInGame": true,
+      "notes": ""
+    },
+    {
+      "id": "pet_goose",
+      "name": "Goose",
+      "rarity": "rare",
+      "obtainMethod": "board_drop",
+      "cost": {
+        "gold": null,
+        "gems": null,
+        "other": null
+      },
+      "baseStats": {
+        "hp": 80,
+        "attack": 13,
+        "defense": 9,
+        "speed": 1.35,
+        "mana": null
+      },
+      "scaling": {
+        "hasLevelScaling": true,
+        "levelFormula": "+3 HP and +0.5 ATK per level over 1",
+        "ascensionScaling": "+10% HP/ATK/DEF per star (max 5)",
+        "rarityMultiplier": "+15% HP/ATK/DEF for rare catch"
+      },
+      "element": {
+        "type": "Air",
+        "description": "Strong against Water, weak against Earth."
+      },
+      "passive": {
+        "name": "Evasive Wing",
+        "description": "+5% Dodge Chance",
+        "trigger": "passive multiplier"
+      },
+      "abilities": [
+        {
+          "name": "Peck",
+          "description": "Quick strike.",
+          "damageType": "damage",
+          "cost": {
+            "mana": null,
+            "cooldown": 1
+          }
+        },
+        {
+          "name": "Tailwind",
+          "description": "Boosts attack speed temporarily.",
+          "damageType": "buff_atk",
+          "cost": {
+            "mana": null,
+            "cooldown": 3
+          }
+        }
+      ],
+      "statusEffects": [],
+      "isActiveInGame": true,
+      "notes": ""
+    },
+    {
+      "id": "pet_pig",
+      "name": "Pig",
+      "rarity": "common",
+      "obtainMethod": "board_drop",
+      "cost": {
+        "gold": null,
+        "gems": null,
+        "other": null
+      },
+      "baseStats": {
+        "hp": 100,
+        "attack": 9,
+        "defense": 13,
+        "speed": 0.8,
+        "mana": null
+      },
+      "scaling": {
+        "hasLevelScaling": true,
+        "levelFormula": "+3 HP and +0.5 ATK per level over 1",
+        "ascensionScaling": "+10% HP/ATK/DEF per star (max 5)",
+        "rarityMultiplier": "+15% HP/ATK/DEF for rare catch"
+      },
+      "element": {
+        "type": "Earth",
+        "description": "Strong against Air, weak against Water."
+      },
+      "passive": {
+        "name": "Truffle Snout",
+        "description": "+3% Resource Gain",
+        "trigger": "passive multiplier"
+      },
+      "abilities": [
+        {
+          "name": "Tackle",
+          "description": "Deals basic damage.",
+          "damageType": "damage",
+          "cost": {
+            "mana": null,
+            "cooldown": 2
+          }
+        },
+        {
+          "name": "Harden",
+          "description": "Reduces damage by 20% for 2 turns.",
+          "damageType": "reduce_damage",
+          "cost": {
+            "mana": null,
+            "cooldown": 4
+          }
+        }
+      ],
+      "statusEffects": [],
+      "isActiveInGame": true,
+      "notes": ""
+    },
+    {
+      "id": "pet_sheep",
+      "name": "Sheep",
+      "rarity": "common",
+      "obtainMethod": "board_drop",
+      "cost": {
+        "gold": null,
+        "gems": null,
+        "other": null
+      },
+      "baseStats": {
+        "hp": 85,
+        "attack": 9,
+        "defense": 10,
+        "speed": 1.0,
+        "mana": null
+      },
+      "scaling": {
+        "hasLevelScaling": true,
+        "levelFormula": "+3 HP and +0.5 ATK per level over 1",
+        "ascensionScaling": "+10% HP/ATK/DEF per star (max 5)",
+        "rarityMultiplier": "+15% HP/ATK/DEF for rare catch"
+      },
+      "element": {
+        "type": "Nature",
+        "description": "Strong against Water, weak against Fire."
+      },
+      "passive": {
+        "name": "Cozy Fleece",
+        "description": "+3% XP Gain",
+        "trigger": "passive multiplier"
+      },
+      "abilities": [
+        {
+          "name": "Vine Whip",
+          "description": "Whips the enemy.",
+          "damageType": "damage",
+          "cost": {
+            "mana": null,
+            "cooldown": 2
+          }
+        },
+        {
+          "name": "Synthesis",
+          "description": "Heals 25 HP.",
+          "damageType": "heal",
+          "cost": {
+            "mana": null,
+            "cooldown": 5
+          }
+        }
+      ],
+      "statusEffects": [],
+      "isActiveInGame": true,
+      "notes": ""
+    },
+    {
+      "id": "pet_dog",
+      "name": "Dog",
+      "rarity": "uncommon",
+      "obtainMethod": "shop_purchase",
+      "cost": {
+        "gold": 10000,
+        "gems": null,
+        "other": null
+      },
+      "baseStats": {
+        "hp": 85,
+        "attack": 12,
+        "defense": 10,
+        "speed": 1.2,
+        "mana": null
+      },
+      "scaling": {
+        "hasLevelScaling": true,
+        "levelFormula": "+3 HP and +0.5 ATK per level over 1",
+        "ascensionScaling": "+10% HP/ATK/DEF per star (max 5)",
+        "rarityMultiplier": "+15% HP/ATK/DEF for rare catch"
+      },
+      "element": {
+        "type": "Nature",
+        "description": "Strong against Water, weak against Fire."
+      },
+      "passive": {
+        "name": "Loyal Companion",
+        "description": "+5% XP Gain",
+        "trigger": "passive multiplier"
+      },
+      "abilities": [
+        {
+          "name": "Vine Whip",
+          "description": "Whips the enemy.",
+          "damageType": "damage",
+          "cost": {
+            "mana": null,
+            "cooldown": 2
+          }
+        },
+        {
+          "name": "Synthesis",
+          "description": "Heals 25 HP.",
+          "damageType": "heal",
+          "cost": {
+            "mana": null,
+            "cooldown": 5
+          }
+        }
+      ],
+      "statusEffects": [],
+      "isActiveInGame": true,
+      "notes": ""
+    },
+    {
+      "id": "pixel_cat",
+      "name": "Cat",
+      "rarity": "rare",
+      "obtainMethod": "daily_spin",
+      "cost": {
+        "gold": 25000,
+        "gems": null,
+        "other": null
+      },
+      "baseStats": {
+        "hp": 70,
+        "attack": 14,
+        "defense": 7,
+        "speed": 1.4,
+        "mana": null
+      },
+      "scaling": {
+        "hasLevelScaling": true,
+        "levelFormula": "+3 HP and +0.5 ATK per level over 1",
+        "ascensionScaling": "+10% HP/ATK/DEF per star (max 5)",
+        "rarityMultiplier": "+15% HP/ATK/DEF for rare catch"
+      },
+      "element": {
+        "type": "Shadow",
+        "description": "Deals +15% to all types, takes +15% from all types."
+      },
+      "passive": {
+        "name": "Night Eye",
+        "description": "+6% Crit Chance (Battle) / +2% XP Gain (Gacha)",
+        "trigger": "passive multiplier"
+      },
+      "abilities": [
+        {
+          "name": "Scratch",
+          "description": "Sharp claws.",
+          "damageType": "damage",
+          "cost": {
+            "mana": null,
+            "cooldown": 1
+          }
+        },
+        {
+          "name": "Shadow Sneak",
+          "description": "Deals 15 damage.",
+          "damageType": "damage",
+          "cost": {
+            "mana": null,
+            "cooldown": 3
+          }
+        }
+      ],
+      "statusEffects": [],
+      "isActiveInGame": true,
+      "notes": "Warning: Duplicate implementations exist between Gacha Store (rarity 'common', +2% XP) and Battle System (rarity 'rare', Shadow element)."
+    },
+    {
+      "id": "pet_rabbit",
+      "name": "Rabbit",
+      "rarity": "uncommon",
+      "obtainMethod": "board_drop",
+      "cost": {
+        "gold": null,
+        "gems": null,
+        "other": null
+      },
+      "baseStats": {
+        "hp": 65,
+        "attack": 10,
+        "defense": 8,
+        "speed": 1.5,
+        "mana": null
+      },
+      "scaling": {
+        "hasLevelScaling": true,
+        "levelFormula": "+3 HP and +0.5 ATK per level over 1",
+        "ascensionScaling": "+10% HP/ATK/DEF per star (max 5)",
+        "rarityMultiplier": "+15% HP/ATK/DEF for rare catch"
+      },
+      "element": {
+        "type": "Nature",
+        "description": "Strong against Water, weak against Fire."
+      },
+      "passive": {
+        "name": "Agile Hop",
+        "description": "+5% Turn Speed Advantage",
+        "trigger": "passive multiplier"
+      },
+      "abilities": [
+        {
+          "name": "Vine Whip",
+          "description": "Whips the enemy.",
+          "damageType": "damage",
+          "cost": {
+            "mana": null,
+            "cooldown": 2
+          }
+        },
+        {
+          "name": "Synthesis",
+          "description": "Heals 25 HP.",
+          "damageType": "heal",
+          "cost": {
+            "mana": null,
+            "cooldown": 5
+          }
+        }
+      ],
+      "statusEffects": [],
+      "isActiveInGame": true,
+      "notes": ""
+    },
+    {
+      "id": "war_chicken",
+      "name": "War Chicken",
+      "rarity": "uncommon",
+      "obtainMethod": "catch",
+      "cost": {
+        "gold": null,
+        "gems": null,
+        "other": null
+      },
+      "baseStats": {
+        "hp": 85,
+        "attack": 15,
+        "defense": 9,
+        "speed": 1.3,
+        "mana": null
+      },
+      "scaling": {
+        "hasLevelScaling": true,
+        "levelFormula": "+3 HP and +0.5 ATK per level over 1",
+        "ascensionScaling": "+10% HP/ATK/DEF per star (max 5)",
+        "rarityMultiplier": "+15% HP/ATK/DEF for rare catch"
+      },
+      "element": {
+        "type": "Fire",
+        "description": "Strong against Nature, weak against Water."
+      },
+      "passive": {
+        "name": "Burning Rage",
+        "description": "+6% Attack",
+        "trigger": "passive multiplier"
+      },
+      "abilities": [
+        {
+          "name": "Ember",
+          "description": "Burns the enemy.",
+          "damageType": "damage",
+          "cost": {
+            "mana": null,
+            "cooldown": 2
+          }
+        },
+        {
+          "name": "Roar",
+          "description": "Boosts attack by 20%.",
+          "damageType": "buff_atk",
+          "cost": {
+            "mana": null,
+            "cooldown": 5
+          }
+        }
+      ],
+      "statusEffects": [],
+      "isActiveInGame": true,
+      "notes": ""
+    },
+    {
+      "id": "stoneback_turtle",
+      "name": "Stoneback Turtle",
+      "rarity": "rare",
+      "obtainMethod": "catch",
+      "cost": {
+        "gold": null,
+        "gems": null,
+        "other": null
+      },
+      "baseStats": {
+        "hp": 120,
+        "attack": 12,
+        "defense": 18,
+        "speed": 0.7,
+        "mana": null
+      },
+      "scaling": {
+        "hasLevelScaling": true,
+        "levelFormula": "+3 HP and +0.5 ATK per level over 1",
+        "ascensionScaling": "+10% HP/ATK/DEF per star (max 5)",
+        "rarityMultiplier": "+15% HP/ATK/DEF for rare catch"
+      },
+      "element": {
+        "type": "Earth",
+        "description": "Strong against Air, weak against Water."
+      },
+      "passive": {
+        "name": "Stone Shell",
+        "description": "+8% Defense",
+        "trigger": "passive multiplier"
+      },
+      "abilities": [
+        {
+          "name": "Tackle",
+          "description": "Deals basic damage.",
+          "damageType": "damage",
+          "cost": {
+            "mana": null,
+            "cooldown": 2
+          }
+        },
+        {
+          "name": "Harden",
+          "description": "Reduces damage by 20% for 2 turns.",
+          "damageType": "reduce_damage",
+          "cost": {
+            "mana": null,
+            "cooldown": 4
+          }
+        }
+      ],
+      "statusEffects": [],
+      "isActiveInGame": true,
+      "notes": ""
+    },
+    {
+      "id": "shadow_otter",
+      "name": "Shadow Otter",
+      "rarity": "rare",
+      "obtainMethod": "catch",
+      "cost": {
+        "gold": null,
+        "gems": null,
+        "other": null
+      },
+      "baseStats": {
+        "hp": 90,
+        "attack": 14,
+        "defense": 10,
+        "speed": 1.4,
+        "mana": null
+      },
+      "scaling": {
+        "hasLevelScaling": true,
+        "levelFormula": "+3 HP and +0.5 ATK per level over 1",
+        "ascensionScaling": "+10% HP/ATK/DEF per star (max 5)",
+        "rarityMultiplier": "+15% HP/ATK/DEF for rare catch"
+      },
+      "element": {
+        "type": "Water",
+        "description": "Strong against Fire and Earth, weak against Air and Nature."
+      },
+      "passive": {
+        "name": "Deep Diver",
+        "description": "+7% Resource Gain",
+        "trigger": "passive multiplier"
+      },
+      "abilities": [
+        {
+          "name": "Water Gun",
+          "description": "Shoots water.",
+          "damageType": "damage",
+          "cost": {
+            "mana": null,
+            "cooldown": 2
+          }
+        },
+        {
+          "name": "Bubble",
+          "description": "Lowers enemy defense slightly.",
+          "damageType": "debuff_def",
+          "cost": {
+            "mana": null,
+            "cooldown": 3
+          }
+        }
+      ],
+      "statusEffects": [],
+      "isActiveInGame": true,
+      "notes": ""
+    },
+    {
+      "id": "blood_goose",
+      "name": "Blood Goose",
+      "rarity": "rare",
+      "obtainMethod": "catch",
+      "cost": {
+        "gold": null,
+        "gems": null,
+        "other": null
+      },
+      "baseStats": {
+        "hp": 95,
+        "attack": 16,
+        "defense": 9,
+        "speed": 1.35,
+        "mana": null
+      },
+      "scaling": {
+        "hasLevelScaling": true,
+        "levelFormula": "+3 HP and +0.5 ATK per level over 1",
+        "ascensionScaling": "+10% HP/ATK/DEF per star (max 5)",
+        "rarityMultiplier": "+15% HP/ATK/DEF for rare catch"
+      },
+      "element": {
+        "type": "Shadow",
+        "description": "Deals +15% to all types, takes +15% from all types."
+      },
+      "passive": {
+        "name": "Bloodlust",
+        "description": "+8% Crit Chance",
+        "trigger": "passive multiplier"
+      },
+      "abilities": [
+        {
+          "name": "Scratch",
+          "description": "Sharp claws.",
+          "damageType": "damage",
+          "cost": {
+            "mana": null,
+            "cooldown": 1
+          }
+        },
+        {
+          "name": "Shadow Sneak",
+          "description": "Deals 15 damage.",
+          "damageType": "damage",
+          "cost": {
+            "mana": null,
+            "cooldown": 3
+          }
+        }
+      ],
+      "statusEffects": [],
+      "isActiveInGame": true,
+      "notes": ""
+    },
+    {
+      "id": "pet_porcupine",
+      "name": "Porcupine",
+      "rarity": "uncommon",
+      "obtainMethod": "shop_purchase",
+      "cost": {
+        "gold": 5000,
+        "gems": null,
+        "other": null
+      },
+      "baseStats": {
+        "hp": 105,
+        "attack": 12,
+        "defense": 15,
+        "speed": 0.9,
+        "mana": null
+      },
+      "scaling": {
+        "hasLevelScaling": true,
+        "levelFormula": "+3 HP and +0.5 ATK per level over 1",
+        "ascensionScaling": "+10% HP/ATK/DEF per star (max 5)",
+        "rarityMultiplier": "+15% HP/ATK/DEF for rare catch"
+      },
+      "element": {
+        "type": "Earth",
+        "description": "Strong against Air, weak against Water."
+      },
+      "passive": {
+        "name": "Spiky Defense",
+        "description": "+7% Defense",
+        "trigger": "passive multiplier"
+      },
+      "abilities": [
+        {
+          "name": "Tackle",
+          "description": "Deals basic damage.",
+          "damageType": "damage",
+          "cost": {
+            "mana": null,
+            "cooldown": 2
+          }
+        },
+        {
+          "name": "Harden",
+          "description": "Reduces damage by 20% for 2 turns.",
+          "damageType": "reduce_damage",
+          "cost": {
+            "mana": null,
+            "cooldown": 4
+          }
+        }
+      ],
+      "statusEffects": [],
+      "isActiveInGame": true,
+      "notes": ""
+    },
+    {
+      "id": "pet_platypus",
+      "name": "Platypus",
+      "rarity": "uncommon",
+      "obtainMethod": "shop_purchase",
+      "cost": {
+        "gold": 15000,
+        "gems": null,
+        "other": null
+      },
+      "baseStats": {
+        "hp": 95,
+        "attack": 13,
+        "defense": 11,
+        "speed": 1.2,
+        "mana": null
+      },
+      "scaling": {
+        "hasLevelScaling": true,
+        "levelFormula": "+3 HP and +0.5 ATK per level over 1",
+        "ascensionScaling": "+10% HP/ATK/DEF per star (max 5)",
+        "rarityMultiplier": "+15% HP/ATK/DEF for rare catch"
+      },
+      "element": {
+        "type": "Water",
+        "description": "Strong against Fire and Earth, weak against Air and Nature."
+      },
+      "passive": {
+        "name": "Treasure Hunter",
+        "description": "+7% Resource Gain",
+        "trigger": "passive multiplier"
+      },
+      "abilities": [
+        {
+          "name": "Water Gun",
+          "description": "Shoots water.",
+          "damageType": "damage",
+          "cost": {
+            "mana": null,
+            "cooldown": 2
+          }
+        },
+        {
+          "name": "Bubble",
+          "description": "Lowers enemy defense slightly.",
+          "damageType": "debuff_def",
+          "cost": {
+            "mana": null,
+            "cooldown": 3
+          }
+        }
+      ],
+      "statusEffects": [],
+      "isActiveInGame": true,
+      "notes": ""
+    },
+    {
+      "id": "pet_giraffe",
+      "name": "Giraffe",
+      "rarity": "rare",
+      "obtainMethod": "shop_purchase",
+      "cost": {
+        "gold": 30000,
+        "gems": null,
+        "other": null
+      },
+      "baseStats": {
+        "hp": 110,
+        "attack": 14,
+        "defense": 12,
+        "speed": 1.1,
+        "mana": null
+      },
+      "scaling": {
+        "hasLevelScaling": true,
+        "levelFormula": "+3 HP and +0.5 ATK per level over 1",
+        "ascensionScaling": "+10% HP/ATK/DEF per star (max 5)",
+        "rarityMultiplier": "+15% HP/ATK/DEF for rare catch"
+      },
+      "element": {
+        "type": "Nature",
+        "description": "Strong against Water, weak against Fire."
+      },
+      "passive": {
+        "name": "High Vantage",
+        "description": "+9% XP Gain",
+        "trigger": "passive multiplier"
+      },
+      "abilities": [
+        {
+          "name": "Vine Whip",
+          "description": "Whips the enemy.",
+          "damageType": "damage",
+          "cost": {
+            "mana": null,
+            "cooldown": 2
+          }
+        },
+        {
+          "name": "Synthesis",
+          "description": "Heals 25 HP.",
+          "damageType": "heal",
+          "cost": {
+            "mana": null,
+            "cooldown": 5
+          }
+        }
+      ],
+      "statusEffects": [],
+      "isActiveInGame": true,
+      "notes": ""
+    },
+    {
+      "id": "pet_raven",
+      "name": "Raven",
+      "rarity": "rare",
+      "obtainMethod": "shop_purchase",
+      "cost": {
+        "gold": 30000,
+        "gems": null,
+        "other": null
+      },
+      "baseStats": {
+        "hp": 85,
+        "attack": 17,
+        "defense": 9,
+        "speed": 1.5,
+        "mana": null
+      },
+      "scaling": {
+        "hasLevelScaling": true,
+        "levelFormula": "+3 HP and +0.5 ATK per level over 1",
+        "ascensionScaling": "+10% HP/ATK/DEF per star (max 5)",
+        "rarityMultiplier": "+15% HP/ATK/DEF for rare catch"
+      },
+      "element": {
+        "type": "Shadow",
+        "description": "Deals +15% to all types, takes +15% from all types."
+      },
+      "passive": {
+        "name": "Dark Flight",
+        "description": "+10% Crit Chance",
+        "trigger": "passive multiplier"
+      },
+      "abilities": [
+        {
+          "name": "Scratch",
+          "description": "Sharp claws.",
+          "damageType": "damage",
+          "cost": {
+            "mana": null,
+            "cooldown": 1
+          }
+        },
+        {
+          "name": "Shadow Sneak",
+          "description": "Deals 15 damage.",
+          "damageType": "damage",
+          "cost": {
+            "mana": null,
+            "cooldown": 3
+          }
+        }
+      ],
+      "statusEffects": [],
+      "isActiveInGame": true,
+      "notes": ""
+    },
+    {
+      "id": "pet_rhino",
+      "name": "Rhino",
+      "rarity": "epic",
+      "obtainMethod": "shop_purchase",
+      "cost": {
+        "gold": 60000,
+        "gems": 25,
+        "other": null
+      },
+      "baseStats": {
+        "hp": 135,
+        "attack": 16,
+        "defense": 19,
+        "speed": 0.8,
+        "mana": null
+      },
+      "scaling": {
+        "hasLevelScaling": true,
+        "levelFormula": "+3 HP and +0.5 ATK per level over 1",
+        "ascensionScaling": "+10% HP/ATK/DEF per star (max 5)",
+        "rarityMultiplier": "+15% HP/ATK/DEF for rare catch"
+      },
+      "element": {
+        "type": "Earth",
+        "description": "Strong against Air, weak against Water."
+      },
+      "passive": {
+        "name": "Thick Skin",
+        "description": "+12% Defense",
+        "trigger": "passive multiplier"
+      },
+      "abilities": [
+        {
+          "name": "Tackle",
+          "description": "Deals basic damage.",
+          "damageType": "damage",
+          "cost": {
+            "mana": null,
+            "cooldown": 2
+          }
+        },
+        {
+          "name": "Harden",
+          "description": "Reduces damage by 20% for 2 turns.",
+          "damageType": "reduce_damage",
+          "cost": {
+            "mana": null,
+            "cooldown": 4
+          }
+        }
+      ],
+      "statusEffects": [],
+      "isActiveInGame": true,
+      "notes": ""
+    },
+    {
+      "id": "pet_elephant",
+      "name": "Elephant",
+      "rarity": "epic",
+      "obtainMethod": "shop_purchase",
+      "cost": {
+        "gold": 60000,
+        "gems": 25,
+        "other": null
+      },
+      "baseStats": {
+        "hp": 140,
+        "attack": 18,
+        "defense": 20,
+        "speed": 0.7,
+        "mana": null
+      },
+      "scaling": {
+        "hasLevelScaling": true,
+        "levelFormula": "+3 HP and +0.5 ATK per level over 1",
+        "ascensionScaling": "+10% HP/ATK/DEF per star (max 5)",
+        "rarityMultiplier": "+15% HP/ATK/DEF for rare catch"
+      },
+      "element": {
+        "type": "Earth",
+        "description": "Strong against Air, weak against Water."
+      },
+      "passive": {
+        "name": "Golden Ivory",
+        "description": "+12% Gold Gain",
+        "trigger": "passive multiplier"
+      },
+      "abilities": [
+        {
+          "name": "Tackle",
+          "description": "Deals basic damage.",
+          "damageType": "damage",
+          "cost": {
+            "mana": null,
+            "cooldown": 2
+          }
+        },
+        {
+          "name": "Harden",
+          "description": "Reduces damage by 20% for 2 turns.",
+          "damageType": "reduce_damage",
+          "cost": {
+            "mana": null,
+            "cooldown": 4
+          }
+        }
+      ],
+      "statusEffects": [],
+      "isActiveInGame": true,
+      "notes": ""
+    },
+    {
+      "id": "cyber_dog",
+      "name": "Cyber Dog",
+      "rarity": "common",
+      "obtainMethod": "gacha",
+      "cost": {
+        "gold": 12000,
+        "gems": null,
+        "other": null
+      },
+      "baseStats": {
+        "hp": 0,
+        "attack": 0,
+        "defense": 0,
+        "speed": null,
+        "mana": null
+      },
+      "scaling": {
+        "hasLevelScaling": false,
+        "levelFormula": null,
+        "ascensionScaling": null,
+        "rarityMultiplier": null
+      },
+      "element": {
+        "type": "none",
+        "description": "Gacha-passive only"
+      },
+      "passive": {
+        "name": "Gacha Passive",
+        "description": "+3% gold from all sources.",
+        "trigger": "gold_gain 0.03%"
+      },
+      "abilities": [],
+      "statusEffects": [],
+      "isActiveInGame": true,
+      "notes": "Exists in Gacha System and item shop, not as a battle unit."
+    },
+    {
+      "id": "spirit_fox",
+      "name": "Spirit Fox",
+      "rarity": "rare",
+      "obtainMethod": "gacha",
+      "cost": {
+        "gold": 15000,
+        "gems": null,
+        "other": null
+      },
+      "baseStats": {
+        "hp": 0,
+        "attack": 0,
+        "defense": 0,
+        "speed": null,
+        "mana": null
+      },
+      "scaling": {
+        "hasLevelScaling": false,
+        "levelFormula": null,
+        "ascensionScaling": null,
+        "rarityMultiplier": null
+      },
+      "element": {
+        "type": "none",
+        "description": "Gacha-passive only"
+      },
+      "passive": {
+        "name": "Gacha Passive",
+        "description": "Mystical guide. +5% XP gain.",
+        "trigger": "xp_gain 0.05%"
+      },
+      "abilities": [],
+      "statusEffects": [],
+      "isActiveInGame": true,
+      "notes": "Exists in Gacha System and item shop."
+    },
+    {
+      "id": "dragon_hatchling",
+      "name": "Dragon Hatchling",
+      "rarity": "epic",
+      "obtainMethod": "gacha",
+      "cost": {
+        "gold": 150000,
+        "gems": 150,
+        "other": null
+      },
+      "baseStats": {
+        "hp": 0,
+        "attack": 3,
+        "defense": 0,
+        "speed": null,
+        "mana": null
+      },
+      "scaling": {
+        "hasLevelScaling": false,
+        "levelFormula": null,
+        "ascensionScaling": null,
+        "rarityMultiplier": null
+      },
+      "element": {
+        "type": "none",
+        "description": "Gacha-passive only"
+      },
+      "passive": {
+        "name": "Gacha Passive",
+        "description": "Young dragon. +3 Attack.",
+        "trigger": "attack 3"
+      },
+      "abilities": [],
+      "statusEffects": [],
+      "isActiveInGame": true,
+      "notes": "Exists in Gacha System and item shop (Legendary in shop)."
+    },
+    {
+      "id": "phoenix_chick",
+      "name": "Phoenix Chick",
+      "rarity": "epic",
+      "obtainMethod": "gacha",
+      "cost": {
+        "gold": 75000,
+        "gems": 50,
+        "other": null
+      },
+      "baseStats": {
+        "hp": 0,
+        "attack": 0,
+        "defense": 3,
+        "speed": null,
+        "mana": null
+      },
+      "scaling": {
+        "hasLevelScaling": false,
+        "levelFormula": null,
+        "ascensionScaling": null,
+        "rarityMultiplier": null
+      },
+      "element": {
+        "type": "none",
+        "description": "Gacha-passive only"
+      },
+      "passive": {
+        "name": "Gacha Passive",
+        "description": "Reborn from ashes. +3 Defense.",
+        "trigger": "defense 3"
+      },
+      "abilities": [],
+      "statusEffects": [],
+      "isActiveInGame": true,
+      "notes": "Exists in Gacha System and item shop."
+    },
+    {
+      "id": "ancient_owl",
+      "name": "Ancient Owl",
+      "rarity": "legendary",
+      "obtainMethod": "gacha",
+      "cost": {
+        "gold": 18000,
+        "gems": null,
+        "other": null
+      },
+      "baseStats": {
+        "hp": 0,
+        "attack": 0,
+        "defense": 0,
+        "speed": null,
+        "mana": null
+      },
+      "scaling": {
+        "hasLevelScaling": false,
+        "levelFormula": null,
+        "ascensionScaling": null,
+        "rarityMultiplier": null
+      },
+      "element": {
+        "type": "none",
+        "description": "Gacha-passive only"
+      },
+      "passive": {
+        "name": "Gacha Passive",
+        "description": "Keeper of wisdom. +10% XP gain.",
+        "trigger": "xp_gain 0.1%"
+      },
+      "abilities": [],
+      "statusEffects": [],
+      "isActiveInGame": true,
+      "notes": "Exists in Gacha System and item shop."
+    },
+    {
+      "id": "cosmic_turtle",
+      "name": "Cosmic Turtle",
+      "rarity": "legendary",
+      "obtainMethod": "gacha",
+      "cost": {
+        "gold": 50000,
+        "gems": null,
+        "other": null
+      },
+      "baseStats": {
+        "hp": 0,
+        "attack": 0,
+        "defense": 0,
+        "speed": null,
+        "mana": null
+      },
+      "scaling": {
+        "hasLevelScaling": false,
+        "levelFormula": null,
+        "ascensionScaling": null,
+        "rarityMultiplier": null
+      },
+      "element": {
+        "type": "none",
+        "description": "Gacha-passive only"
+      },
+      "passive": {
+        "name": "Gacha Passive",
+        "description": "Time flows differently. +8% Sleep XP.",
+        "trigger": "skill_xp 0.08"
+      },
+      "abilities": [],
+      "statusEffects": [],
+      "isActiveInGame": true,
+      "notes": "Exists in Gacha System and item shop."
+    },
+    {
+      "id": "galaxy_heifer",
+      "name": "Galaxy-Eyed Heifer",
+      "rarity": "mythic",
+      "obtainMethod": "gacha",
+      "cost": {
+        "gold": null,
+        "gems": null,
+        "other": null
+      },
+      "baseStats": {
+        "hp": 0,
+        "attack": 0,
+        "defense": 0,
+        "speed": null,
+        "mana": null
+      },
+      "scaling": {
+        "hasLevelScaling": false,
+        "levelFormula": null,
+        "ascensionScaling": null,
+        "rarityMultiplier": null
+      },
+      "element": {
+        "type": "none",
+        "description": "Gacha-passive only"
+      },
+      "passive": {
+        "name": "Gacha Passive",
+        "description": "+25% Housemaid & Strength XP.",
+        "trigger": "skill_xp 0.25"
+      },
+      "abilities": [],
+      "statusEffects": [],
+      "isActiveInGame": true,
+      "notes": "ULTRA RARE! 1 in 100,000 luck roll only."
+    },
+    {
+      "id": "golden_goldfish",
+      "name": "Golden Goldfish",
+      "rarity": "legendary",
+      "obtainMethod": "luck_roll",
+      "cost": {
+        "gold": null,
+        "gems": null,
+        "other": null
+      },
+      "baseStats": {
+        "hp": 0,
+        "attack": 0,
+        "defense": 0,
+        "speed": null,
+        "mana": null
+      },
+      "scaling": {
+        "hasLevelScaling": false,
+        "levelFormula": null,
+        "ascensionScaling": null,
+        "rarityMultiplier": null
+      },
+      "element": {
+        "type": "none",
+        "description": "Item passive only"
+      },
+      "passive": {
+        "name": "Golden Blessing",
+        "description": "+5% Hygiene XP.",
+        "trigger": "Item Stats Bonus"
+      },
+      "abilities": [],
+      "statusEffects": [],
+      "isActiveInGame": true,
+      "notes": "1 in 25,000 Luck Roll. Item passive only."
+    },
+    {
+      "id": "pet_wolf",
+      "name": "Wolf",
+      "rarity": "rare",
+      "obtainMethod": "shop_purchase",
+      "cost": {
+        "gold": 35000,
+        "gems": null,
+        "other": null
+      },
+      "baseStats": {
+        "hp": 0,
+        "attack": 0,
+        "defense": 0,
+        "speed": null,
+        "mana": null
+      },
+      "scaling": {
+        "hasLevelScaling": false,
+        "levelFormula": null,
+        "ascensionScaling": null,
+        "rarityMultiplier": null
+      },
+      "element": {
+        "type": "none",
+        "description": "Item passive only"
+      },
+      "passive": {
+        "name": "Wolf Spirit",
+        "description": "+8% Strength XP",
+        "trigger": "Item Stats Bonus"
+      },
+      "abilities": [],
+      "statusEffects": [],
+      "isActiveInGame": true,
+      "notes": "Does not exist in battle DB. Item passive only."
+    }
+  ],
+  "globalSystems": {
+    "elementalSystem": "Basic triangle element system utilized in usePetBattleStore.ts. Fire > Nature > Water > Fire, and Earth > Air > Water. Strong type gets +25% modifier on attack, Weak gets -25%. Shadow modifies both dealt and received damage (+15%/-15%). Aether is immune to elemental triangles but acts similarly by universally increasing damage via raw stat scaling. Some overlap logic with Ethereal Cow.",
+    "statusEffectSystem": "Ability-based buff/debuff modifiers natively supported via `usePetBattleStore.ts` AbilityType logic. Supported buffs: `buff_atk`, `debuff_def`, `reduce_damage`. Uses flat additive values and duration timers that tick down per turn loop.",
+    "damageFormula": "Math.max(1, Math.floor((move.power * atkTotal / (defTotal + 5)) * typeMult))",
+    "turnLogic": "Speed-based priority system. The pet with higher `attackSpeed * 10` acts first in the turn. Calculates moves side-by-side using `usePetBattleStore.ts` `useMove()` function, applying attacks, lowering cooldowns, and evaluating end-of-turn battle log outputs.",
+    "scalingSystem": "Base stats at Level 1 are fixed via `PET_DATABASE`. Pet instance stats scale adaptively via `getPetBattleStatsScaled()`. Formula: +3 HP, +0.5 ATK per level over 1. 'Rare' flag yields +15% flat boost to all stats. Ascension logic exists granting +10% per star (0-5 stars) to base stats multiplier."
+  }
+}

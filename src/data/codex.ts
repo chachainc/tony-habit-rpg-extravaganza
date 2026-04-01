@@ -4,7 +4,8 @@
 
 import { AURAS } from '../store/useAuraStore';
 import { TITLES } from '../store/useTitleStore';
-import { PET_DB } from '../store/useGachaStore';
+import { PET_DATABASE } from '../data/pets';
+import type { PetDefinition } from '../data/pets';
 import { ITEM_DB } from '../store/useInventoryStore';
 import { EQUIPMENT_DB } from '../store/useEquipmentStore';
 import { ROOM_FURNITURE_CATALOG } from '../store/useRoomStore';
@@ -77,13 +78,13 @@ function rarityFromGacha(r: string): CodexRarity {
 
 // ── PETS (from GachaMachine PET_DB) ──────────────────────────────────────────
 
-const PET_ENTRIES: CodexEntry[] = Object.values(PET_DB).map(p => ({
+const PET_ENTRIES: CodexEntry[] = Object.values(PET_DATABASE).map((p: PetDefinition) => ({
     id: `codex_pet_${p.id}`,
     name: p.name,
     icon: p.icon,
     section: 'pets',
     rarity: rarityFromGacha(p.rarity),
-    description: p.description,
+    description: p.passive?.description || `${p.name} is a loyal companion.`,
     sources: ['daily_spin'],
     obtainHint: `Obtainable from the Daily Spin. ${p.rarity === 'legendary' || p.rarity === 'mythic' ? 'Ultra-rare!' : 'See banner odds.'}`,
     spinOdds: p.rarity === 'legendary' ? '~1:1,000' : p.rarity === 'mythic' ? '1:50,000' : 'See odds table',

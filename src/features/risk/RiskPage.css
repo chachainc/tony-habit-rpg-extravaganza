@@ -1,12 +1,81 @@
 .risk-page {
     position: fixed;
     inset: 0;
+    padding-top: calc(env(safe-area-inset-top, 0px) + 55px);
     background: var(--bg-base);
     color: var(--text-primary);
     display: flex;
     flex-direction: column;
     overflow: hidden;
     z-index: 100;
+}
+
+/* ── Map Banner ── */
+.risk-map-banner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.4rem 0.75rem;
+    background: rgba(0,0,0,0.25);
+    border: 1px solid rgba(139,92,246,0.2);
+    border-radius: 10px;
+    flex-shrink: 0;
+}
+
+.risk-map-banner-info {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+}
+
+.risk-map-banner-name {
+    font-size: 0.95rem;
+    font-weight: 800;
+    color: var(--accent-gold);
+}
+
+.risk-map-banner-sub {
+    font-size: 0.7rem;
+    color: var(--text-secondary);
+    font-style: italic;
+}
+
+.risk-map-back-link {
+    background: none;
+    border: 1px solid rgba(255,255,255,0.12);
+    border-radius: 6px;
+    color: rgba(255,255,255,0.5);
+    font-size: 0.72rem;
+    padding: 0.2rem 0.5rem;
+    cursor: pointer;
+    transition: all 0.2s;
+    flex-shrink: 0;
+}
+.risk-map-back-link:hover {
+    color: var(--text-primary);
+    border-color: var(--accent-gold);
+}
+
+/* ── Advance Button ── */
+.risk-advance-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1.5rem;
+    background: linear-gradient(135deg, #7c3aed 0%, #a855f7 100%);
+    color: white;
+    border: 2px solid rgba(167,139,250,0.5);
+    border-radius: 10px;
+    font-weight: 800;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: filter 0.2s, transform 0.15s;
+    animation: pulseGlow 2s infinite alternate;
+}
+.risk-advance-btn:hover {
+    filter: brightness(1.2);
+    transform: scale(1.04);
 }
 
 /* ── Compact Header ── */
@@ -146,7 +215,6 @@
     will-change: transform;
     transition: none;
     transform-origin: 0 0;
-    background-image: url('/assets/risk/scadrosharial_map.png');
     background-size: cover;
     background-position: center;
 }

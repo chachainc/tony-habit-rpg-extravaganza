@@ -1,35 +1,51 @@
-/* ── FurniturePlacementPanel ──────────────────────────────────────────── */
-
-.fp-panel {
-    background: linear-gradient(180deg, #1a1e2e, #12151f);
-    border: 1px solid rgba(60, 55, 40, 0.3);
-    border-radius: 14px;
-    width: 100%;
-    max-width: 420px;
-    max-height: 80vh;
+.fp-bottom-drawer {
+    background: rgba(15, 23, 42, 0.95);
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.5);
+    border-radius: 16px 16px 0 0;
+    padding: 0;
     display: flex;
     flex-direction: column;
-    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6);
     overflow: hidden;
+    color: #e2e8f0;
+    font-family: 'Space Grotesk', system-ui, sans-serif;
+    backdrop-filter: blur(8px);
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    width: 100%;
 }
 
-.fp-panel__header {
+.fp-bottom-drawer.minimized {
+    transform: translateY(calc(100% - 48px)); /* Keep header visible */
+}
+
+/* Header */
+.fp-drawer-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 16px 20px 12px;
-    border-bottom: 1px solid #334155;
+    padding: 12px 16px;
+    background: rgba(255, 255, 255, 0.03);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    position: relative;
+    cursor: grab;
 }
 
-.fp-panel__header h3 {
+.fp-drawer-header:active {
+    cursor: grabbing;
+}
+
+.fp-drawer-header h3 {
     margin: 0;
-    color: #f8fafc;
-    font-size: 1.1rem;
+    font-size: 1rem;
     font-weight: 600;
+    flex: 1;
+    text-align: center;
+    pointer-events: none;
 }
 
-.fp-close-btn {
-    background: none;
+.fp-drawer-minimize,
+.fp-drawer-close {
+    background: transparent;
     border: none;
     color: #94a3b8;
     cursor: pointer;
@@ -38,377 +54,189 @@
     align-items: center;
     justify-content: center;
     border-radius: 6px;
-    transition: all 0.15s;
+    transition: background-color 0.2s, color 0.2s;
 }
-.fp-close-btn:hover { background: rgba(255,255,255,0.08); color: #f8fafc; }
 
-/* ── Tabs ─────────── */
-.fp-tabs {
+.fp-drawer-minimize:hover,
+.fp-drawer-close:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: #fff;
+}
+
+/* Body */
+.fp-drawer-body {
+    padding: 16px;
+    overflow-x: auto;
+    overflow-y: hidden;
+    scrollbar-width: none; /* Firefox */
+}
+
+.fp-drawer-body::-webkit-scrollbar {
+    display: none; /* Chrome/Safari */
+}
+
+/* Tray List */
+.fp-tray-list {
     display: flex;
-    border-bottom: 1px solid #334155;
+    gap: 16px;
+    min-width: max-content;
+    padding-bottom: 8px; /* Room for scroll/drag */
 }
 
-.fp-tab {
-    flex: 1;
-    background: none;
-    border: none;
-    color: #64748b;
-    font-size: 0.85rem;
-    padding: 10px 12px;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 6px;
-    transition: all 0.15s;
-    border-bottom: 2px solid transparent;
-}
-
-.fp-tab:hover { color: #94a3b8; background: rgba(255,255,255,0.03); }
-
-.fp-tab.active {
-    color: #f8fafc;
-    border-bottom-color: #3b82f6;
-}
-
-/* ── Body ─────────── */
-.fp-panel__body {
-    flex: 1;
-    overflow-y: auto;
-    -webkit-overflow-scrolling: touch;
-    padding: 12px 16px 16px;
-}
-
-/* ── Empty state ─────────── */
-.fp-empty {
-    text-align: center;
-    padding: 32px 16px;
-    color: #64748b;
-}
-.fp-empty p { margin: 0 0 8px; }
-.fp-empty-hint { font-size: 0.82rem; color: #475569; }
-
-/* ── Item List ─────────── */
-.fp-item-list {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-}
-
-.fp-item {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    background: rgba(0,0,0,0.25);
-    border: 1px solid #334155;
-    border-radius: 10px;
-    padding: 10px 12px;
-    transition: border-color 0.2s;
-}
-
-.fp-item.placed {
-    border-color: #22c55e40;
-    background: rgba(34, 197, 94, 0.05);
-}
-
-.fp-item.placing {
-    border-color: #3b82f6;
-    background: rgba(59, 130, 246, 0.08);
-    animation: fp-pulse 1s ease-in-out infinite;
-}
-
-@keyframes fp-pulse {
-    0%, 100% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0); }
-    50% { box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.25); }
-}
-
-.fp-item__icon {
-    font-size: 2rem;
-    width: 44px;
-    height: 44px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background: rgba(0,0,0,0.3);
-    border-radius: 8px;
+.fp-tray-item {
+    width: 100px;
     flex-shrink: 0;
-}
-
-.fp-item__info {
-    flex: 1;
+    background: rgba(30, 41, 59, 0.6);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
     display: flex;
     flex-direction: column;
-    gap: 3px;
-}
-
-.fp-item__name-row {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-}
-
-.fp-item__name {
-    font-weight: 600;
-    font-size: 0.92rem;
-}
-
-.fp-placed-badge {
-    display: flex;
-    align-items: center;
-    gap: 3px;
-    font-size: 0.7rem;
-    color: #22c55e;
-    background: rgba(34, 197, 94, 0.12);
-    border: 1px solid rgba(34, 197, 94, 0.25);
-    padding: 1px 6px;
-    border-radius: 20px;
-}
-
-.fp-item__bonus {
-    font-size: 0.78rem;
-    color: #4ade80;
-}
-
-.fp-item__actions {
-    display: flex;
-    gap: 6px;
-    flex-shrink: 0;
-}
-
-.fp-btn {
-    border: 1px solid #475569;
-    border-radius: 7px;
-    background: rgba(0,0,0,0.25);
-    color: #f8fafc;
-    font-size: 0.78rem;
-    padding: 6px 10px;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    gap: 4px;
-    transition: all 0.15s;
-    white-space: nowrap;
-}
-.fp-btn:hover { background: rgba(255,255,255,0.08); border-color: #94a3b8; }
-
-.fp-btn--place { border-color: #3b82f6; color: #93c5fd; }
-.fp-btn--place:hover { background: rgba(59, 130, 246, 0.15); }
-
-.fp-btn--move { border-color: #f59e0b; color: #fcd34d; font-size: 1rem; padding: 4px 8px; }
-.fp-btn--move:hover { background: rgba(245, 158, 11, 0.15); }
-
-.fp-btn--remove { border-color: #ef4444; color: #fca5a5; }
-.fp-btn--remove:hover { background: rgba(239, 68, 68, 0.15); }
-
-.fp-placing-hint {
-    font-size: 0.75rem;
-    color: #60a5fa;
-    font-style: italic;
-    white-space: nowrap;
-}
-
-.fp-store-hint {
-    text-align: center;
-    color: #475569;
-    font-size: 0.78rem;
-    margin-top: 12px;
-}
-
-/* ── Bonus Tab ─────────── */
-.fp-bonus-subtitle {
-    color: #94a3b8;
-    font-size: 0.82rem;
-    margin: 0 0 12px;
-}
-
-.fp-bonus-grid {
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-    margin-bottom: 20px;
-}
-
-.fp-bonus-row {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 8px 12px;
-    background: rgba(0,0,0,0.25);
-    border-radius: 8px;
-    border: 1px solid #334155;
-}
-
-.fp-bonus-label {
-    color: #cbd5e1;
-    font-size: 0.88rem;
-}
-
-.fp-bonus-value {
-    color: #4ade80;
-    font-weight: 700;
-    font-size: 0.88rem;
-}
-
-.fp-placed-title {
-    color: #64748b;
-    font-size: 0.8rem;
-    margin: 0 0 8px;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-}
-
-.fp-placed-list {
-    border-top: 1px solid #334155;
-    padding-top: 12px;
-}
-
-.fp-placed-entry {
-    display: flex;
-    justify-content: space-between;
-    font-size: 0.82rem;
-    color: #94a3b8;
-    padding: 4px 0;
-}
-
-.fp-placed-coord { color: #475569; font-size: 0.75rem; }
-
-/* ── Draggable pieces in room (grounded dark fantasy) ─────────── */
-.fp-room-piece {
-    position: absolute;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    border-radius: 8px;
-    transition: box-shadow 0.15s, transform 0.2s;
+    overflow: hidden;
+    position: relative;
+    transition: transform 0.2s, border-color 0.2s;
     user-select: none;
-    -webkit-user-select: none;
 }
 
-/* Elliptical ground shadow beneath furniture */
-.fp-room-piece::after {
-    content: '';
-    position: absolute;
-    bottom: -4px;
-    left: 15%;
-    width: 70%;
-    height: 8px;
-    background: radial-gradient(ellipse, rgba(0, 0, 0, 0.45) 0%, transparent 70%);
-    border-radius: 50%;
-    pointer-events: none;
-    z-index: -1;
+.fp-tray-item:hover {
+    border-color: rgba(255, 255, 255, 0.2);
+    transform: translateY(-2px);
 }
 
-.fp-room-piece.edit-mode {
-    border: 1.5px dashed rgba(184, 148, 62, 0.4);
-    background: rgba(184, 148, 62, 0.06);
+.fp-tray-item.placed {
+    opacity: 0.6;
 }
 
-.fp-room-piece.dragging {
-    box-shadow:
-        0 12px 32px rgba(0, 0, 0, 0.6),
-        0 0 12px rgba(184, 148, 62, 0.2);
-    border-color: rgba(184, 148, 62, 0.6);
-    z-index: 20;
-    opacity: 0.85;
-    transform: scale(1.08);
+.fp-tray-item-visual {
+    height: 70px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(15, 23, 42, 0.4);
+    font-size: 2rem;
 }
 
-.fp-room-piece__icon {
-    font-size: clamp(1.4rem, 5vw, 2.6rem);
-    line-height: 1;
-    pointer-events: none;
-    filter: drop-shadow(0 3px 6px rgba(0, 0, 0, 0.5));
-}
-
-.fp-room-piece__label {
-    font-size: 0.6rem;
-    color: rgba(255, 255, 255, 0.5);
+.fp-tray-item-info {
+    padding: 8px;
     text-align: center;
-    margin-top: 2px;
-    pointer-events: none;
+    font-size: 0.75rem;
+    font-weight: 500;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-    max-width: 100%;
-    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.6);
+}
+
+.fp-tray-item-overlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.7);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    transition: opacity 0.2s;
+}
+
+.fp-tray-item:hover .fp-tray-item-overlay {
+    opacity: 1;
+}
+
+.fp-tray-return {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    background: #ef4444;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    padding: 6px 12px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.fp-empty-tray {
+    text-align: center;
+    color: #94a3b8;
+    padding: 2rem;
+    font-size: 0.9rem;
+}
+
+/* Draggable Pieces inside Room */
+.fp-room-piece {
+    position: absolute;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transform: translate(-50%, -50%);
+    transition: filter 0.2s;
+    user-select: none;
+}
+
+.fp-room-piece.edit-mode {
+    border: 2px dashed rgba(255, 255, 255, 0.3);
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 8px;
+}
+
+.fp-room-piece.edit-mode:hover {
+    border-color: rgba(255, 255, 255, 0.6);
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.fp-room-piece.dragging {
+    opacity: 0.7;
+    z-index: 100 !important;
+    filter: drop-shadow(0 10px 15px rgba(0, 0, 0, 0.5));
+    border-color: #3b82f6;
+    background: rgba(59, 130, 246, 0.2);
+}
+
+.fp-room-piece.has-interaction {
+    cursor: pointer;
+}
+
+.fp-room-piece__icon {
+    font-size: 3rem;
+    filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.4));
+    pointer-events: none;
+}
+
+.fp-room-piece__label {
+    position: absolute;
+    bottom: -24px;
+    background: rgba(0, 0, 0, 0.8);
+    color: white;
+    font-size: 0.65rem;
+    padding: 2px 6px;
+    border-radius: 4px;
+    white-space: nowrap;
+    pointer-events: none;
 }
 
 .fp-room-piece__actions {
     position: absolute;
-    top: -28px;
-    left: 50%;
-    transform: translateX(-50%);
+    top: -20px;
+    right: -20px;
     display: flex;
     gap: 4px;
-    z-index: 30;
+    z-index: 10;
 }
 
 .fp-room-action {
     background: #ef4444;
+    color: white;
     border: none;
-    border-radius: 5px;
-    color: white;
-    padding: 4px 6px;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    font-size: 0.75rem;
-}
-
-/* ── Edit mode overlay badge ─────────── */
-.fp-edit-mode-badge {
-    position: absolute;
-    top: 8px;
-    left: 50%;
-    transform: translateX(-50%);
-    background: rgba(59, 130, 246, 0.9);
-    color: white;
-    font-size: 0.75rem;
-    padding: 4px 12px;
-    border-radius: 20px;
-    pointer-events: none;
-    z-index: 10;
-    white-space: nowrap;
-}
-
-/* ── Placement ghost cursor ─────────── */
-.fp-placement-cursor {
-    position: absolute;
-    pointer-events: none;
-    background: rgba(184, 148, 62, 0.15);
-    border: 2px dashed rgba(184, 148, 62, 0.5);
-    border-radius: 8px;
+    border-radius: 50%;
+    width: 24px;
+    height: 24px;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 1.5rem;
-    z-index: 15;
-    transition: left 0.05s, top 0.05s;
-}
-
-/* ── Interactive furniture hover glow ── */
-.fp-room-piece:not(.edit-mode):not(.dragging):hover {
     cursor: pointer;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.5);
+    transition: transform 0.1s;
 }
 
-.fp-room-piece.has-interaction:not(.edit-mode)::before {
-    content: '';
-    position: absolute;
-    inset: -4px;
-    border-radius: 12px;
-    border: 1px solid rgba(184, 148, 62, 0.25);
-    pointer-events: none;
-    opacity: 0;
-    transition: opacity 0.3s;
-}
-
-.fp-room-piece.has-interaction:not(.edit-mode):hover::before {
-    opacity: 1;
-    animation: interactPulse 2s ease-in-out infinite;
-}
-
-@keyframes interactPulse {
-    0%, 100% { box-shadow: 0 0 8px rgba(184, 148, 62, 0.2); }
-    50% { box-shadow: 0 0 16px rgba(184, 148, 62, 0.4); }
+.fp-room-action:active {
+    transform: scale(0.9);
 }

@@ -131,9 +131,9 @@ export const TowerDefensePage = () => {
         }
     };
 
-    const handleSell = () => {
+    const handleStore = () => {
         if (!selectedTower) return;
-        td.sellTower(selectedTower.id);
+        td.storeTower(selectedTower.id);
         setSelectedTower(null);
     };
 
@@ -154,8 +154,7 @@ export const TowerDefensePage = () => {
 
     // Wave progress
     const totalEnemies = td.totalWaveEnemies;
-    const remainingEnemies = td.enemies.length + td.enemyQueue.length;
-    const progressPct = totalEnemies > 0 ? ((totalEnemies - remainingEnemies) / totalEnemies) * 100 : 0;
+    const progressPct = totalEnemies > 0 ? (td.waveStats.kills / totalEnemies) * 100 : 0;
 
     const renderGrid = () => {
         const cells = [];
@@ -245,7 +244,7 @@ export const TowerDefensePage = () => {
                 <div className="td-wave-progress">
                     <div className="td-wave-progress-bar" style={{ width: `${progressPct}%` }} />
                     <span className="td-wave-progress-label">
-                        {totalEnemies - remainingEnemies}/{totalEnemies} defeated
+                        {td.waveStats.kills}/{totalEnemies} defeated
                     </span>
                 </div>
             )}
@@ -277,6 +276,14 @@ export const TowerDefensePage = () => {
                                 onClick={td.startNextWave}
                             >
                                 <Play size={16} /> {td.currentWave === 0 ? "Start First Wave" : "Start Next Wave"}
+                            </button>
+                            <button
+                                className="td-start-btn"
+                                style={{ background: '#64748b' }}
+                                disabled={td.isWaveActive || td.towers.length === 0}
+                                onClick={td.storeAllTowers}
+                            >
+                                Store All Towers
                             </button>
                             {!td.isWaveActive && td.currentWaveModifier !== 'none' && (
                                 <div className="wave-preview-chip">
@@ -380,10 +387,10 @@ export const TowerDefensePage = () => {
                                 >
                                     <div className="enemy-sprite">{def.image ? <img src={def.image} alt={def.name} style={{width: '100%', height: '100%', objectFit: 'contain', pointerEvents: 'none'}} /> : def.icon}</div>
                                     {enemy.isElite && <div className="elite-badge">⚡</div>}
-                                    <div className="enemy-hp-bar-bg">
+                                    <div className="enemy-hp-bar-bg" style={{ position: 'absolute', bottom: '-4px', width: '90%', height: '5px', background: 'rgba(0,0,0,0.8)', padding: '1px', borderRadius: '4px', zIndex: 10 }}>
                                         <div 
                                             className="enemy-hp-bar-fill" 
-                                            style={{ width: `${(enemy.hp / enemy.maxHp) * 100}%` }}
+                                            style={{ width: `${Math.max(0, (enemy.hp / enemy.maxHp) * 100)}%`, height: '100%', background: '#ef4444', borderRadius: '2px', transition: 'width 0.1s linear' }}
                                         />
                                     </div>
                                 </div>
@@ -418,9 +425,10 @@ export const TowerDefensePage = () => {
                                     top: `${(popup.y / TD_GRID_HEIGHT) * 100}%`,
                                     opacity: Math.max(0, 1 - popup.age / 1200),
                                     transform: `translate(-50%, ${-popup.age * 0.04}px)`,
+                                    color: popup.color || undefined
                                 }}
                             >
-                                +{popup.value}🎈
+                                {popup.text ? popup.text : `-${popup.value}`}
                             </div>
                         ))}
 
@@ -491,7 +499,6 @@ export const TowerDefensePage = () => {
                 {selectedTower && (() => {
                     const def = TD_TOWERS[selectedTower.type];
                     const upgCost = Math.floor(def.cost * Math.pow(1.5, selectedTower.level));
-                    const refund = Math.floor((def.cost * Math.pow(1.5, selectedTower.level - 1)) * 0.5);
                     const canUpgrade = selectedTower.level < 3 && (currStore.balloons ?? 0) >= upgCost;
                     const specs = TD_SPECIALIZATIONS[selectedTower.type];
                     const canSpecialize = selectedTower.level >= 2 && !selectedTower.specializationBranch && specs;
@@ -543,8 +550,8 @@ export const TowerDefensePage = () => {
                                 ) : (
                                     <button className="action-btn upgrade" disabled>Max Level Reached</button>
                                 )}
-                                <button className="action-btn sell" onClick={handleSell}>
-                                    Sell <br/>(+🎈 {refund})
+                                <button className="action-btn sell" onClick={handleStore}>
+                                    Store <br/>(To Inventory)
                                 </button>
                             </div>
                         </div>

@@ -33,6 +33,8 @@ interface CampaignState {
     highestFloorCleared: number;
     lastGoldenSlimeFloor: number;
     currentStreak: number;
+    /** Per-enemy cleared tracking. Used when multiple enemies share the same floor number. */
+    clearedEnemyIds: string[];
 
     // Tower Expansion State
     activeRunBuffs: RunBuff[];
@@ -43,6 +45,7 @@ interface CampaignState {
     setCurrentFloor: (floor: number) => void;
     getNextFloorId: () => string | null;
     getEnemyForFloor: (floor: number) => string | null;
+    markEnemyCleared: (enemyId: string) => void;
     incrementStreak: () => void;
     resetStreak: () => void;
     checkForGoldenSlime: (floor: number) => boolean;
@@ -69,8 +72,17 @@ export const useCampaignStore = create<CampaignState>()(
             highestFloorCleared: 0,
             lastGoldenSlimeFloor: -100,
             currentStreak: 0,
+            clearedEnemyIds: [],
             activeRunBuffs: [],
             currentFloorModifier: null,
+
+            markEnemyCleared: (enemyId: string) => {
+                set((state) => ({
+                    clearedEnemyIds: state.clearedEnemyIds.includes(enemyId)
+                        ? state.clearedEnemyIds
+                        : [...state.clearedEnemyIds, enemyId],
+                }));
+            },
 
             unlockNextFloor: () => {
                 const state = get();

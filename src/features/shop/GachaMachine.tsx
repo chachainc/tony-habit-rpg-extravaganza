@@ -2,7 +2,9 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Ticket, Sparkles, Sword, Shield, Heart } from 'lucide-react';
-import { useGachaStore, PET_DB } from '../../store/useGachaStore';
+import { useGachaStore } from '../../store/useGachaStore';
+import { usePetStore } from '../../store/usePetStore';
+import { PET_DATABASE } from '../../data/pets';
 import { useEquipmentStore, EQUIPMENT_DB } from '../../store/useEquipmentStore';
 import './GachaMachine.css';
 
@@ -11,7 +13,8 @@ type PullPhase = 'idle' | 'shake' | 'burst' | 'reveal';
 
 export const GachaMachine = ({ onClose }: { onClose: () => void }) => {
     const navigate = useNavigate();
-    const { tickets, pullWithTicket, pull10Gacha, getPityInfo, setActivePet, activePet, ownedPets } = useGachaStore();
+    const { tickets, pullWithTicket, pull10Gacha, getPityInfo } = useGachaStore();
+    const { equippedPetId, ownedPets, equipPet } = usePetStore();
     const { pullEquipment, equipItem, ownedEquipment, equippedWeapon, equippedArmor, equippedAccessory, essence, getPityInfo: getEquipPity } = useEquipmentStore();
 
     const [activeTab, setActiveTab] = useState<GachaTab>('equipment');
@@ -265,20 +268,20 @@ export const GachaMachine = ({ onClose }: { onClose: () => void }) => {
                             ) : (
                                 <div className="owned-items-grid">
                                     {ownedPets.map((petId) => {
-                                        const pet = PET_DB[petId];
+                                        const pet = PET_DATABASE[petId];
                                         if (!pet) return null;
 
                                         return (
                                             <div
                                                 key={pet.id}
-                                                className={`item-card glassmorphism ${pet.rarity} ${activePet === pet.id ? 'equipped' : ''}`}
-                                                onClick={() => setActivePet(pet.id)}
+                                                className={`item-card glassmorphism ${pet.rarity} ${equippedPetId === pet.id ? 'equipped' : ''}`}
+                                                onClick={() => equipPet(pet.id)}
                                             >
                                                 <div className={`item-glow ${getRarityGlow(pet.rarity)}`} />
                                                 <div className="item-icon">{pet.icon}</div>
                                                 <div className="item-name">{pet.name}</div>
-                                                <div className="item-bonus">{pet.description}</div>
-                                                {activePet === pet.id && <div className="equipped-badge">✓ Active</div>}
+                                                <div className="item-bonus">{pet.passive?.description}</div>
+                                                {equippedPetId === pet.id && <div className="equipped-badge">✓ Active</div>}
                                             </div>
                                         );
                                     })}
@@ -449,7 +452,7 @@ export const GachaMachine = ({ onClose }: { onClose: () => void }) => {
                                     </div>
                                 )}
 
-                                <p className="result-description">{result.item.description}</p>
+                                <p className="result-description">{activeTab === 'equipment' ? result.item.description : result.item.passive?.description}</p>
 
                                 {result.wasDuplicate ? (
                                     <div className="duplicate-notice">

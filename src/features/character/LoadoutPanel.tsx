@@ -11,12 +11,13 @@ import type { SkillName } from '../../store/useGameStore';
 import { ITEM_DATABASE } from '../../data/items';
 import { useHeroImage } from '../../hooks/useHeroImage';
 import { useMagicStore, SPELL_DB } from '../../store/useMagicStore';
+import { useTitleStore, TITLES } from '../../store/useTitleStore';
 import './LoadoutPanel.css';
 
 type RadialSlotId = 
     | 'helm' | 'amulet' | 'cape' | 'weapon' | 'body' | 'shield' 
     | 'legs' | 'gloves' | 'boots' | 'ring' | 'pet' | 'pet_accessory' | 'book' 
-    | 'artifact' | 'relic' | 'spell';
+    | 'artifact' | 'relic' | 'spell' | 'title';
 
 interface SelectionItem {
     id: string;
@@ -36,6 +37,7 @@ export const LoadoutPanel = ({ onClose }: { onClose: () => void }) => {
     const auraStore = useAuraStore();
     const petStore = usePetStore();
     const magicStore = useMagicStore();
+    const titleStore = useTitleStore();
 
     // ── UI State ──
     const [activeSlot, setActiveSlot] = useState<RadialSlotId | null>(null);
@@ -78,7 +80,7 @@ export const LoadoutPanel = ({ onClose }: { onClose: () => void }) => {
                 const ring = equipStore.equippedAccessory ? EQUIPMENT_DB[equipStore.equippedAccessory] : null;
                 return { icon: ring?.icon || '', name: ring?.name || '', emptyIcon: '💍' };
             case 'pet':
-                const pet = petStore.activePet ? ITEM_DATABASE[petStore.activePet] : null;
+                const pet = petStore.equippedPetId ? ITEM_DATABASE[petStore.equippedPetId] : null;
                 return { icon: pet?.icon || '', name: pet?.name || '', emptyIcon: '🐾' };
             case 'book':
                 const book = invStore.equipped.book ? ITEM_DB[invStore.equipped.book] : null;
@@ -95,6 +97,9 @@ export const LoadoutPanel = ({ onClose }: { onClose: () => void }) => {
             case 'spell':
                 const spelling = magicStore.equippedSpell ? SPELL_DB[magicStore.equippedSpell] : null;
                 return { icon: spelling?.icon || '', name: spelling?.name || '', emptyIcon: '🪄' };
+            case 'title':
+                const activeTitle = titleStore.activeTitle ? TITLES.find(t => t.id === titleStore.activeTitle) : null;
+                return { icon: activeTitle?.icon || '', name: activeTitle?.name || '', emptyIcon: '👑' };
         }
     };
     const activeAuraId = auraStore.activeAuraId;
@@ -172,11 +177,12 @@ export const LoadoutPanel = ({ onClose }: { onClose: () => void }) => {
             weapon: equipStore.equippedWeapon ?? null,
             shield: invStore.equipped.armor ?? null,
             ring: equipStore.equippedAccessory ?? null,
-            pet: petStore.activePet ?? null,
+            pet: petStore.equippedPetId ?? null,
             pet_accessory: invStore.equipped.pet_accessory ?? null,
             book: invStore.equipped.book ?? null,
             artifact: invStore.equipped.artifact ?? null,
-            relic: invStore.equipped.relic ?? null
+            relic: invStore.equipped.relic ?? null,
+            title: titleStore.activeTitle ?? null
         };
         equipStore.saveEquipmentSet(setName, snapshot);
     };
@@ -202,7 +208,8 @@ export const LoadoutPanel = ({ onClose }: { onClose: () => void }) => {
         if (snapshot.relic) invStore.equipItem(snapshot.relic, 'relic'); else invStore.unequipItem('relic');
         if (snapshot.pet_accessory) invStore.equipItem(snapshot.pet_accessory, 'pet_accessory'); else invStore.unequipItem('pet_accessory');
         
-        if (snapshot.pet) petStore.switchPet(snapshot.pet);
+        if (snapshot.pet) petStore.equipPet(snapshot.pet);
+        if (snapshot.title) titleStore.setActiveTitle(snapshot.title); else titleStore.setActiveTitle(null);
     };
 
 
@@ -272,6 +279,9 @@ export const LoadoutPanel = ({ onClose }: { onClose: () => void }) => {
                     return { id: s.id, name: s.name, icon: s.icon, desc: `${s.mpCost} MP`, isLocked: false };
                 });
                 break;
+            case 'title':
+                list = TITLES.map(t => ({ id: t.id, name: t.name, icon: t.icon, desc: t.description, isLocked: !titleStore.unlockedTitles.includes(t.id) }));
+                break;
             case 'gloves':
                 list = [];
                 break;
@@ -301,6 +311,7 @@ export const LoadoutPanel = ({ onClose }: { onClose: () => void }) => {
                 case 'artifact': invStore.unequipItem('artifact'); break;
                 case 'relic': invStore.unequipItem('relic'); break;
                 case 'spell': magicStore.equipSpell(null); break;
+                case 'title': titleStore.setActiveTitle(null); break;
                 case 'gloves': break;
             }
         } else {
@@ -315,12 +326,13 @@ export const LoadoutPanel = ({ onClose }: { onClose: () => void }) => {
                 case 'weapon': equipStore.equipItem(itemId); break;
                 case 'shield': invStore.equipItem(itemId, 'armor'); break;
                 case 'ring': equipStore.equipItem(itemId); break;
-                case 'pet': petStore.switchPet(itemId); break;
+                case 'pet': petStore.equipPet(itemId); break;
                 case 'pet_accessory': invStore.equipItem(itemId, 'pet_accessory'); break;
                 case 'book': invStore.equipItem(itemId, 'book'); break;
                 case 'artifact': invStore.equipItem(itemId, 'artifact'); break;
                 case 'relic': invStore.equipItem(itemId, 'relic'); break;
                 case 'spell': magicStore.equipSpell(itemId); break;
+                case 'title': titleStore.setActiveTitle(itemId); break;
                 case 'gloves': break;
             }
         }
@@ -385,6 +397,7 @@ export const LoadoutPanel = ({ onClose }: { onClose: () => void }) => {
                         {renderSlot('book', 'ls-book')}
                         {renderSlot('relic', 'ls-relic')}
                         {renderSlot('spell', 'ls-spell')}
+                        {renderSlot('title', 'ls-title')}
                     </div>
                 </div>
 

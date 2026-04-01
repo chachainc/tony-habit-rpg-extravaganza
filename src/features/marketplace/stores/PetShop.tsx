@@ -19,7 +19,12 @@ interface Props {
 const PET_ITEMS = [
     'pet_cow',
     'pet_porcupine',
-    'pet_dog',
+    'pet_platypus',
+    'pet_giraffe',
+    'pet_raven',
+    'pet_elephant',
+    'pet_rhino',
+    'pet_bear',
     'cow_king',
     'wizard_cow',
     'highland_archer_cow',

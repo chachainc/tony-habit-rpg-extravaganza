@@ -1,6 +1,6 @@
 import { useInventoryStore, ITEM_DB, type ItemStatBonuses } from './useInventoryStore';
 import { ITEM_DATABASE } from '../data/items';
-import { PET_DB } from './useGachaStore';
+import { PET_DATABASE } from '../data/pets';
 import { useRiskStore } from './useRiskStore';
 import { useTraitStore } from './useTraitStore';
 
@@ -101,16 +101,13 @@ export const getPassiveBonuses = (): PassiveBonuses => {
     processGear(equipped.book);     // New: book slot
     processGear(equipped.jewelry);  // New: jewelry slot
 
-    // Process Pet (via PET_DB or ITEM_DATABASE)
+    // Process Pet (via PET_DATABASE or ITEM_DATABASE)
     if (equipped.pet) {
-        const gachaPet = PET_DB[equipped.pet];
+        const gachaPet = PET_DATABASE[equipped.pet];
         if (gachaPet) {
-            if (gachaPet.passiveBonus.type === 'attack') bonuses.attack_bonus += (gachaPet.passiveBonus.value * 10);
-            if (gachaPet.passiveBonus.type === 'defense') bonuses.defense_bonus += (gachaPet.passiveBonus.value * 10);
-            if (gachaPet.passiveBonus.type === 'skill_xp') {
-                if (gachaPet.passiveBonus.skillName === 'intelligence') bonuses.intelligence_bonus += 5;
-                if (gachaPet.passiveBonus.skillName === 'strategy') bonuses.strategy_bonus += 5;
-            }
+            const effectType = gachaPet.passive?.effectType;
+            if (effectType === 'bonus_gold') bonuses.gold_bonus += (gachaPet.passive?.value ?? 0);
+            // Note: new passive model is simpler — no attack/defense/skill_xp subtypes
         }
         
         const marketPet = ITEM_DATABASE[equipped.pet];
@@ -140,11 +137,18 @@ export const getPassiveBonuses = (): PassiveBonuses => {
 
     // Process Risk Map Region Bonuses
     const activeRiskRegions = useRiskStore.getState().getActiveRegionBonuses();
+    // Map 1 regions
     if (activeRiskRegions.includes('verdant_plains')) bonuses.attack_bonus += Math.floor(bonuses.attack_bonus * 0.05) || 1; // +5% ATK
     if (activeRiskRegions.includes('ashlands')) bonuses.gold_multiplier += 10; // +10% Gold
     if (activeRiskRegions.includes('iron_highlands')) bonuses.defense_bonus += Math.floor(bonuses.defense_bonus * 0.10) || 1; // +10% DEF 
     if (activeRiskRegions.includes('frozen_north')) bonuses.xp_multiplier += 10; // +10% XP
     if (activeRiskRegions.includes('sunken_expanse')) bonuses.max_hp_bonus += 5; // +5 Max HP
+    // Map 2 regions (stronger)
+    if (activeRiskRegions.includes('obsidian_peaks')) bonuses.attack_bonus += Math.floor(bonuses.attack_bonus * 0.15) || 2; // +15% ATK
+    if (activeRiskRegions.includes('dead_marshes')) bonuses.gold_multiplier += 15; // +15% Gold
+    if (activeRiskRegions.includes('ember_wastes')) bonuses.max_hp_bonus += 10; // +10 Max HP
+    if (activeRiskRegions.includes('shadow_rift')) bonuses.defense_bonus += Math.floor(bonuses.defense_bonus * 0.20) || 2; // +20% DEF
+    if (activeRiskRegions.includes('cursed_tundra')) bonuses.xp_multiplier += 15; // +15% XP
 
     return bonuses;
 };

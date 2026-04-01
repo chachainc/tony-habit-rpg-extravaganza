@@ -26,6 +26,7 @@ export interface Spell {
         type: 'heal' | 'damage' | 'shield';
         value: number; // % for heal, multiplier for damage (old spells), baseDamage for new spells, turns for shield
         element?: 'fire' | 'ice' | 'lightning' | 'cosmic' | 'neutral';
+        dot?: { damage: number; turns: number };
     };
 }
 
@@ -63,14 +64,14 @@ export const SPELL_DB: Record<string, Spell> = {
         id: 'poison_needle',
         name: 'Poison Needle',
         icon: '🧪',
-        description: 'A venomous needle that pierces deep.',
+        description: 'Deals 4 damage and applies poison (2 damage for 2 turns)',
         goldCost: 350,
         mpCost: 4,
         flexibilityTier: 1,
         tier: 'novice',
         baseDamage: 4,
         cooldownTurns: 1,
-        effect: { type: 'damage', value: 4, element: 'neutral' },
+        effect: { type: 'damage', value: 4, element: 'neutral', dot: { damage: 2, turns: 2 } },
     },
 
     // ══════════════════════════════════════════════

@@ -1,0 +1,37 @@
+npm warn config production Use `--omit=dev` instead.
+src/features/arena/Arena.tsx(627,21): error TS2339: Property 'activePet' does not exist on type 'PetState'.
+src/features/arena/ArenaBattlefieldLayout.tsx(103,11): error TS2339: Property 'activePet' does not exist on type 'PetState'.
+src/features/character/LoadoutPanel.tsx(81,38): error TS2339: Property 'activePet' does not exist on type 'PetState'.
+src/features/character/LoadoutPanel.tsx(81,73): error TS2339: Property 'activePet' does not exist on type 'PetState'.
+src/features/character/LoadoutPanel.tsx(175,27): error TS2339: Property 'activePet' does not exist on type 'PetState'.
+src/features/character/LoadoutPanel.tsx(205,36): error TS2339: Property 'switchPet' does not exist on type 'PetState'.
+src/features/character/LoadoutPanel.tsx(318,38): error TS2339: Property 'switchPet' does not exist on type 'PetState'.
+src/features/combat/PetBattle.tsx(10,5): error TS2353: Object literal may only specify known properties, and 'Normal' does not exist in type 'Record<PetElementType, string>'.
+src/features/pet/HomeModal.tsx(13,13): error TS2339: Property 'activePet' does not exist on type 'PetState'.
+src/features/pet/HomeModal.tsx(13,24): error TS2339: Property 'name' does not exist on type 'PetState'.
+src/features/pet/HomeModal.tsx(13,30): error TS2339: Property 'health' does not exist on type 'PetState'.
+src/features/pet/HomeModal.tsx(13,38): error TS2339: Property 'hunger' does not exist on type 'PetState'.
+src/features/pet/HomeModal.tsx(13,46): error TS2339: Property 'mood' does not exist on type 'PetState'.
+src/features/pet/HomeModal.tsx(13,52): error TS2339: Property 'energy' does not exist on type 'PetState'.
+src/features/pet/HomeModal.tsx(13,60): error TS2339: Property 'feed' does not exist on type 'PetState'.
+src/features/pet/HomeModal.tsx(13,66): error TS2339: Property 'play' does not exist on type 'PetState'.
+src/features/pet/PetPage.tsx(37,13): error TS2339: Property 'activePet' does not exist on type 'PetState'.
+src/features/pet/PetPage.tsx(37,24): error TS2339: Property 'name' does not exist on type 'PetState'.
+src/features/pet/PetPage.tsx(37,30): error TS2339: Property 'health' does not exist on type 'PetState'.
+src/features/pet/PetPage.tsx(37,38): error TS2339: Property 'hunger' does not exist on type 'PetState'.
+src/features/pet/PetPage.tsx(37,46): error TS2339: Property 'mood' does not exist on type 'PetState'.
+src/features/pet/PetPage.tsx(37,52): error TS2339: Property 'energy' does not exist on type 'PetState'.
+src/features/pet/PetPage.tsx(37,60): error TS2339: Property 'feed' does not exist on type 'PetState'.
+src/features/pet/PetPage.tsx(37,66): error TS2339: Property 'play' does not exist on type 'PetState'.
+src/features/room/PetInteractionPanel.tsx(34,42): error TS2339: Property 'activePet' does not exist on type 'PetState'.
+src/features/room/PetInteractionPanel.tsx(35,40): error TS2339: Property 'name' does not exist on type 'PetState'.
+src/features/room/PlayerRoom.tsx(565,13): error TS2339: Property 'activePet' does not exist on type 'PetState'.
+src/features/room/PlayerRoom.tsx(565,24): error TS2339: Property 'name' does not exist on type 'PetState'.
+src/features/room/Room2D.tsx(11,13): error TS2339: Property 'activePet' does not exist on type 'PetState'.
+src/features/room/RoomLobby.tsx(93,13): error TS2339: Property 'activePet' does not exist on type 'PetState'.
+src/features/room/RoomLobby.tsx(93,24): error TS2339: Property 'name' does not exist on type 'PetState'.
+src/features/room/WalkableRoom.tsx(51,13): error TS2339: Property 'activePet' does not exist on type 'PetState'.
+src/features/room/WalkableRoom.tsx(51,24): error TS2339: Property 'name' does not exist on type 'PetState'.
+src/store/useBattleStore.ts(737,33): error TS2339: Property 'getActivePetDef' does not exist on type 'PetState'.
+src/store/useBattleStore.ts(748,34): error TS2339: Property 'name' does not exist on type 'PetState'.
+src/store/useBattleStore.ts(758,16): error TS7053: Element implicitly has an 'any' type because expression of type 'any' can't be used to index type 'Record<SkillName, Skill>'.

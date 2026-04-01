@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { Swords, Sparkles, BookOpen, ChevronUp, ChevronDown, X } from 'lucide-react';
+import { BookOpen, ChevronUp, ChevronDown, X } from 'lucide-react';
 import { useGameStore } from '../../store/useGameStore';
 import { useBattleStore } from '../../store/useBattleStore';
 import { useEnemyStore, ENEMY_DB, ELEMENT_ICONS } from '../../store/useEnemyStore';
@@ -87,37 +87,156 @@ const ENEMY_IMAGES: Record<string, string> = {
 };
 
 /**
- * Calculates a win probability percentage based on combatant stats.
- * Weighted primarily on ATK vs DEF and HP pools.
+ * Lightweight battle simulation to estimate win probability.
+ * Runs N fast in-memory fights using the same core mechanics as the real battle system.
+ * Accounts for: attack rolls, defense mitigation, enemy healing/drain, DOT, cooldowns.
+ * Does NOT mutate any Zustand state.
  */
-const calculateWinChance = (player: any, enemy: any): number => {
-    if (!player || !enemy) return 0;
+const SIM_COUNT = 150;
+const SIM_MAX_TURNS = 80; // Safety cap to avoid infinite loops with high-sustain enemies
 
-    // Estimate total damage cycles
-    const playerDmgPerTurn = Math.max(5, player.atk - (enemy.def * 0.5));
-    const enemyDmgPerTurn = Math.max(5, enemy.atk - (player.def * 0.5));
-
-    const turnsToKillEnemy = enemy.maxHp / playerDmgPerTurn;
-    const turnsToKillPlayer = player.maxHp / enemyDmgPerTurn;
-
-    // Win chance is inverse ratio of turns to kill
-    // If turnsToKillEnemy is smaller, player wins faster
-    let chance = (turnsToKillPlayer / (turnsToKillEnemy + turnsToKillPlayer)) * 100;
-
-    // Add speed weight
-    const spdDiff = player.spd - enemy.spd;
-    chance += spdDiff * 0.1;
-
-    // Add level/floor scaling offset to keep it within realistic bounds
-    return Math.min(99.9, Math.max(0.1, Math.round(chance)));
+type SimCombatant = {
+    hp: number;
+    maxHp: number;
+    atk: number;
+    def: number;
+    energy: number;
+    cooldowns: Record<string, number>;
+    dotTurns: number;
+    dotDamage: number;
 };
 
-const getWinChanceColor = (chance: number): string => {
-    if (chance < 30) return '#ef4444'; // Red
-    if (chance < 50) return '#f97316'; // Orange
-    if (chance < 70) return '#fbbf24'; // Yellow
+/** Apply mitigation formula matching useBattleStore.applyDamage */
+const simMitigate = (rawDmg: number, def: number): number => {
+    return Math.max(1, Math.round(rawDmg * (100 / (100 + def)) * (0.95 + Math.random() * 0.1)));
+};
+
+/** Run a single simulated battle. Returns true if player wins. */
+const runOneSim = (pIn: SimCombatant, eIn: SimCombatant, enemyDef: any): boolean => {
+    const p = { ...pIn, cooldowns: {}, dotTurns: 0, dotDamage: 0 };
+    const e = { ...eIn, cooldowns: {} as Record<string, number>, dotTurns: 0, dotDamage: 0 };
+
+    // Precompute the enemy's heal-on-attack abilities
+    const allAbilities: any[] = [
+        { id: 'basic_attack', damageMultiplier: 1.0, cooldown: 0, effects: undefined, energyCost: 0 },
+        ...(enemyDef.abilities || []),
+    ];
+
+    for (let turn = 0; turn < SIM_MAX_TURNS; turn++) {
+        // ── PLAYER TURN (light attack: random roll 1..ATK) ──
+        {
+            const atkRoll = Math.floor(Math.random() * Math.max(1, p.atk)) + 1;
+            const dmg = simMitigate(atkRoll, e.def);
+            e.hp -= dmg;
+            if (e.hp <= 0) return true;
+            // Player gains energy on attack
+            p.energy = Math.min(100, p.energy + 20);
+        }
+
+        // ── ENEMY TURN ──
+        {
+            // Tick down enemy cooldowns
+            for (const id in e.cooldowns) {
+                if (e.cooldowns[id] > 0) e.cooldowns[id]--;
+            }
+
+            // Choose ability: skill off-cooldown first, else basic
+            let chosen = allAbilities[0];
+            // Check ultimate
+            const ult = allAbilities.find((a: any) => a.type === 'ultimate' && e.energy >= (a.energyCost || 100));
+            if (ult) {
+                chosen = ult;
+                e.energy = 0;
+            } else {
+                const availSkill = allAbilities.find(
+                    (a: any) => a.type === 'skill' && (!e.cooldowns[a.id] || e.cooldowns[a.id] <= 0)
+                );
+                if (availSkill) chosen = availSkill;
+            }
+
+            // Apply cooldown
+            if (chosen.cooldown > 0) e.cooldowns[chosen.id] = chosen.cooldown;
+            // Gain energy
+            if (chosen.type !== 'ultimate') e.energy = Math.min(100, e.energy + 15);
+
+            // Compute damage
+            const rawDmg = e.atk * (chosen.damageMultiplier ?? 1.0);
+            const finalDmg = simMitigate(rawDmg, p.def);
+            p.hp -= finalDmg;
+
+            // Apply DOT to player
+            if (chosen.effects?.dot) {
+                p.dotTurns = chosen.effects.dot.turns;
+                p.dotDamage = chosen.effects.dot.damage;
+            }
+
+            // Enemy heals itself (heal is % of maxHp)
+            if (chosen.effects?.heal) {
+                const healAmt = Math.round(e.maxHp * chosen.effects.heal / 100);
+                e.hp = Math.min(e.maxHp, e.hp + healAmt);
+            }
+
+            if (p.hp <= 0) return false;
+        }
+
+        // ── DOT tick on player ──
+        if (p.dotTurns > 0) {
+            p.hp -= p.dotDamage;
+            p.dotTurns--;
+            if (p.hp <= 0) return false;
+        }
+    }
+    // If we hit the turn cap, treat as draw → loss (sustain enemy survived)
+    return false;
+};
+
+interface WinEstimate {
+    winRate: number;      // 0–100
+    label: string;        // 'Dangerous' | 'Unfavorable' | 'Close Fight' | 'Favored' | 'Very Favored'
+    sustainWarning: boolean;
+}
+
+const estimateWinChance = (player: any, enemy: any, enemyDef: any): WinEstimate => {
+    if (!player || !enemy || !enemyDef) return { winRate: 0, label: 'Dangerous', sustainWarning: false };
+
+    const pSim: SimCombatant = {
+        hp: player.maxHp, maxHp: player.maxHp,
+        atk: player.atk, def: player.def,
+        energy: 0, cooldowns: {}, dotTurns: 0, dotDamage: 0,
+    };
+    const eSim: SimCombatant = {
+        hp: enemy.maxHp, maxHp: enemy.maxHp,
+        atk: enemy.atk, def: enemy.def,
+        energy: 0, cooldowns: {}, dotTurns: 0, dotDamage: 0,
+    };
+
+    let wins = 0;
+    for (let i = 0; i < SIM_COUNT; i++) {
+        if (runOneSim(pSim, eSim, enemyDef)) wins++;
+    }
+
+    const winRate = Math.round((wins / SIM_COUNT) * 100);
+
+    let label: string;
+    if (winRate < 20) label = 'Dangerous';
+    else if (winRate < 40) label = 'Unfavorable';
+    else if (winRate < 60) label = 'Close Fight';
+    else if (winRate < 80) label = 'Favored';
+    else label = 'Very Favored';
+
+    // Detect sustain enemies (any ability with heal)
+    const sustainWarning = (enemyDef.abilities || []).some((a: any) => a.effects?.heal);
+
+    return { winRate, label, sustainWarning };
+};
+
+const getWinChanceColor = (winRate: number): string => {
+    if (winRate < 20) return '#ef4444'; // Red
+    if (winRate < 40) return '#f97316'; // Orange
+    if (winRate < 60) return '#fbbf24'; // Yellow
     return '#22c55e'; // Green
 };
+
 
 export const Arena = ({ onClose }: { onClose: () => void }) => {
     const navigate = useNavigate();
@@ -129,13 +248,14 @@ export const Arena = ({ onClose }: { onClose: () => void }) => {
     const {
         currentFloor,
         highestFloorCleared,
-        currentStreak, // New
+        currentStreak,
+        clearedEnemyIds,
+        markEnemyCleared,
         unlockNextFloor,
-        getEnemyForFloor,
         checkForGoldenSlime,
         recordGoldenSlimeEncounter,
-        incrementStreak, // New
-        resetStreak, // New
+        incrementStreak,
+        resetStreak,
     } = useCampaignStore();
 
     // Pet companion (for ArenaBattlefieldLayout only)
@@ -216,13 +336,13 @@ export const Arena = ({ onClose }: { onClose: () => void }) => {
         };
     }, [autoAttack, selectAbility, executePlayerAction]);
 
-    // Handle starting a battle for a specific floor
-    const handleStartBattle = (floor: number) => {
+    // Handle starting a battle by enemy ID (sequential progression)
+    const handleStartBattle = (enemyId: string, floorNum: number) => {
         // Check for Golden Slime rare encounter (1% chance)
-        const goldenSlimeSpawn = checkForGoldenSlime(floor);
+        const goldenSlimeSpawn = checkForGoldenSlime(floorNum);
 
         if (goldenSlimeSpawn) {
-            recordGoldenSlimeEncounter(floor);
+            recordGoldenSlimeEncounter(floorNum);
             resetBattle();
             initBattle('golden_slime');
             setView('battle');
@@ -230,13 +350,10 @@ export const Arena = ({ onClose }: { onClose: () => void }) => {
             return;
         }
 
-        const enemyId = getEnemyForFloor(floor);
-        if (enemyId) {
-            resetBattle();
-            initBattle(enemyId);
-            setView('battle');
-            setAutoAttack(false); // Reset auto-attack when starting new battle
-        }
+        resetBattle();
+        initBattle(enemyId);
+        setView('battle');
+        setAutoAttack(false);
     };
 
     // Handle Victory
@@ -268,10 +385,6 @@ export const Arena = ({ onClose }: { onClose: () => void }) => {
                     }
                     if (player) {
                         import('../../store/useConquestStore').then(({ useConquestStore: cs }) => {
-                            // Apply damage sustained during this battle back to conquest run health
-                            // Since player might have started at less than runMaxHP, 
-                            // we calculate damage taken = (battleMaxHP - currentBattleHP)
-                            // Then deduct that from conquest HP
                             const maxStateHp = player.maxHp;
                             const currentHp = player.hp;
                             const damageTaken = maxStateHp - currentHp;
@@ -282,7 +395,7 @@ export const Arena = ({ onClose }: { onClose: () => void }) => {
                     // Arena Rewards with Streak Multiplier
                     incrementStreak();
                     const streakCount = useCampaignStore.getState().currentStreak;
-                    const streakMultiplier = 1.0 + (Math.min(streakCount, 10) * 0.05); // Cap at +50%
+                    const streakMultiplier = 1.0 + (Math.min(streakCount, 10) * 0.05);
 
                     const totalGold = Math.floor((Math.round(enemyDef.goldReward * scaling) + passives.gold_bonus) * streakMultiplier);
                     const totalXp = Math.floor(Math.round(enemyDef.xpReward * scaling) * streakMultiplier);
@@ -290,8 +403,11 @@ export const Arena = ({ onClose }: { onClose: () => void }) => {
                     addGold(totalGold);
                     useGameStore.getState().addGlobalXp(totalXp);
 
-                    // Unlock next floor if this was the current floor
-                    if (currentFloor <= highestFloorCleared + 1) { // Logic check
+                    // Mark this specific enemy as cleared (sequential progression)
+                    markEnemyCleared(enemy.id);
+
+                    // Also advance the floor counter for backward-compat
+                    if (currentFloor <= highestFloorCleared + 1) {
                         unlockNextFloor();
                     }
 
@@ -373,11 +489,18 @@ export const Arena = ({ onClose }: { onClose: () => void }) => {
 
     // --- CAMPAIGN MAP ---
     if (view === 'map') {
-        // Build sorted list of all enemies by floor
+        // Build sorted list of all enemies by floor (then by ENEMY_DB insertion order for ties)
         const allEnemies = Object.values(ENEMY_DB)
-            .filter(e => e.floor > 0) // Exclude special encounters (Golden Slime etc.)
+            .filter(e => e.floor > 0)
             .sort((a, b) => a.floor - b.floor);
-        const maxDisplayFloor = Math.min(50, highestFloorCleared + 5);
+
+        // Assign a strict sequential display index (1F, 2F, 3F...) regardless of duplicate floor values
+        // First uncleared enemy in the sequence is the ACTIVE one; everything after is LOCKED.
+        const firstUnclearedIdx = allEnemies.findIndex(e => !clearedEnemyIds.includes(e.id));
+
+        const maxDisplayIdx = firstUnclearedIdx === -1
+            ? allEnemies.length   // all cleared — show everything
+            : Math.min(allEnemies.length, firstUnclearedIdx + 6); // show a few ahead
 
         const rarityColors: Record<string, string> = {
             common: '#9ca3af',
@@ -387,22 +510,22 @@ export const Arena = ({ onClose }: { onClose: () => void }) => {
         };
 
         const floors = allEnemies
-            .filter(e => e.floor <= maxDisplayFloor)
-            .map((enemyDef) => {
-                const i = enemyDef.floor;
-                const isUnlocked = i <= highestFloorCleared + 1;
-                const isCleared = i <= highestFloorCleared;
-                const isBoss = enemyDef.floor % 10 === 0;
-                const isActive = isUnlocked && !isCleared;
+            .slice(0, maxDisplayIdx)
+            .map((enemyDef, idx) => {
+                const displayFloor = idx + 1;  // 1-based sequential floor number
+                const isCleared = clearedEnemyIds.includes(enemyDef.id);
+                const isActive = idx === firstUnclearedIdx;
+                const isLocked = !isCleared && !isActive;
+                const isBoss = enemyDef.isBoss || (enemyDef.floor % 10 === 0 && enemyDef.rarity === 'legendary');
 
                 return (
                     <div
                         key={enemyDef.id}
-                        className={`floor-node ${isUnlocked ? 'unlocked' : ''} ${isCleared ? 'cleared' : ''} ${isBoss ? 'boss' : ''} ${isActive ? 'active' : ''}`}
+                        className={`floor-node ${!isLocked ? 'unlocked' : ''} ${isCleared ? 'cleared' : ''} ${isBoss ? 'boss' : ''} ${isActive ? 'active' : ''}`}
                     >
                         {/* Floor Number Badge */}
                         <div className="floor-number" style={isBoss ? { background: 'linear-gradient(135deg, #f59e0b, #ef4444)', fontSize: '0.85rem' } : {}}>
-                            {i}F
+                            {displayFloor}F
                         </div>
 
                         {/* Enemy Info Block */}
@@ -416,41 +539,58 @@ export const Arena = ({ onClose }: { onClose: () => void }) => {
                                 </span>
                             </div>
 
-                            {/* Stats Row */}
-                            <div className="floor-stats">
-                                <span title="HP">❤️ {enemyDef.baseHp}</span>
-                                <span title="ATK">⚔️ {enemyDef.baseAtk}</span>
-                                <span title="DEF">🛡️ {enemyDef.baseDef}</span>
-                                <span title="SPD">💨 {enemyDef.baseSpd}</span>
-                                <span title="Element">{ELEMENT_ICONS[enemyDef.element]}</span>
-                            </div>
+                            {/* Stats Row — hide for locked floors */}
+                            {!isLocked && (
+                                <div className="floor-stats">
+                                    <span title="HP">❤️ {enemyDef.baseHp}</span>
+                                    <span title="ATK">⚔️ {enemyDef.baseAtk}</span>
+                                    <span title="DEF">🛡️ {enemyDef.baseDef}</span>
+                                    <span title="SPD">💨 {enemyDef.baseSpd}</span>
+                                    <span title="Element">{ELEMENT_ICONS[enemyDef.element]}</span>
+                                </div>
+                            )}
 
                             {/* Requirements Row */}
-                            <div className="floor-reqs">
-                                <span className="floor-req">⚔️ {enemyDef.requiredAtk} ATK</span>
-                                <span className="floor-req">🛡️ {enemyDef.requiredDef} DEF</span>
-                                {enemyDef.requiredSkill && (
-                                    <span className="floor-req skill-req">
-                                        📖 {enemyDef.requiredSkill.skill} Lv.{enemyDef.requiredSkill.level}
-                                    </span>
-                                )}
-                            </div>
+                            {!isLocked && (
+                                <div className="floor-reqs">
+                                    <span className="floor-req">⚔️ {enemyDef.requiredAtk} ATK</span>
+                                    <span className="floor-req">🛡️ {enemyDef.requiredDef} DEF</span>
+                                    {enemyDef.requiredSkill && (
+                                        <span className="floor-req skill-req">
+                                            📖 {enemyDef.requiredSkill.skill} Lv.{enemyDef.requiredSkill.level}
+                                        </span>
+                                    )}
+                                </div>
+                            )}
 
                             {/* Rewards Row */}
-                            <div className="floor-rewards">
-                                <span>🪙 {enemyDef.goldReward}</span>
-                                <span>⭐ {enemyDef.xpReward} XP</span>
-                            </div>
+                            {!isLocked && (
+                                <div className="floor-rewards">
+                                    <span>🪙 {enemyDef.goldReward}</span>
+                                    <span>⭐ {enemyDef.xpReward} XP</span>
+                                </div>
+                            )}
                         </div>
 
                         {/* Action */}
-                        {isUnlocked && !isCleared && (
-                            <button className="start-battle-btn" onClick={() => handleStartBattle(i)}>
+                        {isActive && (
+                            <button className="start-battle-btn" onClick={() => handleStartBattle(enemyDef.id, enemyDef.floor)}>
                                 ⚔️ BATTLE
                             </button>
                         )}
-                        {isCleared && <div className="cleared-badge">✅</div>}
-                        {!isUnlocked && <div className="locked-badge">🔒</div>}
+                        {isCleared && (
+                            <div className="cleared-badge" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.2rem' }}>
+                                <span>✅ CLEARED</span>
+                                <button
+                                    className="start-battle-btn"
+                                    style={{ fontSize: '0.7rem', padding: '0.3rem 0.6rem', opacity: 0.7 }}
+                                    onClick={() => handleStartBattle(enemyDef.id, enemyDef.floor)}
+                                >
+                                    🔁 REPLAY
+                                </button>
+                            </div>
+                        )}
+                        {isLocked && <div className="locked-badge">🔒 LOCKED</div>}
                     </div>
                 );
             });
@@ -503,10 +643,10 @@ export const Arena = ({ onClose }: { onClose: () => void }) => {
     if (view === 'battle') {
         if (phase === 'prep' && enemy && player) {
             const enemyDef = ENEMY_DB[enemy.id];
-            const winChance = calculateWinChance(player, enemy);
-            const winColor = getWinChanceColor(winChance);
-            const { activePet: activePetId } = usePetStore.getState();
-            const activePet = activePetId ? PET_DATABASE[activePetId] : null;
+            const estimate = estimateWinChance(player, enemy, enemyDef);
+            const winColor = getWinChanceColor(estimate.winRate);
+            const { equippedPetId: activePetId } = usePetStore.getState();
+            const equippedPet = activePetId ? PET_DATABASE[activePetId] : null;
 
 
 
@@ -520,8 +660,13 @@ export const Arena = ({ onClose }: { onClose: () => void }) => {
                                 <h2>⚔️ BATTLE PREPARATION ⚔️</h2>
                                 <p>Equip your spells and prepare for combat.</p>
                                 <div className="win-chance-text" style={{ color: winColor }}>
-                                    WIN CHANCE: {winChance}%
+                                    {estimate.label.toUpperCase()} — ~{estimate.winRate}% WIN CHANCE
                                 </div>
+                                {estimate.sustainWarning && (
+                                    <div style={{ fontSize: '0.72rem', color: '#f59e0b', marginTop: '0.25rem', opacity: 0.85 }}>
+                                        ⚠️ Enemy has healing/sustain — longer fights are riskier.
+                                    </div>
+                                )}
                             </div>
 
                             <div className="prep-scrollable">
@@ -619,14 +764,12 @@ export const Arena = ({ onClose }: { onClose: () => void }) => {
                                             {/* Active Pet */}
                                             <div className="active-pet-section">
                                                 <div className="prep-section-label">ACTIVE PET</div>
-                                                {activePet ? (
+                                                {equippedPet ? (
                                                     <div className="pet-prep-card">
-                                                        <span className="pet-prep-icon">{activePet.icon}</span>
+                                                        <span className="pet-prep-icon">{equippedPet.icon}</span>
                                                         <div className="pet-prep-info">
-                                                            <span className="pet-prep-name">{activePet.name}</span>
-                                                            {activePet.abilities && activePet.abilities[0] && (
-                                                                <span className="pet-prep-ability">{activePet.abilities[0].name}: {activePet.abilities[0].description}</span>
-                                                            )}
+                                                            <span className="pet-prep-name">{equippedPet.name}</span>
+                                                            
                                                         </div>
                                                     </div>
                                                 ) : (
@@ -763,7 +906,7 @@ export const Arena = ({ onClose }: { onClose: () => void }) => {
 
                                     {/* 1. Heavy Attack */}
                                     <button
-                                        className="command-btn attack"
+                                        className="command-btn attack heavy"
                                         disabled={phase !== 'select_action' || autoAttack || isRolling || useBattleStore.getState().heavyAttackCooldown > 0}
                                         onClick={() => {
                                             if (phase === 'select_action' && useBattleStore.getState().heavyAttackCooldown === 0) {
@@ -781,7 +924,7 @@ export const Arena = ({ onClose }: { onClose: () => void }) => {
                                                     name: 'Heavy Strike', 
                                                     type: 'attack', 
                                                     description: '', 
-                                                    icon: '⚔️', 
+                                                    icon: '💥', 
                                                     element: 'neutral', 
                                                     damageMultiplier: 1.0, 
                                                     cooldown: 0, 
@@ -792,19 +935,18 @@ export const Arena = ({ onClose }: { onClose: () => void }) => {
                                             }
                                         }}
                                     >
-                                        <div className="btn-icon"><Swords /></div>
-                                        <div className="btn-label" style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
-                                            <span>Heavy</span>
+                                        <div className="btn-top">💥 Heavy</div>
+                                        <div className="btn-mid">Hi-Dmg</div>
+                                        <div className="btn-bot">
                                             {useBattleStore.getState().heavyAttackCooldown > 0
-                                                ? <span style={{ fontSize: '0.7rem', color: '#ef4444' }}>Heavy (Cooldown)</span>
-                                                : <span style={{ fontSize: '0.7rem', opacity: 0.8 }}>50% low hit / 50% big hit</span>
+                                                ? <span style={{ color: '#ef4444' }}>⚠️ Cooldown</span>
+                                                : <span>⚠️ 50% Hit</span>
                                             }
                                         </div>
                                     </button>
 
-                                    {/* 2. Light Attack */}
                                     <button
-                                        className="command-btn attack"
+                                        className="command-btn attack light"
                                         disabled={phase !== 'select_action' || autoAttack || isRolling}
                                         onClick={() => {
                                             if (phase === 'select_action') {
@@ -826,7 +968,7 @@ export const Arena = ({ onClose }: { onClose: () => void }) => {
                                                                 name: 'Light Strike', 
                                                                 type: 'attack', 
                                                                 description: '', 
-                                                                icon: '🗡️', 
+                                                                icon: '⚡', 
                                                                 element: 'neutral', 
                                                                 damageMultiplier: 1.0, 
                                                                 cooldown: 0, 
@@ -842,17 +984,11 @@ export const Arena = ({ onClose }: { onClose: () => void }) => {
                                             }
                                         }}
                                     >
-                                        <div className="btn-icon"><Swords /></div>
-                                        <div className="btn-label" style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
-                                            <span>Light</span>
-                                            <span style={{ fontSize: '0.7rem', opacity: 0.8 }}>
-                                                {isRolling && rollValue !== null ? (
-                                                    <span style={{ color: '#fbbf24', fontWeight: 'bold', fontSize: '1rem' }}>🎲 {rollValue}</span>
-                                                ) : (
-                                                    `Roll 1–${Math.max(1, Math.floor(player.atk * useBattleStore.getState().playerDamageModifier))}`
-                                                )}
-                                            </span>
+                                        <div className="btn-top">⚡ Light</div>
+                                        <div className="btn-mid" style={isRolling ? { color: '#fbbf24' } : {}}>
+                                            {isRolling && rollValue !== null ? `🎲 ${rollValue}` : `1–${Math.max(1, Math.floor(player.atk * useBattleStore.getState().playerDamageModifier))}`}
                                         </div>
+                                        <div className="btn-bot">Always Hits</div>
                                     </button>
 
                                     {/* 2. Cast Spell */}
@@ -879,24 +1015,23 @@ export const Arena = ({ onClose }: { onClose: () => void }) => {
                                                     }
                                                 }}
                                             >
-                                                <div className="btn-icon"><Sparkles /></div>
-                                                <div className="btn-label">
-                                                    {!spell 
-                                                        ? 'No Spell Equipped' 
-                                                        : onCooldown
-                                                            ? `${spell.name} on Cooldown`
-                                                            : `Cast ${spell.name} ${expectedDamage ? `(${expectedDamage} dmg)` : ''}`}
+                                                <div className="btn-top">✨ {spell ? spell.name : 'Spell'}</div>
+                                                <div className="btn-mid" style={!spell ? { fontSize: '0.85rem' } : {}}>
+                                                    {!spell
+                                                        ? 'None'
+                                                        : expectedDamage ? `${expectedDamage} Dmg` : 'Cast'}
                                                 </div>
-                                                {spell && onCooldown && (
-                                                    <div className="mp-display" style={{ color: '#ef4444' }}>
-                                                        {spellCooldownTurns} turn{spellCooldownTurns !== 1 ? 's' : ''} remaining
-                                                    </div>
-                                                )}
-                                                {spell && !onCooldown && (
-                                                    <div className="mp-display" style={{ color: canCast ? 'inherit' : '#ef4444' }}>
-                                                        {spell.mpCost} MP
-                                                    </div>
-                                                )}
+                                                <div className="btn-bot">
+                                                    {spell && onCooldown ? (
+                                                        <span style={{ color: '#ef4444' }}>⚠️ {spellCooldownTurns}t CD</span>
+                                                    ) : spell && !canCast ? (
+                                                        <span style={{ color: '#ef4444' }}>{spell.mpCost} MP</span>
+                                                    ) : spell ? (
+                                                        <span>{spell.mpCost} MP</span>
+                                                    ) : (
+                                                        'Not Equipped'
+                                                    )}
+                                                </div>
                                             </button>
                                         );
                                     })()}

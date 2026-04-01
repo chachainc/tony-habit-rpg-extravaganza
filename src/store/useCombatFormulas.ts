@@ -185,6 +185,11 @@ export function getDetailedCombatBreakdown(): CombatBreakdown {
         atkSources.push({ label: 'Risk Verdant Plains (+5%)', value: riskAtkVal });
         atkSubtotal += riskAtkVal;
     }
+    if (activeRiskRegions.includes('obsidian_peaks')) {
+        const riskAtkVal2 = Math.round(atkSubtotal * 0.15);
+        atkSources.push({ label: 'Risk Obsidian Peaks (+15%)', value: riskAtkVal2 });
+        atkSubtotal += riskAtkVal2;
+    }
 
     if (roomAtkPercent > 0) {
         const roomAtkVal = Math.round(atkSubtotal * roomAtkPercent / 100);
@@ -235,6 +240,11 @@ export function getDetailedCombatBreakdown(): CombatBreakdown {
         const riskDefVal = Math.round(defSubtotal * 0.10);
         defSources.push({ label: 'Risk Iron Highlands (+10%)', value: riskDefVal });
         defSubtotal += riskDefVal;
+    }
+    if (activeRiskRegions.includes('shadow_rift')) {
+        const riskDefVal2 = Math.round(defSubtotal * 0.20);
+        defSources.push({ label: 'Risk Shadow Rift (+20%)', value: riskDefVal2 });
+        defSubtotal += riskDefVal2;
     }
 
     if (roomBonuses.defPercent > 0) {
@@ -304,6 +314,10 @@ export function getDetailedCombatBreakdown(): CombatBreakdown {
     if (activeRiskRegions.includes('sunken_expanse')) {
         hpSources.push({ label: 'Risk Sunken Expanse', value: 5 });
         totalHp += 5;
+    }
+    if (activeRiskRegions.includes('ember_wastes')) {
+        hpSources.push({ label: 'Risk Ember Wastes', value: 10 });
+        totalHp += 10;
     }
 
     // ── SPD ──────────────────────────────

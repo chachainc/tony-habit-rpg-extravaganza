@@ -253,6 +253,15 @@
     filter: drop-shadow(0 2px 3px rgba(0,0,0,0.6));
 }
 
+.storm-entity.storm-enemy.attacking-fort {
+    animation: stormEnemyAttack 0.4s ease-in-out infinite alternate;
+}
+
+@keyframes stormEnemyAttack {
+    0% { transform: translate(-50%, -50%) rotate(-5deg) scale(1); }
+    100% { transform: translate(-30%, -50%) rotate(15deg) scale(1.1); filter: drop-shadow(0 0 8px rgba(239, 68, 68, 0.6)); }
+}
+
 .storm-entity.storm-defender {
     z-index: 12;
     filter: drop-shadow(0 2px 4px rgba(59, 130, 246, 0.4));
@@ -891,4 +900,67 @@
 @keyframes stormDmgPop {
     from { transform: translate(-50%, 0) scale(0.5); }
     to { transform: translate(-50%, 0) scale(1); }
+}
+
+/* Drag to Store Dropzone */
+.storm-dropzone-store {
+    position: absolute;
+    bottom: -100px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(239, 68, 68, 0.9);
+    color: white;
+    padding: 12px 24px;
+    border-radius: 12px 12px 0 0;
+    font-weight: 700;
+    border: 2px dashed #fca5a5;
+    border-bottom: none;
+    z-index: 100;
+    transition: bottom 0.2s ease;
+    box-shadow: 0 -4px 12px rgba(239, 68, 68, 0.3);
+    pointer-events: none;
+}
+
+.storm-dropzone-store.visible {
+    bottom: 0px;
+}
+
+/* Selected Tap Menu */
+.storm-selected-menu {
+    position: absolute;
+    bottom: 110%;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #1e293b;
+    border: 2px solid #334155;
+    border-radius: 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding: 6px;
+    z-index: 50;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+    min-width: 100px;
+    pointer-events: auto;
+}
+
+.storm-selected-menu button {
+    background: #334155;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    padding: 6px 10px;
+    font-size: 12px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.storm-selected-menu button:hover:not(:disabled) {
+    background: #475569;
+}
+
+.storm-selected-menu button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
 }

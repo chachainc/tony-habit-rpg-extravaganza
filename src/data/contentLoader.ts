@@ -1,6 +1,6 @@
 import gameContent from './gameContent.json';
 import type { ItemDef, ItemType, Rarity as ItemRarity, ShopCategory } from '../store/useInventoryStore';
-import type { PetDef } from '../store/useGachaStore';
+import type { PetDefinition } from '../data/pets';
 import type { CodexEntry, CodexSection, CodexRarity, CodexSource } from './codex';
 
 // ── Raw Format from JSON ──
@@ -27,7 +27,7 @@ const rawData = gameContent as ExternalItemData[];
 
 // ── Merge Functions ──
 
-export function mergeExternalPets(hardcodedPets: Record<string, PetDef>): Record<string, PetDef> {
+export function mergeExternalPets(hardcodedPets: Record<string, PetDefinition>): Record<string, PetDefinition> {
     console.log('[BOOT] contentLoader - mergeExternalPets started');
     try {
         const combined = { ...hardcodedPets };
@@ -43,21 +43,23 @@ export function mergeExternalPets(hardcodedPets: Record<string, PetDef>): Record
             }
 
             // 2. Map structure safely
-            const petInfo: PetDef = {
+            const petInfo: PetDefinition = {
                 id: item.id,
                 name: item.name,
-                rarity: (item.rarity as PetDef['rarity']) || 'common',
+                rarity: (item.rarity as PetDefinition['rarity']) || 'common',
                 icon: item.icon || '🐾',
-                description: item.description || '',
-                source: item.source,
-                passiveBonus: {
-                    type: 'attack', // Fallback
-                    value: item.effectValue || 0
+                obtainMethod: item.source || 'unknown',
+                passive: {
+                    name: 'Bonus Gold',
+                    description: `+${item.effectValue || 0} bonus`,
+                    effectType: 'bonus_gold',
+                    value: item.effectValue || 0,
                 }
             };
 
-            if (item.effectType === 'gold_gain' || item.effectType === 'xp_gain' || item.effectType === 'defense' || item.effectType === 'skill_xp') {
-                petInfo.passiveBonus.type = item.effectType;
+            if (item.effectType === 'gold_gain') {
+                petInfo.passive.effectType = 'bonus_gold';
+                petInfo.passive.value = item.effectValue || 0;
             }
 
             combined[petInfo.id] = petInfo;

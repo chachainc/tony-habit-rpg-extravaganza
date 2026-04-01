@@ -233,6 +233,10 @@ interface RoomState {
 
     // Comfort Score
     getComfortScore: () => { score: number; tier: string; xpMultiplier: number; goldMultiplier: number };
+
+    // Editor state
+    editMode: boolean;
+    setEditMode: (v: boolean | ((old: boolean) => boolean)) => void;
 }
 
 export const useRoomStore = create<RoomState>()(
@@ -241,6 +245,11 @@ export const useRoomStore = create<RoomState>()(
             // Multi-room system
             currentRoomId: 'bedroom',
             unlockedRooms: ['bedroom'],
+            editMode: false,
+            
+            setEditMode: (v) => set((s) => ({ 
+                editMode: typeof v === 'function' ? v(s.editMode) : v 
+            })),
 
             switchRoom: (roomId) => {
                 const s = get();

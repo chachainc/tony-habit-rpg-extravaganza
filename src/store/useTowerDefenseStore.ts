@@ -43,6 +43,8 @@ export interface DamagePopup {
     isCrit: boolean;
     isHeal: boolean;
     age: number; // ms since spawn
+    text?: string;
+    color?: string;
 }
 
 export interface WaveStats {
@@ -84,7 +86,8 @@ export interface TowerDefenseState {
 
     // Actions
     buildTower: (type: TowerType, x: number, y: number) => boolean;
-    sellTower: (id: string) => void;
+    storeTower: (id: string) => void;
+    storeAllTowers: () => void;
     upgradeTower: (id: string) => boolean;
     specializeTower: (id: string, branch: string) => boolean;
     setGameSpeed: (speed: 1 | 2 | 3) => void;
@@ -163,21 +166,30 @@ export const useTowerDefenseStore = create<TowerDefenseState>()(
                 return true;
             },
 
-            sellTower: (id) => {
+            storeTower: (id) => {
                 const state = get();
                 const tower = state.towers.find(t => t.id === id);
                 if (!tower) return;
                 
-                const def = TD_TOWERS[tower.type];
-                const refundRate = state.currentMapModifier === 'drought' ? 1.0 : 0.5;
-                const refund = Math.floor((def.cost * Math.pow(1.5, tower.level - 1)) * refundRate);
-
-                useCurrencyStore.getState().addBalloons(refund);
                 const currentInv = state.towerInventory[tower.type] ?? 0;
                 set(s => ({
                     towers: s.towers.filter(t => t.id !== id),
                     towerInventory: { ...s.towerInventory, [tower.type]: currentInv + 1 }
                 }));
+            },
+
+            storeAllTowers: () => {
+                const state = get();
+                const newInventory = { ...state.towerInventory };
+                
+                state.towers.forEach(t => {
+                    newInventory[t.type] = (newInventory[t.type] ?? 0) + 1;
+                });
+                
+                set({
+                    towers: [],
+                    towerInventory: newInventory
+                });
             },
 
             upgradeTower: (id) => {
@@ -324,8 +336,11 @@ export const useTowerDefenseStore = create<TowerDefenseState>()(
                         enemy.progress = 0;
                         // Did it reach base?
                         if (enemy.pathIndex >= TD_PATH.length - 1) {
-                            damageTaken += 10;
+                            damageTaken += 9999; // immediate fail
                             enemy.hp = 0; // mark for death
+                            
+                            const ep = TD_PATH[TD_PATH.length - 1];
+                            newDamagePopups.push({ id: `escape-${now}-${enemy.id}`, x: ep.x, y: ep.y, value: 0, isCrit: false, isHeal: false, age: 0, text: "ESCAPED!", color: '#ef4444' });
                         }
                     }
                 });
@@ -559,15 +574,13 @@ export const useTowerDefenseStore = create<TowerDefenseState>()(
                 const arenaStats = useArenaStatsStore.getState();
                 newEnemies = newEnemies.filter(e => {
                     if (e.hp <= 0 && e.pathIndex < TD_PATH.length - 1) {
-                        // Per-kill reward — elites give 2x
+                        // Per-kill reward
                         const enemyDef = TD_ENEMIES[e.type];
                         const rewardMul = e.isElite ? 2 : 1;
-                        const killGold = (Math.floor(enemyDef.reward * 0.5) + 1) * rewardMul;
-                        const killShmeckles = (Math.floor(enemyDef.reward * 0.3) + 1) * rewardMul;
+                        const killGold = 10 * rewardMul;
+                        
                         useCurrencyStore.getState().addGold(killGold, { exact: true });
-                        useCurrencyStore.getState().addShmeckles(killShmeckles);
                         goldThisTick += killGold;
-                        shmecklesThisTick += killShmeckles;
                         killsThisTick++;
 
                         // Damage popup on death location
@@ -575,7 +588,7 @@ export const useTowerDefenseStore = create<TowerDefenseState>()(
                         const dp2 = TD_PATH[e.pathIndex + 1] || dp1;
                         const dx = dp1.x + (dp2.x - dp1.x) * e.progress;
                         const dy = dp1.y + (dp2.y - dp1.y) * e.progress;
-                        newDamagePopups.push({ id: `kill-${now}-${e.id}`, x: dx, y: dy, value: killShmeckles, isCrit: !!e.isElite, isHeal: false, age: 0 });
+                        newDamagePopups.push({ id: `kill-${now}-${e.id}`, x: dx, y: dy, value: killGold, isCrit: false, isHeal: false, age: 0, text: `+${killGold} 🪙`, color: '#facc15' });
 
                         // Arena stats
                         arenaStats.recordKill();
@@ -587,7 +600,6 @@ export const useTowerDefenseStore = create<TowerDefenseState>()(
                             setTimeout(() => set({ screenShake: false }), 400);
                         }
                         arenaStats.recordGold(killGold);
-                        arenaStats.recordShmeckles(killShmeckles);
                         return false;
                     }
                     return e.hp > 0;
@@ -659,15 +671,13 @@ export const useTowerDefenseStore = create<TowerDefenseState>()(
             
             resetGame: () => {
                 set({
-                    baseHealth: 100,
-                    currentWave: 0,
+                    baseHealth: get().maxBaseHealth || 100,
+                    currentWave: Math.max(0, get().currentWave - 1),
                     isWaveActive: false,
-                    towers: [],
                     enemies: [],
                     projectiles: [],
                     damagePopups: [],
                     enemyQueue: [],
-                    towerInventory: { cow: 1 }, // Free starter cow!
                     currentMapModifier: rollMapModifier(),
                     currentWaveModifier: 'none',
                     totalWaveEnemies: 0,

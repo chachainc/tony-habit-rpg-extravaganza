@@ -118,7 +118,11 @@ export const ItemCard = ({
                     </button>
                 ) : !canAfford ? (
                     <button className="item-btn item-btn--expensive" disabled>
-                        Can't Afford
+                        {missingCurrency.some(c => c.includes('Gold')) && missingCurrency.some(c => c.includes('Diamond'))
+                            ? 'Need Gold & Diamonds'
+                            : missingCurrency.some(c => c.includes('Diamond'))
+                            ? `Need Diamonds`
+                            : 'Not Enough Gold'}
                     </button>
                 ) : (
                     <button className="item-btn item-btn--purchase" onClick={onPurchase}>
@@ -127,7 +131,7 @@ export const ItemCard = ({
                 )}
             </div>
 
-            {/* Lock Overlay */}
+            {/* Lock Overlay — only for truly progression-locked items */}
             {!isUnlocked && (
                 <div className="item-card-overlay">
                     <Lock size={48} />
@@ -141,15 +145,17 @@ export const ItemCard = ({
                         <div className="tooltip-section">
                             <strong>Requirements:</strong>
                             {missingRequirements.map((req, i) => (
-                                <div key={i}>❌ {req}</div>
+                                <div key={i}>🔒 {req}</div>
                             ))}
                         </div>
                     )}
                     {missingCurrency.length > 0 && (
                         <div className="tooltip-section">
-                            <strong>Need:</strong>
+                            <strong>Missing:</strong>
                             {missingCurrency.map((curr, i) => (
-                                <div key={i}>❌ {curr}</div>
+                                <div key={i}>
+                                    {curr.includes('Gold') ? '💰' : curr.includes('Diamond') ? '💎' : '🎖️'} {curr}
+                                </div>
                             ))}
                         </div>
                     )}

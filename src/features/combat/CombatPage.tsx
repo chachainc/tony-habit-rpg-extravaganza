@@ -9,6 +9,8 @@ import { useCurrencyStore } from '../../store/useCurrencyStore';
 import { ChessGame } from '../conquest/ChessGame';
 import { ConquestTiles } from '../conquest/ConquestTiles';
 import { WarJournal } from './WarJournal';
+import { Blackjack } from './Blackjack';
+import { BrickBreaker } from './BrickBreaker';
 import { useState } from 'react';
 import './CombatPage.css';
 
@@ -20,6 +22,8 @@ export const CombatPage = () => {
     const [showChess, setShowChess] = useState(false);
     const [showTiles, setShowTiles] = useState(false);
     const [showJournal, setShowJournal] = useState(false);
+    const [showBlackjack, setShowBlackjack] = useState(false);
+    const [showBreaker, setShowBreaker] = useState(false);
     const { getAttack, getDefense, getMagicAttack, getMaxMP } = useGameStore();
     const { currentMP, player } = useBattleStore();
 
@@ -60,8 +64,8 @@ export const CombatPage = () => {
                     initial={{ opacity: 0, y: -20 }}
                     animate={{ opacity: 1, y: 0 }}
                 >
-                    <h1>⚔️ Combat</h1>
-                    <p className="combat-subtitle">Choose your battlefield</p>
+                    <h1>🎮 Games</h1>
+                    <p className="combat-subtitle">Choose your game</p>
                     <button
                         className="wj-open-btn"
                         onClick={() => setShowJournal(true)}
@@ -106,18 +110,114 @@ export const CombatPage = () => {
                     </div>
                 </motion.div>
 
-                {/* Combat Options */}
+                {/* Game Options */}
                 <div className="combat-options">
 
-                    {/* ─── DAILY GAMES ─── */}
-                    <div className="combat-section-label">🎮 DAILY GAMES</div>
+                    {/* ═══════════ COMBAT SECTION ═══════════ */}
+                    <div className="combat-section-label">⚔️ COMBAT</div>
+
+                    <motion.button
+                        className="combat-option combat-option--arena"
+                        onClick={() => navigate('/arena')}
+                        initial={{ opacity: 0, x: -30 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ delay: 0.15 }}
+                        whileHover={{ scale: 1.02 }}
+                        whileTap={{ scale: 0.98 }}
+                    >
+                        <div className="combat-option__icon">
+                            <Swords size={48} />
+                        </div>
+                        <div className="combat-option__info">
+                            <h2>Arena</h2>
+                            <p>Climb the Tower of Discipline. Battle enemies floor by floor and earn rewards.</p>
+                        </div>
+                        <div className="combat-option__arrow">→</div>
+                    </motion.button>
+
+
+
+                    {/* ═══════════ STRATEGY SECTION ═══════════ */}
+                    <div className="combat-section-label">🎯 STRATEGY</div>
+
+                    <motion.button
+                        className="combat-option combat-option--blackjack"
+                        onClick={() => setShowBlackjack(true)}
+                        initial={{ opacity: 0, x: -30 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ delay: 0.25 }}
+                        whileHover={{ scale: 1.02 }}
+                        whileTap={{ scale: 0.98 }}
+                    >
+                        <div className="combat-option__icon" style={{ fontSize: '48px', lineHeight: '48px' }}>🃏</div>
+                        <div className="combat-option__info">
+                            <h2>Blackjack</h2>
+                            <p>Casino table game. 50 free coins/day. No gold spent.</p>
+                        </div>
+                        <div className="combat-option__arrow">→</div>
+                    </motion.button>
+
+
+                    <motion.button
+                        className="combat-option combat-option--breaker"
+                        onClick={() => setShowBreaker(true)}
+                        initial={{ opacity: 0, x: -30 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ delay: 0.35 }}
+                        whileHover={{ scale: 1.02 }}
+                        whileTap={{ scale: 0.98 }}
+                    >
+                        <div className="combat-option__icon" style={{ fontSize: '48px', lineHeight: '48px' }}>🧱</div>
+                        <div className="combat-option__info">
+                            <h2>Brick Breaker <span className="combat-limit-badge">3/day</span></h2>
+                            <p>Classic breakout! Smash bricks with the ball.</p>
+                        </div>
+                        <div className="combat-option__arrow">→</div>
+                    </motion.button>
+
+                    <motion.button
+                        className="combat-option combat-option--tiles"
+                        onClick={() => setShowTiles(true)}
+                        initial={{ opacity: 0, x: 30 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ delay: 0.4 }}
+                        whileHover={{ scale: 1.02 }}
+                        whileTap={{ scale: 0.98 }}
+                    >
+                        <div className="combat-option__icon" style={{ fontSize: '48px', lineHeight: '48px' }}>🎲</div>
+                        <div className="combat-option__info">
+                            <h2>Tiles Game <span className="combat-limit-badge">3/day</span></h2>
+                            <p>Match tiles and test your memory.</p>
+                        </div>
+                        <div className="combat-option__arrow">→</div>
+                    </motion.button>
+
+                    <motion.button
+                        className="combat-option combat-option--chess"
+                        onClick={() => setShowChess(true)}
+                        initial={{ opacity: 0, x: -30 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ delay: 0.45 }}
+                        whileHover={{ scale: 1.02 }}
+                        whileTap={{ scale: 0.98 }}
+                    >
+                        <div className="combat-option__icon" style={{ fontSize: '48px', lineHeight: '48px' }}>♟️</div>
+                        <div className="combat-option__info">
+                            <h2>Daily Chess <span className="combat-limit-badge">1/day</span></h2>
+                            <p>Challenge your mind. Win: +1 Sigil, +1 Smeckle, +1 Balloon.</p>
+                        </div>
+                        <div className="combat-option__arrow">→</div>
+                    </motion.button>
+
+                    {/* ═══════════ ARMY SECTION ═══════════ */}
+                    <div className="combat-section-label">🏰 ARMY</div>
 
                     <motion.button
                         className="combat-option combat-option--conquest"
                         onClick={() => navigate('/conquest')}
                         initial={{ opacity: 0, x: 30 }}
                         animate={{ opacity: 1, x: 0 }}
-                        transition={{ delay: 0.1 }}
+                        transition={{ delay: 0.5 }}
                         whileHover={{ scale: 1.02 }}
                         whileTap={{ scale: 0.98 }}
                     >
@@ -132,70 +232,11 @@ export const CombatPage = () => {
                     </motion.button>
 
                     <motion.button
-                        className="combat-option combat-option--chess"
-                        onClick={() => setShowChess(true)}
-                        initial={{ opacity: 0, x: 30 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        transition={{ delay: 0.2 }}
-                        whileHover={{ scale: 1.02 }}
-                        whileTap={{ scale: 0.98 }}
-                    >
-                        <div className="combat-option__icon" style={{ fontSize: '48px', lineHeight: '48px' }}>♟️</div>
-                        <div className="combat-option__info">
-                            <h2>Daily Chess <span className="combat-limit-badge">1/day</span></h2>
-                            <p>Challenge your mind. Win: +1 Sigil, +1 Smeckle, +1 Balloon.</p>
-                        </div>
-                        <div className="combat-option__arrow">→</div>
-                    </motion.button>
-
-                    <motion.button
-                        className="combat-option combat-option--tiles"
-                        onClick={() => setShowTiles(true)}
-                        initial={{ opacity: 0, x: -30 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        transition={{ delay: 0.3 }}
-                        whileHover={{ scale: 1.02 }}
-                        whileTap={{ scale: 0.98 }}
-                    >
-                        <div className="combat-option__icon" style={{ fontSize: '48px', lineHeight: '48px' }}>🎲</div>
-                        <div className="combat-option__info">
-                            <h2>Tiles Game <span className="combat-limit-badge">3/day</span></h2>
-                            <p>Match tiles and test your memory.</p>
-                        </div>
-                        <div className="combat-option__arrow">→</div>
-                    </motion.button>
-
-                    {/* ─── TEST YOUR POWER ─── */}
-                    <div className="combat-section-label">⚔️ TEST YOUR POWER</div>
-
-                    <motion.button
-                        className="combat-option combat-option--arena"
-                        onClick={() => navigate('/arena')}
-                        initial={{ opacity: 0, x: -30 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        transition={{ delay: 0.4 }}
-                        whileHover={{ scale: 1.02 }}
-                        whileTap={{ scale: 0.98 }}
-                    >
-                        <div className="combat-option__icon">
-                            <Swords size={48} />
-                        </div>
-                        <div className="combat-option__info">
-                            <h2>Arena</h2>
-                            <p>Climb the Tower of Discipline. Battle enemies floor by floor and earn rewards.</p>
-                        </div>
-                        <div className="combat-option__arrow">→</div>
-                    </motion.button>
-
-                    {/* ─── EXPAND YOUR ARMY ─── */}
-                    <div className="combat-section-label">🏰 EXPAND YOUR ARMY</div>
-
-                    <motion.button
                         className="combat-option combat-option--risk"
                         onClick={() => navigate('/risk')}
                         initial={{ opacity: 0, y: 30 }}
                         animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: 0.5 }}
+                        transition={{ delay: 0.55 }}
                         whileHover={{ scale: 1.02 }}
                         whileTap={{ scale: 0.98 }}
                     >
@@ -232,7 +273,7 @@ export const CombatPage = () => {
                         onClick={() => navigate('/tower-defense')}
                         initial={{ opacity: 0, y: 30 }}
                         animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: 0.7 }}
+                        transition={{ delay: 0.65 }}
                         whileHover={{ scale: 1.02 }}
                         whileTap={{ scale: 0.98 }}
                     >
@@ -249,11 +290,11 @@ export const CombatPage = () => {
                 </div>
             </div>
 
+            {/* ═══ Modals ═══ */}
             <AnimatePresence>
                 {showChess && <ChessGame
                 onComplete={(result) => {
                     if (result === 'win') {
-                        // Chess win: +1 sigil, +1 shmeckle (→ also +1 balloon auto-mirrored)
                         addSigils(1);
                         currency.addShmeckles(1);
                     }
@@ -282,6 +323,12 @@ export const CombatPage = () => {
             </AnimatePresence>
             <AnimatePresence>
                 {showJournal && <WarJournal onClose={() => setShowJournal(false)} />}
+            </AnimatePresence>
+            <AnimatePresence>
+                {showBlackjack && <Blackjack onClose={() => setShowBlackjack(false)} />}
+            </AnimatePresence>
+            <AnimatePresence>
+                {showBreaker && <BrickBreaker onClose={() => setShowBreaker(false)} />}
             </AnimatePresence>
         </div>
     );

@@ -74,15 +74,52 @@ export const useCurrencyStore = create<CurrencyState>()(
             },
 
             addGold: (amount, options) => {
+                const processGoldAddition = (finalGold: number) => {
+                    import('./usePetStore').then(({ usePetStore }) => {
+                        let totalAmount = finalGold;
+                        if (amount > 0) {
+                            const petStore = usePetStore.getState();
+                            const petDef = petStore.getEquippedPetDef();
+                            
+                            // Apply flat gold bonus if pet has it
+                            if (petDef?.passive?.effectType === 'bonus_gold') {
+                                const dateStr = new Date().toISOString().split('T')[0];
+                                const dailyCap = petDef.passive.capPerDay || Infinity;
+                                const todayGold = petStore.lastPetGoldDate === dateStr ? petStore.dailyPetGold : 0;
+                                
+                                const petBonus = petDef.passive.value;
+                                if (todayGold < dailyCap) {
+                                    const goldToGive = Math.min(petBonus, dailyCap - todayGold);
+                                    if (goldToGive > 0) {
+                                        petStore.recordPetGoldBonus(goldToGive, dateStr);
+                                        totalAmount += goldToGive;
+                                    }
+                                }
+                            }
+                        }
+
+                        // Apply the gold
+                        set((state) => ({ gold: state.gold + totalAmount }));
+
+                        // Handle tracking
+                        if (amount < 0) {
+                            import('./useEconomyBalanceStore').then(({ useEconomyBalanceStore }) => {
+                                useEconomyBalanceStore.getState().trackGoldSpent(Math.abs(amount));
+                            }).catch(() => {});
+                        } else if (amount > 0 && !options?.exact) {
+                            import('./useEconomyBalanceStore').then(({ useEconomyBalanceStore }) => {
+                                useEconomyBalanceStore.getState().trackGoldEarned(totalAmount);
+                            }).catch(() => {});
+                        }
+                    }).catch(() => {
+                        // Fallback if import fails
+                        set((state) => ({ gold: state.gold + finalGold }));
+                    });
+                };
+
                 // Fixed/exact rewards bypass Housemaid bonus and inflation guard
                 if (options?.exact || amount <= 0) {
-                    set((state) => ({ gold: state.gold + amount }));
-                    // Still track lifetime spending if negative
-                    if (amount < 0) {
-                        import('./useEconomyBalanceStore').then(({ useEconomyBalanceStore }) => {
-                            useEconomyBalanceStore.getState().trackGoldSpent(Math.abs(amount));
-                        }).catch(() => {});
-                    }
+                    processGoldAddition(amount);
                     return;
                 }
 
@@ -101,15 +138,13 @@ export const useCurrencyStore = create<CurrencyState>()(
                         const econ = useEconomyBalanceStore.getState();
                         const inflationMult = econ.getInflationMultiplier();
                         const finalAmount = Math.max(1, Math.floor(amount * multiplier * inflationMult));
-                        set((state) => ({ gold: state.gold + finalAmount }));
-                        econ.trackGoldEarned(finalAmount);
+                        processGoldAddition(finalAmount);
                     }).catch(() => {
                         const finalAmount = Math.floor(amount * multiplier);
-                        set((state) => ({ gold: state.gold + finalAmount }));
+                        processGoldAddition(finalAmount);
                     });
                 }).catch(() => {
-                    // Fallback if import fails
-                    set((state) => ({ gold: state.gold + amount }));
+                    processGoldAddition(amount);
                 });
             },
             addTickets: (amount) => set((state) => ({ tickets: state.tickets + amount })),

@@ -1,6 +1,6 @@
-import React, { useState, useRef, useCallback } from 'react';
+import React, { useState, useRef, useCallback, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Package, MapPin, Trash2 } from 'lucide-react';
+import { X, Trash2, GripHorizontal } from 'lucide-react';
 import {
     useRoomStore,
     ROOM_FURNITURE_CATALOG,
@@ -10,41 +10,23 @@ import './FurniturePlacementPanel.css';
 
 interface Props {
     onClose: () => void;
-    /** Called when user taps an unplaced item and wants to click-place in the room */
-    onEnterPlacementMode: (furnitureId: string) => void;
-    /** List of currently active placement modes */
-    placingFurnitureId: string | null;
 }
 
 export const FurniturePlacementPanel: React.FC<Props> = ({
     onClose,
-    onEnterPlacementMode,
-    placingFurnitureId,
 }) => {
     const {
         ownedRoomFurniture,
-        placedRoomFurniture,
         isPlaced,
+        placeRoomFurniture,
         unplaceByFurnitureId,
-        getPlacedBonusSummary,
     } = useRoomStore();
 
-    const [tab, setTab] = useState<'inventory' | 'bonuses'>('inventory');
-
-    const bonusSummary = getPlacedBonusSummary();
+    const [isMinimized, setIsMinimized] = useState(false);
 
     const ownedItems = ROOM_FURNITURE_CATALOG.filter((def) =>
         ownedRoomFurniture.includes(def.id)
     );
-    const unownedCount = ROOM_FURNITURE_CATALOG.length - ownedItems.length;
-
-    const handlePlace = (furnitureId: string) => {
-        onEnterPlacementMode(furnitureId);
-    };
-
-    const handleUnplace = (furnitureId: string) => {
-        unplaceByFurnitureId(furnitureId);
-    };
 
     const rarityColor: Record<string, string> = {
         common: '#94a3b8',
@@ -54,169 +36,148 @@ export const FurniturePlacementPanel: React.FC<Props> = ({
         legendary: '#eab308',
     };
 
+    // Ghost drag logic for placing NEW items from the drawer
+    const [draggedItem, setDraggedItem] = useState<{ id: string; x: number; y: number } | null>(null);
+
+    const handlePointerDown = (e: React.PointerEvent, defId: string) => {
+        // Prevent default scrolling when attempting to drag an item out
+        e.stopPropagation();
+        setDraggedItem({
+            id: defId,
+            x: e.clientX,
+            y: e.clientY
+        });
+    };
+
+    useEffect(() => {
+        const handleGlobalPointerMove = (e: PointerEvent) => {
+            if (draggedItem) {
+                setDraggedItem({ id: draggedItem.id, x: e.clientX, y: e.clientY });
+            }
+        };
+
+        const handleGlobalPointerUp = (e: PointerEvent) => {
+            if (draggedItem) {
+                // Drop occurred. Calculate relative X, Y in the main room container
+                const roomVisualHub = document.querySelector('.room-visual-hub');
+                if (roomVisualHub) {
+                    const rect = roomVisualHub.getBoundingClientRect();
+                    const dropX = ((e.clientX - rect.left) / rect.width) * 100;
+                    const dropY = ((e.clientY - rect.top) / rect.height) * 100;
+
+                    // Only place if dropped roughly inside the room area
+                    if (dropX >= 0 && dropX <= 100 && dropY >= 0 && dropY <= 100) {
+                        placeRoomFurniture(draggedItem.id, dropX, dropY);
+                    }
+                }
+                setDraggedItem(null);
+            }
+        };
+
+        if (draggedItem) {
+            window.addEventListener('pointermove', handleGlobalPointerMove);
+            window.addEventListener('pointerup', handleGlobalPointerUp);
+        }
+
+        return () => {
+            window.removeEventListener('pointermove', handleGlobalPointerMove);
+            window.removeEventListener('pointerup', handleGlobalPointerUp);
+        };
+    }, [draggedItem, placeRoomFurniture]);
+
+    const activeItemDef = draggedItem ? ROOM_FURNITURE_CATALOG.find(c => c.id === draggedItem.id) : null;
+
     return (
-        <div className="fp-panel">
-            {/* Header */}
-            <div className="fp-panel__header">
-                <h3>🪑 Furniture</h3>
-                <button className="fp-close-btn" onClick={onClose}><X size={18} /></button>
-            </div>
+        <>
+            <motion.div 
+                className={`fp-bottom-drawer ${isMinimized ? 'minimized' : ''}`}
+                initial={{ y: 200 }}
+                animate={{ y: 0 }}
+                exit={{ y: 200 }}
+                onPointerDown={(e) => e.stopPropagation()} 
+            >
+                {/* Header / Handle */}
+                <div className="fp-drawer-header">
+                    <button className="fp-drawer-minimize" onClick={() => setIsMinimized(!isMinimized)}>
+                        <GripHorizontal size={20} />
+                    </button>
+                    <h3>🪑 Furniture Inventory</h3>
+                    <button className="fp-drawer-close" onClick={onClose}><X size={18} /></button>
+                </div>
 
-            {/* Tabs */}
-            <div className="fp-tabs">
-                <button
-                    className={`fp-tab ${tab === 'inventory' ? 'active' : ''}`}
-                    onClick={() => setTab('inventory')}
-                >
-                    <Package size={14} /> Owned ({ownedItems.length})
-                </button>
-                <button
-                    className={`fp-tab ${tab === 'bonuses' ? 'active' : ''}`}
-                    onClick={() => setTab('bonuses')}
-                >
-                    ✨ Active Bonuses
-                </button>
-            </div>
-
-            <div className="fp-panel__body">
-                {tab === 'inventory' && (
-                    <>
+                {!isMinimized && (
+                    <div className="fp-drawer-body">
                         {ownedItems.length === 0 ? (
-                            <div className="fp-empty">
-                                <p>No furniture owned yet.</p>
-                                <p className="fp-empty-hint">
-                                    Visit the Furniture Store to buy items for your room.
-                                </p>
+                            <div className="fp-empty-tray">
+                                <p>No furniture owned yet. Visit the Store.</p>
                             </div>
                         ) : (
-                            <div className="fp-item-list">
+                            <div className="fp-tray-list">
                                 {ownedItems.map((def) => {
                                     const placed = isPlaced(def.id);
-                                    const isBeingPlaced = placingFurnitureId === def.id;
                                     return (
                                         <div
                                             key={def.id}
-                                            className={`fp-item ${placed ? 'placed' : ''} ${isBeingPlaced ? 'placing' : ''}`}
+                                            className={`fp-tray-item ${placed ? 'placed' : ''}`}
+                                            onPointerDown={!placed ? (e) => handlePointerDown(e, def.id) : undefined}
+                                            style={{ cursor: placed ? 'default' : 'grab' }}
                                         >
-                                            <div className="fp-item__icon">{def.icon}</div>
-                                            <div className="fp-item__info">
-                                                <div className="fp-item__name-row">
-                                                    <span
-                                                        className="fp-item__name"
-                                                        style={{ color: rarityColor[def.rarity] }}
-                                                    >
-                                                        {def.name}
-                                                    </span>
-                                                    {placed && (
-                                                        <span className="fp-placed-badge">
-                                                            <MapPin size={10} /> Placed
-                                                        </span>
-                                                    )}
-                                                </div>
-                                                <span className="fp-item__bonus">{def.bonusLabel}</span>
+                                            <div className="fp-tray-item-visual">
+                                                <span className="fp-tray-item-icon">{def.icon}</span>
                                             </div>
-                                            <div className="fp-item__actions">
-                                                {isBeingPlaced ? (
-                                                    <span className="fp-placing-hint">Tap room to place</span>
-                                                ) : placed ? (
-                                                    <>
-                                                        <button
-                                                            className="fp-btn fp-btn--move"
-                                                            onClick={() => handlePlace(def.id)}
-                                                            title="Move"
-                                                        >
-                                                            ✥
-                                                        </button>
-                                                        <button
-                                                            className="fp-btn fp-btn--remove"
-                                                            onClick={() => handleUnplace(def.id)}
-                                                            title="Remove from room"
-                                                        >
-                                                            <Trash2 size={14} />
-                                                        </button>
-                                                    </>
-                                                ) : (
-                                                    <button
-                                                        className="fp-btn fp-btn--place"
-                                                        onClick={() => handlePlace(def.id)}
-                                                    >
-                                                        Place
+                                            <div className="fp-tray-item-info">
+                                                <span className="fp-tray-item-name" style={{ color: rarityColor[def.rarity] }}>
+                                                    {def.name}
+                                                </span>
+                                            </div>
+                                            {placed && (
+                                                <div className="fp-tray-item-overlay">
+                                                    <button className="fp-tray-return" onClick={(e) => { e.stopPropagation(); unplaceByFurnitureId(def.id); }}>
+                                                        <Trash2 size={12} /> Store
                                                     </button>
-                                                )}
-                                            </div>
+                                                </div>
+                                            )}
                                         </div>
                                     );
                                 })}
                             </div>
                         )}
-
-                        {unownedCount > 0 && (
-                            <p className="fp-store-hint">
-                                + {unownedCount} more items available in the store
-                            </p>
-                        )}
-                    </>
-                )}
-
-                {tab === 'bonuses' && (
-                    <div className="fp-bonuses">
-                        {bonusSummary.length === 0 ? (
-                            <div className="fp-empty">
-                                <p>No furniture placed yet.</p>
-                                <p className="fp-empty-hint">Place items in your room to activate bonuses.</p>
-                            </div>
-                        ) : (
-                            <>
-                                <p className="fp-bonus-subtitle">
-                                    Active from {placedRoomFurniture.length} placed item
-                                    {placedRoomFurniture.length !== 1 ? 's' : ''}:
-                                </p>
-                                <div className="fp-bonus-grid">
-                                    {bonusSummary.map((b) => (
-                                        <div key={b.label} className="fp-bonus-row">
-                                            <span className="fp-bonus-label">{b.label}</span>
-                                            <span className="fp-bonus-value">{b.value}</span>
-                                        </div>
-                                    ))}
-                                </div>
-
-                                <div className="fp-placed-list">
-                                    <p className="fp-placed-title">Placed furniture:</p>
-                                    {placedRoomFurniture.map((p) => {
-                                        const def = ROOM_FURNITURE_CATALOG.find(d => d.id === p.furnitureId);
-                                        if (!def) return null;
-                                        return (
-                                            <div key={p.id} className="fp-placed-entry">
-                                                <span>{def.icon} {def.name}</span>
-                                                <span className="fp-placed-coord">
-                                                    {Math.round(p.x)}%, {Math.round(p.y)}%
-                                                </span>
-                                            </div>
-                                        );
-                                    })}
-                                </div>
-                            </>
-                        )}
                     </div>
                 )}
-            </div>
-        </div>
+            </motion.div>
+
+            {/* Ghost Drag Preview rendered at Window Level */}
+            {draggedItem && activeItemDef && (
+                <div 
+                    style={{
+                        position: 'fixed',
+                        left: draggedItem.x,
+                        top: draggedItem.y,
+                        transform: 'translate(-50%, -50%)',
+                        pointerEvents: 'none',
+                        zIndex: 9999,
+                        fontSize: '3rem',
+                        opacity: 0.6,
+                        filter: 'drop-shadow(0 10px 15px rgba(0,0,0,0.5))'
+                    }}
+                >
+                    {activeItemDef.icon}
+                </div>
+            )}
+        </>
     );
 };
 
-/** Draggable furniture piece rendered inside the room grid */
-interface DraggablePieceProps {
+// ... keep DraggableFurniturePiece unchanged below
+export interface DraggablePieceProps {
     placed: PlacedFurniture;
     editMode: boolean;
-    containerRef: React.RefObject<HTMLDivElement | null>;
-    /** Called when tapped in non-edit mode (e.g. opens a panel) */
     onInteract?: () => void;
 }
 
 export const DraggableFurniturePiece: React.FC<DraggablePieceProps> = ({
     placed,
     editMode,
-    containerRef,
     onInteract,
 }) => {
     const { movePlacedFurniture, unplaceByFurnitureId } = useRoomStore();
@@ -243,10 +204,14 @@ export const DraggableFurniturePiece: React.FC<DraggablePieceProps> = ({
     }, [editMode, placed.x, placed.y]);
 
     const onPointerMove = useCallback((e: React.PointerEvent) => {
-        if (!isDragging || !dragStart.current || !containerRef.current) return;
+        if (!isDragging || !dragStart.current) return;
         e.stopPropagation();
 
-        const rect = containerRef.current.getBoundingClientRect();
+        // Dynamically find the room container
+        const roomVisualHub = document.querySelector('.room-visual-hub');
+        const rect = roomVisualHub ? roomVisualHub.getBoundingClientRect() : null;
+        if (!rect) return;
+
         const dx = ((e.clientX - dragStart.current.clientX) / rect.width) * 100;
         const dy = ((e.clientY - dragStart.current.clientY) / rect.height) * 100;
 
@@ -254,11 +219,10 @@ export const DraggableFurniturePiece: React.FC<DraggablePieceProps> = ({
         const newY = Math.max(0, Math.min(100 - sizeH, dragStart.current.pieceY + dy));
 
         movePlacedFurniture(placed.id, newX, newY);
-    }, [isDragging, containerRef, movePlacedFurniture, placed.id, sizeW, sizeH]);
+    }, [isDragging, movePlacedFurniture, placed.id, sizeW, sizeH]);
 
     const onPointerUp = useCallback((e: React.PointerEvent) => {
         if (!isDragging && !editMode && onInteract) {
-            // Non-edit-mode tap → trigger interaction
             e.stopPropagation();
             onInteract();
             return;
@@ -267,7 +231,6 @@ export const DraggableFurniturePiece: React.FC<DraggablePieceProps> = ({
         e.stopPropagation();
         setIsDragging(false);
 
-        // If barely moved, treat as tap
         const dist = dragStart.current
             ? Math.abs(e.clientX - dragStart.current.clientX) + Math.abs(e.clientY - dragStart.current.clientY)
             : 999;

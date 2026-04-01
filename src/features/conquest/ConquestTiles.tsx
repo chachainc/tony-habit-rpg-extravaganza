@@ -45,6 +45,7 @@ export const ConquestTiles = ({ onComplete, onClose, canPlay, canPlayImpossible 
     const [trayFull, setTrayFull] = useState(false);
     const [trayFullMessage, setTrayFullMessage] = useState(false);
     const [initialTileCount, setInitialTileCount] = useState(0);
+    const [showResultButton, setShowResultButton] = useState(false);
 
     // Power-up state
     const [ownedRemove, setOwnedRemove] = useState(0);
@@ -351,15 +352,6 @@ export const ConquestTiles = ({ onComplete, onClose, canPlay, canPlayImpossible 
         return () => clearInterval(interval);
     }, [comboTimer]);
 
-    // ─── TRIGGER RESULT CALLBACK ──────────────────
-    useEffect(() => {
-        if (result && phase === 'result') {
-            const tilesRemoved = board.filter(t => t.removed).length;
-            const pct = initialTileCount > 0 ? Math.round((tilesRemoved / initialTileCount) * 100) : 0;
-            onComplete(result, difficulty, result === 'win' ? 100 : pct);
-        }
-    }, [result, phase, difficulty, onComplete]);
-
     // ─── TRAY CAPACITY (difficulty-scaled) ─────────
     const trayCapacity = difficulty >= 3 ? 6 : TRAY_CAPACITY;
 
@@ -400,6 +392,22 @@ export const ConquestTiles = ({ onComplete, onClose, canPlay, canPlayImpossible 
         if (isPartialClear) return Math.max(1, Math.floor(fullXP / 2));
         return 0;
     };
+
+    const estimatedGold = (() => {
+        const fullGold = { 1: 5, 2: 15, 3: 30, 4: 50 }[difficulty] || 5;
+        if (result === 'win') return fullGold;
+        if (isPartialClear) return Math.max(1, Math.floor(fullGold / 2));
+        return 0;
+    })();
+
+    // ─── EFFECTS ──────────────────────────────────
+    useEffect(() => {
+        if (phase === 'result') {
+            setShowResultButton(false);
+            const timer = setTimeout(() => setShowResultButton(true), 500);
+            return () => clearTimeout(timer);
+        }
+    }, [phase]);
 
     // ─── RENDER: DIFFICULTY SELECT ────────────────
     const renderDifficultySelect = () => (
@@ -669,30 +677,61 @@ export const ConquestTiles = ({ onComplete, onClose, canPlay, canPlayImpossible 
                         >
                             <h2>{result === 'win' ? '🏆 VICTORY!' : isPartialClear ? '🌓 HALF CLEARED!' : '💀 DEFEAT'}</h2>
                             <div className="tiles-result-rewards">
-                                <div className="tiles-reward-row">📊 Points: {points}</div>
-                                <div className="tiles-reward-row">🗺️ Board Cleared: {clearPct}%</div>
-                                {result === 'win' && (
+                                {result === 'win' || isPartialClear ? (
                                     <>
-                                        <div className="tiles-reward-row highlight">🔱 Full Clear — Sigils Earned!</div>
-                                        <div className="tiles-reward-row highlight">🎯 +{getXP()} Strategy XP {maxCombo >= 3 ? `(Combo Bonus!)` : ''}</div>
-                                        {preset.gemReward > 0 && (
-                                            <div className="tiles-reward-row highlight">💎 +{preset.gemReward} Gems</div>
+                                        <div className="tiles-reward-row">📊 Points: {points}</div>
+                                        <div className="tiles-reward-row">🗺️ Board Cleared: {clearPct}%</div>
+                                        {result === 'win' ? (
+                                            <>
+                                                <div className="tiles-reward-row highlight">🔱 Full Clear — Sigils Earned!</div>
+                                                <motion.div initial={{scale:0, opacity:0}} animate={{scale:1, opacity:1}} transition={{delay:0.2}} className="tiles-reward-row highlight">🎯 +{getXP()} Strategy XP {maxCombo >= 3 ? `(Combo Bonus!)` : ''}</motion.div>
+                                                {preset.gemReward > 0 && (
+                                                    <motion.div initial={{scale:0, opacity:0}} animate={{scale:1, opacity:1}} transition={{delay:0.3}} className="tiles-reward-row highlight">💎 +{preset.gemReward} Gems</motion.div>
+                                                )}
+                                                {estimatedGold > 0 && (
+                                                    <motion.div initial={{scale:0, y:20, opacity:0}} animate={{scale:1, y:0, opacity:1}} transition={{delay:0.4, type:'spring'}} className="tiles-reward-row highlight" style={{ color: '#fbbf24', fontSize: '1.2rem', fontWeight: 'bold', marginTop: '0.5rem' }}>🪙 +{estimatedGold} Gold</motion.div>
+                                                )}
+                                            </>
+                                        ) : (
+                                            <>
+                                                <div className="tiles-reward-row highlight" style={{ color: '#f59e0b' }}>🌓 Partial Reward Earned!</div>
+                                                <motion.div initial={{scale:0, opacity:0}} animate={{scale:1, opacity:1}} transition={{delay:0.2}} className="tiles-reward-row highlight" style={{ color: '#f59e0b' }}>🎯 +{getXP()} Strategy XP (50% reward)</motion.div>
+                                                {estimatedGold > 0 && (
+                                                    <motion.div initial={{scale:0, y:20, opacity:0}} animate={{scale:1, y:0, opacity:1}} transition={{delay:0.4, type:'spring'}} className="tiles-reward-row highlight" style={{ color: '#fbbf24', fontSize: '1.2rem', fontWeight: 'bold', marginTop: '0.5rem' }}>🪙 +{estimatedGold} Gold</motion.div>
+                                                )}
+                                            </>
                                         )}
                                     </>
-                                )}
-                                {isPartialClear && (
+                                ) : (
                                     <>
-                                        <div className="tiles-reward-row highlight" style={{ color: '#f59e0b' }}>🌓 Partial Reward Earned!</div>
-                                        <div className="tiles-reward-row highlight" style={{ color: '#f59e0b' }}>🎯 +{getXP()} Strategy XP (50% reward)</div>
+                                        {points > 0 ? (
+                                            <>
+                                                <div className="tiles-reward-row">📊 Points: {points}</div>
+                                                <div className="tiles-reward-row">🗺️ Board Cleared: {clearPct}%</div>
+                                            </>
+                                        ) : (
+                                            <div className="tiles-reward-row">Run Abandoned —</div>
+                                        )}
+                                        <div className="tiles-reward-row" style={{ color: '#94a3b8' }}>Cleared less than 50% — no reward.</div>
                                     </>
                                 )}
-                                {result === 'loss' && !isPartialClear && (
-                                    <div className="tiles-reward-row">Cleared less than 50% — no reward.</div>
-                                )}
                             </div>
-                            <button className="tiles-play-again-btn" onClick={onClose}>
-                                Done
-                            </button>
+                            
+                            <AnimatePresence>
+                                {showResultButton && (
+                                    <motion.button 
+                                        className="tiles-play-again-btn" 
+                                        onClick={() => {
+                                            onComplete(result!, difficulty, result === 'win' ? 100 : clearPct);
+                                        }}
+                                        initial={{ opacity: 0, y: 10 }}
+                                        animate={{ opacity: 1, y: 0 }}
+                                        exit={{ opacity: 0 }}
+                                    >
+                                        {result === 'win' || isPartialClear ? 'Collect Rewards' : 'Return'}
+                                    </motion.button>
+                                )}
+                            </AnimatePresence>
                         </motion.div>
                     </motion.div>
                 )}
@@ -727,7 +766,14 @@ export const ConquestTiles = ({ onComplete, onClose, canPlay, canPlayImpossible 
                         <div className="tiles-points-value">{points}</div>
                     </div>
                 )}
-                <button className="tiles-close-btn" onClick={onClose}>✕</button>
+                <button className="tiles-close-btn" style={{ opacity: phase === 'result' ? 0.3 : 1, pointerEvents: phase === 'result' ? 'none' : 'auto' }} onClick={() => {
+                    if (phase === 'playing') {
+                        setResult('loss');
+                        setPhase('result');
+                    } else {
+                        onClose();
+                    }
+                }}>✕</button>
             </div>
 
             {/* Content */}
