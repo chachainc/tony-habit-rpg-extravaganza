@@ -134,67 +134,69 @@ export const TILE_COLORS: Record<string, string> = {
 };
 
 export function generateValidBoard(rawCoordinates: [number, number, number][]): TripleTileNode[] {
-  // 1. Generate exactly 12 of each type (144 total, 48 Triads)
-  let rawPool: string[] = [];
-  TILE_TYPES.forEach(type => {
-    for (let i = 0; i < 12; i++) {
-      rawPool.push(type);
-    }
-  });
+  const totalTiles = rawCoordinates.length;
+  const groups = Math.floor(totalTiles / 3);
 
-  // 2. Sort coordinates into 3 depth/region "Buckets" to prevent clustering
-  // Bucket A: High visibility, top layers (Early Game Flow)
-  // Bucket B: Mid layers, shingled arms (Mid Game Balance)
-  // Bucket C: Deep elevator shafts, Z > 2 (Late Game Grinding)
-  let bucketA: [number, number, number][] = [];
-  let bucketB: [number, number, number][] = [];
-  let bucketC: [number, number, number][] = [];
-
-  rawCoordinates.forEach(coord => {
-    if (coord[2] === 0) bucketA.push(coord); // Bedrock
-    else if (coord[2] === 1) bucketB.push(coord); // Shingle
-    else bucketC.push(coord); // Elevator Shafts
-  });
-
-  // 3. Deterministically deal the triads across the 3 buckets
-  // This guarantees that 3 identical tiles NEVER end up in the same vertical stack
-  let finalBoard: TripleTileNode[] = [];
+  // 1. Build a strict pool mathematically using exactly multiples of 3
+  const triadTypes: string[] = [];
+  const triadsPerType = Math.floor(groups / TILE_TYPES.length);
   
-  // We deal 4 triads per type = 12 tiles. 
-  // We put 4 in A, 4 in B, 4 in C for perfect vertical distribution.
-  const dealToBucket = (bucket: [number, number, number][], type: string, count: number) => {
-      for(let i=0; i<count; i++) {
-          if (bucket.length === 0) break;
-          // Deterministic pseudo-random pick from remaining bucket slots
-          const index = (type.length * 137 + i * 41) % bucket.length;
-          const coord = bucket.splice(index, 1)[0];
-          finalBoard.push({
-              id: `tile-${coord[0]}-${coord[1]}-${coord[2]}`,
-              type: type,
-              x: coord[0],
-              y: coord[1],
-              z: coord[2]
-          });
-      }
-  };
-
   TILE_TYPES.forEach(type => {
-      dealToBucket(bucketA, type, 4);
-      dealToBucket(bucketB, type, 4);
-      dealToBucket(bucketC, type, 4);
+      for (let i = 0; i < triadsPerType; i++) {
+          triadTypes.push(type);
+      }
   });
 
-  // If any odd tiles are left due to rounding, sweep them up
-  const remainingCoords = [...bucketA, ...bucketB, ...bucketC];
-  remainingCoords.forEach((coord, i) => {
-       finalBoard.push({
-              id: `tile-sweep-${i}`,
-              type: TILE_TYPES[i % 12],
-              x: coord[0],
-              y: coord[1],
-              z: coord[2]
-          });
+  // Assign any remaining triads generically if Math.floor left gaps
+  while (triadTypes.length < groups) {
+      triadTypes.push(TILE_TYPES[triadTypes.length % TILE_TYPES.length]);
+  }
+
+  // Shuffle deterministically
+  let seed = 9301;
+  const random = () => { seed = (seed * 9301 + 49297) % 233280; return seed / 233280; };
+  for (let i = triadTypes.length - 1; i > 0; i--) {
+      const j = Math.floor(random() * (i + 1));
+      [triadTypes[i], triadTypes[j]] = [triadTypes[j], triadTypes[i]];
+  }
+
+  // 2. Sort all coordinates by Z-depth to safely distribute 1 triad piece across Low/Mid/Deep
+  const sortedCoords = [...rawCoordinates].sort((a, b) => {
+      if (a[2] !== b[2]) return a[2] - b[2];
+      if (a[1] !== b[1]) return a[1] - b[1];
+      return a[0] - b[0];
   });
+
+  const finalBoard: TripleTileNode[] = [];
+  const third = Math.floor(totalTiles / 3);
+  
+  // Divide cleanly into 3 chunks
+  const b1 = sortedCoords.slice(0, third);
+  const b2 = sortedCoords.slice(third, third * 2);
+  const b3 = sortedCoords.slice(third * 2, totalTiles);
+
+  // 3. Assign mathematically
+  for (let i = 0; i < groups; i++) {
+      const type = triadTypes[i];
+      // Offset mid/deep index to decouple X/Y overlap from deterministic logic
+      const c1 = b1[i % b1.length];
+      const c2 = b2[(i + 17) % b2.length];
+      const c3 = b3[(i + 31) % b3.length];
+      
+      if (c1) finalBoard.push({ id: `tile-${c1[0]}-${c1[1]}-${c1[2]}`, type, x: c1[0], y: c1[1], z: c1[2] });
+      if (c2) finalBoard.push({ id: `tile-${c2[0]}-${c2[1]}-${c2[2]}`, type, x: c2[0], y: c2[1], z: c2[2] });
+      if (c3) finalBoard.push({ id: `tile-${c3[0]}-${c3[1]}-${c3[2]}`, type, x: c3[0], y: c3[1], z: c3[2] });
+  }
+
+  // Safety sweep for unassigned fallback
+  if (finalBoard.length < totalTiles) {
+      const assigned = new Set(finalBoard.map(t => `${t.x},${t.y},${t.z}`));
+      sortedCoords.forEach(c => {
+         if (!assigned.has(`${c[0]},${c[1]},${c[2]}`)) {
+             finalBoard.push({ id: `tile-${c[0]}-${c[1]}-${c[2]}`, type: TILE_TYPES[0], x: c[0], y: c[1], z: c[2] });
+         }
+      });
+  }
 
   return finalBoard;
 }
@@ -295,6 +297,43 @@ export const trueTripleTileMap: TripleTileNode[] = generateValidBoard(rawCoordin
     for (const t of trueTripleTileMap) {
         counts.set(t.type, (counts.get(t.type) ?? 0) + 1);
     }
+    
+    // Debug & Normalization Block
+    console.debug(`[TileConfig] Pre-Validation Tile Type Counts:`);
+    let needsNormalization = false;
+    for (const [type, count] of counts) {
+        console.debug(`  - ${type}: ${count}`);
+        if (count % 3 !== 0) needsNormalization = true;
+    }
+
+    if (needsNormalization) {
+        console.warn(`[TileConfig] Normalization triggered! Rebalancing tiles to multiples of 3...`);
+        const strayNodes: TripleTileNode[] = [];
+        for (const [type, count] of counts) {
+            const remainder = count % 3;
+            if (remainder > 0) {
+                 let foundCount = 0;
+                 for (let i = trueTripleTileMap.length - 1; i >= 0; i--) {
+                     if (trueTripleTileMap[i].type === type && foundCount < remainder) {
+                         strayNodes.push(trueTripleTileMap[i]);
+                         foundCount++;
+                     }
+                 }
+            }
+        }
+        
+        const validTypes = Array.from(counts.keys());
+        for (let i = 0; i < strayNodes.length; i++) {
+             const typeGroup = Math.floor(i / 3) % validTypes.length;
+             strayNodes[i].type = validTypes[typeGroup];
+        }
+        
+        counts.clear();
+        for (const t of trueTripleTileMap) {
+            counts.set(t.type, (counts.get(t.type) ?? 0) + 1);
+        }
+    }
+
     for (const [type, count] of counts) {
         if (count % 3 !== 0) {
             throw new Error(
