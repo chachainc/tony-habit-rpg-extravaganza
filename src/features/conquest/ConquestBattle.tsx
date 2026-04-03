@@ -24,6 +24,8 @@ export const ConquestBattle = () => {
     const [showDefeatModal, setShowDefeatModal] = useState(false);
     const [isRolling, setIsRolling] = useState(false);
     const [rollValue, setRollValue] = useState<number | null>(null);
+    const [isHeavyRolling, setIsHeavyRolling] = useState(false);
+    const [heavyRollValue, setHeavyRollValue] = useState<number | null>(null);
     const initialPlayerHpRef = useRef<number | null>(null);
     const [enemySpecialText, setEnemySpecialText] = useState<string | null>(null);
 
@@ -303,31 +305,56 @@ export const ConquestBattle = () => {
                         {/* 1. Heavy Attack */}
                         <button
                             className="cq-action-btn attack heavy"
-                            disabled={!isPlayerTurn || isExecuting || isRolling || battle.heavyAttackCooldown > 0}
+                            disabled={!isPlayerTurn || isExecuting || isRolling || isHeavyRolling || battle.heavyAttackCooldown > 0}
                             onClick={() => {
                                 if (battle.heavyAttackCooldown > 0) return;
+                                setIsHeavyRolling(true);
                                 const modifiedAtk = Math.max(1, player.atk * battle.playerDamageModifier);
                                 const lowHit = Math.max(1, Math.ceil(modifiedAtk * 0.5));
                                 const bigHit = Math.max(1, Math.floor(modifiedAtk * 1.5));
-                                const isSuccess = Math.random() > 0.5;
-                                const finalDamage = isSuccess ? bigHit : lowHit;
-                                useBattleStore.setState({ heavyAttackCooldown: 2 });
-                                conquest.trackDamageDealt(finalDamage);
-                                battle.selectAbility({
-                                    id: 'heavy_strike', name: 'Heavy Strike', type: 'attack',
-                                    description: '', icon: '💥', element: 'neutral',
-                                    damageMultiplier: 1.0, cooldown: 0, energyCost: 0,
-                                    customDamageConfig: { type: 'heavy', rollValue: finalDamage }
-                                });
-                                battle.executePlayerAction();
+                                
+                                let rolls = 0;
+                                const maxRolls = 10;
+                                const interval = setInterval(() => {
+                                    const stepSuccess = Math.random() > 0.5;
+                                    setHeavyRollValue(stepSuccess ? bigHit : lowHit);
+                                    rolls++;
+                                    if (rolls >= maxRolls) {
+                                        clearInterval(interval);
+                                        const isSuccess = Math.random() > 0.5;
+                                        const finalDamage = isSuccess ? bigHit : lowHit;
+                                        setHeavyRollValue(finalDamage);
+                                        
+                                        setTimeout(() => {
+                                            useBattleStore.setState(state => ({
+                                                combatLog: [...state.combatLog, { message: `🎲 Heavy Roll: ${finalDamage}!`, type: 'info' as const }],
+                                                heavyAttackCooldown: 2
+                                            }));
+                                            conquest.trackDamageDealt(finalDamage);
+                                            battle.selectAbility({
+                                                id: 'heavy_strike', name: 'Heavy Strike', type: 'attack',
+                                                description: '', icon: '💥', element: 'neutral',
+                                                damageMultiplier: 1.0, cooldown: 0, energyCost: 0,
+                                                customDamageConfig: { type: 'heavy', rollValue: finalDamage }
+                                            });
+                                            battle.executePlayerAction();
+                                            setIsHeavyRolling(false);
+                                            setHeavyRollValue(null);
+                                        }, 400);
+                                    }
+                                }, 50);
                             }}
                         >
                             <div className="cq-btn-top">💥 Heavy</div>
-                            <div className="cq-btn-mid">Hi-Dmg</div>
+                            <div className="cq-btn-mid" style={isHeavyRolling ? { color: '#fbbf24' } : {}}>
+                                {isHeavyRolling && heavyRollValue !== null 
+                                    ? `🎲 ${heavyRollValue}` 
+                                    : `${Math.max(1, Math.ceil(Math.max(1, player.atk * battle.playerDamageModifier) * 0.5))} or ${Math.max(1, Math.floor(Math.max(1, player.atk * battle.playerDamageModifier) * 1.5))}`}
+                            </div>
                             <div className="cq-btn-bot">
                                 {battle.heavyAttackCooldown > 0
                                     ? <span style={{ color: '#ef4444' }}>⚠️ Cooldown</span>
-                                    : <span>⚠️ 50% Hit</span>
+                                    : <span>🎲 50/50 Roll</span>
                                 }
                             </div>
                         </button>
@@ -335,7 +362,7 @@ export const ConquestBattle = () => {
                         {/* 2. Light Attack */}
                         <button
                             className="cq-action-btn attack light"
-                            disabled={!isPlayerTurn || isExecuting || isRolling}
+                            disabled={!isPlayerTurn || isExecuting || isRolling || isHeavyRolling}
                             onClick={() => {
                                 setIsRolling(true);
                                 const modifiedAtk = Math.max(1, Math.floor(player.atk * battle.playerDamageModifier));
@@ -350,6 +377,9 @@ export const ConquestBattle = () => {
                                         setRollValue(finalRoll);
                                         conquest.trackDamageDealt(finalRoll);
                                         setTimeout(() => {
+                                            useBattleStore.setState(state => ({
+                                                combatLog: [...state.combatLog, { message: `🎲 Rolled ${finalRoll}!`, type: 'info' as const }]
+                                            }));
                                             battle.selectAbility({
                                                 id: 'light_strike', name: 'Light Strike', type: 'attack',
                                                 description: '', icon: '⚡', element: 'neutral',

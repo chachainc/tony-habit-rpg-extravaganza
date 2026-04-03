@@ -282,6 +282,8 @@ export const Arena = ({ onClose }: { onClose: () => void }) => {
     const [showPowerDetails, setShowPowerDetails] = useState(false);
     const [isRolling, setIsRolling] = useState(false);
     const [rollValue, setRollValue] = useState<number | null>(null);
+    const [isHeavyRolling, setIsHeavyRolling] = useState(false);
+    const [heavyRollValue, setHeavyRollValue] = useState<number | null>(null);
 
     // Auto-attack timer ref - MUST use ref so cleanup works properly
     const autoTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -907,47 +909,69 @@ export const Arena = ({ onClose }: { onClose: () => void }) => {
                                     {/* 1. Heavy Attack */}
                                     <button
                                         className="command-btn attack heavy"
-                                        disabled={phase !== 'select_action' || autoAttack || isRolling || useBattleStore.getState().heavyAttackCooldown > 0}
+                                        disabled={phase !== 'select_action' || autoAttack || isRolling || isHeavyRolling || useBattleStore.getState().heavyAttackCooldown > 0}
                                         onClick={() => {
                                             if (phase === 'select_action' && useBattleStore.getState().heavyAttackCooldown === 0) {
+                                                setIsHeavyRolling(true);
                                                 const modifiedAtk = Math.max(1, player.atk * useBattleStore.getState().playerDamageModifier);
                                                 const lowHit = Math.max(1, Math.ceil(modifiedAtk * 0.5));
                                                 const bigHit = Math.max(1, Math.floor(modifiedAtk * 1.5));
                                                 
-                                                const isSuccess = Math.random() > 0.5;
-                                                const finalDamage = isSuccess ? bigHit : lowHit;
-                                                
-                                                // Buffer cooldown to 2 so it correctly blocks exactly 1 full player turn after this one finishes
-                                                useBattleStore.setState({ heavyAttackCooldown: 2 });
-                                                selectAbility({ 
-                                                    id: 'heavy_strike', 
-                                                    name: 'Heavy Strike', 
-                                                    type: 'attack', 
-                                                    description: '', 
-                                                    icon: '💥', 
-                                                    element: 'neutral', 
-                                                    damageMultiplier: 1.0, 
-                                                    cooldown: 0, 
-                                                    energyCost: 0,
-                                                    customDamageConfig: { type: 'heavy', rollValue: finalDamage }
-                                                });
-                                                setTimeout(executePlayerAction, 100);
+                                                let rolls = 0;
+                                                const maxRolls = 10;
+                                                const interval = setInterval(() => {
+                                                    const stepSuccess = Math.random() > 0.5;
+                                                    setHeavyRollValue(stepSuccess ? bigHit : lowHit);
+                                                    rolls++;
+                                                    if (rolls >= maxRolls) {
+                                                        clearInterval(interval);
+                                                        const isSuccess = Math.random() > 0.5;
+                                                        const finalDamage = isSuccess ? bigHit : lowHit;
+                                                        setHeavyRollValue(finalDamage);
+                                                        
+                                                        setTimeout(() => {
+                                                            useBattleStore.setState(state => ({
+                                                                combatLog: [...state.combatLog, { message: `🎲 Heavy Roll: ${finalDamage}!`, type: 'info' as const }],
+                                                                heavyAttackCooldown: 2 
+                                                            }));
+                                                            selectAbility({ 
+                                                                id: 'heavy_strike', 
+                                                                name: 'Heavy Strike', 
+                                                                type: 'attack', 
+                                                                description: '', 
+                                                                icon: '💥', 
+                                                                element: 'neutral', 
+                                                                damageMultiplier: 1.0, 
+                                                                cooldown: 0, 
+                                                                energyCost: 0,
+                                                                customDamageConfig: { type: 'heavy', rollValue: finalDamage }
+                                                            });
+                                                            executePlayerAction();
+                                                            setIsHeavyRolling(false);
+                                                            setHeavyRollValue(null);
+                                                        }, 400);
+                                                    }
+                                                }, 50);
                                             }
                                         }}
                                     >
                                         <div className="btn-top">💥 Heavy</div>
-                                        <div className="btn-mid">Hi-Dmg</div>
+                                        <div className="btn-mid" style={isHeavyRolling ? { color: '#fbbf24' } : {}}>
+                                            {isHeavyRolling && heavyRollValue !== null 
+                                                ? `🎲 ${heavyRollValue}` 
+                                                : `${Math.max(1, Math.ceil(Math.max(1, player.atk * useBattleStore.getState().playerDamageModifier) * 0.5))} or ${Math.max(1, Math.floor(Math.max(1, player.atk * useBattleStore.getState().playerDamageModifier) * 1.5))}`}
+                                        </div>
                                         <div className="btn-bot">
                                             {useBattleStore.getState().heavyAttackCooldown > 0
                                                 ? <span style={{ color: '#ef4444' }}>⚠️ Cooldown</span>
-                                                : <span>⚠️ 50% Hit</span>
+                                                : <span>🎲 50/50 Roll</span>
                                             }
                                         </div>
                                     </button>
 
                                     <button
                                         className="command-btn attack light"
-                                        disabled={phase !== 'select_action' || autoAttack || isRolling}
+                                        disabled={phase !== 'select_action' || autoAttack || isRolling || isHeavyRolling}
                                         onClick={() => {
                                             if (phase === 'select_action') {
                                                 setIsRolling(true);
@@ -963,6 +987,9 @@ export const Arena = ({ onClose }: { onClose: () => void }) => {
                                                         const finalRoll = Math.floor(Math.random() * modifiedAtk) + 1;
                                                         setRollValue(finalRoll);
                                                         setTimeout(() => {
+                                                            useBattleStore.setState(state => ({
+                                                                combatLog: [...state.combatLog, { message: `🎲 Rolled ${finalRoll}!`, type: 'info' as const }]
+                                                            }));
                                                             selectAbility({ 
                                                                 id: 'light_strike', 
                                                                 name: 'Light Strike', 
