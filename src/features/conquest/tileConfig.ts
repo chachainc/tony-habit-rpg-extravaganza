@@ -18,6 +18,27 @@ export interface TileSymbol {
 }
 export type Difficulty = 1 | 2 | 3 | 4;
 
+export const TILE_IMAGES: Record<string, string> = {
+  'sword': '/assets/tiles/sword.png',
+  'shield': '/assets/tiles/shield.png',
+  'helmet': '/assets/tiles/helmet.png',
+  'crown': '/assets/tiles/crown.png',
+  'gem': '/assets/tiles/gem.png',
+  'scroll': '/assets/tiles/scroll.png',
+  'potion': '/assets/tiles/potion.png',
+  'ring': '/assets/tiles/ring.png',
+  'key': '/assets/tiles/key.png',
+  'book': '/assets/tiles/book.png',
+  'meat': '/assets/tiles/meat.png',
+  'coin': '/assets/tiles/coin.png',
+  // legacy fallbacks
+  'chalice': '/assets/tiles/chalice.png',
+  'owl': '/assets/tiles/owl.png',
+  'fox': '/assets/tiles/fox.png',
+  'slime': '/assets/tiles/slime.png',
+  'golem': '/assets/tiles/golem.png',
+};
+
 export const DIFFICULTY_PRESETS = {
     1: { name: 'Normal', totalTiles: 198, symbolCount: 66, layers: 10, label: '🎴 Conquest Tiles', gemReward: 1 },
     2: { name: 'Normal', totalTiles: 198, symbolCount: 66, layers: 10, label: '🎴 Conquest Tiles', gemReward: 1 },
@@ -90,118 +111,175 @@ export function getSymbolForType(type: string): TileSymbol {
     return DISPLAY_SYMBOLS[Math.abs(idx)];
 }
 
-// ─── AUTHORED BOARD MAP ───────────────────────────────
-function assignTypes(coords: [number, number, number][]): TripleTileNode[] {
-    const triadCount = Math.floor(coords.length / 3);
+export const TILE_TYPES = [
+  // CORE
+  'sword', 'shield', 'helmet', 'crown', 'gem', 'scroll', 'potion', 'ring',
+  // SUPPORT
+  'coin', 'key', 'meat', 'book'
+];
 
-    // 1. Sort coords into Top, Mid, Deep by Exposure (Z desc, Y desc, X asc)
-    const byExposure = coords.map((c, i) => ({ c, i })).sort((a, b) => {
-        if (a.c[2] !== b.c[2]) return b.c[2] - a.c[2]; // Highest Z first
-        if (a.c[1] !== b.c[1]) return b.c[1] - a.c[1]; // Highest Y first (shingle order)
-        return a.c[0] - b.c[0];
-    });
+export const TILE_COLORS: Record<string, string> = {
+  'sword': '#e8ecef',  // silver/steel
+  'shield': '#e3f2fd', // blue
+  'helmet': '#efebe9', // bronze
+  'crown': '#fff8e1',  // gold
+  'gem': '#f3e5f5',    // purple
+  'scroll': '#fdf8e3', // tan
+  'potion': '#e8f5e9', // green
+  'ring': '#fff3e0',   // warm gold
+  'coin': '#fffde7',   // yellow
+  'key': '#fbe9e7',    // brass
+  'meat': '#ffebee',   // red
+  'book': '#e8eaf6'    // blue/red tint
+};
 
-    const b3 = byExposure.slice(0, triadCount);
-    const b2 = byExposure.slice(triadCount, triadCount * 2);
-    const b1 = byExposure.slice(triadCount * 2, triadCount * 3);
-
-    // 2. Sort each bucket by X to organize into Left/Center/Right
-    const sortX = (a: {c: [number, number, number]}, b: {c: [number, number, number]}) => a.c[0] - b.c[0];
-    b3.sort(sortX);
-    b2.sort(sortX);
-    b1.sort(sortX);
-
-    // 3. Generate and shuffle triad types deterministically (stable)
-    const types = Array.from({ length: triadCount }, (_, i) => `T${i}`);
-    const shuffledTriads = types
-        .map((v, i) => ({ v, sort: (i * 9301 + 49297) % 233280 }))
-        .sort((a, b) => a.sort - b.sort)
-        .map(x => x.v);
-
-    const nodes: TripleTileNode[] = new Array(coords.length);
-    const shift = Math.floor(triadCount / 3);
-
-    // 4. Distribute each triad into Top, Mid, Deep with an X-shift to avoid column stacking
-    for (let i = 0; i < triadCount; i++) {
-        const type = shuffledTriads[i];
-        
-        // Piece 1: Top exposed, region i
-        const n3 = b3[i];
-        nodes[n3.i] = { id: `tile_${n3.i}`, type, x: n3.c[0], y: n3.c[1], z: n3.c[2] };
-
-        // Piece 2: Mid exposed, region shifted
-        const b2Idx = (i + shift) % triadCount;
-        const n2 = b2[b2Idx];
-        nodes[n2.i] = { id: `tile_${n2.i}`, type, x: n2.c[0], y: n2.c[1], z: n2.c[2] };
-
-        // Piece 3: Deep hidden, region shifted twice
-        const b1Idx = (i + shift * 2) % triadCount;
-        const n1 = b1[b1Idx];
-        nodes[n1.i] = { id: `tile_${n1.i}`, type, x: n1.c[0], y: n1.c[1], z: n1.c[2] };
+export function generateValidBoard(rawCoordinates: [number, number, number][]): TripleTileNode[] {
+  // 1. Generate exactly 12 of each type (144 total, 48 Triads)
+  let rawPool: string[] = [];
+  TILE_TYPES.forEach(type => {
+    for (let i = 0; i < 12; i++) {
+      rawPool.push(type);
     }
+  });
 
-    // Fallback remainder handling (if coords miraculously isn't divisible by 3)
-    for (let i = 0; i < coords.length; i++) {
-        if (!nodes[i]) {
-            const [x, y, z] = coords[i];
-            nodes[i] = { id: `tile_${i}`, type: shuffledTriads[0], x, y, z };
-        }
-    }
+  // 2. Sort coordinates into 3 depth/region "Buckets" to prevent clustering
+  // Bucket A: High visibility, top layers (Early Game Flow)
+  // Bucket B: Mid layers, shingled arms (Mid Game Balance)
+  // Bucket C: Deep elevator shafts, Z > 2 (Late Game Grinding)
+  let bucketA: [number, number, number][] = [];
+  let bucketB: [number, number, number][] = [];
+  let bucketC: [number, number, number][] = [];
 
-    return nodes;
+  rawCoordinates.forEach(coord => {
+    if (coord[2] === 0) bucketA.push(coord); // Bedrock
+    else if (coord[2] === 1) bucketB.push(coord); // Shingle
+    else bucketC.push(coord); // Elevator Shafts
+  });
+
+  // 3. Deterministically deal the triads across the 3 buckets
+  // This guarantees that 3 identical tiles NEVER end up in the same vertical stack
+  let finalBoard: TripleTileNode[] = [];
+  
+  // We deal 4 triads per type = 12 tiles. 
+  // We put 4 in A, 4 in B, 4 in C for perfect vertical distribution.
+  const dealToBucket = (bucket: [number, number, number][], type: string, count: number) => {
+      for(let i=0; i<count; i++) {
+          if (bucket.length === 0) break;
+          // Deterministic pseudo-random pick from remaining bucket slots
+          const index = (type.length * 137 + i * 41) % bucket.length;
+          const coord = bucket.splice(index, 1)[0];
+          finalBoard.push({
+              id: `tile-${coord[0]}-${coord[1]}-${coord[2]}`,
+              type: type,
+              x: coord[0],
+              y: coord[1],
+              z: coord[2]
+          });
+      }
+  };
+
+  TILE_TYPES.forEach(type => {
+      dealToBucket(bucketA, type, 4);
+      dealToBucket(bucketB, type, 4);
+      dealToBucket(bucketC, type, 4);
+  });
+
+  // If any odd tiles are left due to rounding, sweep them up
+  const remainingCoords = [...bucketA, ...bucketB, ...bucketC];
+  remainingCoords.forEach((coord, i) => {
+       finalBoard.push({
+              id: `tile-sweep-${i}`,
+              type: TILE_TYPES[i % 12],
+              x: coord[0],
+              y: coord[1],
+              z: coord[2]
+          });
+  });
+
+  return finalBoard;
 }
 
-const coords: [number, number, number][] = [
-    // --- LAYER 0 BEDROCK ---
-    ...Array.from({ length: 12 }).flatMap<[number, number, number]>((_, y) => [
-        [0, y, 0], [1, y, 0], [2, y, 0]
-    ]),
-    ...Array.from({ length: 12 }).flatMap<[number, number, number]>((_, y) => [
-        [4, y, 0], [5, y, 0], [6, y, 0]
-    ]),
-    [3, 6, 0], [3, 7, 0], [3, 8, 0], [3, 9, 0],
+const rawCoordinates: [number, number, number][] = [
+  // === Z=0: THE BEDROCK BASE (60 Tiles) ===
+  // Left Arm (Jagged outer edge)
+  [1,0,0], [2,0,0],
+  [0,1,0], [1,1,0], [2,1,0],
+  [0,2,0], [1,2,0], [2,2,0],
+  [0,3,0], [1,3,0], [2,3,0],
+  [0,4,0], [1,4,0], [2,4,0],
+  [1,5,0], [2,5,0],
+  [1,6,0], [2,6,0],
+  [1,7,0], [2,7,0],
+  [1,8,0], [2,8,0],
+  // Right Arm (Jagged outer edge)
+  [4,0,0], [5,0,0],
+  [4,1,0], [5,1,0], [6,1,0],
+  [4,2,0], [5,2,0], [6,2,0],
+  [4,3,0], [5,3,0], [6,3,0],
+  [4,4,0], [5,4,0], [6,4,0],
+  [4,5,0], [5,5,0],
+  [4,6,0], [5,6,0],
+  [4,7,0], [5,7,0],
+  [4,8,0], [5,8,0],
+  // Center Bridge
+  [3,4,0], [3,5,0], [3,6,0], [3,7,0],
+  // The Feet Bases
+  [1,10,0], [2,10,0], [4,10,0], [5,10,0],
+  [1,11,0], [5,11,0],
 
-    // --- LAYER 1 SHINGLE ---
-    ...Array.from({ length: 10 }).flatMap<[number, number, number]>((_, y) => [
-        [0, y + 1, 1], [1, y + 1, 1], [2, y + 1, 1]
-    ]),
-    ...Array.from({ length: 10 }).flatMap<[number, number, number]>((_, y) => [
-        [4, y + 1, 1], [5, y + 1, 1], [6, y + 1, 1]
-    ]),
-    [3, 7, 1], [3, 8, 1],
+  // === Z=1: FIRST SHINGLE LAYER (42 Tiles) ===
+  // Left Arm
+  [1,1,1], [2,1,1],
+  [0,2,1], [1,2,1], [2,2,1],
+  [0,3,1], [1,3,1], [2,3,1],
+  [1,4,1], [2,4,1],
+  [1,5,1], [2,5,1],
+  [1,6,1], [2,6,1],
+  [1,7,1], [2,7,1],
+  // Right Arm
+  [4,1,1], [5,1,1],
+  [4,2,1], [5,2,1], [6,2,1],
+  [4,3,1], [5,3,1], [6,3,1],
+  [4,4,1], [5,4,1],
+  [4,5,1], [5,5,1],
+  [4,6,1], [5,6,1],
+  [4,7,1], [5,7,1],
+  // Bridge
+  [3,5,1], [3,6,1],
 
-    // --- LAYER 2 TAPER ---
-    ...Array.from({ length: 8 }).flatMap<[number, number, number]>((_, y) => [
-        [1, y + 2, 2], [2, y + 2, 2]
-    ]),
-    ...Array.from({ length: 8 }).flatMap<[number, number, number]>((_, y) => [
-        [4, y + 2, 2], [5, y + 2, 2]
-    ]),
+  // === Z=2: THE RIDGES (18 Tiles) ===
+  [1,2,2], [2,2,2], [4,2,2], [5,2,2],
+  [1,3,2], [2,3,2], [4,3,2], [5,3,2],
+  [1,4,2], [2,4,2], [4,4,2], [5,4,2],
+  [2,5,2], [4,5,2],
+  [2,6,2], [4,6,2],
+  [3,5,2], [3,6,2], // Bridge Peaks
 
-    // --- ELEVATOR SHAFTS (LEFT) ---
-    ...Array.from({ length: 10 }).map<[number, number, number]>((_, z) => [1, 13, z]),
-
-    // --- ELEVATOR SHAFTS (RIGHT) ---
-    ...Array.from({ length: 10 }).map<[number, number, number]>((_, z) => [5, 13, z]),
-
-    // --- INNER STACKS ---
-    [2, 11, 3], [2, 11, 4], [2, 11, 5], [2, 11, 6],
-    [4, 11, 3], [4, 11, 4], [4, 11, 5], [4, 11, 6],
+  // === Z=3 TO Z=6: THE ELEVATOR SHAFTS (24 Tiles) ===
+  // These are the deep, isolated traps at the bottom of the board
+  // Left Inner Foot
+  [2,10,1], [2,10,2], [2,10,3],
+  // Right Inner Foot
+  [4,10,1], [4,10,2], [4,10,3],
+  // Left Outer Foot (Deepest)
+  [1,11,1], [1,11,2], [1,11,3], [1,11,4], [1,11,5], [1,11,6], [1,11,7], [1,11,8], [1,11,9],
+  // Right Outer Foot (Deepest)
+  [5,11,1], [5,11,2], [5,11,3], [5,11,4], [5,11,5], [5,11,6], [5,11,7], [5,11,8], [5,11,9]
 ];
 
 // ─── MODULE-LOAD VALIDATION (fails hard on bad map) ───
 (function validateBoard() {
-    const total = coords.length;
-    if (total % 3 !== 0) {
+    const total = rawCoordinates.length;
+    if (total !== 144) {
         throw new Error(
-            `[TileConfig] FATAL: Board coord count (${total}) is not divisible by 3. Cannot form triads.`
+            `[TileConfig] FATAL: Board coord count (${total}) is not exactly 144. Found ${total}.`
         );
     }
     // Post-assign validation happens lazily on first use via trueTripleTileMap
     console.info(`[TileConfig] Board: ${total} tiles → ${total / 3} triads ✓`);
 })();
 
-export const trueTripleTileMap: TripleTileNode[] = assignTypes(coords);
+export const trueTripleTileMap: TripleTileNode[] = generateValidBoard(rawCoordinates);
 
 // ─── POST-ASSIGN VALIDATION ───────────────────────────
 (function validateTypes() {
@@ -223,7 +301,7 @@ export const trueTripleTileMap: TripleTileNode[] = assignTypes(coords);
 export const bedrockDivots: { x: number; y: number }[] = (() => {
     const seen = new Set<string>();
     const divots: { x: number; y: number }[] = [];
-    for (const [x, y, z] of coords) {
+    for (const [x, y, z] of rawCoordinates) {
         if (z === 0) {
             const key = `${x},${y}`;
             if (!seen.has(key)) {

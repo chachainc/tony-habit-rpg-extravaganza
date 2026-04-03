@@ -5,7 +5,8 @@ import {
     trueTripleTileMap,
     bedrockDivots,
     isTileLocked,
-    getSymbolForType,
+    TILE_IMAGES,
+    TILE_COLORS,
     POWER_COSTS,
     type TripleTileNode,
     type DockTile,
@@ -191,9 +192,9 @@ export const ConquestTiles = ({ onComplete, onClose, canPlay: _canPlay, canPlayI
 
     // ─── RENDER HELPERS ───────────────────────────────
     const tileLeft   = (t: TripleTileNode) => t.x * TILE_WIDTH;
-    const tileTop    = (t: TripleTileNode) => t.y * (TILE_HEIGHT * 0.5);
+    const tileTop    = (t: TripleTileNode) => t.y * (TILE_HEIGHT * 0.35);
     const tileZ      = (t: TripleTileNode) => t.z * 1000 + t.y * 10 + t.x;
-    const tileMargin = (t: TripleTileNode) => `${-(t.z * 6)}px`;
+    const tileMargin = (t: TripleTileNode) => `${-(t.z * 5)}px`;
 
     // Stable sort: z asc, y asc, id asc
     const sortedBoard = [...board].sort((a, b) =>
@@ -274,7 +275,7 @@ export const ConquestTiles = ({ onComplete, onClose, canPlay: _canPlay, canPlayI
                                 className="tiles-divot"
                                 style={{
                                     left: d.x * TILE_WIDTH - offsetX,
-                                    top:  d.y * (TILE_HEIGHT * 0.5) - offsetY,
+                                    top:  d.y * (TILE_HEIGHT * 0.35) - offsetY,
                                     width: TILE_WIDTH,
                                     height: TILE_HEIGHT,
                                 }}
@@ -284,7 +285,6 @@ export const ConquestTiles = ({ onComplete, onClose, canPlay: _canPlay, canPlayI
                         {/* Active tiles */}
                         {sortedBoard.map(tile => {
                             const locked  = isTileLocked(tile, board);
-                            const sym     = getSymbolForType(tile.type);
                             const left    = tileLeft(tile) - offsetX;
                             const top     = tileTop(tile) - offsetY;
 
@@ -300,6 +300,7 @@ export const ConquestTiles = ({ onComplete, onClose, canPlay: _canPlay, canPlayI
                                         zIndex: tileZ(tile),
                                         width: TILE_WIDTH,
                                         height: TILE_HEIGHT,
+                                        backgroundColor: TILE_COLORS[tile.type],
                                     }}
                                     onClick={() => !locked && selectTile(tile)}
                                     layout
@@ -310,13 +311,8 @@ export const ConquestTiles = ({ onComplete, onClose, canPlay: _canPlay, canPlayI
                                     whileTap={!locked ? { scale: 0.96, zIndex: 9999 } : {}}
                                     transition={{ duration: 0.2, ease: "easeOut" }}
                                 >
-                                    <div className="tiles-tile-icon-bg">
-                                        {sym.imageSrc ? (
-                                            <img src={sym.imageSrc} alt={sym.label} className="tiles-tile-img" />
-                                        ) : (
-                                            <span className="tiles-tile-emoji">{sym.emoji}</span>
-                                        )}
-                                    </div>
+                                    <img src={TILE_IMAGES[tile.type]} alt={tile.type} style={{ width: '80%', height: '80%', objectFit: 'contain', pointerEvents: 'none' }} />
+                                    <div className="tiles-tile-level">{tile.z + 1}</div>
                                 </motion.div>
                             );
                         })}
@@ -329,12 +325,11 @@ export const ConquestTiles = ({ onComplete, onClose, canPlay: _canPlay, canPlayI
                         {Array.from({ length: TRAY_CAPACITY }).map((_, i) => {
                             const dockTile  = dock[i];
                             const isClearing = dockTile ? clearingIds.has(dockTile.id) : false;
-                            const sym = dockTile ? getSymbolForType(dockTile.type) : null;
 
                             return (
                                 <div key={i} className={`tiles-tray-slot ${dockTile ? 'filled' : 'empty'} ${isClearing ? 'clearing' : ''}`}>
                                     <AnimatePresence>
-                                        {dockTile && sym && (
+                                        {dockTile && (
                                             <motion.div
                                                 key={dockTile.id}
                                                 layoutId={dockTile.id}
@@ -349,16 +344,11 @@ export const ConquestTiles = ({ onComplete, onClose, canPlay: _canPlay, canPlayI
                                                     height: '76px', 
                                                     position: 'absolute',
                                                     margin: 0,
-                                                    pointerEvents: 'none'
+                                                    pointerEvents: 'none',
+                                                    backgroundColor: TILE_COLORS[dockTile.type],
                                                 }}
                                             >
-                                                <div className="tiles-tile-icon-bg" style={{ width: '40px', height: '40px' }}>
-                                                    {sym.imageSrc ? (
-                                                        <img src={sym.imageSrc} alt={sym.label} className="tiles-tile-img" style={{ width: '32px', height: '32px' }} />
-                                                    ) : (
-                                                        <span className="tiles-tile-emoji" style={{ fontSize: '1.4rem' }}>{sym.emoji}</span>
-                                                    )}
-                                                </div>
+                                                <img src={TILE_IMAGES[dockTile.type]} alt={dockTile.type} style={{ width: '80%', height: '80%', objectFit: 'contain', pointerEvents: 'none' }} />
                                             </motion.div>
                                         )}
                                     </AnimatePresence>
