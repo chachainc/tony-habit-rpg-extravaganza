@@ -211,6 +211,7 @@ const rawCoordinates: [number, number, number][] = [
   [1,6,0], [2,6,0],
   [1,7,0], [2,7,0],
   [1,8,0], [2,8,0],
+  [1,9,0], [2,9,0], // filled gap gap to feet
   // Right Arm (Jagged outer edge)
   [4,0,0], [5,0,0],
   [4,1,0], [5,1,0], [6,1,0],
@@ -221,8 +222,10 @@ const rawCoordinates: [number, number, number][] = [
   [4,6,0], [5,6,0],
   [4,7,0], [5,7,0],
   [4,8,0], [5,8,0],
+  [4,9,0], [5,9,0], // filled gap to feet
   // Center Bridge
   [3,4,0], [3,5,0], [3,6,0], [3,7,0],
+  [3,8,0], [3,9,0], // filled bridge gap
   // The Feet Bases
   [1,10,0], [2,10,0], [4,10,0], [5,10,0],
   [1,11,0], [5,11,0],
@@ -236,6 +239,8 @@ const rawCoordinates: [number, number, number][] = [
   [1,5,1], [2,5,1],
   [1,6,1], [2,6,1],
   [1,7,1], [2,7,1],
+  [1,8,1], [2,8,1], // fill shingle arm
+  [1,9,1], [2,9,1], // fill shingle arm
   // Right Arm
   [4,1,1], [5,1,1],
   [4,2,1], [5,2,1], [6,2,1],
@@ -244,6 +249,8 @@ const rawCoordinates: [number, number, number][] = [
   [4,5,1], [5,5,1],
   [4,6,1], [5,6,1],
   [4,7,1], [5,7,1],
+  [4,8,1], [5,8,1], // fill shingle arm
+  [4,9,1], [5,9,1], // fill shingle arm
   // Bridge
   [3,5,1], [3,6,1],
 
@@ -270,6 +277,7 @@ const rawCoordinates: [number, number, number][] = [
 // ─── MODULE-LOAD VALIDATION (fails hard on bad map) ───
 (function validateBoard() {
     const total = rawCoordinates.length;
+    console.debug(`[TileConfig] Pre-validation Board Coord Count: ${total}`);
     if (total !== 144) {
         throw new Error(
             `[TileConfig] FATAL: Board coord count (${total}) is not exactly 144. Found ${total}.`
