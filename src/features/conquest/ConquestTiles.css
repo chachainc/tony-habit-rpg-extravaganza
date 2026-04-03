@@ -135,33 +135,32 @@
 /* ─── BOARD TILES ─────────────────────────────────── */
 .tiles-board-tile {
     position: absolute;
-    width: 60px;
-    height: 84px;
-    background-color: #ffffff;
-    background-image: linear-gradient(180deg, rgba(255,255,255,0.7) 0%, rgba(0,0,0,0.1) 100%);
-    border-radius: 11px;
-    border: 1px solid rgba(0,0,0,0.06);
-    box-shadow: 0px 6px 10px rgba(0,0,0,0.6);
+    /* width and height are injected inline to match TILE_WIDTH/TILE_HEIGHT */
+    background-image: linear-gradient(180deg, rgba(255,255,255,0.8) 0%, rgba(200,200,190,0.3) 100%);
+    border-radius: 6px;
+    border: 1px solid rgba(0,0,0,0.15);
+    box-shadow: 0px 4px 6px rgba(0,0,0,0.4), inset 0px 1px 2px rgba(255,255,255,0.9);
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    padding: 8px;
+    padding: 4px;
     cursor: default;
-    transition: filter 0.15s;
+    transition: filter 0.15s, transform 0.1s;
 }
 .tiles-board-tile.unlocked {
     cursor: pointer;
 }
 .tiles-board-tile.locked {
     filter: brightness(0.65) saturate(0.6);
-    opacity: 0.9;
+    opacity: 0.95;
     cursor: not-allowed;
 }
 .tiles-board-tile.unlocked:hover {
+    filter: brightness(1.1);
     box-shadow:
-        0px 8px 12px rgba(0,0,0,0.65),
-        0 0 12px rgba(96,165,250,0.4);
+        0px 8px 12px rgba(0,0,0,0.5),
+        0 0 14px rgba(255,255,255,0.7);
 }
 .tiles-tile-level {
     position: absolute;
@@ -174,35 +173,36 @@
     pointer-events: none;
 }
 
-/* ─── RIGHT DOCK ──────────────────────────────────── */
+/* ─── BOTTOM DOCK ──────────────────────────────────── */
 .tiles-dock {
     display: flex;
-    flex-direction: column;
+    flex-direction: row;
     align-items: center;
+    justify-content: center;
     gap: 0.5rem;
-    width: 74px;
-    flex-shrink: 0;
-    padding: 0.75rem 0.25rem;
-    background: rgba(0, 20, 40, 0.6);
-    border: 2px solid #00e5ff;
-    border-radius: 12px;
-    box-shadow:
-        0 0 10px #00e5ff,
-        inset 0 0 10px #00e5ff;
+    height: auto;
+    width: 100%;
+    padding: 0.5rem 1rem;
+    background: rgba(0, 10, 20, 0.4);
+    border-top: 1px solid rgba(0, 229, 255, 0.3);
+    box-shadow: inset 0 20px 20px -20px rgba(0,229,255,0.1);
     backdrop-filter: blur(8px);
+    z-index: 50;
+    flex-shrink: 0;
 }
-.tiles-tray-vertical {
+.tiles-tray-horizontal {
     display: flex;
-    flex-direction: column;
-    gap: 6px;
+    flex-direction: row;
+    gap: 4px;
     align-items: center;
+    justify-content: center;
 }
 .tiles-tray-slot {
-    width: 54px;
-    height: 76px;
-    border-radius: 9px;
+    width: 44px; /* Matches TILE_WIDTH */
+    height: 54px; /* Matches TILE_HEIGHT */
+    border-radius: 6px;
     background: rgba(0, 150, 255, 0.05);
-    border: 1px solid rgba(0, 150, 255, 0.4);
+    border: 1px solid rgba(0, 150, 255, 0.3);
     box-shadow: inset 0 0 6px rgba(0, 150, 255, 0.2);
     display: flex;
     align-items: center;
@@ -223,19 +223,20 @@
     50%  { transform: scale(0.9); opacity: 0.8; }
     100% { transform: scale(0); opacity: 0; }
 }
-.tiles-tray-img { width: 36px; height: 36px; object-fit: contain; border-radius: 50%; }
-.tiles-tray-emoji { font-size: 1.4rem; }
+.tiles-tray-img { width: 32px; height: 32px; object-fit: contain; }
+.tiles-tray-emoji { font-size: 1.2rem; }
 .tiles-tray-label {
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 2px;
-    padding-top: 4px;
-    border-top: 1px solid rgba(96,165,250,0.2);
-    width: 100%;
+    justify-content: center;
+    margin-left: 0.5rem;
+    padding-left: 0.5rem;
+    border-left: 1px solid rgba(96,165,250,0.2);
+    height: 100%;
 }
-.tiles-tray-count { font-size: 0.7rem; font-weight: 700; color: #93c5fd; }
-.tiles-tray-left  { font-size: 0.6rem; color: #64748b; }
+.tiles-tray-count { font-size: 0.75rem; font-weight: 800; color: #93c5fd; }
+.tiles-tray-left  { font-size: 0.65rem; color: #64748b; text-transform: uppercase; letter-spacing: 1px; }
 
 /* ─── RESULT OVERLAY ──────────────────────────────── */
 .tiles-result-overlay {

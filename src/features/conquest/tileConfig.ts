@@ -21,22 +21,20 @@ export type Difficulty = 1 | 2 | 3 | 4;
 export const TILE_IMAGES: Record<string, string> = {
   'sword': '/assets/tiles/sword.png',
   'shield': '/assets/tiles/shield.png',
-  'helmet': '/assets/tiles/helmet.png',
-  'crown': '/assets/tiles/crown.png',
-  'gem': '/assets/tiles/gem.png',
-  'scroll': '/assets/tiles/scroll.png',
   'potion': '/assets/tiles/potion.png',
-  'ring': '/assets/tiles/ring.png',
-  'key': '/assets/tiles/key.png',
+  'crown': '/assets/tiles/crown.png',
   'book': '/assets/tiles/book.png',
-  'meat': '/assets/tiles/meat.png',
+  'gem': '/assets/tiles/gem.png',
+  'key': '/assets/tiles/key.png',
+  'scroll': '/assets/tiles/scroll.png',
+  'helmet': '/assets/tiles/helmet.png',
   'coin': '/assets/tiles/coin.png',
-  // legacy fallbacks
-  'chalice': '/assets/tiles/chalice.png',
-  'owl': '/assets/tiles/owl.png',
-  'fox': '/assets/tiles/fox.png',
-  'slime': '/assets/tiles/slime.png',
-  'golem': '/assets/tiles/golem.png',
+  'relic': '/assets/tiles/relic.png',
+  'gauntlet': '/assets/tiles/gauntlet.png',
+  'ring': '/assets/tiles/ring.png',
+  'chest': '/assets/tiles/chest.png',
+  'flame': '/assets/tiles/flame.png',
+  'moon': '/assets/tiles/moon.png',
 };
 
 export const DIFFICULTY_PRESETS = {
@@ -112,25 +110,27 @@ export function getSymbolForType(type: string): TileSymbol {
 }
 
 export const TILE_TYPES = [
-  // CORE
-  'sword', 'shield', 'helmet', 'crown', 'gem', 'scroll', 'potion', 'ring',
-  // SUPPORT
-  'coin', 'key', 'meat', 'book'
+  'sword', 'shield', 'potion', 'crown', 'book', 'gem', 'key', 'scroll',
+  'helmet', 'coin', 'relic', 'gauntlet', 'ring', 'chest', 'flame', 'moon'
 ];
 
 export const TILE_COLORS: Record<string, string> = {
-  'sword': '#e8ecef',  // silver/steel
-  'shield': '#e3f2fd', // blue
-  'helmet': '#efebe9', // bronze
-  'crown': '#fff8e1',  // gold
-  'gem': '#f3e5f5',    // purple
-  'scroll': '#fdf8e3', // tan
-  'potion': '#e8f5e9', // green
-  'ring': '#fff3e0',   // warm gold
-  'coin': '#fffde7',   // yellow
-  'key': '#fbe9e7',    // brass
-  'meat': '#ffebee',   // red
-  'book': '#e8eaf6'    // blue/red tint
+  'sword': '#fafaf8',
+  'shield': '#fafaf8',
+  'potion': '#fafaf8',
+  'crown': '#fafaf8',
+  'book': '#fafaf8',
+  'gem': '#fafaf8',
+  'key': '#fafaf8',
+  'scroll': '#fafaf8',
+  'helmet': '#fafaf8',
+  'coin': '#fafaf8',
+  'relic': '#fafaf8',
+  'gauntlet': '#fafaf8',
+  'ring': '#fafaf8',
+  'chest': '#fafaf8',
+  'flame': '#fafaf8',
+  'moon': '#fafaf8',
 };
 
 export function generateValidBoard(rawCoordinates: [number, number, number][]): TripleTileNode[] {
@@ -201,88 +201,76 @@ export function generateValidBoard(rawCoordinates: [number, number, number][]): 
   return finalBoard;
 }
 
-const rawCoordinates: [number, number, number][] = [
-  // === Z=0: THE BEDROCK BASE (60 Tiles) ===
-  // Left Arm (Jagged outer edge)
-  [1,0,0], [2,0,0],
-  [0,1,0], [1,1,0], [2,1,0],
-  [0,2,0], [1,2,0], [2,2,0],
-  [0,3,0], [1,3,0], [2,3,0],
-  [0,4,0], [1,4,0], [2,4,0],
-  [1,5,0], [2,5,0],
-  [1,6,0], [2,6,0],
-  [1,7,0], [2,7,0],
-  [1,8,0], [2,8,0],
-  [1,9,0], [2,9,0], // filled gap gap to feet
-  // Right Arm (Jagged outer edge)
-  [4,0,0], [5,0,0],
-  [4,1,0], [5,1,0], [6,1,0],
-  [4,2,0], [5,2,0], [6,2,0],
-  [4,3,0], [5,3,0], [6,3,0],
-  [4,4,0], [5,4,0], [6,4,0],
-  [4,5,0], [5,5,0],
-  [4,6,0], [5,6,0],
-  [4,7,0], [5,7,0],
-  [4,8,0], [5,8,0],
-  [4,9,0], [5,9,0], // filled gap to feet
-  // Center Bridge
-  [3,4,0], [3,5,0], [3,6,0], [3,7,0],
-  [3,8,0], [3,9,0], // filled bridge gap
-  // The Feet Bases
-  [1,10,0], [2,10,0], [4,10,0], [5,10,0],
-  [1,11,0], [5,11,0],
-
-  // === Z=1: FIRST SHINGLE LAYER (42 Tiles) ===
-  // Left Arm
-  [1,1,1], [2,1,1],
-  [0,2,1], [1,2,1], [2,2,1],
-  [0,3,1], [1,3,1], [2,3,1],
-  [1,4,1], [2,4,1],
-  [1,5,1], [2,5,1],
-  [1,6,1], [2,6,1],
-  [1,7,1], [2,7,1],
-  [1,8,1], [2,8,1], // fill shingle arm
-  [1,9,1], [2,9,1], // fill shingle arm
-  // Right Arm
-  [4,1,1], [5,1,1],
-  [4,2,1], [5,2,1], [6,2,1],
-  [4,3,1], [5,3,1], [6,3,1],
-  [4,4,1], [5,4,1],
-  [4,5,1], [5,5,1],
-  [4,6,1], [5,6,1],
-  [4,7,1], [5,7,1],
-  [4,8,1], [5,8,1], // fill shingle arm
-  [4,9,1], [5,9,1], // fill shingle arm
-  // Bridge
-  [3,5,1], [3,6,1],
-
-  // === Z=2: THE RIDGES (18 Tiles) ===
-  [1,2,2], [2,2,2], [4,2,2], [5,2,2],
-  [1,3,2], [2,3,2], [4,3,2], [5,3,2],
-  [1,4,2], [2,4,2], [4,4,2], [5,4,2],
-  [2,5,2], [4,5,2],
-  [2,6,2], [4,6,2],
-  [3,5,2], [3,6,2], // Bridge Peaks
-
-  // === Z=3 TO Z=6: THE ELEVATOR SHAFTS (24 Tiles) ===
-  // These are the deep, isolated traps at the bottom of the board
-  // Left Inner Foot
-  [2,10,1], [2,10,2], [2,10,3],
-  // Right Inner Foot
-  [4,10,1], [4,10,2], [4,10,3],
-  // Left Outer Foot (Deepest)
-  [1,11,1], [1,11,2], [1,11,3], [1,11,4], [1,11,5], [1,11,6], [1,11,7], [1,11,8], [1,11,9],
-  // Right Outer Foot (Deepest)
-  [5,11,1], [5,11,2], [5,11,3], [5,11,4], [5,11,5], [5,11,6], [5,11,7], [5,11,8], [5,11,9]
+const blueprint = [
+  // Z = 0 (168)
+  [
+    "    XXXXXXXXXXXXXXXX    ",
+    "  XXXXXXXXXXXXXXXXXXXX  ",
+    "XXXXXXXXXXXXXXXXXXXXXXXX",
+    "XXXXXXXXXXXXXXXXXXXXXXXX",
+    "XXXXXXXXXXXXXXXXXXXXXXXX",
+    "XXXXXXXXXXXXXXXXXXXXXXXX",
+    "  XXXXXXXXXXXXXXXXXXXX  ",
+    "    XXXXXXXXXXXXXXXX    ",
+  ],
+  // Z = 1 (84)
+  [
+    "                        ",
+    "       XXXXXXXXXX       ",
+    "     XXXXXXXXXXXXXX     ",
+    "   XXXXXXXXXXXXXXXXXX   ",
+    "   XXXXXXXXXXXXXXXXXX   ",
+    "     XXXXXXXXXXXXXX     ",
+    "       XXXXXXXXXX       ",
+    "                        ",
+  ],
+  // Z = 2 (28)
+  [
+    "                        ",
+    "                        ",
+    "         XXXXXX         ",
+    "        XXXXXXXX        ",
+    "        XXXXXXXX        ",
+    "         XXXXXX         ",
+    "                        ",
+    "                        ",
+  ],
+  // Z = 3 (8)
+  [
+    "                        ",
+    "                        ",
+    "                        ",
+    "          XXXX          ",
+    "          XXXX          ",
+    "                        ",
+    "                        ",
+    "                        ",
+  ]
 ];
+
+function parseBlueprint(bp: string[][]): [number, number, number][] {
+    const coords: [number, number, number][] = [];
+    bp.forEach((layer, z) => {
+        layer.forEach((row, y) => {
+            for (let x = 0; x < row.length; x++) {
+                if (row[x] === 'X') {
+                    coords.push([x, y, z]);
+                }
+            }
+        });
+    });
+    return coords;
+}
+
+const rawCoordinates: [number, number, number][] = parseBlueprint(blueprint);
 
 // ─── MODULE-LOAD VALIDATION (fails hard on bad map) ───
 (function validateBoard() {
     const total = rawCoordinates.length;
     console.debug(`[TileConfig] Pre-validation Board Coord Count: ${total}`);
-    if (total !== 144) {
+    if (total !== 288) {
         throw new Error(
-            `[TileConfig] FATAL: Board coord count (${total}) is not exactly 144. Found ${total}.`
+            `[TileConfig] FATAL: Board coord count (${total}) is not exactly 288. Found ${total}.`
         );
     }
     // Post-assign validation happens lazily on first use via trueTripleTileMap
@@ -360,17 +348,19 @@ export const bedrockDivots: { x: number; y: number }[] = (() => {
     return divots;
 })();
 
-// ─── LOCKING LOGIC (symbolic, no geometry) ────────────
+// ─── LOCKING LOGIC (true mahjong geometry) ────────────
 export function isDirectStackLocked(tile: TripleTileNode, tiles: TripleTileNode[]): boolean {
-    return tiles.some(b => b.id !== tile.id && b.x === tile.x && b.y === tile.y && b.z > tile.z);
+    return tiles.some(b => b.x === tile.x && b.y === tile.y && b.z > tile.z);
 }
 
-export function isShingleLocked(tile: TripleTileNode, tiles: TripleTileNode[]): boolean {
-    return tiles.some(b => b.id !== tile.id && b.x === tile.x && b.y === tile.y + 1 && b.z >= tile.z);
+export function isLeftRightBlocked(tile: TripleTileNode, tiles: TripleTileNode[]): boolean {
+    const hasLeft  = tiles.some(b => b.z === tile.z && b.y === tile.y && b.x === tile.x - 1);
+    const hasRight = tiles.some(b => b.z === tile.z && b.y === tile.y && b.x === tile.x + 1);
+    return hasLeft && hasRight;
 }
 
 export function isTileLocked(tile: TripleTileNode, tiles: TripleTileNode[]): boolean {
-    return isDirectStackLocked(tile, tiles) || isShingleLocked(tile, tiles);
+    return isDirectStackLocked(tile, tiles) || isLeftRightBlocked(tile, tiles);
 }
 
 // ─── LEGACY COMPAT (generateBoard still used by store) ─

@@ -26,8 +26,8 @@ interface ConquestTilesProps {
 }
 
 // ─── CONSTANTS ────────────────────────────────────────
-const TILE_WIDTH   = 60;
-const TILE_HEIGHT  = 84;
+const TILE_WIDTH   = 44;
+const TILE_HEIGHT  = 54;
 const TRAY_CAPACITY = 7;
 
 // ─── COMPONENT ────────────────────────────────────────
@@ -192,9 +192,9 @@ export const ConquestTiles = ({ onComplete, onClose, canPlay: _canPlay, canPlayI
 
     // ─── RENDER HELPERS ───────────────────────────────
     const tileLeft   = (t: TripleTileNode) => t.x * TILE_WIDTH;
-    const tileTop    = (t: TripleTileNode) => t.y * (TILE_HEIGHT * 0.35);
+    const tileTop    = (t: TripleTileNode) => t.y * TILE_HEIGHT;
     const tileZ      = (t: TripleTileNode) => t.z * 1000 + t.y * 10 + t.x;
-    const tileMargin = (t: TripleTileNode) => `${-(t.z * 5)}px`;
+    const tileMargin = (t: TripleTileNode) => `${-(t.z * 3)}px`; // Premium thin offset
 
     // Stable sort: z asc, y asc, id asc
     const sortedBoard = [...board].sort((a, b) =>
@@ -265,102 +265,99 @@ export const ConquestTiles = ({ onComplete, onClose, canPlay: _canPlay, canPlayI
                 </div>
 
                 {/* CENTER: Board */}
-                <div className="tiles-board-container">
-                    <div className="tiles-board" style={{ width: boardWidth, height: boardHeight, position: 'relative' }}>
+                {/* RIGHT: Board and Dock Block */}
+                <div style={{ display: 'flex', flexDirection: 'column', flex: 1, minWidth: 0 }}>
+                    {/* CENTER: Board */}
+                    <div className="tiles-board-container">
+                        <div className="tiles-board" style={{ width: boardWidth, height: boardHeight, position: 'relative' }}>
 
-                        {/* Divots — bedrock ghost grid */}
-                        {bedrockDivots.map(d => (
-                            <div
-                                key={`divot-${d.x}-${d.y}`}
-                                className="tiles-divot"
-                                style={{
-                                    left: d.x * TILE_WIDTH - offsetX,
-                                    top:  d.y * (TILE_HEIGHT * 0.35) - offsetY,
-                                    width: TILE_WIDTH,
-                                    height: TILE_HEIGHT,
-                                }}
-                            />
-                        ))}
-
-                        {/* Active tiles */}
-                        {sortedBoard.map(tile => {
-                            const locked  = isTileLocked(tile, board);
-                            const left    = tileLeft(tile) - offsetX;
-                            const top     = tileTop(tile) - offsetY;
-
-                            return (
-                                <motion.div
-                                    key={tile.id}
-                                    layoutId={tile.id}
-                                    className={`tiles-board-tile ${locked ? 'locked' : 'unlocked'}`}
+                            {/* Divots — bedrock ghost grid */}
+                            {bedrockDivots.map(d => (
+                                <div
+                                    key={`divot-${d.x}-${d.y}`}
+                                    className="tiles-divot"
                                     style={{
-                                        left,
-                                        top,
-                                        marginTop: tileMargin(tile),
-                                        zIndex: tileZ(tile),
+                                        left: d.x * TILE_WIDTH - offsetX,
+                                        top:  d.y * TILE_HEIGHT - offsetY,
                                         width: TILE_WIDTH,
                                         height: TILE_HEIGHT,
-                                        backgroundColor: TILE_COLORS[tile.type],
                                     }}
-                                    onClick={() => !locked && selectTile(tile)}
-                                    layout
-                                    initial={{ scale: 0.9, opacity: 0 }}
-                                    animate={{ scale: 1, opacity: 1, y: 0 }}
-                                    exit={{ scale: 0.8, opacity: 0 }}
-                                    whileHover={!locked ? { y: -2, zIndex: 9999 } : {}}
-                                    whileTap={!locked ? { scale: 0.96, zIndex: 9999 } : {}}
-                                    transition={{ duration: 0.2, ease: "easeOut" }}
-                                >
-                                    <img src={TILE_IMAGES[tile.type]} alt={tile.type} style={{ width: '80%', height: '80%', objectFit: 'contain', pointerEvents: 'none' }} />
-                                    <div className="tiles-tile-level">{tile.z + 1}</div>
-                                </motion.div>
-                            );
-                        })}
-                    </div>
-                </div>
+                                />
+                            ))}
 
-                {/* RIGHT: Dock */}
-                <div className="tiles-dock">
-                    <div className="tiles-tray-vertical">
-                        {Array.from({ length: TRAY_CAPACITY }).map((_, i) => {
-                            const dockTile  = dock[i];
-                            const isClearing = dockTile ? clearingIds.has(dockTile.id) : false;
+                            {/* Active tiles */}
+                            {sortedBoard.map(tile => {
+                                const locked  = isTileLocked(tile, board);
+                                const left    = tileLeft(tile) - offsetX;
+                                const top     = tileTop(tile) - offsetY;
 
-                            return (
-                                <div key={i} className={`tiles-tray-slot ${dockTile ? 'filled' : 'empty'} ${isClearing ? 'clearing' : ''}`}>
-                                    <AnimatePresence>
-                                        {dockTile && (
-                                            <motion.div
-                                                key={dockTile.id}
-                                                layoutId={dockTile.id}
-                                                className="tiles-board-tile dock-tile-override"
-                                                layout
-                                                initial={{ scale: 1.1, translateY: -10 }}
-                                                animate={{ scale: 1, opacity: 1, translateY: 0 }}
-                                                exit={{ scale: 0, opacity: 0, transition: { duration: 0.15 } }}
-                                                transition={{ type: 'spring', stiffness: 350, damping: 25 }}
-                                                style={{ 
-                                                    width: '54px', 
-                                                    height: '76px', 
-                                                    position: 'absolute',
-                                                    margin: 0,
-                                                    pointerEvents: 'none',
-                                                    backgroundColor: TILE_COLORS[dockTile.type],
-                                                }}
-                                            >
-                                                <img src={TILE_IMAGES[dockTile.type]} alt={dockTile.type} style={{ width: '80%', height: '80%', objectFit: 'contain', pointerEvents: 'none' }} />
-                                            </motion.div>
-                                        )}
-                                    </AnimatePresence>
-                                </div>
-                            );
-                        })}
+                                return (
+                                    <motion.div
+                                        key={tile.id}
+                                        layoutId={tile.id}
+                                        className={`tiles-board-tile ${locked ? 'locked' : 'unlocked'}`}
+                                        style={{
+                                            left,
+                                            top,
+                                            marginTop: tileMargin(tile),
+                                            zIndex: tileZ(tile),
+                                            width: TILE_WIDTH,
+                                            height: TILE_HEIGHT,
+                                            backgroundColor: TILE_COLORS[tile.type],
+                                        }}
+                                        onClick={() => !locked && selectTile(tile)}
+                                        layout
+                                        initial={{ scale: 0.9, opacity: 0 }}
+                                        animate={{ scale: 1, opacity: 1, y: 0 }}
+                                        exit={{ scale: 0.8, opacity: 0 }}
+                                        whileHover={!locked ? { y: -2, zIndex: 9999 } : {}}
+                                        whileTap={!locked ? { scale: 0.96, zIndex: 9999 } : {}}
+                                        transition={{ duration: 0.2, ease: "easeOut" }}
+                                    >
+                                        <img src={TILE_IMAGES[tile.type]} alt={tile.type} style={{ width: '80%', height: '80%', objectFit: 'contain', pointerEvents: 'none', filter: 'drop-shadow(0 2px 2px rgba(0,0,0,0.1))' }} />
+                                    </motion.div>
+                                );
+                            })}
+                        </div>
                     </div>
-                    <div className="tiles-tray-label">
-                        <div className="tiles-tray-count">{dock.length}/{TRAY_CAPACITY}</div>
-                        <span className="tiles-tray-left" style={{ opacity: dock.length >= TRAY_CAPACITY - 2 ? 1 : 0.4 }}>
-                            {TRAY_CAPACITY - dock.length === 0 ? 'FULL' : `${TRAY_CAPACITY - dock.length} left`}
-                        </span>
+
+                    {/* BOTTOM: Dock */}
+                    <div className="tiles-dock">
+                        <div className="tiles-tray-horizontal">
+                            {Array.from({ length: TRAY_CAPACITY }).map((_, i) => {
+                                const dockTile  = dock[i];
+                                const isClearing = dockTile ? clearingIds.has(dockTile.id) : false;
+
+                                return (
+                                    <div key={i} className={`tiles-tray-slot ${dockTile ? 'filled' : 'empty'} ${isClearing ? 'clearing' : ''}`}>
+                                        <AnimatePresence>
+                                            {dockTile && (
+                                                <motion.div
+                                                    key={dockTile.id}
+                                                    layoutId={dockTile.id}
+                                                    className="tiles-board-tile dock-tile-override"
+                                                    layout
+                                                    initial={{ scale: 1.1, translateY: -10 }}
+                                                    animate={{ scale: 1, opacity: 1, translateY: 0 }}
+                                                    exit={{ scale: 0, opacity: 0, transition: { duration: 0.15 } }}
+                                                    transition={{ type: 'spring', stiffness: 350, damping: 25 }}
+                                                    style={{ 
+                                                        width: `${TILE_WIDTH}px`, 
+                                                        height: `${TILE_HEIGHT}px`, 
+                                                        position: 'absolute',
+                                                        margin: 0,
+                                                        pointerEvents: 'none',
+                                                        backgroundColor: TILE_COLORS[dockTile.type],
+                                                    }}
+                                                >
+                                                    <img src={TILE_IMAGES[dockTile.type]} alt={dockTile.type} style={{ width: '80%', height: '80%', objectFit: 'contain', pointerEvents: 'none', filter: 'drop-shadow(0 2px 2px rgba(0,0,0,0.1))' }} />
+                                                </motion.div>
+                                            )}
+                                        </AnimatePresence>
+                                    </div>
+                                );
+                            })}
+                        </div>
                     </div>
                 </div>
             </div>
