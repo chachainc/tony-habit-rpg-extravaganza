@@ -192,7 +192,7 @@ export const ConquestTiles = ({ onComplete, onClose, canPlay: _canPlay, canPlayI
     // ─── RENDER HELPERS ───────────────────────────────
     const tileLeft   = (t: TripleTileNode) => t.x * TILE_WIDTH;
     const tileTop    = (t: TripleTileNode) => t.y * (TILE_HEIGHT * 0.5);
-    const tileZ      = (t: TripleTileNode) => t.z * 100 + t.y * 10 + t.x;
+    const tileZ      = (t: TripleTileNode) => t.z * 1000 + t.y * 10 + t.x;
     const tileMargin = (t: TripleTileNode) => `${-(t.z * 6)}px`;
 
     // Stable sort: z asc, y asc, id asc
@@ -306,15 +306,17 @@ export const ConquestTiles = ({ onComplete, onClose, canPlay: _canPlay, canPlayI
                                     initial={{ scale: 0.9, opacity: 0 }}
                                     animate={{ scale: 1, opacity: 1, y: 0 }}
                                     exit={{ scale: 0.8, opacity: 0 }}
-                                    whileTap={!locked ? { y: -6, scale: 1.02, zIndex: 9999 } : {}}
+                                    whileHover={!locked ? { y: -2, zIndex: 9999 } : {}}
+                                    whileTap={!locked ? { scale: 0.96, zIndex: 9999 } : {}}
                                     transition={{ duration: 0.2, ease: "easeOut" }}
                                 >
-                                    {sym.imageSrc ? (
-                                        <img src={sym.imageSrc} alt={sym.label} className="tiles-tile-img" />
-                                    ) : (
-                                        <span className="tiles-tile-emoji">{sym.emoji}</span>
-                                    )}
-                                    <span className="tiles-tile-label">{sym.label}</span>
+                                    <div className="tiles-tile-icon-bg">
+                                        {sym.imageSrc ? (
+                                            <img src={sym.imageSrc} alt={sym.label} className="tiles-tile-img" />
+                                        ) : (
+                                            <span className="tiles-tile-emoji">{sym.emoji}</span>
+                                        )}
+                                    </div>
                                 </motion.div>
                             );
                         })}
@@ -343,20 +345,20 @@ export const ConquestTiles = ({ onComplete, onClose, canPlay: _canPlay, canPlayI
                                                 exit={{ scale: 0, opacity: 0, transition: { duration: 0.15 } }}
                                                 transition={{ type: 'spring', stiffness: 350, damping: 25 }}
                                                 style={{ 
-                                                    width: '48px', 
-                                                    height: '68px', 
+                                                    width: '54px', 
+                                                    height: '76px', 
                                                     position: 'absolute',
                                                     margin: 0,
-                                                    boxShadow: '0 2px 4px rgba(0,0,0,0.4)',
                                                     pointerEvents: 'none'
                                                 }}
                                             >
-                                                {sym.imageSrc ? (
-                                                    <img src={sym.imageSrc} alt={sym.label} className="tiles-tile-img" style={{ width: '36px', height: '36px' }} />
-                                                ) : (
-                                                    <span className="tiles-tile-emoji" style={{ fontSize: '1.6rem' }}>{sym.emoji}</span>
-                                                )}
-                                                <span className="tiles-tile-label" style={{ fontSize: '0.45rem' }}>{sym.label}</span>
+                                                <div className="tiles-tile-icon-bg" style={{ width: '40px', height: '40px' }}>
+                                                    {sym.imageSrc ? (
+                                                        <img src={sym.imageSrc} alt={sym.label} className="tiles-tile-img" style={{ width: '32px', height: '32px' }} />
+                                                    ) : (
+                                                        <span className="tiles-tile-emoji" style={{ fontSize: '1.4rem' }}>{sym.emoji}</span>
+                                                    )}
+                                                </div>
                                             </motion.div>
                                         )}
                                     </AnimatePresence>
