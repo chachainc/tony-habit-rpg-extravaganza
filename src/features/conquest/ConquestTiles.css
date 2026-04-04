@@ -1,5 +1,6 @@
 /* ══════════════════════════════════════════════════════
-   CONQUEST TILES — Mahjong Board CSS
+   CONQUEST TILES — Premium Mahjong Board CSS
+   Dense Physical Tiles · Battlefield BG · Full Animations
    ══════════════════════════════════════════════════════ */
 
 /* ─── ROOT ────────────────────────────────────────────── */
@@ -9,308 +10,424 @@
     position: fixed;
     inset: 0;
     z-index: 10000;
-    background: radial-gradient(circle at 30% 20%, #1a1740 0%, #0d1422 45%, #020617 100%);
-    background-color: #020617;
+    background-image:
+        radial-gradient(ellipse 55% 70% at 50% 50%, rgba(2, 6, 23, 0.60) 25%, transparent 100%),
+        linear-gradient(rgba(2, 6, 23, 0.20), rgba(2, 6, 23, 0.20)),
+        url('/assets/conquest-bg.png');
+    background-size: cover;
+    background-position: center center;
+    background-repeat: no-repeat;
     overflow: hidden;
+    font-family: 'Inter', system-ui, sans-serif;
 }
 
-/* ─── TOPBAR (includes inline power buttons) ──────────── */
+/* ─── PORTRAIT LOCK ───────────────────────────────────── */
+.tiles-portrait-lock {
+    display: none;
+    position: absolute;
+    inset: 0;
+    background: rgba(2, 6, 23, 0.97);
+    z-index: 99999;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    text-align: center;
+    gap: 0.75rem;
+}
+.tiles-portrait-lock h2 { font-size: 1.4rem; margin: 0; }
+.tiles-portrait-lock p  { font-size: 0.9rem; color: #94a3b8; margin: 0; }
+
+@media (orientation: portrait) {
+    .tiles-portrait-lock { display: flex; }
+    .tiles-topbar, .tiles-main-wrap, .tiles-dock, .tiles-side-panel {
+        display: none !important;
+    }
+}
+.portrait-lock-icon { font-size: 4rem; animation: rotSpin 3s linear infinite; }
+@keyframes rotSpin { 100% { transform: rotate(360deg); } }
+
+/* ─── TOPBAR ──────────────────────────────────────────── */
 .tiles-topbar {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 0.4rem 0.75rem;
-    background: rgba(8, 14, 30, 0.95);
-    border-bottom: 1px solid rgba(59, 130, 246, 0.2);
+    padding: 0.35rem 0.85rem;
+    background: rgba(4, 8, 20, 0.88);
+    border-bottom: 1px solid rgba(59, 130, 246, 0.15);
+    backdrop-filter: blur(8px);
     flex-shrink: 0;
-    gap: 0.5rem;
+    height: 40px;
 }
 .tiles-topbar-label {
-    font-size: 0.78rem;
-    font-weight: 700;
-    color: #93c5fd;
-    text-transform: uppercase;
-    letter-spacing: 0.07em;
-    white-space: nowrap;
+    font-size: 0.75rem; font-weight: 700;
+    color: #7dd3fc; text-transform: uppercase; 
+    letter-spacing: 0.14em;
+    text-shadow: 0 0 10px rgba(125, 211, 252, 0.45);
 }
 .tiles-topbar-score {
-    font-size: 0.9rem;
-    font-weight: 800;
-    color: #fbbf24;
-    text-shadow: 0 0 8px rgba(251, 191, 36, 0.5);
+    font-size: 0.88rem; font-weight: 800;
+    color: #fbbf24; text-shadow: 0 0 8px rgba(251, 191, 36, 0.4);
 }
 .tiles-topbar-close {
-    background: rgba(239, 68, 68, 0.15);
-    border: 1px solid rgba(239, 68, 68, 0.35);
-    border-radius: 6px;
-    color: #f87171;
-    font-size: 0.85rem;
-    width: 26px;
-    height: 26px;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+    background: rgba(239, 68, 68, 0.12); border: 1px solid rgba(239, 68, 68, 0.3);
+    border-radius: 6px; color: #f87171; font-size: 0.82rem;
+    width: 24px; height: 24px; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
     transition: background 0.15s;
 }
-.tiles-topbar-close:hover { background: rgba(239,68,68,0.3); }
+.tiles-topbar-close:hover { background: rgba(239,68,68,0.28); }
 
-/* ─── INLINE POWER BUTTONS ───────────────────────────── */
-.tiles-powers-inline {
-    display: flex;
-    flex-direction: row;
-    align-items: center;
-    gap: 0.5rem;
+/* ─── LAYOUT ──────────────────────────────────────────── */
+.tiles-main-wrap {
+    display: flex; flex-direction: row;
+    flex: 1; min-height: 0; overflow: hidden;
 }
-.tiles-power-item {
-    display: flex;
-    flex-direction: row;
-    align-items: center;
-    gap: 3px;
-    background: rgba(30, 58, 138, 0.3);
-    border: 1px solid rgba(96, 165, 250, 0.25);
-    border-radius: 8px;
-    padding: 2px 6px 2px 4px;
+.tiles-content-area {
+    display: flex; flex-direction: column;
+    flex: 1; min-height: 0;
+    position: relative; overflow: hidden;
 }
-.tiles-power-btn {
-    width: 30px;
-    height: 30px;
-    border-radius: 7px;
-    background: rgba(29, 78, 216, 0.7);
-    border: 1px solid rgba(96, 165, 250, 0.5);
-    color: #fff;
-    font-size: 0.85rem;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: all 0.13s;
-}
-.tiles-power-btn:hover:not(:disabled) { background: rgba(37,99,235,0.9); transform: scale(1.05); }
-.tiles-power-btn:disabled { opacity: 0.28; cursor: not-allowed; }
-.tiles-power-count {
-    font-size: 0.68rem;
-    font-weight: 800;
-    color: #93c5fd;
-    min-width: 12px;
-    text-align: center;
-}
-.tiles-power-buy {
-    font-size: 0.6rem;
-    background: rgba(34, 197, 94, 0.2);
-    border: 1px solid rgba(34, 197, 94, 0.4);
-    border-radius: 4px;
-    color: #86efac;
-    cursor: pointer;
-    padding: 1px 4px;
-    line-height: 1;
-}
-
-/* ─── BOARD CONTAINER ────────────────────────────────── */
 .tiles-board-container {
     flex: 1;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    overflow: auto;
-    padding: 6px 4px;
+    display: flex; align-items: center; justify-content: center;
+    overflow: hidden;
+    padding: 44px 20px 66px 20px;
     min-height: 0;
 }
-
-/* ─── BOARD ──────────────────────────────────────────── */
-.tiles-board {
-    position: relative;
-    overflow: visible;
+.tiles-board-scaler {
+    display: flex; align-items: center; justify-content: center;
+    transform-origin: center center;
 }
+.tiles-board { position: relative; overflow: visible; }
 
-/* ─── GHOST DIVOTS ───────────────────────────────────── */
-.tiles-divot {
+/* ─── BOARD FOCUS SHADOW / GLOW ───────────────────────── */
+.tiles-board::after {
+    content: '';
     position: absolute;
-    background: rgba(255, 255, 255, 0.03);
-    border-radius: 4px;
-    border: 1px solid rgba(255, 255, 255, 0.05);
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    width: 160%; height: 140%;
+    border-radius: 50%;
+    background: radial-gradient(
+        ellipse at center,
+        rgba(200, 230, 255, 0.08) 0%,   /* faint low-intensity blue/white glow */
+        rgba(3, 7, 15, 0.45) 35%,       /* dark dimming shadow behind board */
+        rgba(3, 7, 15, 0.15) 60%,
+        transparent 75%
+    );
     pointer-events: none;
+    z-index: 0;
+    filter: blur(8px);
 }
 
-/* ─── MAHJONG TILES ──────────────────────────────────── */
+/* ══════════════════════════════════════════════════════
+   TILE CARD SYSTEM — Dense Physical Mahjong Piece
+   The tile IS the card. Image fills the face.
+   No floating circular frame.
+   ══════════════════════════════════════════════════════ */
+
 .tiles-board-tile {
     position: absolute;
-    /* Landscape Mahjong tile — ivory with 3D block depth */
-    background: linear-gradient(165deg, #f8f5ec 0%, #ede8d6 100%);
-    border-radius: 4px;
-    border: 1px solid rgba(0, 0, 0, 0.22);
-    /* The key visual: solid bottom "side" of the tile block */
+    border-radius: 5px;
+    overflow: hidden;
+
+    /* Light parchment / stone surface — real Mahjong tile feel */
+    background: linear-gradient(
+        175deg,
+        #f5eedf 0%,    /* warm top highlight */
+        #ece4d0 18%,   /* main stone face */
+        #e4dac6 70%,   /* lower face */
+        #d9cfba 100%   /* bottom shadow edge */
+    );
+
+    /* Thin border — slightly amber-brown, like bone/ivory */
+    border: 1px solid rgba(140, 110, 70, 0.28);
+
+    /* Soft physical depth — shadow UNDER tile, tiny bevel top */
     box-shadow:
-        0 4px 0px #b8a87a,           /* tile physical side / thickness */
-        0 5px 10px rgba(0,0,0,0.5); /* drop shadow on board surface */
+        inset 0 1px 0 rgba(255,255,255,0.70),   /* top bevel highlight */
+        inset 0 -1px 0 rgba(0,0,0,0.12),          /* bottom inner shadow */
+        0 3px 7px  rgba(0,0,0,0.50),
+        0 1px 2px  rgba(0,0,0,0.35);
+
     display: flex;
     align-items: center;
     justify-content: center;
-    padding: 2px;
     cursor: default;
-    transition: filter 0.12s, transform 0.1s;
-    overflow: hidden;
+    will-change: transform, box-shadow;
+    transition:
+        box-shadow 0.14s ease-out,
+        border-color 0.14s ease-out;
 }
+
+/* Top bevel — light catching the top edge of the stone tile */
+.tiles-board-tile::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 28%;
+    background: linear-gradient(180deg, rgba(255,255,255,0.30) 0%, transparent 100%);
+    border-radius: 4px 4px 0 0;
+    pointer-events: none;
+    z-index: 3;
+}
+
+/* ─── UNLOCKED (PLAYABLE) TILE ──────────────────────── */
 .tiles-board-tile.unlocked {
     cursor: pointer;
+    /* Warmer/brighter parchment for playable tiles */
+    background: linear-gradient(
+        175deg,
+        #faf4e6 0%,
+        #f0e9d5 18%,
+        #e8dfc9 70%,
+        #ddd4bc 100%
+    );
+    animation: unlockedIdleGlow 3s ease-in-out infinite;
 }
+
+@keyframes unlockedIdleGlow {
+    0%, 100% {
+        box-shadow:
+            inset 0 1px 0 rgba(255,255,255,0.70),
+            inset 0 -1px 0 rgba(0,0,0,0.12),
+            0 3px 7px rgba(0,0,0,0.50),
+            0 1px 2px rgba(0,0,0,0.35);
+    }
+    50% {
+        box-shadow:
+            inset 0 1px 0 rgba(255,255,255,0.70),
+            inset 0 -1px 0 rgba(0,0,0,0.12),
+            0 3px 7px rgba(0,0,0,0.50),
+            0 0 8px rgba(255,220,140,0.20),
+            0 1px 2px rgba(0,0,0,0.35);
+    }
+}
+
+/* HOVER: lift + very faint amber glow */
 .tiles-board-tile.unlocked:hover {
-    filter: brightness(1.08);
-    transform: translateY(-2px);
+    animation: none;
+    border-color: rgba(200, 160, 80, 0.55);
     box-shadow:
-        0 6px 0px #b8a87a,
-        0 8px 16px rgba(0, 0, 0, 0.6),
-        0 0 12px rgba(255, 220, 100, 0.3);
+        inset 0 1px 0 rgba(255,255,255,0.80),
+        inset 0 -1px 0 rgba(0,0,0,0.12),
+        0 0 0 1px rgba(200,160,80,0.40),
+        0 0 12px rgba(200,160,80,0.18),
+        0 6px 14px rgba(0,0,0,0.55);
 }
+
+/* ─── BLOCKED TILE ──────────────────────────────────── */
+/* Desaturated cool stone — readable but clearly inactive */
 .tiles-board-tile.locked {
-    filter: brightness(0.6) saturate(0.45);
-    cursor: not-allowed;
-    /* Locked tiles show no raised depth */
-    box-shadow: 0 2px 0px #8a7a5a, 0 3px 6px rgba(0,0,0,0.4);
+    cursor: pointer;
+    background: linear-gradient(
+        175deg,
+        #8a95a0 0%,
+        #7c8793 18%,
+        #717c88 70%,
+        #68737e 100%
+    );
+    border-color: rgba(40, 50, 60, 0.35);
+    box-shadow:
+        inset 0 1px 0 rgba(255,255,255,0.18),
+        0 2px 4px rgba(0,0,0,0.45);
+    filter: none;
+    opacity: 0.72;
+    animation: none;
 }
 
-/* ─── TILE IMAGE ─────────────────────────────────────── */
-.tiles-tile-img {
-    width: 78%;
-    height: 78%;
-    object-fit: contain;
-    pointer-events: none;
-    filter: drop-shadow(0 1px 1px rgba(0,0,0,0.2));
+/* ─── BUMP ANIMATION (blocked tile tap feedback) ─────── */
+.tiles-board-tile.bumping {
+    animation: tileBump 200ms ease-out forwards !important;
+}
+@keyframes tileBump {
+    0%   { transform: translateY(0)   scale(1);    }
+    28%  { transform: translateY(-5px) scale(0.97); }
+    65%  { transform: translateY(1px)  scale(1);    }
+    100% { transform: translateY(0)   scale(1);    }
 }
 
-/* ─── BOTTOM DOCK ────────────────────────────────────── */
-.tiles-dock {
-    display: flex;
-    flex-direction: row;
-    align-items: center;
-    justify-content: center;
-    gap: 0.4rem;
-    padding: 6px 10px;
-    background: rgba(2, 6, 20, 0.6);
-    border-top: 1px solid rgba(59, 130, 246, 0.15);
-    backdrop-filter: blur(10px);
-    flex-shrink: 0;
+/* ─── STACK REVEAL — tile that just became unlocked ──── */
+.tiles-board-tile.revealed {
+    animation: tileReveal 200ms ease-out forwards !important;
 }
-.tiles-tray-row {
-    display: flex;
-    flex-direction: row;
-    gap: 3px;
-    align-items: center;
+@keyframes tileReveal {
+    0%   { transform: translateY(5px); filter: brightness(0.7); }
+    100% { transform: translateY(0);   filter: brightness(1);   }
 }
-.tiles-tray-slot {
-    /* Sized to match TILE_W × TILE_H — dock uses same tile dimensions */
-    width: 44px;
-    height: 32px;
-    border-radius: 4px;
-    background: rgba(30, 60, 120, 0.12);
-    border: 1px solid rgba(96, 165, 250, 0.18);
-    display: flex;
-    align-items: center;
-    justify-content: center;
+
+/* ─── HINT TILE (match available pulse) ──────────────── */
+.tiles-board-tile.hinted {
+    animation: tileHintPulse 1.2s ease-in-out infinite !important;
+}
+/* Amber/gold hint pulse — matches parchment tile palette */
+@keyframes tileHintPulse {
+    0%, 100% { border-color: rgba(180,130,40,0.0); box-shadow: 0 3px 7px rgba(0,0,0,0.50); }
+    50%       {
+        border-color: rgba(210,160,40,0.90);
+        box-shadow:
+            0 0 0 2px rgba(210,160,40,0.75),
+            0 0 14px rgba(210,160,40,0.40),
+            0 3px 7px rgba(0,0,0,0.50);
+    }
+}
+
+/* ══════════════════════════════════════════════════════
+   ICON AREA — fully transparent container
+   The tile gradient IS the Mahjong piece face.
+   ══════════════════════════════════════════════════════ */
+
+.tiles-inner-frame {
     position: relative;
-    transition: background 0.18s;
+    z-index: 2;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 94%;
+    height: 92%;
+    background: transparent;
+    border: none;
+    box-shadow: none;
 }
-.tiles-tray-slot.filled { background: transparent; border-color: transparent; }
-.tiles-tray-slot.clearing { animation: tray-clear 0.2s ease-out forwards; }
-@keyframes tray-clear {
-    0%  { transform: scale(1); opacity: 1; }
-    50% { transform: scale(0.85); opacity: 0.7; }
-    100%{ transform: scale(0); opacity: 0; }
+
+/* Icon fills 90% — symbol dominates, no padding/float */
+.tiles-tile-img {
+    width: 90%;
+    height: 90%;
+    object-fit: contain;
+    /* Crisp shadow for visibility on light parchment */
+    filter:
+        drop-shadow(0 1px 3px rgba(0,0,0,0.55))
+        drop-shadow(0 0 1px rgba(0,0,0,0.30));
+    pointer-events: none;
 }
-.tiles-dock-meta {
+
+/* ══════════════════════════════════════════════════════
+   DOCK / TRAY
+   ══════════════════════════════════════════════════════ */
+.tiles-dock {
+    position: absolute;
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%);
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 1px;
-    padding-left: 8px;
-    border-left: 1px solid rgba(96, 165, 250, 0.12);
-    min-width: 36px;
+    gap: 4px;
+    padding: 10px 18px 12px;
+    /* Brightened tray area for better visibility */
+    background: rgba(16, 26, 44, 0.95);
+    border: 1px solid rgba(125, 211, 252, 0.25);
+    border-bottom: none;
+    border-radius: 12px 12px 0 0;
+    /* Soft top glow to make it an active UI zone */
+    box-shadow: 
+        0 -4px 24px rgba(0,0,0,0.7),
+        0 0 15px rgba(125, 211, 252, 0.15) inset,
+        0 -2px 12px rgba(125, 211, 252, 0.20);
+    z-index: 200;
+    backdrop-filter: blur(14px);
 }
-.tiles-tray-count {
-    font-size: 0.68rem;
-    font-weight: 800;
-    color: #93c5fd;
+.tiles-tray-row {
+    display: flex; flex-direction: row;
+    gap: 4px; align-items: center;
 }
-.tiles-tray-left {
-    font-size: 0.58rem;
-    color: #475569;
-    text-transform: uppercase;
-    letter-spacing: 0.04em;
+.tiles-tray-slot {
+    position: relative;
+    width: 44px; height: 40px;    /* matches TILE_W × TILE_H */
+    border-radius: 4px;
+    border: 1px solid rgba(255,255,255,0.07);
+    background: rgba(255,255,255,0.025);
+    flex-shrink: 0;
 }
-.tiles-clear-pct {
-    font-size: 0.6rem;
-    color: #fbbf24;
-    font-weight: 700;
+.tiles-tray-slot.clearing { animation: traySlotClear 0.25s ease-out forwards; }
+@keyframes traySlotClear {
+    0%   { transform: scale(1);    opacity: 1; filter: brightness(1); }
+    30%  { transform: scale(1.05); opacity: 1; filter: brightness(2) drop-shadow(0 0 12px rgba(255, 220, 150, 0.8)); }
+    100% { transform: scale(0.8);  opacity: 0; filter: brightness(1); }
 }
+.tiles-dock-meta {
+    display: flex; gap: 0.6rem;
+    font-size: 0.65rem; color: #64748b;
+}
+.tiles-tray-count { color: #94a3b8; font-weight: 700; }
+.tiles-tray-left  { color: #f59e0b; }
+.tiles-clear-pct  { color: #34d399; }
 
-/* ─── DOCK TILE (identical shape to board tiles) ─────── */
-.dock-tile {
-    border-radius: 4px !important;
-    box-shadow: 0 3px 0px #b8a87a, 0 4px 8px rgba(0,0,0,0.45) !important;
+/* ══════════════════════════════════════════════════════
+   SIDE PANEL — Power-ups
+   ══════════════════════════════════════════════════════ */
+.tiles-side-panel {
+    display: flex; flex-direction: column;
+    gap: 0.75rem; padding: 1rem 0.6rem;
+    background: rgba(3, 7, 18, 0.72);
+    border-left: 1px solid rgba(59, 130, 246, 0.12);
+    backdrop-filter: blur(10px);
+    width: 96px; flex-shrink: 0;
+    justify-content: center; align-items: center;
 }
+.side-power {
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    width: 76px;
+    background: rgba(18, 28, 46, 0.92);
+    border: 1px solid rgba(148, 163, 184, 0.11);
+    border-radius: 10px;
+    padding: 0.65rem 0.35rem;
+    cursor: pointer;
+    transition: all 0.14s ease-out;
+    gap: 3px; user-select: none;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.4);
+}
+.side-power:hover:not([aria-disabled="true"]) {
+    background: rgba(26, 42, 68, 0.98);
+    transform: translateY(-2px);
+    border-color: rgba(96, 165, 250, 0.38);
+    box-shadow: 0 6px 18px rgba(0,0,0,0.45), 0 0 8px rgba(59,130,246,0.1);
+}
+.side-power[aria-disabled="true"] {
+    opacity: 0.28; cursor: not-allowed; filter: grayscale(0.9);
+}
+.side-power-icon { font-size: 1.35rem; line-height: 1; }
+.side-power-name { font-size: 0.68rem; font-weight: 700; color: #cbd5e1; }
+.side-power-meta { font-size: 0.55rem; color: #64748b; text-align: center; }
 
-/* ─── RESULT OVERLAY ─────────────────────────────────── */
+/* ══════════════════════════════════════════════════════
+   RESULT OVERLAY
+   ══════════════════════════════════════════════════════ */
 .tiles-result-overlay {
-    position: absolute;
-    inset: 0;
-    background: rgba(0, 0, 0, 0.78);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    z-index: 500;
-    backdrop-filter: blur(5px);
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,0.78);
+    display: flex; align-items: center; justify-content: center;
+    z-index: 50000; backdrop-filter: blur(5px);
 }
 .tiles-result-card {
-    background: linear-gradient(145deg, #0f172a, #1e3a5f);
-    border-radius: 16px;
-    padding: 1.5rem;
-    max-width: 280px;
-    width: 90%;
-    text-align: center;
-    border: 1px solid rgba(96, 165, 250, 0.35);
-    box-shadow: 0 0 40px rgba(59, 130, 246, 0.25);
-    color: #fff;
+    background: linear-gradient(160deg, #0f1a35 0%, #1a2847 100%);
+    border-radius: 18px; padding: 2rem 2.5rem;
+    text-align: center; color: #fff;
+    box-shadow: 0 24px 64px rgba(0,0,0,0.9), 0 0 0 1px rgba(59,130,246,0.28);
+    max-width: 320px; width: 90vw;
 }
-.tiles-result-card.victory { border-color: rgba(251, 191, 36, 0.5); box-shadow: 0 0 40px rgba(251, 191, 36, 0.22); }
-.tiles-result-card.defeat  { border-color: rgba(239, 68, 68, 0.4);  box-shadow: 0 0 40px rgba(239, 68, 68, 0.18); }
-.tiles-result-card h2 { font-size: 1.5rem; margin: 0 0 0.75rem; }
-.tiles-result-rewards { display: flex; flex-direction: column; gap: 0.3rem; margin-bottom: 1rem; }
-.tiles-reward-row { font-size: 0.82rem; color: #94a3b8; }
+.tiles-result-card.victory {
+    border: 1px solid rgba(251,191,36,0.38);
+    box-shadow: 0 24px 64px rgba(0,0,0,0.9), 0 0 32px rgba(251,191,36,0.12);
+}
+.tiles-result-card.defeat { border: 1px solid rgba(239,68,68,0.28); }
+.tiles-result-card h2 { margin: 0 0 1rem; font-size: 1.6rem; }
+.tiles-result-rewards { display: flex; flex-direction: column; gap: 0.4rem; margin-bottom: 1.25rem; }
+.tiles-reward-row { font-size: 0.9rem; color: #94a3b8; }
 .tiles-reward-row.highlight { color: #fbbf24; font-weight: 700; }
-.tiles-revive-buttons { display: flex; gap: 0.5rem; justify-content: center; margin-bottom: 0.75rem; }
-.tiles-revive-giveup {
-    flex: 1; padding: 0.45rem; border-radius: 8px;
-    background: rgba(239, 68, 68, 0.15); border: 1px solid rgba(239, 68, 68, 0.4);
-    color: #f87171; font-weight: 600; cursor: pointer; font-size: 0.78rem;
-}
-.tiles-revive-purchase {
-    flex: 1; padding: 0.45rem; border-radius: 8px;
-    background: linear-gradient(135deg, #1d4ed8, #2563eb);
-    border: none; color: #fff; font-weight: 700; cursor: pointer; font-size: 0.78rem;
-}
-.tiles-revive-purchase:disabled { opacity: 0.4; cursor: not-allowed; }
 .tiles-result-btn {
-    width: 100%; padding: 0.55rem; border-radius: 10px;
-    background: linear-gradient(135deg, #1d4ed8, #7c3aed);
-    border: none; color: #fff; font-weight: 700; font-size: 0.88rem; cursor: pointer;
+    background: linear-gradient(135deg, #1d4ed8, #2563eb);
+    border: none; border-radius: 10px; color: #fff;
+    padding: 0.65rem 1.5rem; font-size: 0.9rem; font-weight: 700;
+    cursor: pointer; transition: all 0.15s; width: 100%;
 }
-
-/* ─── PURCHASE MODAL ─────────────────────────────────── */
-.tiles-purchase-overlay {
-    position: absolute; inset: 0;
-    background: rgba(0,0,0,0.6);
-    display: flex; align-items: center; justify-content: center;
-    z-index: 600;
+.tiles-result-btn:hover { background: linear-gradient(135deg, #2563eb, #3b82f6); transform: translateY(-1px); }
+.tiles-revive-buttons { display: flex; gap: 0.5rem; margin-bottom: 0.75rem; }
+.tiles-revive-giveup {
+    flex: 1; padding: 0.5rem; border-radius: 8px;
+    background: rgba(239,68,68,0.12); border: 1px solid rgba(239,68,68,0.28);
+    color: #f87171; font-size: 0.82rem; cursor: pointer;
 }
-.tiles-purchase-card {
-    background: linear-gradient(145deg, #0f172a, #1e3a5f);
-    border-radius: 16px; padding: 1.25rem;
-    max-width: 240px; width: 90%; text-align: center;
-    border: 1px solid rgba(96, 165, 250, 0.35); color: #fff;
-}
-.tiles-purchase-header {
-    display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem;
-}
-.tiles-purchase-header h3 { margin: 0; font-size: 0.95rem; }
-.tiles-purchase-close { background: transparent; border: none; color: #94a3b8; font-size: 1rem; cursor: pointer; }
-.tiles-purchase-cost { font-size: 0.88rem; color: #fbbf24; font-weight: 600; }

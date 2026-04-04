@@ -3,7 +3,6 @@ import { useState, useCallback, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
     trueTripleTileMap,
-    bedrockDivots,
     isTileLocked,
     TILE_IMAGES,
     TILE_COLORS,
@@ -25,12 +24,13 @@ interface ConquestTilesProps {
 }
 
 // ─── LAYOUT CONSTANTS ─────────────────────────────────
-// Landscape Mahjong tile proportions — wider than tall
-const TILE_W    = 44;   // px wide
-const TILE_H    = 32;   // px tall  (W:H = 1.375 — proper mahjong ratio)
-const Y_PITCH   = 15;   // row shingle offset (show ~47% of each tile row)
-const Z_LIFT    = 5;    // px upward shift per z-level (higher z = raised)
-const TRAY_CAP  = 7;
+// Close-to-square tile — dense, physical Mahjong piece feel
+const TILE_W   = 44;  // px wide (2 logical units)
+const TILE_H   = 40;  // px tall (ratio ~1.1 — near square)
+const Y_PITCH  = 40;  // tighter rows — 2px gap reduction for denser grid
+const Z_LIFT   =  5;  // increased: more visible stack depth per z-level
+const TRAY_CAP =  7;
+const MAX_Z    =  8;  // anchor stacks go to z=8
 
 export const ConquestTiles = ({ onComplete, onClose }: ConquestTilesProps) => {
     const [phase,       setPhase]      = useState<'playing' | 'result'>('playing');
@@ -39,25 +39,30 @@ export const ConquestTiles = ({ onComplete, onClose }: ConquestTilesProps) => {
     const [score,       setScore]      = useState(0);
     const [result,      setResult]     = useState<'win' | 'loss' | null>(null);
     const [clearingIds, setClearingIds] = useState<Set<string>>(new Set());
+    const [hintTileIds, setHintTileIds] = useState<Set<string>>(new Set());
+    const [bumpingId,   setBumpingId]  = useState<string | null>(null);
+    const [revealedIds, setRevealedIds] = useState<Set<string>>(new Set());
 
-    const [ownedRemove,  setOwnedRemove]  = useState(1);
-    const [ownedUndo,    setOwnedUndo]    = useState(1);
-    const [purchaseModal, setPurchaseModal] = useState<'remove' | 'undo' | 'shuffle' | null>(null);
-    const [removeBoughtToday, setRemoveBoughtToday] = useState(0);
-    const [undoBoughtToday,   setUndoBoughtToday]   = useState(0);
-    const DAILY_LIMIT = 3;
+    // Power-up usage counters
+    const MAX_POWER_USE = 2;
+    const [usedUndo,    setUsedUndo]    = useState(0);
+    const [usedShuffle, setUsedShuffle] = useState(0);
+    const [usedHint,    setUsedHint]    = useState(0);
 
-    const undoStack     = useRef<UndoEntry[]>([]);
-    const initialCount  = useRef(trueTripleTileMap.length);
-    const currency      = useCurrencyStore();
-    const addToast      = useToastStore(s => s.addToast);
+    const undoStack    = useRef<UndoEntry[]>([]);
+    const initialCount = useRef(trueTripleTileMap.length);
+    const currency     = useCurrencyStore();
+    const addToast     = useToastStore(s => s.addToast);
 
+    // ─── INIT ──────────────────────────────────────────
     useEffect(() => {
         setBoard([...trueTripleTileMap]);
         setDock([]); setScore(0); setResult(null);
         setClearingIds(new Set());
+        setHintTileIds(new Set());
         undoStack.current = [];
         setPhase('playing');
+        setUsedUndo(0); setUsedShuffle(0); setUsedHint(0);
     }, []);
 
     // ─── SELECT TILE ───────────────────────────────────
@@ -66,6 +71,7 @@ export const ConquestTiles = ({ onComplete, onClose }: ConquestTilesProps) => {
         if (dock.length >= TRAY_CAP || clearingIds.size > 0) return;
         if (isTileLocked(tile, board)) return;
 
+        setHintTileIds(new Set());
         const newBoard = board.filter(b => b.id !== tile.id);
         const dockTile: DockTile = { id: tile.id, type: tile.type, x: tile.x, y: tile.y, z: tile.z };
         const newDock  = [...dock, dockTile];
@@ -82,7 +88,10 @@ export const ConquestTiles = ({ onComplete, onClose }: ConquestTilesProps) => {
             for (const t of newDock) { if (t.type === matchedType && toRemove.length < 3) toRemove.push(t.id); }
             setClearingIds(new Set(toRemove));
             setBoard(newBoard); setDock(newDock); setScore(s => s + 30);
-            setTimeout(() => { setDock(p => p.filter(t => !toRemove.includes(t.id))); setClearingIds(new Set()); }, 350);
+            setTimeout(() => {
+                setDock(p => p.filter(t => !toRemove.includes(t.id)));
+                setClearingIds(new Set());
+            }, 350);
             return;
         }
         setBoard(newBoard); setDock(newDock); setScore(s => s + 10);
@@ -101,38 +110,73 @@ export const ConquestTiles = ({ onComplete, onClose }: ConquestTilesProps) => {
         }
     }, [board, dock, phase, result, clearingIds]);
 
-    // ─── UNDO ──────────────────────────────────────────
+    // ─── POWERS ──────────────────────────────────────────
+    const buyPower = (_type: string, cost: number, usedCount: number, setUsed: (u: number) => void, action: () => void) => {
+        if (usedCount >= MAX_POWER_USE) {
+            addToast({ message: 'Max uses reached for this game.', type: 'warning' });
+            return;
+        }
+        if (!currency.spendGold(cost)) {
+            addToast({ message: `Need ${cost}🪙`, type: 'error' });
+            return;
+        }
+        setUsed(usedCount + 1);
+        action();
+    };
+
     const handleUndo = useCallback(() => {
-        if (ownedUndo <= 0 || clearingIds.size > 0) return;
-        const entry = undoStack.current.pop();
-        if (!entry) return;
-        setOwnedUndo(c => c - 1);
-        const restored: TripleTileNode = { id: entry.tile.id, type: entry.tile.type, x: entry.tile.x, y: entry.tile.y, z: entry.tile.z };
-        setBoard(prev => [...prev, restored]);
-        setDock(prev => { const n = [...prev]; for (let i = n.length - 1; i >= 0; i--) { if (n[i].id === entry.tile.id) { n.splice(i, 1); break; } } return n; });
-        setScore(entry.prevScore);
-    }, [ownedUndo, clearingIds]);
+        if (clearingIds.size > 0 || undoStack.current.length === 0) return;
+        buyPower('undo', POWER_COSTS.undo, usedUndo, setUsedUndo, () => {
+            const entry = undoStack.current.pop();
+            if (!entry) return;
+            const restored: TripleTileNode = {
+                id: entry.tile.id, type: entry.tile.type,
+                x: entry.tile.x, y: entry.tile.y, z: entry.tile.z, coveredBy: [],
+            };
+            setBoard(prev => [...prev, restored]);
+            setDock(prev => { const n = [...prev]; for (let i = n.length - 1; i >= 0; i--) { if (n[i].id === entry.tile.id) { n.splice(i, 1); break; } } return n; });
+            setScore(entry.prevScore);
+            setHintTileIds(new Set());
+        });
+    }, [usedUndo, clearingIds, currency]); // eslint-disable-line
 
-    // ─── REMOVE POWER ──────────────────────────────────
-    const handleRemove = useCallback(() => {
-        if (ownedRemove <= 0 || clearingIds.size > 0) return;
-        const free = board.filter(t => !isTileLocked(t, board));
-        if (!free.length) return;
-        const toRemove = [...free].sort((a, b) => b.z - a.z).slice(0, 3).map(t => t.id);
-        setOwnedRemove(c => c - 1);
-        setBoard(prev => prev.filter(t => !toRemove.includes(t.id)));
-    }, [ownedRemove, board, clearingIds]);
+    const handleShuffle = useCallback(() => {
+        if (clearingIds.size > 0 || board.length === 0) return;
+        buyPower('shuffle', POWER_COSTS.shuffle, usedShuffle, setUsedShuffle, () => {
+            const types = board.map(b => b.type);
+            for (let i = types.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [types[i], types[j]] = [types[j], types[i]];
+            }
+            setBoard(prev => prev.map((b, i) => ({ ...b, type: types[i] })));
+            setHintTileIds(new Set());
+        });
+    }, [usedShuffle, board, clearingIds, currency]); // eslint-disable-line
 
-    // ─── PURCHASE ──────────────────────────────────────
-    const handlePurchase = useCallback((type: 'remove' | 'undo' | 'shuffle') => {
-        const cost = POWER_COSTS[type];
-        const counts = { remove: removeBoughtToday, undo: undoBoughtToday, shuffle: 0 };
-        if (counts[type] >= DAILY_LIMIT) { addToast({ message: `Daily limit reached`, type: 'warning' }); return; }
-        if (!currency.spendGold(cost)) { addToast({ message: `Need ${cost}🪙`, type: 'error' }); return; }
-        if (type === 'remove') { setOwnedRemove(c => c + 1); setRemoveBoughtToday(c => c + 1); }
-        if (type === 'undo')   { setOwnedUndo(c => c + 1);   setUndoBoughtToday(c => c + 1);   }
-        setPurchaseModal(null);
-    }, [currency, removeBoughtToday, undoBoughtToday, addToast]);
+    const handleHint = useCallback(() => {
+        if (clearingIds.size > 0) return;
+        buyPower('hint', POWER_COSTS.hint, usedHint, setUsedHint, () => {
+            const free = board.filter(t => !isTileLocked(t, board));
+            const counts = new Map<string, TripleTileNode[]>();
+            for (const t of free) {
+                if (!counts.has(t.type)) counts.set(t.type, []);
+                counts.get(t.type)!.push(t);
+            }
+            for (const tiles of counts.values()) {
+                if (tiles.length >= 3) {
+                    setHintTileIds(new Set(tiles.slice(0, 3).map(t => t.id)));
+                    return;
+                }
+            }
+            for (const tiles of counts.values()) {
+                if (tiles.length > 0) {
+                    setHintTileIds(new Set([tiles[0].id]));
+                    addToast({ message: 'No full triples free. Next move highlighted.', type: 'info' });
+                    return;
+                }
+            }
+        });
+    }, [usedHint, board, clearingIds, currency]); // eslint-disable-line
 
     // ─── RESULT HANDLER ───────────────────────────────
     const handleComplete = useCallback(() => {
@@ -141,25 +185,63 @@ export const ConquestTiles = ({ onComplete, onClose }: ConquestTilesProps) => {
     }, [result, board.length, onComplete]);
 
     // ─── RENDER HELPERS ───────────────────────────────
-    // Left = column index × tile width (no horizontal overlap in this grid layout)
-    const tileLeft = (t: TripleTileNode) => t.x * TILE_W;
-    // Top = row × shingle pitch, RAISED by z-level (higher z tiles float upward)
+    //
+    // Tile logical size: 2 units wide, 1 unit tall.
+    // Each x-unit = TILE_W/2 pixels.
+    // So tile at x occupies pixels [x*(TILE_W/2), x*(TILE_W/2) + TILE_W).
+    //
+    // Stagger: odd-z tiles are at x = even+1, so they render
+    // centered between the two tiles they cover below.
+    //
+    //   z=0: tile at x=0 → left=0px
+    //   z=0: tile at x=2 → left=60px
+    //   z=1: tile at x=1 → left=30px  ← sits exactly between the two
+    //
+    // This produces the classic Mahjong split-coverage overlap.
+
+    const tileLeft = (t: TripleTileNode) => t.x * (TILE_W / 2);
+
+    // Higher z = visually higher (smaller y) — upper tiles lift slightly.
+    // Each layer offset: Z_LIFT px upward per z. Lower tiles peek at bottom.
     const tileTop  = (t: TripleTileNode) => t.y * Y_PITCH - t.z * Z_LIFT;
-    // Painter's algorithm: back rows and lower z behind front/higher z
-    const tileZ    = (t: TripleTileNode) => t.z * 200 + t.y * 10 + t.x;
 
-    // Board pixel bounds
-    const PADDING = 16;
-    let boardW = 400, boardH = 360, offX = 0, offY = 0;
+    // Painter's z-index: higher z always renders on top.
+    // Within same z: higher y (lower on screen) renders on top for perspective.
+    const tileZ    = (t: TripleTileNode) => t.z * 500 + t.y * 10 + 1;
+
+    // ─── SCALE TO FIT ─────────────────────────────────
+    const containerRef = useRef<HTMLDivElement>(null);
+    const [scale, setScale] = useState(1);
+
+    let contentW = 400, contentH = 300, minX = 0, minY = 0;
     if (board.length > 0) {
-        const minX = Math.min(...board.map(tileLeft)) - PADDING;
-        const minY = Math.min(...board.map(tileTop))  - PADDING;
-        const maxX = Math.max(...board.map(t => tileLeft(t) + TILE_W)) + PADDING;
-        const maxY = Math.max(...board.map(t => tileTop(t)  + TILE_H)) + PADDING;
-        offX = minX; offY = minY;
-        boardW = maxX - minX; boardH = maxY - minY;
+        minX = Math.min(...board.map(tileLeft));
+        minY = Math.min(...board.map(tileTop));
+        const maxX = Math.max(...board.map(t => tileLeft(t) + TILE_W));
+        const maxY = Math.max(...board.map(t => tileTop(t)  + TILE_H));
+        contentW = maxX - minX;
+        contentH = maxY - minY;
     }
+    const PADDING    = 28;
+    const containerW = contentW + PADDING * 2;
+    const containerH = contentH + PADDING * 2;
 
+    useEffect(() => {
+        const el = containerRef.current;
+        if (!el) return;
+        const ro = new ResizeObserver(entries => {
+            for (const e of entries) {
+                const { width, height } = e.contentRect;
+                const sx = width  / containerW;
+                const sy = height / containerH;
+                setScale(Math.min(sx, sy, 1.1));
+            }
+        });
+        ro.observe(el);
+        return () => ro.disconnect();
+    }, [containerW, containerH]);
+
+    // Sort: z asc (bottom first), then y, then x — painter's algorithm
     const sortedBoard = [...board].sort((a, b) =>
         a.z !== b.z ? a.z - b.z : a.y !== b.y ? a.y - b.y : a.x - b.x
     );
@@ -167,123 +249,185 @@ export const ConquestTiles = ({ onComplete, onClose }: ConquestTilesProps) => {
     const isWin    = result === 'win';
     const clearPct = Math.round(((initialCount.current - board.length) / initialCount.current) * 100);
 
+    // ─── RENDER ─────────────────────────────────────────
     return (
         <div className="tiles-root">
-            {/* TOP BAR + POWER BUTTONS (horizontal) */}
+            {/* ── PORTRAIT LOCK ──────────────────────────── */}
+            <div className="tiles-portrait-lock">
+                <div className="portrait-lock-icon">🔄</div>
+                <h2>Rotate your device</h2>
+                <p>Strategic sorting requires a landscape view.</p>
+                <button onClick={onClose} className="tiles-result-btn" style={{ marginTop: '1rem', width: '200px' }}>Leave</button>
+            </div>
+
+            {/* ── TOP BAR ────────────────────────────────── */}
             <div className="tiles-topbar">
-                <span className="tiles-topbar-label">🎴 Mahjong</span>
-
-                {/* Power buttons in topbar */}
-                <div className="tiles-powers-inline">
-                    <div className="tiles-power-item">
-                        <button className="tiles-power-btn" onClick={handleUndo}
-                            disabled={ownedUndo <= 0 || clearingIds.size > 0} title="Undo">↩</button>
-                        <span className="tiles-power-count">{ownedUndo}</span>
-                        <button className="tiles-power-buy" onClick={() => setPurchaseModal('undo')}>+</button>
-                    </div>
-                    <div className="tiles-power-item">
-                        <button className="tiles-power-btn" onClick={handleRemove}
-                            disabled={ownedRemove <= 0 || clearingIds.size > 0} title="Remove 3">🗑</button>
-                        <span className="tiles-power-count">{ownedRemove}</span>
-                        <button className="tiles-power-buy" onClick={() => setPurchaseModal('remove')}>+</button>
-                    </div>
-                </div>
-
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                <span className="tiles-topbar-label">🎴 TILE GAME</span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.8rem' }}>
+                    <span className="tiles-topbar-score" style={{ color: '#fff' }}>🪙 {currency.gold}</span>
                     <span className="tiles-topbar-score">⭐ {score}</span>
                     <button className="tiles-topbar-close" onClick={onClose}>✕</button>
                 </div>
             </div>
 
-            {/* BOARD */}
-            <div className="tiles-board-container">
-                <div className="tiles-board" style={{ width: boardW, height: boardH, position: 'relative' }}>
+            {/* ── MAIN WRAP: Board Area + Side Panel ─────── */}
+            <div className="tiles-main-wrap">
 
-                    {/* Ghost divot grid */}
-                    {bedrockDivots.map(d => (
-                        <div key={`d${d.x}_${d.y}`} className="tiles-divot" style={{
-                            left:   d.x * TILE_W           - offX,
-                            top:    d.y * Y_PITCH          - offY,
-                            width:  TILE_W, height: TILE_H,
-                        }} />
-                    ))}
+                {/* CONTENT AREA: board + dock stacked vertically */}
+                <div className="tiles-content-area">
 
-                    {/* Tiles */}
-                    {sortedBoard.map(tile => {
-                        const locked = isTileLocked(tile, board);
-                        const left   = tileLeft(tile) - offX;
-                        const top    = tileTop(tile)  - offY;
-                        return (
-                            <motion.div
-                                key={tile.id}
-                                layoutId={tile.id}
-                                className={`tiles-board-tile ${locked ? 'locked' : 'unlocked'}`}
-                                style={{
-                                    left, top,
-                                    width: TILE_W, height: TILE_H,
-                                    zIndex: tileZ(tile),
-                                    backgroundColor: TILE_COLORS[tile.type],
-                                }}
-                                onClick={() => !locked && selectTile(tile)}
-                                layout
-                                initial={{ scale: 0.88, opacity: 0 }}
-                                animate={{ scale: 1, opacity: 1 }}
-                                exit={{ scale: 0.75, opacity: 0 }}
-                                whileHover={!locked ? { y: -3, zIndex: 9999 } : {}}
-                                whileTap={!locked   ? { scale: 0.94 } : {}}
-                                transition={{ duration: 0.16, ease: 'easeOut' }}
-                            >
-                                <img src={TILE_IMAGES[tile.type]} alt={tile.type}
-                                    className="tiles-tile-img" />
-                            </motion.div>
-                        );
-                    })}
-                </div>
-            </div>
+                    {/* BOARD */}
+                    <div className="tiles-board-container" ref={containerRef}>
+                        <div className="tiles-board-scaler" style={{ transform: `scale(${scale})`, transformOrigin: 'center center' }}>
+                            <div className="tiles-board" style={{ width: contentW, height: contentH }}>
 
-            {/* BOTTOM DOCK */}
-            <div className="tiles-dock">
-                <div className="tiles-tray-row">
-                    {Array.from({ length: TRAY_CAP }).map((_, i) => {
-                        const dt = dock[i];
-                        const clearing = dt ? clearingIds.has(dt.id) : false;
-                        return (
-                            <div key={i} className={`tiles-tray-slot ${dt ? 'filled' : 'empty'} ${clearing ? 'clearing' : ''}`}>
-                                <AnimatePresence>
-                                    {dt && (
-                                        <motion.div key={dt.id} layoutId={dt.id}
-                                            className="tiles-board-tile dock-tile"
+                                {sortedBoard.map(tile => {
+                                    const locked    = isTileLocked(tile, board);
+                                    const left      = tileLeft(tile) - minX;
+                                    const top       = tileTop(tile)  - minY;
+                                    const isHint    = hintTileIds.has(tile.id);
+                                    const isBumping = bumpingId === tile.id;
+
+                                    // 1. Unlocked tiles are top playable tiles: bright & sharp
+                                    // 2. Locked tiles are beneath: darker & blurrier based on absolute z-level
+                                    const stackBrightness = locked
+                                        ? Math.max(0.40, 0.95 - ((MAX_Z - tile.z) * 0.10))
+                                        : 1.15; // Playable tile indicator: slightly boosted brightness
+
+                                    const stackBlur = locked
+                                        ? Math.min(1.5, ((MAX_Z - tile.z) * 0.18))
+                                        : 0; // Playable tiles are perfectly sharp
+
+                                    return (
+                                        <motion.div
+                                            key={tile.id}
+                                            layoutId={tile.id}
+                                            className={[
+                                                'tiles-board-tile',
+                                                locked    ? 'locked'   : 'unlocked',
+                                                isHint    ? 'hinted'   : '',
+                                                isBumping ? 'bumping'  : '',
+                                            ].filter(Boolean).join(' ')}
+                                            style={{
+                                                left, top,
+                                                width: TILE_W, height: TILE_H,
+                                                zIndex: tileZ(tile),
+                                                filter: `brightness(${stackBrightness}) blur(${stackBlur}px)`,
+                                            }}
+                                            onClick={() => {
+                                                if (!locked) {
+                                                    selectTile(tile);
+                                                } else {
+                                                    // Bump feedback for blocked-tile tap
+                                                    setBumpingId(tile.id);
+                                                    setTimeout(() => setBumpingId(null), 220);
+                                                }
+                                            }}
                                             layout
-                                            initial={{ scale: 1.12, y: -10 }}
-                                            animate={{ scale: 1, opacity: 1, y: 0 }}
-                                            exit={{ scale: 0, opacity: 0, transition: { duration: 0.14 } }}
-                                            transition={{ type: 'spring', stiffness: 380, damping: 28 }}
-                                            style={{ width: TILE_W, height: TILE_H, position: 'absolute', pointerEvents: 'none', backgroundColor: TILE_COLORS[dt.type] }}
+                                            initial={{ scale: 0.88, opacity: 0 }}
+                                            animate={{ scale: 1,    opacity: 1 }}
+                                            exit={{ scale: 0.72, opacity: 0 }}
+                                            whileHover={!locked ? { y: -4, scale: 1.02, zIndex: 9999 } : {}}
+                                            whileTap={!locked   ? { y: -8, scale: 1.05, zIndex: 9999 } : {}}
+                                            transition={{ duration: 0.14, ease: 'easeOut' }}
                                         >
-                                            <img src={TILE_IMAGES[dt.type]} alt={dt.type} className="tiles-tile-img" />
+                                            <div className="tiles-inner-frame">
+                                                <img src={TILE_IMAGES[tile.type]} alt={tile.type} className="tiles-tile-img" />
+                                            </div>
                                         </motion.div>
-                                    )}
-                                </AnimatePresence>
-                            </div>
-                        );
-                    })}
-                </div>
-                <div className="tiles-dock-meta">
-                    <span className="tiles-tray-count">{dock.length}/{TRAY_CAP}</span>
-                    <span className="tiles-tray-left" style={{ opacity: dock.length >= TRAY_CAP - 2 ? 1 : 0.4 }}>
-                        {dock.length >= TRAY_CAP ? 'FULL' : `${TRAY_CAP - dock.length} left`}
-                    </span>
-                    <span className="tiles-clear-pct">{clearPct}%</span>
-                </div>
-            </div>
+                                    );
+                                })}
 
-            {/* RESULT */}
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* BOTTOM DOCK */}
+                    <div className="tiles-dock">
+                        <div className="tiles-tray-row">
+                            {Array.from({ length: TRAY_CAP }).map((_, i) => {
+                                const dt = dock[i];
+                                const clearing = dt ? clearingIds.has(dt.id) : false;
+                                return (
+                                    <div key={i} className={`tiles-tray-slot ${dt ? 'filled' : 'empty'} ${clearing ? 'clearing' : ''}`}>
+                                        <AnimatePresence>
+                                            {dt && (
+                                                <motion.div key={dt.id} layoutId={dt.id}
+                                                    className="tiles-board-tile dock-tile"
+                                                    layout
+                                                    initial={{ scale: 1.1, y: -8 }}
+                                                    animate={{ scale: 1, opacity: 1, y: 0 }}
+                                                    exit={{ scale: 0, opacity: 0, transition: { duration: 0.14 } }}
+                                                    transition={{ type: 'spring', stiffness: 380, damping: 28 }}
+                                                    style={{
+                                                        width: TILE_W, height: TILE_H,
+                                                        position: 'absolute',
+                                                        pointerEvents: 'none',
+                                                        backgroundColor: TILE_COLORS[dt.type] || '#1e293b',
+                                                    }}
+                                                >
+                                                    <div className="tiles-inner-frame">
+                                                        <img src={TILE_IMAGES[dt.type]} alt={dt.type} className="tiles-tile-img" />
+                                                    </div>
+                                                </motion.div>
+                                            )}
+                                        </AnimatePresence>
+                                    </div>
+                                );
+                            })}
+                        </div>
+                        <div className="tiles-dock-meta">
+                            <span className="tiles-tray-count">{dock.length}/{TRAY_CAP}</span>
+                            <span className="tiles-tray-left" style={{ opacity: dock.length >= TRAY_CAP - 2 ? 1 : 0.4 }}>
+                                {dock.length >= TRAY_CAP ? 'FULL' : `${TRAY_CAP - dock.length} left`}
+                            </span>
+                            <span className="tiles-clear-pct">{clearPct}%</span>
+                        </div>
+                    </div>
+
+                </div>{/* end .tiles-content-area */}
+
+                {/* SIDE PANEL — Power-ups */}
+                <div className="tiles-side-panel">
+                    <div className="side-power"
+                        onClick={handleShuffle}
+                        aria-disabled={usedShuffle >= MAX_POWER_USE || currency.gold < POWER_COSTS.shuffle}
+                    >
+                        <div className="side-power-icon">🔀</div>
+                        <div className="side-power-name">Shuffle</div>
+                        <div className="side-power-meta">{usedShuffle}/{MAX_POWER_USE} · 20g</div>
+                    </div>
+                    <div className="side-power"
+                        onClick={handleHint}
+                        aria-disabled={usedHint >= MAX_POWER_USE || currency.gold < POWER_COSTS.hint}
+                    >
+                        <div className="side-power-icon">💡</div>
+                        <div className="side-power-name">Hint</div>
+                        <div className="side-power-meta">{usedHint}/{MAX_POWER_USE} · 20g</div>
+                    </div>
+                    <div className="side-power"
+                        onClick={handleUndo}
+                        aria-disabled={usedUndo >= MAX_POWER_USE || undoStack.current.length === 0 || currency.gold < POWER_COSTS.undo}
+                    >
+                        <div className="side-power-icon">↩️</div>
+                        <div className="side-power-name">Undo</div>
+                        <div className="side-power-meta">{usedUndo}/{MAX_POWER_USE} · 20g</div>
+                    </div>
+                </div>
+
+            </div>{/* end .tiles-main-wrap */}
+
+            {/* ── RESULT OVERLAY ─────────────────────────── */}
             <AnimatePresence>
                 {result && (
-                    <motion.div className="tiles-result-overlay" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+                    <motion.div className="tiles-result-overlay"
+                        initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+                    >
                         <motion.div className={`tiles-result-card ${isWin ? 'victory' : 'defeat'}`}
-                            initial={{ scale: 0.8, opacity: 0, y: 30 }} animate={{ scale: 1, opacity: 1, y: 0 }}
-                            transition={{ type: 'spring', stiffness: 300, damping: 24 }}>
+                            initial={{ scale: 0.8, opacity: 0, y: 30 }}
+                            animate={{ scale: 1, opacity: 1, y: 0 }}
+                            transition={{ type: 'spring', stiffness: 300, damping: 24 }}
+                        >
                             <h2>{isWin ? '🏆 VICTORY!' : '💀 Defeat'}</h2>
                             <div className="tiles-result-rewards">
                                 <div className="tiles-reward-row">⭐ {score} pts</div>
@@ -292,8 +436,7 @@ export const ConquestTiles = ({ onComplete, onClose }: ConquestTilesProps) => {
                             </div>
                             {!isWin && (
                                 <div className="tiles-revive-buttons">
-                                    <button className="tiles-revive-giveup" onClick={onClose}>Give Up</button>
-                                    <button className="tiles-revive-purchase" onClick={() => setPurchaseModal('remove')}>Purchase</button>
+                                    <button className="tiles-revive-giveup" onClick={onClose}>Leave</button>
                                 </div>
                             )}
                             <button className="tiles-result-btn" onClick={handleComplete}>
@@ -304,26 +447,6 @@ export const ConquestTiles = ({ onComplete, onClose }: ConquestTilesProps) => {
                 )}
             </AnimatePresence>
 
-            {/* PURCHASE MODAL */}
-            <AnimatePresence>
-                {purchaseModal && (
-                    <motion.div className="tiles-purchase-overlay" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setPurchaseModal(null)}>
-                        <motion.div className="tiles-purchase-card" initial={{ scale: 0.9 }} animate={{ scale: 1 }} exit={{ scale: 0.9 }} onClick={e => e.stopPropagation()}>
-                            <div className="tiles-purchase-header">
-                                <h3>Purchase Power-up</h3>
-                                <button className="tiles-purchase-close" onClick={() => setPurchaseModal(null)}>✕</button>
-                            </div>
-                            <div className="tiles-purchase-cost">🪙 {POWER_COSTS[purchaseModal]} Gold</div>
-                            <div style={{ display: 'flex', gap: '0.75rem', marginTop: '1rem' }}>
-                                <button className="tiles-revive-giveup" onClick={() => setPurchaseModal(null)}>Cancel</button>
-                                <button className="tiles-revive-purchase"
-                                    disabled={currency.gold < POWER_COSTS[purchaseModal]}
-                                    onClick={() => handlePurchase(purchaseModal)}>Buy</button>
-                            </div>
-                        </motion.div>
-                    </motion.div>
-                )}
-            </AnimatePresence>
         </div>
     );
 };
