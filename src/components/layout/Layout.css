@@ -44,7 +44,7 @@
 }
 
 /* ─── Mobile Layout ───────────────────────── */
-@media (max-width: 768px) {
+@media (max-width: 768px) and (orientation: portrait) {
     .app-layout {
         flex-direction: column;
     }
@@ -53,5 +53,13 @@
         padding: var(--space-4) var(--space-3);
         padding-bottom: calc(72px + env(safe-area-inset-bottom, 0px));
         /* Space for bottom nav + iOS safe area */
+    }
+}
+
+/* ─── Mobile Landscape Layout ───────────────────────── */
+@media (max-height: 500px) and (orientation: landscape), (max-width: 950px) and (orientation: landscape) {
+    .content-area {
+        padding: 0;
+        /* Remove padding to give max space to games/content */
     }
 }

@@ -687,12 +687,16 @@ export const Arena = ({ onClose }: { onClose: () => void }) => {
                                             </div>
                                         </div>
                                         <div className="profile-content">
-                                            <div className="stat-grid horizontal">
-                                                <div className="stat-pill"><span className="stat-icon">❤️</span> {enemy.maxHp}</div>
-                                                <div className="stat-pill"><span className="stat-icon">⚔️</span> {enemy.atk}</div>
-                                                <div className="stat-pill"><span className="stat-icon">🛡️</span> {enemy.def}</div>
-                                                <div className="stat-pill"><span className="stat-icon">💨</span> {enemy.spd}</div>
-                                                <div className="stat-pill"><span className="stat-icon">✨</span> {enemyDef.element}</div>
+                                            <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: '0.8rem', padding: '0.5rem 0', fontWeight: 600, fontSize: '0.9rem' }}>
+                                                <span>❤️ {enemy.maxHp} HP</span>
+                                                <span style={{ opacity: 0.5 }}>•</span>
+                                                <span>⚔️ {enemy.atk} ATK</span>
+                                                <span style={{ opacity: 0.5 }}>•</span>
+                                                <span>🛡️ {enemy.def} DEF</span>
+                                                <span style={{ opacity: 0.5 }}>•</span>
+                                                <span>💨 {enemy.spd} SPD</span>
+                                                <span style={{ opacity: 0.5 }}>•</span>
+                                                <span style={{ textTransform: 'capitalize' }}>{ELEMENT_ICONS[enemyDef.element]} {enemyDef.element}</span>
                                             </div>
                                             {useBattleStore.getState().context === 'conquest' && (
                                                 <div className="synergy-banner" style={{ marginTop: '0.5rem', background: 'rgba(239, 68, 68, 0.2)' }}>
@@ -711,12 +715,16 @@ export const Arena = ({ onClose }: { onClose: () => void }) => {
                                             </div>
                                         </div>
                                         <div className="profile-content">
-                                            <div className="stat-grid horizontal">
-                                                <div className="stat-pill"><span className="stat-icon">❤️</span> {player.maxHp}</div>
-                                                <div className="stat-pill"><span className="stat-icon">⚔️</span> {player.atk}</div>
-                                                <div className="stat-pill"><span className="stat-icon">🛡️</span> {player.def}</div>
-                                                <div className="stat-pill"><span className="stat-icon">💨</span> {player.spd}</div>
-                                                <div className="stat-pill"><span className="stat-icon">🔮</span> neutral</div>
+                                            <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: '0.8rem', padding: '0.5rem 0', fontWeight: 600, fontSize: '0.9rem', color: '#f1f5f9' }}>
+                                                <span>❤️ {player.maxHp} HP</span>
+                                                <span style={{ opacity: 0.5 }}>•</span>
+                                                <span>⚔️ {player.atk} ATK</span>
+                                                <span style={{ opacity: 0.5 }}>•</span>
+                                                <span>🛡️ {player.def} DEF</span>
+                                                <span style={{ opacity: 0.5 }}>•</span>
+                                                <span>💨 {player.spd} SPD</span>
+                                                <span style={{ opacity: 0.5 }}>•</span>
+                                                <span>{ELEMENT_ICONS['neutral']} Neutral</span>
                                             </div>
 
                                             {/* Power Details Panel */}
@@ -732,30 +740,59 @@ export const Arena = ({ onClose }: { onClose: () => void }) => {
 
                                             {showPowerDetails && (() => {
                                                 const breakdown = getDetailedCombatBreakdown();
-                                                const renderStat = (label: string, stat: StatBreakdown, unit: string = '') => (
-                                                    <div className="breakdown-stat" key={label}>
-                                                        <div className="breakdown-stat-header">
-                                                            <span className="breakdown-stat-name">{label}</span>
-                                                            <span className="breakdown-stat-total">{stat.total}{unit}</span>
-                                                        </div>
-                                                        <div className="breakdown-sources">
-                                                            {stat.sources.map((s, i) => (
-                                                                <span key={i} className={`breakdown-source ${s.value < 0 ? 'negative' : ''}`}>
-                                                                    {s.label}: {s.value > 0 ? '+' : ''}{s.value}{unit}
-                                                                </span>
-                                                            ))}
-                                                        </div>
-                                                    </div>
-                                                );
+                                                const getSourceInfo = (label: string) => {
+                                                    const l = label.toLowerCase();
+                                                    if (l.includes('lv.')) return { name: label.split(' ')[0], type: 'Habits' };
+                                                    if (l.includes('equipment')) return { name: 'Equipped Gear', type: 'Equipment' };
+                                                    if (l.includes('room') || l.includes('bed')) return { name: 'Room Stats', type: 'Furniture' };
+                                                    if (l.includes('trophies')) return { name: 'Trophies', type: 'Bonus' };
+                                                    if (l.includes('aura')) return { name: 'Aura', type: 'Bonus' };
+                                                    if (l.includes('synergy')) return { name: 'Synergy', type: 'Bonus' };
+                                                    if (l.includes('risk')) return { name: 'Risk Region', type: 'Bonus' };
+                                                    if (l.includes('berserk')) return { name: 'Berserk', type: 'Bonus' };
+                                                    if (l.includes('budget')) return { name: 'Budget Power', type: 'Bonus' };
+                                                    return { name: label, type: 'Bonus' };
+                                                };
+
+                                                const tableRows: any[] = [];
+                                                const process = (stat: StatBreakdown, statName: string) => {
+                                                    stat.sources.forEach(s => {
+                                                        const info = getSourceInfo(s.label);
+                                                        tableRows.push({ name: info.name, type: info.type, val: s.value, stat: statName });
+                                                    });
+                                                };
+
+                                                process(breakdown.hp, 'HP');
+                                                process(breakdown.atk, 'ATK');
+                                                process(breakdown.def, 'DEF');
+                                                process(breakdown.spd, 'Speed');
+                                                if (breakdown.matk && breakdown.matk.total > 0) process(breakdown.matk, 'Magic ATK');
+                                                if (breakdown.mp && breakdown.mp.total > 0) process(breakdown.mp, 'Max MP');
+
                                                 return (
-                                                    <div className="power-details-panel">
-                                                        {renderStat('⚔️ ATK', breakdown.atk)}
-                                                        {renderStat('🛡️ DEF', breakdown.def)}
-                                                        {renderStat('❤️ HP', breakdown.hp)}
-                                                        {renderStat('💎 MP', breakdown.mp)}
-                                                        {renderStat('💨 SPD', breakdown.spd)}
+                                                    <div className="power-details-panel" style={{ padding: '0.5rem', background: 'rgba(15, 23, 42, 0.4)', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.05)', marginTop: '0.5rem' }}>
+                                                        <table style={{ width: '100%', fontSize: '0.8rem', textAlign: 'left', borderCollapse: 'collapse' }}>
+                                                            <thead>
+                                                                <tr style={{ color: '#94a3b8', borderBottom: '1px solid rgba(255,255,255,0.1)' }}>
+                                                                    <th style={{ paddingBottom: '0.5rem' }}>SKILL</th>
+                                                                    <th style={{ paddingBottom: '0.5rem' }}>SOURCE</th>
+                                                                    <th style={{ paddingBottom: '0.5rem', textAlign: 'right' }}>EFFECT</th>
+                                                                </tr>
+                                                            </thead>
+                                                            <tbody>
+                                                                {tableRows.map((row, i) => (
+                                                                    <tr key={i} style={{ borderBottom: '1px solid rgba(255,255,255,0.03)' }}>
+                                                                        <td style={{ padding: '0.4rem 0', fontWeight: 600 }}>{row.name}</td>
+                                                                        <td style={{ padding: '0.4rem 0', color: '#cbd5e1' }}>{row.type}</td>
+                                                                        <td style={{ padding: '0.4rem 0', textAlign: 'right', color: row.val < 0 ? '#ef4444' : '#10b981', fontWeight: 600 }}>
+                                                                            {row.val > 0 ? '+' : ''}{row.val} {row.stat}
+                                                                        </td>
+                                                                    </tr>
+                                                                ))}
+                                                            </tbody>
+                                                        </table>
                                                         {breakdown.synergy.active && (
-                                                            <div className="synergy-banner">
+                                                            <div className="synergy-banner" style={{ marginTop: '0.75rem' }}>
                                                                 🔗 {breakdown.synergy.description}
                                                             </div>
                                                         )}

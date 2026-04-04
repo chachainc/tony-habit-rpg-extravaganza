@@ -128,7 +128,7 @@ function buildBricks(W: number, level: number): Brick[] {
     const palette = LEVEL_PALETTES[Math.min(level - 1, LEVEL_PALETTES.length - 1)];
 
     const mk = (r: number, c: number, hp = 1): Brick => ({
-        x: 10 + c * bw, y: 44 + r * (bh + gap),
+        x: 10 + c * bw, y: 68 + r * (bh + gap),
         w: bw - gap, h: bh,
         alive: true, hp, maxHp: hp,
         color: palette[r % palette.length],
@@ -169,7 +169,7 @@ function buildBossEntity(W: number, level: number): BossBrick {
     const bossW = W * 0.7;
     const bossH = 44;
     return {
-        x: (W - bossW) / 2, y: 50,
+        x: (W - bossW) / 2, y: 74,
         w: bossW, h: bossH,
         hp: cfg.maxHp, maxHp: cfg.maxHp,
         flashTimer: 0, pulseTimer: 0,
@@ -339,9 +339,9 @@ export const BrickBreaker = ({ onClose }: { onClose: () => void }) => {
 
             // Initialize primary ball
             const primaryBall: Ball = {
-                x: W / 2, y: H - 36, r: 6,
+                x: W / 2, y: H - 54, r: 6,
                 vx: levelSpeed(selectedLevel, false), vy: -levelSpeed(selectedLevel, false),
-                launched: false, trailX: W / 2, trailY: H - 36,
+                launched: false, trailX: W / 2, trailY: H - 54,
             };
             ballsRef.current = [primaryBall];
 
@@ -532,7 +532,7 @@ export const BrickBreaker = ({ onClose }: { onClose: () => void }) => {
         };
 
         const drawPaddle = () => {
-            const py = H - 18;
+            const py = H - 36;
             const sh = paddle.h + paddle.stretch;
             if (paddle.stretch > 0) paddle.stretch -= 0.5;
             // Wide paddle tint
@@ -652,7 +652,7 @@ export const BrickBreaker = ({ onClose }: { onClose: () => void }) => {
             }
 
             // Paddle
-            const py = H - 18;
+            const py = H - 36;
             if (ball.vy > 0 &&
                 ball.y + ball.r >= py && ball.y + ball.r <= py + paddle.h + 4 &&
                 ball.x >= paddle.x && ball.x <= paddle.x + paddle.w) {
@@ -676,7 +676,7 @@ export const BrickBreaker = ({ onClose }: { onClose: () => void }) => {
                 ballsRef.current = [ball];
                 if (livesRef.current <= 0) return true; // endGame handled outside
                 ball.x = paddle.x + paddle.w / 2;
-                ball.y = H - 36;
+                ball.y = H - 54;
                 ball.vx = levelSpeed(activeLevelRef.current, false);
                 ball.vy = -levelSpeed(activeLevelRef.current, false);
                 ball.launched = false;
@@ -787,7 +787,7 @@ export const BrickBreaker = ({ onClose }: { onClose: () => void }) => {
                 if (!pu.alive) continue;
                 pu.y += pu.vy;
                 // Paddle catch
-                const py = H - 18;
+                const py = H - 36;
                 if (pu.y + pu.h / 2 >= py && pu.y - pu.h / 2 <= py + paddle.h &&
                     pu.x + pu.w / 2 >= paddle.x && pu.x - pu.w / 2 <= paddle.x + paddle.w) {
                     applyPowerUp(pu.id, W, activeLevelRef.current);

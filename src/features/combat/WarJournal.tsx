@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion';
-import { X, Skull, Swords, Shield, Zap, Award, Target, Crown, Flame } from 'lucide-react';
+import { X, Skull, Swords, Shield, Zap, Award, Target, Crown, Flame, Coins } from 'lucide-react';
 import { useArenaStatsStore } from '../../store/useArenaStatsStore';
 import './WarJournal.css';
 
@@ -24,8 +24,8 @@ export const WarJournal = ({ onClose }: { onClose: () => void }) => {
     ];
 
     const currencyStats = [
-        { emoji: '🪙', label: 'Gold Earned (Lifetime)', value: formatNumber(stats.totalGoldEarned) },
-        { emoji: '🐌', label: 'Shmeckles Earned (Lifetime)', value: formatNumber(stats.totalShmecklesEarned) },
+        { icon: <Coins size={16} color="#fbbf24" style={{ display: 'inline', verticalAlign: 'text-bottom' }} />, label: 'Gold Earned (Lifetime)', value: formatNumber(stats.totalGoldEarned) },
+        { icon: '🐌', label: 'Shmeckles Earned (Lifetime)', value: formatNumber(stats.totalShmecklesEarned) },
     ];
 
     return (
@@ -76,7 +76,7 @@ export const WarJournal = ({ onClose }: { onClose: () => void }) => {
                 <div className="wj-currency">
                     {currencyStats.map(c => (
                         <div key={c.label} className="wj-currency-row">
-                            <span>{c.emoji} {c.label}</span>
+                            <span>{c.icon} {c.label}</span>
                             <span className="wj-currency-val">{c.value}</span>
                         </div>
                     ))}
