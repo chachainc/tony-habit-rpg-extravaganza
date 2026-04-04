@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Info, ChevronDown, ChevronUp, X, RefreshCw, Play, Square, Coins } from 'lucide-react';
-import { useMonopolyStore, getBoard, BOARD_ODDS, OWNERSHIP_TIERS, getPropertyMultiplier, type BoardSpace, type MysteryRollResult, type MoveResult } from '../../store/useMonopolyStore';
+import { useMonopolyStore, getBoard, BOARD_ODDS, OWNERSHIP_TIERS, getPropertyMultiplier, type BoardSpace, type MysteryRollResult } from '../../store/useMonopolyStore';
 import { useCurrencyStore } from '../../store/useCurrencyStore';
 import { useConquestStore } from '../../store/useConquestStore';
 import { useHeroImage } from '../../hooks/useHeroImage';
@@ -115,7 +115,7 @@ export const MonopolyBoard = ({ onClose }: { onClose: () => void }) => {
         ownedTiles, buyTile, upgradeTile,
         canBuyTile, canUpgradeTile, getBuyCost, getUpgradeCost,
     } = useMonopolyStore();
-    const { addGold, addShmeckles, addTickets, gold, shmeckles, spendGold, spendShmeckles, spendCurrency, canAfford } = useCurrencyStore();
+    const { addGold, addShmeckles, addTickets, gold, spendCurrency, canAfford } = useCurrencyStore();
     const heroImage = useHeroImage();
 
     const addSigils = (n: number) => {
@@ -134,7 +134,6 @@ export const MonopolyBoard = ({ onClose }: { onClose: () => void }) => {
     const [landedSpace, setLandedSpace] = useState<BoardSpace | null>(null);
     const [mysteryEvent, setMysteryEvent] = useState<MysteryRollResult | null>(null);
     const [goRewardAmount, setGoRewardAmount] = useState(0);
-    const [moveResultData, setMoveResultData] = useState<MoveResult | null>(null);
 
     const [boardKey, setBoardKey] = useState(0);
     const [isRefreshing, setIsRefreshing] = useState(false);
@@ -177,7 +176,6 @@ export const MonopolyBoard = ({ onClose }: { onClose: () => void }) => {
         setMysteryEvent(null);
         setFinalRng(null);
         setGoRewardAmount(0);
-        setMoveResultData(null);
 
         // Phase 1: dice spin animation
         setPhase('dice-spin');
@@ -217,7 +215,6 @@ export const MonopolyBoard = ({ onClose }: { onClose: () => void }) => {
                         setTimeout(() => {
                             const moveResult = movePlayer(roll);
                             setLandedSpace(moveResult.landedSpace);
-                            setMoveResultData(moveResult);
                             setAnimatingTo(null);
 
                             if (moveResult.passedGo) {
@@ -316,7 +313,6 @@ export const MonopolyBoard = ({ onClose }: { onClose: () => void }) => {
         setFinalRng(null);
         setDiceResult(null);
         setGoRewardAmount(0);
-        setMoveResultData(null);
 
         // If board refresh is pending (after GO pass), trigger it now
         if (needsRefresh) {
@@ -332,7 +328,6 @@ export const MonopolyBoard = ({ onClose }: { onClose: () => void }) => {
         setFinalRng(null);
         setDiceResult(null);
         setGoRewardAmount(0);
-        setMoveResultData(null);
 
         if (needsRefresh) {
             handleBoardRefresh();
