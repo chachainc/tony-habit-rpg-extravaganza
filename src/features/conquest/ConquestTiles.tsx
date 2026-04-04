@@ -41,7 +41,6 @@ export const ConquestTiles = ({ onComplete, onClose }: ConquestTilesProps) => {
     const [clearingIds, setClearingIds] = useState<Set<string>>(new Set());
     const [hintTileIds, setHintTileIds] = useState<Set<string>>(new Set());
     const [bumpingId,   setBumpingId]  = useState<string | null>(null);
-    const [revealedIds, setRevealedIds] = useState<Set<string>>(new Set());
 
     // Power-up usage counters
     const MAX_POWER_USE = 2;
