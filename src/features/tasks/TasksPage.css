@@ -1451,6 +1451,16 @@
     width: 100%;
     max-width: 480px;
     box-shadow: 0 -12px 40px rgba(0,0,0,0.6);
+    /* Mobile-safe internal scrolling & nav clearance */
+    max-height: min(90dvh, 100%);
+    overflow-y: auto;
+    box-sizing: border-box;
+}
+
+@media (max-width: 768px) {
+    .todo-modal-card {
+        padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 88px);
+    }
 }
 
 .todo-modal-header {

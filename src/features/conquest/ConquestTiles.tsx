@@ -251,13 +251,6 @@ export const ConquestTiles = ({ onComplete, onClose }: ConquestTilesProps) => {
     // ─── RENDER ─────────────────────────────────────────
     return (
         <div className="tiles-root">
-            {/* ── PORTRAIT LOCK ──────────────────────────── */}
-            <div className="tiles-portrait-lock">
-                <div className="portrait-lock-icon">🔄</div>
-                <h2>Rotate your device</h2>
-                <p>Strategic sorting requires a landscape view.</p>
-                <button onClick={onClose} className="tiles-result-btn" style={{ marginTop: '1rem', width: '200px' }}>Leave</button>
-            </div>
 
             {/* ── TOP BAR ────────────────────────────────── */}
             <div className="tiles-topbar">

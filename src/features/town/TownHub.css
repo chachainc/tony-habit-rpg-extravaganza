@@ -102,10 +102,12 @@
 /* === BUILDING CARD === */
 .building-card {
     position: relative;
-    text-align: center;
+    text-align: left;
     padding: var(--space-xl);
     transition: all var(--duration-normal) var(--easing);
     overflow: hidden;
+    display: flex;
+    flex-direction: column;
 }
 
 .building-card__glow {
@@ -186,17 +188,32 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    margin: 0 auto var(--space-lg) auto;
-    width: 80px;
-    height: 80px;
-    background: rgba(255, 255, 255, 0.05);
-    border-radius: var(--radius-xl);
+    margin: 0 0 var(--space-lg) 0;
+    width: 70px;
+    height: 70px;
+    background: rgba(255, 255, 255, 0.05); /* subtle background */
+    border-radius: var(--radius-lg);       /* slight rounded corners */
     transition: all var(--duration-normal) var(--easing);
+    flex-shrink: 0;
+    /* Optional consistent inward/outward glow */
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1) inset, 0 0 15px currentColor inset;
 }
 
 .building-card:hover .building-card__icon {
-    transform: translateY(-4px) scale(1.1);
+    transform: translateY(-4px) scale(1.05);
     background: rgba(255, 255, 255, 0.1);
+}
+
+/* Custom Image Icon (e.g., Arena) */
+.building-card__image-icon {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;               /* do not stretch, maintain aspect ratio */
+    aspect-ratio: 1 / 1;             /* 1:1 precise */
+    padding: 8px;                    /* subtle padding inside icon container */
+    box-sizing: border-box;
+    border-radius: inherit;          /* match container's rounded corners */
+    display: block;
 }
 
 /* === TEXT === */
@@ -235,7 +252,7 @@
     }
 
     .building-card__icon {
-        width: 60px;
-        height: 60px;
+        width: 56px;
+        height: 56px;
     }
 }

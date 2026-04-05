@@ -10,7 +10,7 @@ import { useCampaignStore } from '../../store/useCampaignStore';
 import { usePetStore, PET_DATABASE } from '../../store/usePetStore';
 import { useMagicStore } from '../../store/useMagicStore';
 import { ArenaBattlefieldLayout } from './ArenaBattlefieldLayout';
-import { getDetailedCombatBreakdown, type StatBreakdown } from '../../store/useCombatFormulas';
+import { getDetailedCombatBreakdown } from '../../store/useCombatFormulas';
 import { getPassiveBonuses } from '../../store/usePassiveEffects';
 import { WeaponEquipWidget } from './WeaponEquipWidget';
 import { useXpWeaponStore } from '../../store/useXpWeaponStore';
@@ -740,55 +740,44 @@ export const Arena = ({ onClose }: { onClose: () => void }) => {
 
                                             {showPowerDetails && (() => {
                                                 const breakdown = getDetailedCombatBreakdown();
-                                                const getSourceInfo = (label: string) => {
-                                                    const l = label.toLowerCase();
-                                                    if (l.includes('lv.')) return { name: label.split(' ')[0], type: 'Habits' };
-                                                    if (l.includes('equipment')) return { name: 'Equipped Gear', type: 'Equipment' };
-                                                    if (l.includes('room') || l.includes('bed')) return { name: 'Room Stats', type: 'Furniture' };
-                                                    if (l.includes('trophies')) return { name: 'Trophies', type: 'Bonus' };
-                                                    if (l.includes('aura')) return { name: 'Aura', type: 'Bonus' };
-                                                    if (l.includes('synergy')) return { name: 'Synergy', type: 'Bonus' };
-                                                    if (l.includes('risk')) return { name: 'Risk Region', type: 'Bonus' };
-                                                    if (l.includes('berserk')) return { name: 'Berserk', type: 'Bonus' };
-                                                    if (l.includes('budget')) return { name: 'Budget Power', type: 'Bonus' };
-                                                    return { name: label, type: 'Bonus' };
-                                                };
-
-                                                const tableRows: any[] = [];
-                                                const process = (stat: StatBreakdown, statName: string) => {
-                                                    stat.sources.forEach(s => {
-                                                        const info = getSourceInfo(s.label);
-                                                        tableRows.push({ name: info.name, type: info.type, val: s.value, stat: statName });
-                                                    });
-                                                };
-
-                                                process(breakdown.hp, 'HP');
-                                                process(breakdown.atk, 'ATK');
-                                                process(breakdown.def, 'DEF');
-                                                process(breakdown.spd, 'Speed');
-                                                if (breakdown.matk && breakdown.matk.total > 0) process(breakdown.matk, 'Magic ATK');
-                                                if (breakdown.mp && breakdown.mp.total > 0) process(breakdown.mp, 'Max MP');
+                                                const { skills } = useGameStore.getState();
+                                                
+                                                const tableRows = [
+                                                    { skill: 'Health', level: skills['Health']?.level ?? 1, power: 'HP ❤️', total: breakdown.hp.total, base: 50 + ((skills['Health']?.level ?? 1) - 1) * 5 },
+                                                    { skill: 'Strength', level: skills['Strength']?.level ?? 1, power: 'ATK ⚔️', total: breakdown.atk.total, base: 1 + (skills['Strength']?.level ?? 1) },
+                                                    { skill: 'Hygiene', level: skills['Hygiene']?.level ?? 1, power: 'DEF 🛡️', total: breakdown.def.total, base: 1 + (skills['Hygiene']?.level ?? 1) },
+                                                    { skill: 'Cardio', level: skills['Cardio']?.level ?? 1, power: 'Speed 💨', total: breakdown.spd.total, base: (skills['Cardio']?.level ?? 1) },
+                                                    { skill: 'Int', level: skills['Intelligence']?.level ?? 1, power: 'Magic ATK ✨', total: breakdown.matk.total, base: 1 + (skills['Intelligence']?.level ?? 1) },
+                                                    { skill: 'Sleep', level: skills['Sleep']?.level ?? 1, power: 'Max MP 🌙', total: breakdown.mp.total, base: 20 + ((skills['Sleep']?.level ?? 1) - 1) * 5 }
+                                                ];
 
                                                 return (
                                                     <div className="power-details-panel" style={{ padding: '0.5rem', background: 'rgba(15, 23, 42, 0.4)', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.05)', marginTop: '0.5rem' }}>
-                                                        <table style={{ width: '100%', fontSize: '0.8rem', textAlign: 'left', borderCollapse: 'collapse' }}>
+                                                        <table style={{ width: '100%', fontSize: '0.75rem', textAlign: 'left', borderCollapse: 'collapse' }}>
                                                             <thead>
                                                                 <tr style={{ color: '#94a3b8', borderBottom: '1px solid rgba(255,255,255,0.1)' }}>
                                                                     <th style={{ paddingBottom: '0.5rem' }}>SKILL</th>
-                                                                    <th style={{ paddingBottom: '0.5rem' }}>SOURCE</th>
-                                                                    <th style={{ paddingBottom: '0.5rem', textAlign: 'right' }}>EFFECT</th>
+                                                                    <th style={{ paddingBottom: '0.5rem', textAlign: 'center' }}>LEVEL</th>
+                                                                    <th style={{ paddingBottom: '0.5rem', textAlign: 'center' }}>BONUS</th>
+                                                                    <th style={{ paddingBottom: '0.5rem' }}>POWER</th>
+                                                                    <th style={{ paddingBottom: '0.5rem', textAlign: 'right' }}>TOTAL</th>
                                                                 </tr>
                                                             </thead>
                                                             <tbody>
-                                                                {tableRows.map((row, i) => (
-                                                                    <tr key={i} style={{ borderBottom: '1px solid rgba(255,255,255,0.03)' }}>
-                                                                        <td style={{ padding: '0.4rem 0', fontWeight: 600 }}>{row.name}</td>
-                                                                        <td style={{ padding: '0.4rem 0', color: '#cbd5e1' }}>{row.type}</td>
-                                                                        <td style={{ padding: '0.4rem 0', textAlign: 'right', color: row.val < 0 ? '#ef4444' : '#10b981', fontWeight: 600 }}>
-                                                                            {row.val > 0 ? '+' : ''}{row.val} {row.stat}
-                                                                        </td>
-                                                                    </tr>
-                                                                ))}
+                                                                {tableRows.map((row, i) => {
+                                                                    const bonus = row.total - row.base;
+                                                                    return (
+                                                                        <tr key={i} style={{ borderBottom: '1px solid rgba(255,255,255,0.03)' }}>
+                                                                            <td style={{ padding: '0.4rem 0', fontWeight: 600, color: '#e2e8f0' }}>{row.skill}</td>
+                                                                            <td style={{ padding: '0.4rem 0', textAlign: 'center', color: '#94a3b8' }}>{row.level}</td>
+                                                                            <td style={{ padding: '0.4rem 0', textAlign: 'center', color: bonus < 0 ? '#ef4444' : (bonus > 0 ? '#10b981' : '#64748b'), fontWeight: 600 }}>
+                                                                                {bonus > 0 ? '+' : ''}{bonus}
+                                                                            </td>
+                                                                            <td style={{ padding: '0.4rem 0', fontWeight: 600, color: '#f8fafc' }}>{row.power}</td>
+                                                                            <td style={{ padding: '0.4rem 0', textAlign: 'right', fontWeight: 800, color: '#f1f5f9' }}>{row.total}</td>
+                                                                        </tr>
+                                                                    );
+                                                                })}
                                                             </tbody>
                                                         </table>
                                                         {breakdown.synergy.active && (

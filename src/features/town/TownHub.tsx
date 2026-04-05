@@ -1,7 +1,6 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import {
-    Swords,
     ShoppingBag,
     ListTodo,
     Users,
@@ -46,7 +45,7 @@ export const TownHub: React.FC<TownHubProps> = ({ onNavigate }) => {
         {
             id: 'arena',
             name: 'Battle Arena',
-            icon: <Swords size={40} />,
+            icon: <img src="/assets/arena-icon.jpg" alt="Arena" className="building-card__image-icon" />,
             description: 'Fight abstract enemies',
             color: '#ef4444',
             onClick: () => onNavigate('arena'),

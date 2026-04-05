@@ -131,7 +131,7 @@
 
 .combat-option {
     display: flex;
-    align-items: center;
+    align-items: flex-start;
     gap: 1.25rem;
     padding: 1.5rem;
     background: rgba(255, 255, 255, 0.04);
@@ -215,6 +215,18 @@
     border-radius: 1rem;
     position: relative;
     z-index: 1;
+}
+
+/* Custom Image Icon */
+.combat-option__image-icon {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;               /* do not stretch, maintain aspect ratio */
+    aspect-ratio: 1 / 1;             /* 1:1 precise */
+    padding: 8px;                    /* uniform dense padding inside icon container */
+    box-sizing: border-box;
+    border-radius: inherit;          /* match container's rounded corners */
+    display: block;
 }
 
 .combat-option--arena .combat-option__icon {
