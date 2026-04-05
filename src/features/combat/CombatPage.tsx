@@ -1,6 +1,6 @@
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Swords, Crown, Shield, Zap, Map as MapIcon, Castle, ScrollText } from 'lucide-react';
+import { Swords, Shield, Zap, ScrollText } from 'lucide-react';
 import { useBattleStore } from '../../store/useBattleStore';
 import { useConquestStore } from '../../store/useConquestStore';
 import { useGameStore } from '../../store/useGameStore';
@@ -126,7 +126,7 @@ export const CombatPage = () => {
                         whileTap={{ scale: 0.98 }}
                     >
                         <div className="combat-option__icon">
-                            <Swords size={48} />
+                            <img src="/assets/arena-icon.jpg" alt="Arena" className="combat-option__image-icon" />
                         </div>
                         <div className="combat-option__info">
                             <h2>Arena</h2>
@@ -149,7 +149,9 @@ export const CombatPage = () => {
                         whileHover={{ scale: 1.02 }}
                         whileTap={{ scale: 0.98 }}
                     >
-                        <div className="combat-option__icon" style={{ fontSize: '48px', lineHeight: '48px' }}>🃏</div>
+                        <div className="combat-option__icon">
+                            <img src="/assets/blackjack-icon.jpg" alt="Blackjack" className="combat-option__image-icon" />
+                        </div>
                         <div className="combat-option__info">
                             <h2>Blackjack</h2>
                             <p>Casino table game. 50 free coins/day. No gold spent.</p>
@@ -167,7 +169,9 @@ export const CombatPage = () => {
                         whileHover={{ scale: 1.02 }}
                         whileTap={{ scale: 0.98 }}
                     >
-                        <div className="combat-option__icon" style={{ fontSize: '48px', lineHeight: '48px' }}>🧱</div>
+                        <div className="combat-option__icon">
+                            <img src="/assets/breaker-icon.jpg" alt="Brick Breaker" className="combat-option__image-icon" />
+                        </div>
                         <div className="combat-option__info">
                             <h2>Brick Breaker <span className="combat-limit-badge">3/day</span></h2>
                             <p>Classic breakout! Smash bricks with the ball.</p>
@@ -184,7 +188,9 @@ export const CombatPage = () => {
                         whileHover={{ scale: 1.02 }}
                         whileTap={{ scale: 0.98 }}
                     >
-                        <div className="combat-option__icon" style={{ fontSize: '48px', lineHeight: '48px' }}>🎲</div>
+                        <div className="combat-option__icon">
+                            <img src="/assets/tiles-icon.jpg" alt="Tiles Game" className="combat-option__image-icon" />
+                        </div>
                         <div className="combat-option__info">
                             <h2>Tiles Game <span className="combat-limit-badge">3/day</span></h2>
                             <p>Match tiles and test your memory.</p>
@@ -201,7 +207,9 @@ export const CombatPage = () => {
                         whileHover={{ scale: 1.02 }}
                         whileTap={{ scale: 0.98 }}
                     >
-                        <div className="combat-option__icon" style={{ fontSize: '48px', lineHeight: '48px' }}>♟️</div>
+                        <div className="combat-option__icon">
+                            <img src="/assets/chess-icon.jpg" alt="Daily Chess" className="combat-option__image-icon" />
+                        </div>
                         <div className="combat-option__info">
                             <h2>Daily Chess <span className="combat-limit-badge">1/day</span></h2>
                             <p>Challenge your mind. Win: +1 Sigil, +1 Smeckle, +1 Balloon.</p>
@@ -222,7 +230,7 @@ export const CombatPage = () => {
                         whileTap={{ scale: 0.98 }}
                     >
                         <div className="combat-option__icon">
-                            <Crown size={48} />
+                            <img src="/assets/conquest-icon.jpg" alt="Conquest" className="combat-option__image-icon" />
                         </div>
                         <div className="combat-option__info">
                             <h2>Conquest <span className="combat-limit-badge">1/day</span></h2>
@@ -241,7 +249,7 @@ export const CombatPage = () => {
                         whileTap={{ scale: 0.98 }}
                     >
                         <div className="combat-option__icon">
-                            <MapIcon size={48} />
+                            <img src="/assets/risk-icon.jpg" alt="Risk" className="combat-option__image-icon" />
                         </div>
                         <div className="combat-option__info">
                             <h2>Risk</h2>
@@ -260,7 +268,9 @@ export const CombatPage = () => {
                         whileTap={{ scale: 0.98 }}
                         style={{ borderLeft: '4px solid #a855f7' }}
                     >
-                        <div className="combat-option__icon" style={{ fontSize: '48px', lineHeight: '48px' }}>🐌</div>
+                        <div className="combat-option__icon">
+                            <img src="/assets/storm-icon.jpg" alt="Storm the Fort" className="combat-option__image-icon" />
+                        </div>
                         <div className="combat-option__info">
                             <h2>Storm the Fort</h2>
                             <p>Hold the line! Side-view wave defense where you deploy soldiers using Shmeckles.</p>
@@ -278,7 +288,7 @@ export const CombatPage = () => {
                         whileTap={{ scale: 0.98 }}
                     >
                         <div className="combat-option__icon">
-                            <Castle size={48} />
+                            <img src="/assets/tower-icon.jpg" alt="Tower Defense" className="combat-option__image-icon" />
                         </div>
                         <div className="combat-option__info">
                             <h2>Tower Defense</h2>

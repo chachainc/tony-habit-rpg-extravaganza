@@ -4,7 +4,7 @@ import { useAuraStore, AURAS } from '../../store/useAuraStore';
 import { usePetStore } from '../../store/usePetStore';
 import { useCampaignStore } from '../../store/useCampaignStore';
 import { ITEM_DATABASE } from '../../data/items';
-import { useHeroImage } from '../../hooks/useHeroImage';
+import { usePlayerAvatar } from '../../hooks/usePlayerAvatar';
 import forestRuinsBg from '../../assets/backgrounds/forest_ruins.png';
 import volcanicCavernBg from '../../assets/backgrounds/volcanic_cavern.png';
 import shadowRealmBg from '../../assets/backgrounds/shadow_realm.png';
@@ -65,6 +65,7 @@ const getBackgroundForFloor = (floor: number): string => {
 const UnitEntity = ({ combatant, isAlly, isActive, isHit, imageSrc, petItem }: { combatant: Combatant; isAlly: boolean; isActive: boolean; isHit: boolean; imageSrc: string; petItem?: any }) => {
   const hpPercent = Math.max(0, (combatant.hp / combatant.maxHp) * 100);
   const mpPercent = combatant.maxMana ? Math.max(0, (combatant.mana / combatant.maxMana) * 100) : 0;
+  const energyPercent = combatant.energy;
 
   return (
     <div className={`unit-entity ${isAlly ? 'ally' : 'enemy'} ${isActive ? 'attacking' : ''} ${isHit ? 'hit' : ''}`}>
@@ -90,6 +91,10 @@ const UnitEntity = ({ combatant, isAlly, isActive, isHit, imageSrc, petItem }: {
               <div className="hp-bar-fill" style={{ width: `${mpPercent}%`, background: '#3b82f6' }} />
             </div>
             <div className="hp-text" style={{ color: '#93c5fd' }}>{Math.max(0, Math.floor(combatant.mana))}/{Math.round(combatant.maxMana)} MP</div>
+            <div className={`hp-bar-frame ${energyPercent >= 100 ? 'energy-full-shimmer' : ''}`} style={{ marginTop: '4px', background: '#000' }}>
+              <div className="hp-bar-fill" style={{ width: `${energyPercent}%`, background: 'linear-gradient(90deg, #b45309, #d97706)' }} />
+            </div>
+            <div className="hp-text" style={{ color: '#fde68a' }}>{Math.floor(combatant.energy)}/100 Energy</div>
           </>
         )}
       </div>
@@ -102,27 +107,48 @@ export const ArenaBattlefieldLayout = () => {
   const { currentFloor, currentStreak } = useCampaignStore();
   const { equippedPetId } = usePetStore();
   const { activeAuraId } = useAuraStore();
-  const heroImage = useHeroImage();
+  const heroImage = usePlayerAvatar();
 
   const petItem = equippedPetId ? ITEM_DATABASE[equippedPetId] : null;
-  const [floatingTexts, setFloatingTexts] = useState<Array<{ id: number; text: string; type: 'damage' | 'heal' | 'crit'; x: number; y: number }>>([]);
+  const [floatingTexts, setFloatingTexts] = useState<Array<{ id: number; text: string; type: 'damage' | 'heal' | 'crit' | 'ultimate' | 'energy'; x: number; y: number }>>([]);
   const [hitTargetId, setHitTargetId] = useState<string | null>(null);
 
   useEffect(() => {
     if (!lastDamage) return;
 
+    if (lastDamage.type === 'ultimateActivation') {
+        return; // Don't show text for the activation phase
+    }
+
     const isPlayerTarget = lastDamage.target === 'player';
     const xOffset = Math.random() * 10 - 5;
-    setFloatingTexts((prev) => [
-      ...prev,
-      {
-        id: Date.now(),
-        text: lastDamage.amount.toString(),
-        type: lastDamage.isCrit ? 'crit' : 'damage',
-        x: isPlayerTarget ? 25 + xOffset : 75 + xOffset,
-        y: 40,
-      },
-    ]);
+    
+    const newTexts: any[] = [];
+    
+    // Main damage text
+    if (lastDamage.amount > 0 || lastDamage.type !== 'heal') {
+        const textType = lastDamage.type === 'ultimate' ? 'ultimate' : (lastDamage.isCrit ? 'crit' : 'damage');
+        newTexts.push({
+            id: Date.now(),
+            text: lastDamage.amount.toString(),
+            type: textType,
+            x: isPlayerTarget ? 25 + xOffset : 75 + xOffset,
+            y: 40,
+        });
+    }
+
+    // Energy gain text
+    if (lastDamage.energyGain) {
+        newTexts.push({
+            id: Date.now() + 1,
+            text: `+${lastDamage.energyGain} Energy`,
+            type: 'energy',
+            x: 25 + (Math.random() * 10 - 5), // Always above player
+            y: 30, // Slightly higher
+        });
+    }
+
+    setFloatingTexts((prev) => [...prev, ...newTexts]);
     setHitTargetId(lastDamage.target);
 
     const timer = setTimeout(() => setHitTargetId(null), 500);
@@ -133,7 +159,7 @@ export const ArenaBattlefieldLayout = () => {
     if (floatingTexts.length === 0) return;
     const timer = setTimeout(() => {
       setFloatingTexts((prev) => prev.slice(1));
-    }, 1000);
+    }, 1500); // Extended slightly so we can read ultimate numbers
     return () => clearTimeout(timer);
   }, [floatingTexts]);
 

@@ -1,12 +1,11 @@
 import { useState, useMemo, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, ArrowLeft, Dumbbell, Scale, BedDouble, BookOpen, Shirt } from 'lucide-react';
-import { useNavigate, useLocation } from 'react-router-dom';
-import { usePetStore } from '../../store/usePetStore';
+import { useNavigate } from 'react-router-dom';
+import { usePetStore, PET_DATABASE } from '../../store/usePetStore';
 import { useTitleStore } from '../../store/useTitleStore';
 import { useAuraStore, AURAS } from '../../store/useAuraStore';
 import { useHealthStore } from '../../store/useHealthStore';
-import { ITEM_DATABASE } from '../../data/items';
 import { SceneShell } from '../../components/scene';
 import { WardrobePanel } from './WardrobePanel';
 import { LibraryCodex } from '../library/LibraryCodex';
@@ -16,7 +15,7 @@ import { FurniturePlacementPanel, DraggableFurniturePiece } from './FurniturePla
 import { useRoomStore } from '../../store/useRoomStore';
 
 import homeCampBg from '../../assets/room-bg.jpg';
-import { useHeroImage } from '../../hooks/useHeroImage';
+import { usePlayerAvatar } from '../../hooks/usePlayerAvatar';
 import './PlayerRoom.css';
 
 type ActivePanel = 'wardrobe' | 'bookshelf' | 'sleep' | 'body' | 'loadout' | 'furniture_edit' | null;
@@ -195,29 +194,32 @@ export const PlayerRoom = ({ onClose: _onClose }: { onClose: () => void }) => {
     const { activeTitle, getUnlockedTitleDefs } = useTitleStore();
     const { activeAuraId } = useAuraStore();
     const { placedRoomFurniture } = useRoomStore();
-    const heroImage = useHeroImage();
+    const heroImage = usePlayerAvatar();
 
     const { editMode, setEditMode } = useRoomStore();
     const [activePanel, setActivePanel] = useState<ActivePanel>(editMode ? 'furniture_edit' : null);
 
     const [playerPos, setPlayerPos] = useState({ top: 50, left: 50 }); // Center of room naturally
     const [isMoving, setIsMoving] = useState(false);
-    
-    const location = useLocation();
 
+    // Subtle hint overlay pointing to the edit button
+    const [showHint, setShowHint] = useState(true);
     useEffect(() => {
-        if (location.state?.autoEdit) {
-            setEditMode(true);
-            setActivePanel('furniture_edit');
-        }
-    }, [location.state]);
+        const t = setTimeout(() => setShowHint(false), 5000);
+        return () => clearTimeout(t);
+    }, []);
+
+    // Dismiss hint if they open edit mode immediately
+    useEffect(() => {
+        if (editMode) setShowHint(false);
+    }, [editMode]);
 
     // Get active aura and titles
     const activeAura = useMemo(() => AURAS.find(a => a.id === activeAuraId), [activeAuraId]);
     const activeTitleDef = useMemo(() => getUnlockedTitleDefs().find(t => t.id === activeTitle), [activeTitle, getUnlockedTitleDefs]);
 
-    // Pet Sprite
-    const petData = equippedPetId ? ITEM_DATABASE[equippedPetId] : null;
+    // Pet Sprite — from PET_DATABASE (single source of truth)
+    const petData = equippedPetId ? PET_DATABASE[equippedPetId] : null;
     const petSprite = petData?.icon || '🐮';
 
     const handleHotspotTap = (hotspot: Hotspot) => {
@@ -257,17 +259,47 @@ export const PlayerRoom = ({ onClose: _onClose }: { onClose: () => void }) => {
                         </button>
                     </div>
 
-                    {/* Edit Room Button */}
-                    <button 
-                        className={`room-edit-btn ${editMode ? 'active' : ''}`}
-                        style={{ position: 'absolute', top: 16, right: 16, zIndex: 50, background: 'rgba(15, 23, 42, 0.85)', padding: '8px 16px', borderRadius: '12px', color: 'white', border: '1px solid rgba(255,255,255,0.1)' }}
-                        onClick={() => { 
-                            setEditMode(v => !v); 
-                            setActivePanel(editMode ? null : 'furniture_edit'); 
-                        }}
-                    >
-                        {editMode ? 'Done Editing' : '✏️ Edit Room'}
-                    </button>
+                    {/* Edit Room Button & Hint Container */}
+                    <div style={{ position: 'absolute', top: 16, right: 16, zIndex: 50, display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '0.5rem' }}>
+                        <button 
+                            className={`room-edit-btn ${editMode ? 'active' : ''}`}
+                            style={{ background: 'rgba(15, 23, 42, 0.85)', padding: '8px 16px', borderRadius: '12px', color: 'white', border: '1px solid rgba(255,255,255,0.1)' }}
+                            onClick={() => { 
+                                setEditMode(v => !v); 
+                                setActivePanel(editMode ? null : 'furniture_edit'); 
+                            }}
+                        >
+                            {editMode ? 'Done Editing' : '✏️ Edit Room'}
+                        </button>
+
+                        <AnimatePresence>
+                            {showHint && !editMode && (
+                                <motion.div
+                                    initial={{ opacity: 0, y: -10, scale: 0.95 }}
+                                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                                    exit={{ opacity: 0, y: -10, scale: 0.95 }}
+                                    transition={{ duration: 0.3 }}
+                                    style={{
+                                        background: 'rgba(99, 102, 241, 0.9)', // Indigo 500
+                                        color: 'white',
+                                        padding: '0.5rem 0.75rem',
+                                        borderRadius: '8px',
+                                        fontSize: '0.75rem',
+                                        fontWeight: 600,
+                                        boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.5)',
+                                        border: '1px solid rgba(165, 180, 252, 0.5)',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: '0.4rem',
+                                        zIndex: 49
+                                    }}
+                                >
+                                    <span>Tap to customize space</span>
+                                    <span style={{ fontSize: '1rem', animation: 'bounceRight 1s infinite' }}>⤴️</span>
+                                </motion.div>
+                            )}
+                        </AnimatePresence>
+                    </div>
 
                     {/* Draggable Furniture Area */}
                     <div style={{ position: 'absolute', inset: 0, pointerEvents: editMode ? 'auto' : 'none', zIndex: 15 }}>

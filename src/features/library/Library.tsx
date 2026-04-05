@@ -179,29 +179,8 @@ export const Library = () => {
                 {/* ── LIBRARY TAB ── */}
                 {activeTab === 'library' && (
                     <>
-                        {/* Intelligence Stat */}
-                        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
-                            <div className="intelligence-stat">
-                                <div className="intelligence-header">
-                                    <span className="intelligence-icon">🧠</span>
-                                    <span className="intelligence-label">Intelligence</span>
-                                    <span className="intelligence-level">Lv. {skills['Intelligence'].level}</span>
-                                </div>
-                                <div className="intelligence-bar">
-                                    <motion.div
-                                        className="intelligence-fill"
-                                        initial={{ width: 0 }}
-                                        animate={{ width: `${intelligenceProgress.percentage}%` }}
-                                    />
-                                </div>
-                                <div className="intelligence-xp">
-                                    {intelligenceProgress.current} / {intelligenceProgress.required} XP
-                                </div>
-                            </div>
-                        </motion.div>
-
                         {/* Add New Book */}
-                        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
+                        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
                             <Card variant="elevated" className="add-book-card">
                                 <h2>📖 Start a New Book</h2>
                                 <form onSubmit={handleAddBook} className="add-book-form">
@@ -274,6 +253,27 @@ export const Library = () => {
                                     </button>
                                 </form>
                             </Card>
+                        </motion.div>
+
+                        {/* Intelligence Stat */}
+                        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
+                            <div className="intelligence-stat">
+                                <div className="intelligence-header">
+                                    <span className="intelligence-icon">🧠</span>
+                                    <span className="intelligence-label">Intelligence</span>
+                                    <span className="intelligence-level">Lv. {skills['Intelligence'].level}</span>
+                                </div>
+                                <div className="intelligence-bar">
+                                    <motion.div
+                                        className="intelligence-fill"
+                                        initial={{ width: 0 }}
+                                        animate={{ width: `${intelligenceProgress.percentage}%` }}
+                                    />
+                                </div>
+                                <div className="intelligence-xp">
+                                    {intelligenceProgress.current} / {intelligenceProgress.required} XP
+                                </div>
+                            </div>
                         </motion.div>
                         {/* Info Card */}
                         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>

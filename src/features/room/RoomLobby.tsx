@@ -1,26 +1,17 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { BedDouble, BookOpen, Shirt, Scale, Dumbbell, DollarSign, Edit3 } from 'lucide-react';
-import { usePetStore } from '../../store/usePetStore';
-import { ITEM_DATABASE } from '../../data/items';
-import { useHeroImage } from '../../hooks/useHeroImage';
+import { BedDouble, BookOpen, Scale, Dumbbell, DollarSign } from 'lucide-react';
+import { usePetStore, PET_DATABASE } from '../../store/usePetStore';
+import { usePlayerAvatar } from '../../hooks/usePlayerAvatar';
 import { SceneShell } from '../../components/scene';
 import { LoadoutPanel } from '../character/LoadoutPanel';
+import { SleepPanel } from './SleepPanel';
+import { GardenPanel } from './GardenPanel';
 import homeCampBg from '../../assets/room-bg.jpg';
 import './RoomLobby.css';
 
 const ROOM_CARDS = [
-    {
-        id: 'closet',
-        icon: <Shirt size={28} />,
-        title: 'Closet',
-        subtitle: 'Titles, Auras, Pets',
-        color: 'rgba(139, 92, 246, 0.35)',
-        borderColor: 'rgba(139, 92, 246, 0.5)',
-        route: null,
-        panelHint: 'wardrobe',
-    },
     {
         id: 'bed',
         icon: <BedDouble size={28} />,
@@ -28,17 +19,8 @@ const ROOM_CARDS = [
         subtitle: 'Sleep Log',
         color: 'rgba(59, 130, 246, 0.35)',
         borderColor: 'rgba(59, 130, 246, 0.5)',
-        route: '/room/2d',
+        route: null,
         panelHint: 'sleep',
-    },
-    {
-        id: 'library',
-        icon: <BookOpen size={28} />,
-        title: 'Library',
-        subtitle: 'Book Collection',
-        color: 'rgba(245, 158, 11, 0.35)',
-        borderColor: 'rgba(245, 158, 11, 0.5)',
-        route: '/library',
     },
     {
         id: 'body',
@@ -48,6 +30,15 @@ const ROOM_CARDS = [
         color: 'rgba(236, 72, 153, 0.35)',
         borderColor: 'rgba(236, 72, 153, 0.5)',
         route: '/health',
+    },
+    {
+        id: 'library',
+        icon: <BookOpen size={28} />,
+        title: 'Library',
+        subtitle: 'Book Collection',
+        color: 'rgba(245, 158, 11, 0.35)',
+        borderColor: 'rgba(245, 158, 11, 0.5)',
+        route: '/library',
     },
     {
         id: 'gym',
@@ -68,19 +59,9 @@ const ROOM_CARDS = [
         route: '/budget',
     },
     {
-        id: 'arrange',
-        icon: <Edit3 size={28} />,
-        title: 'Arrange',
-        subtitle: 'Place & Move Items',
-        color: 'rgba(59, 130, 246, 0.4)',
-        borderColor: 'rgba(59, 130, 246, 0.6)',
-        route: '/room/2d',
-        state: { autoEdit: true },
-    },
-    {
         id: 'pet',
         icon: null, // filled dynamically
-        title: 'Pet',
+        title: 'Pets',
         subtitle: 'Care & Bond',
         color: 'rgba(251, 191, 36, 0.35)',
         borderColor: 'rgba(251, 191, 36, 0.5)',
@@ -97,23 +78,34 @@ const ROOM_CARDS = [
         route: '/room/2d',
         state: { autoEdit: false },
     },
+    {
+        id: 'garden',
+        icon: <span style={{ fontSize: '1.6rem' }}>🌱</span>,
+        title: 'Garden',
+        subtitle: 'Plant & Harvest',
+        color: 'rgba(34, 197, 94, 0.35)',
+        borderColor: 'rgba(34, 197, 94, 0.5)',
+        route: null,
+    },
 ];
 
 export const RoomLobby = ({ onClose: _onClose }: { onClose: () => void }) => {
     const navigate = useNavigate();
     const { equippedPetId, name: petName } = usePetStore();
-    const petData = equippedPetId ? ITEM_DATABASE[equippedPetId] : null;
-    const petSprite = petData?.icon || '🐮';
-    const heroImage = useHeroImage();
+    const petDef = equippedPetId ? PET_DATABASE[equippedPetId] : null;
+    const petSprite = petDef?.icon || '🐮';
+    const heroImage = usePlayerAvatar();
     
     const [showLoadout, setShowLoadout] = useState(false);
+    const [showSleep, setShowSleep] = useState(false);
+    const [showGarden, setShowGarden] = useState(false);
 
     return (
         <SceneShell
             backgroundImage={homeCampBg}
             showFog={true}
             showVignette={true}
-            showEmbers={true}
+            showEmbers={!showLoadout && !showSleep && !showGarden}
         >
             <div className="room-hub">
                 {/* Equipment Loadout Bar */}
@@ -143,8 +135,10 @@ export const RoomLobby = ({ onClose: _onClose }: { onClose: () => void }) => {
                             transition={{ delay: i * 0.04 }}
                             whileTap={{ scale: 0.95 }}
                             onClick={() => {
-                                if (card.id === 'closet') {
-                                    setShowLoadout(true);
+                                if (card.id === 'bed') {
+                                    setShowSleep(true);
+                                } else if (card.id === 'garden') {
+                                    setShowGarden(true);
                                 } else if (card.route) {
                                     navigate(card.route, card.state ? { state: card.state } : undefined);
                                 }
@@ -180,6 +174,44 @@ export const RoomLobby = ({ onClose: _onClose }: { onClose: () => void }) => {
                         }}
                     >
                         <LoadoutPanel onClose={() => setShowLoadout(false)} />
+                    </motion.div>
+                )}
+                {showSleep && (
+                    <motion.div
+                        initial={{ opacity: 0, scale: 0.95 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        exit={{ opacity: 0, scale: 0.95 }}
+                        style={{
+                            position: 'fixed',
+                            inset: 0,
+                            backgroundColor: 'rgba(15, 23, 42, 0.98)',
+                            zIndex: 60,
+                            overflowY: 'auto',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            padding: '1rem'
+                        }}
+                    >
+                        <div style={{ width: '100%', maxWidth: '600px' }}>
+                            <SleepPanel onClose={() => setShowSleep(false)} />
+                        </div>
+                    </motion.div>
+                )}
+                {showGarden && (
+                    <motion.div
+                        initial={{ opacity: 0, scale: 0.95 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        exit={{ opacity: 0, scale: 0.95 }}
+                        style={{
+                            position: 'fixed',
+                            inset: 0,
+                            backgroundColor: 'rgba(15, 23, 42, 0.95)',
+                            zIndex: 60,
+                            overflowY: 'auto'
+                        }}
+                    >
+                        <GardenPanel onClose={() => setShowGarden(false)} />
                     </motion.div>
                 )}
             </AnimatePresence>

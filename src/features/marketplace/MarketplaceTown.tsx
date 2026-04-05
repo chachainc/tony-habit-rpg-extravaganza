@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+
 import { motion, AnimatePresence } from 'framer-motion';
 import { X } from 'lucide-react';
 import { useMarketplaceStore } from '../../store/useMarketplaceStore';
@@ -16,7 +16,7 @@ import { JewelryStore } from './stores/JewelryStore';
 
 import { SceneShell } from '../../components/scene';
 import marketplaceNightBg from '../../assets/backgrounds/marketplace_night.png';
-import { useHeroImage } from '../../hooks/useHeroImage';
+import { usePlayerAvatar } from '../../hooks/usePlayerAvatar';
 import armorSignboard from '../../assets/signboards/armor.png';
 import weaponSignboard from '../../assets/signboards/weapon.png';
 import petSignboard from '../../assets/signboards/pet.png';
@@ -36,8 +36,7 @@ const SIGNBOARD_MAP: Record<string, string> = {
 };
 
 export const MarketplaceTown = () => {
-    const heroImage = useHeroImage();
-    const navigate = useNavigate();
+    const heroImage = usePlayerAvatar();
     const { playerPosition, setPlayerPosition, activeStore, openStore, closeStore } = useMarketplaceStore();
     const loyalty = useMarketLoyaltyStore();
     const currency = useGameStore(s => s.currency);
@@ -156,9 +155,6 @@ export const MarketplaceTown = () => {
         setNearbyStore(foundStore);
     }, [playerPosition]);
 
-    const handleExit = () => {
-        navigate('/');
-    };
 
     const nearbyStoreData = nearbyStore
         ? MARKETPLACE_LAYOUT.stores.find(s => s.id === nearbyStore)
@@ -182,46 +178,10 @@ export const MarketplaceTown = () => {
             >
                 <div className="marketplace-town marketplace-town--with-shell">
 
-                    {/* Exit button */}
-                    <button className="marketplace-exit-btn" onClick={handleExit}>
-                        <X size={24} />
-                        Exit Marketplace
-                    </button>
-
-                    {/* Codex button */}
-                    <button
-                        className="marketplace-codex-btn"
-                        onClick={() => navigate('/codex')}
-                    >
-                        📖 Codex
-                    </button>
-
                     {/* Mobile Store Grid — visible only on small screens via CSS */}
                     <div className="marketplace-mobile-grid">
-                        <h2 className="marketplace-mobile-title">🏪 Marketplace</h2>
 
-                        {/* Quick-Access Bar */}
-                        <div className="mp-quick-access">
-                            {MARKETPLACE_LAYOUT.stores.map((store) => (
-                                <button
-                                    key={store.id}
-                                    className="mp-qa-btn"
-                                    onClick={() => openStore(store.id)}
-                                    style={{ '--qa-color': store.color } as React.CSSProperties}
-                                >
-                                    <span className="mp-qa-emoji">{store.emoji}</span>
-                                    <span className="mp-qa-name">{store.name.split(' ')[0]}</span>
-                                </button>
-                            ))}
-                            {isMerchantDay && (
-                                <button className="mp-qa-btn mp-qa-merchant" onClick={() => setShowMerchant(true)}>
-                                    <span className="mp-qa-emoji">🧙</span>
-                                    <span className="mp-qa-name">Merchant</span>
-                                </button>
-                            )}
-                        </div>
 
-                        {/* Merchant NPC Card (Mon/Wed/Fri) */}
                         {isMerchantDay && (
                             <motion.div
                                 className="marketplace-store-card mp-merchant-card"

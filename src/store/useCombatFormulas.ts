@@ -30,7 +30,7 @@ export const SKILL_COMBAT_ROLES: Record<SkillName, SkillCombatRole> = {
     'Strength': { skill: 'Strength', primaryStat: 'ATK', description: 'Physical attack damage (ATK = 1 + level)', icon: '💪' },
     'Health': { skill: 'Health', primaryStat: 'HP', description: 'Max health (50 base HP, +5 per level after Lv1)', icon: '❤️' },
     'Hygiene': { skill: 'Hygiene', primaryStat: 'DEF', description: 'Physical defense (DEF = 1 + level)', icon: '🧼' },
-    'Cardio': { skill: 'Cardio', primaryStat: 'SPD', description: 'Speed and dodge (SPD = level, Dodge = level%)', icon: '🏃' },
+    'Cardio': { skill: 'Cardio', primaryStat: 'SPD & ULT', description: 'Improves agility and slightly increases Ultimate energy gain during combat.', icon: '🏃' },
     'Sleep': { skill: 'Sleep', primaryStat: 'MP', description: 'Mana pool (20 base MP, +5 per level after Lv1)', icon: '😴' },
     'Intelligence': { skill: 'Intelligence', primaryStat: 'MATK', description: 'Magic attack (MAG = 1 + level)', icon: '🧠' },
     'Social': { skill: 'Social', primaryStat: 'MDEF', description: 'Magic defense (MDEF = 1 + level)', icon: '🤝' },

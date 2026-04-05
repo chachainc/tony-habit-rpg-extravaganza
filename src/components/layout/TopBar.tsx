@@ -8,6 +8,7 @@ import { useBattleStore } from '../../store/useBattleStore';
 import { useConquestStore } from '../../store/useConquestStore';
 import { useProfileStore } from '../../store/useProfileStore';
 import { useCurrencyStore } from '../../store/useCurrencyStore';
+import { useTitleStore } from '../../store/useTitleStore';
 import './TopBar.css';
 
 export const TopBar = () => {
@@ -21,6 +22,11 @@ export const TopBar = () => {
     const { sigils } = useConquestStore();
     const { profileName, playerTitle, activeBannerId } = useProfileStore();
     const { shmeckles } = useCurrencyStore();
+    const { activeTitle, getUnlockedTitleDefs } = useTitleStore();
+
+    const titleDefs = getUnlockedTitleDefs();
+    const activeTitleDef = titleDefs.find(t => t.id === activeTitle);
+    const displayTitle = activeTitleDef ? activeTitleDef.name : playerTitle;
 
     const level = getGlobalLevel();
     const atk = getAttack();
@@ -66,7 +72,9 @@ export const TopBar = () => {
                             {bannerEmoji && <span className="top-bar__banner-emoji">{bannerEmoji}</span>}
                             {profileName}
                         </span>
-                        <span className="top-bar__player-title">{playerTitle}</span>
+                        <span className="top-bar__player-title" style={{ fontSize: '0.65rem', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                            {displayTitle}
+                        </span>
                     </div>
                     <div className="top-bar__level-badge">Lv{level}</div>
                 </div>

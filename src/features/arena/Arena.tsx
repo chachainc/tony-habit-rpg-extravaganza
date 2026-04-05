@@ -10,7 +10,7 @@ import { useCampaignStore } from '../../store/useCampaignStore';
 import { usePetStore, PET_DATABASE } from '../../store/usePetStore';
 import { useMagicStore } from '../../store/useMagicStore';
 import { ArenaBattlefieldLayout } from './ArenaBattlefieldLayout';
-import { getDetailedCombatBreakdown, type StatBreakdown } from '../../store/useCombatFormulas';
+import { getDetailedCombatBreakdown, getSkillSynergyBonus } from '../../store/useCombatFormulas';
 import { getPassiveBonuses } from '../../store/usePassiveEffects';
 import { WeaponEquipWidget } from './WeaponEquipWidget';
 import { useXpWeaponStore } from '../../store/useXpWeaponStore';
@@ -51,7 +51,8 @@ import generalInertiaImg from '../../assets/bosses/general_inertia.png';
 import flickerBurnoutImg from '../../assets/bosses/flicker_burnout.png';
 
 // Player sprite
-import { useHeroImage } from '../../hooks/useHeroImage';
+import { useProfileStore } from '../../store/useProfileStore';
+import { usePlayerAvatar, getUltimateName } from '../../hooks/usePlayerAvatar';
 
 // Map floor ranges to background images
 const getBackgroundForFloor = (floor: number): string => {
@@ -241,7 +242,10 @@ const getWinChanceColor = (winRate: number): string => {
 export const Arena = ({ onClose }: { onClose: () => void }) => {
     const navigate = useNavigate();
     const location = useLocation();
-    const heroImage = useHeroImage();
+    const heroImage = usePlayerAvatar();
+    const classType = useProfileStore(s => s.classType);
+    const ultimateName = getUltimateName(classType);
+    const synergy = getSkillSynergyBonus();
     const { getMagicAttack } = useGameStore();
     const { addGold } = useCurrencyStore();
     const { markDefeated } = useEnemyStore();
@@ -282,6 +286,8 @@ export const Arena = ({ onClose }: { onClose: () => void }) => {
     const [showPowerDetails, setShowPowerDetails] = useState(false);
     const [isRolling, setIsRolling] = useState(false);
     const [rollValue, setRollValue] = useState<number | null>(null);
+    const [isHeavyRolling, setIsHeavyRolling] = useState(false);
+    const [heavyRollValue, setHeavyRollValue] = useState<number | null>(null);
 
     // Auto-attack timer ref - MUST use ref so cleanup works properly
     const autoTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -310,20 +316,11 @@ export const Arena = ({ onClose }: { onClose: () => void }) => {
                 return;
             }
 
-            if (currentPlayer.energy >= 100) {
-                // Use Ultimate when rage is full
-                const ult = currentPlayer.abilities.find(a => a.type === 'ultimate');
-                if (ult) {
-                    selectAbility(ult);
-                    setTimeout(executePlayerAction, 100);
-                }
-            } else {
-                // Use Basic Strike
-                const strike = currentPlayer.abilities.find(a => a.id === 'basic_strike');
-                if (strike) {
-                    selectAbility(strike);
-                    setTimeout(executePlayerAction, 100);
-                }
+            // Use Basic Strike only
+            const strike = currentPlayer.abilities.find(a => a.id === 'basic_strike');
+            if (strike) {
+                selectAbility(strike);
+                setTimeout(executePlayerAction, 100);
             }
         }, 1500);
 
@@ -685,12 +682,16 @@ export const Arena = ({ onClose }: { onClose: () => void }) => {
                                             </div>
                                         </div>
                                         <div className="profile-content">
-                                            <div className="stat-grid horizontal">
-                                                <div className="stat-pill"><span className="stat-icon">❤️</span> {enemy.maxHp}</div>
-                                                <div className="stat-pill"><span className="stat-icon">⚔️</span> {enemy.atk}</div>
-                                                <div className="stat-pill"><span className="stat-icon">🛡️</span> {enemy.def}</div>
-                                                <div className="stat-pill"><span className="stat-icon">💨</span> {enemy.spd}</div>
-                                                <div className="stat-pill"><span className="stat-icon">✨</span> {enemyDef.element}</div>
+                                            <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: '0.8rem', padding: '0.5rem 0', fontWeight: 600, fontSize: '0.9rem' }}>
+                                                <span>❤️ {enemy.maxHp} HP</span>
+                                                <span style={{ opacity: 0.5 }}>•</span>
+                                                <span>⚔️ {enemy.atk} ATK</span>
+                                                <span style={{ opacity: 0.5 }}>•</span>
+                                                <span>🛡️ {enemy.def} DEF</span>
+                                                <span style={{ opacity: 0.5 }}>•</span>
+                                                <span>💨 {enemy.spd} SPD</span>
+                                                <span style={{ opacity: 0.5 }}>•</span>
+                                                <span style={{ textTransform: 'capitalize' }}>{ELEMENT_ICONS[enemyDef.element]} {enemyDef.element}</span>
                                             </div>
                                             {useBattleStore.getState().context === 'conquest' && (
                                                 <div className="synergy-banner" style={{ marginTop: '0.5rem', background: 'rgba(239, 68, 68, 0.2)' }}>
@@ -709,12 +710,16 @@ export const Arena = ({ onClose }: { onClose: () => void }) => {
                                             </div>
                                         </div>
                                         <div className="profile-content">
-                                            <div className="stat-grid horizontal">
-                                                <div className="stat-pill"><span className="stat-icon">❤️</span> {player.maxHp}</div>
-                                                <div className="stat-pill"><span className="stat-icon">⚔️</span> {player.atk}</div>
-                                                <div className="stat-pill"><span className="stat-icon">🛡️</span> {player.def}</div>
-                                                <div className="stat-pill"><span className="stat-icon">💨</span> {player.spd}</div>
-                                                <div className="stat-pill"><span className="stat-icon">🔮</span> neutral</div>
+                                            <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: '0.8rem', padding: '0.5rem 0', fontWeight: 600, fontSize: '0.9rem', color: '#f1f5f9' }}>
+                                                <span>❤️ {player.maxHp} HP</span>
+                                                <span style={{ opacity: 0.5 }}>•</span>
+                                                <span>⚔️ {player.atk} ATK</span>
+                                                <span style={{ opacity: 0.5 }}>•</span>
+                                                <span>🛡️ {player.def} DEF</span>
+                                                <span style={{ opacity: 0.5 }}>•</span>
+                                                <span>💨 {player.spd} SPD</span>
+                                                <span style={{ opacity: 0.5 }}>•</span>
+                                                <span>{ELEMENT_ICONS['neutral']} Neutral</span>
                                             </div>
 
                                             {/* Power Details Panel */}
@@ -730,30 +735,48 @@ export const Arena = ({ onClose }: { onClose: () => void }) => {
 
                                             {showPowerDetails && (() => {
                                                 const breakdown = getDetailedCombatBreakdown();
-                                                const renderStat = (label: string, stat: StatBreakdown, unit: string = '') => (
-                                                    <div className="breakdown-stat" key={label}>
-                                                        <div className="breakdown-stat-header">
-                                                            <span className="breakdown-stat-name">{label}</span>
-                                                            <span className="breakdown-stat-total">{stat.total}{unit}</span>
-                                                        </div>
-                                                        <div className="breakdown-sources">
-                                                            {stat.sources.map((s, i) => (
-                                                                <span key={i} className={`breakdown-source ${s.value < 0 ? 'negative' : ''}`}>
-                                                                    {s.label}: {s.value > 0 ? '+' : ''}{s.value}{unit}
-                                                                </span>
-                                                            ))}
-                                                        </div>
-                                                    </div>
-                                                );
+                                                const { skills } = useGameStore.getState();
+                                                
+                                                const tableRows = [
+                                                    { skill: 'Health', level: skills['Health']?.level ?? 1, power: 'HP ❤️', total: breakdown.hp.total, base: 50 + ((skills['Health']?.level ?? 1) - 1) * 5 },
+                                                    { skill: 'Strength', level: skills['Strength']?.level ?? 1, power: 'ATK ⚔️', total: breakdown.atk.total, base: 1 + (skills['Strength']?.level ?? 1) },
+                                                    { skill: 'Hygiene', level: skills['Hygiene']?.level ?? 1, power: 'DEF 🛡️', total: breakdown.def.total, base: 1 + (skills['Hygiene']?.level ?? 1) },
+                                                    { skill: 'Cardio', level: skills['Cardio']?.level ?? 1, power: 'Speed 💨', total: breakdown.spd.total, base: (skills['Cardio']?.level ?? 1) },
+                                                    { skill: 'Int', level: skills['Intelligence']?.level ?? 1, power: 'Magic ATK ✨', total: breakdown.matk.total, base: 1 + (skills['Intelligence']?.level ?? 1) },
+                                                    { skill: 'Sleep', level: skills['Sleep']?.level ?? 1, power: 'Max MP 🌙', total: breakdown.mp.total, base: 20 + ((skills['Sleep']?.level ?? 1) - 1) * 5 }
+                                                ];
+
                                                 return (
-                                                    <div className="power-details-panel">
-                                                        {renderStat('⚔️ ATK', breakdown.atk)}
-                                                        {renderStat('🛡️ DEF', breakdown.def)}
-                                                        {renderStat('❤️ HP', breakdown.hp)}
-                                                        {renderStat('💎 MP', breakdown.mp)}
-                                                        {renderStat('💨 SPD', breakdown.spd)}
+                                                    <div className="power-details-panel" style={{ padding: '0.5rem', background: 'rgba(15, 23, 42, 0.4)', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.05)', marginTop: '0.5rem' }}>
+                                                        <table style={{ width: '100%', fontSize: '0.75rem', textAlign: 'left', borderCollapse: 'collapse' }}>
+                                                            <thead>
+                                                                <tr style={{ color: '#94a3b8', borderBottom: '1px solid rgba(255,255,255,0.1)' }}>
+                                                                    <th style={{ paddingBottom: '0.5rem' }}>SKILL</th>
+                                                                    <th style={{ paddingBottom: '0.5rem', textAlign: 'center' }}>LEVEL</th>
+                                                                    <th style={{ paddingBottom: '0.5rem', textAlign: 'center' }}>BONUS</th>
+                                                                    <th style={{ paddingBottom: '0.5rem' }}>POWER</th>
+                                                                    <th style={{ paddingBottom: '0.5rem', textAlign: 'right' }}>TOTAL</th>
+                                                                </tr>
+                                                            </thead>
+                                                            <tbody>
+                                                                {tableRows.map((row, i) => {
+                                                                    const bonus = row.total - row.base;
+                                                                    return (
+                                                                        <tr key={i} style={{ borderBottom: '1px solid rgba(255,255,255,0.03)' }}>
+                                                                            <td style={{ padding: '0.4rem 0', fontWeight: 600, color: '#e2e8f0' }}>{row.skill}</td>
+                                                                            <td style={{ padding: '0.4rem 0', textAlign: 'center', color: '#94a3b8' }}>{row.level}</td>
+                                                                            <td style={{ padding: '0.4rem 0', textAlign: 'center', color: bonus < 0 ? '#ef4444' : (bonus > 0 ? '#10b981' : '#64748b'), fontWeight: 600 }}>
+                                                                                {bonus > 0 ? '+' : ''}{bonus}
+                                                                            </td>
+                                                                            <td style={{ padding: '0.4rem 0', fontWeight: 600, color: '#f8fafc' }}>{row.power}</td>
+                                                                            <td style={{ padding: '0.4rem 0', textAlign: 'right', fontWeight: 800, color: '#f1f5f9' }}>{row.total}</td>
+                                                                        </tr>
+                                                                    );
+                                                                })}
+                                                            </tbody>
+                                                        </table>
                                                         {breakdown.synergy.active && (
-                                                            <div className="synergy-banner">
+                                                            <div className="synergy-banner" style={{ marginTop: '0.75rem' }}>
                                                                 🔗 {breakdown.synergy.description}
                                                             </div>
                                                         )}
@@ -839,7 +862,41 @@ export const Arena = ({ onClose }: { onClose: () => void }) => {
                                     </Panel>
                                 </div>
 
-                                <div className="prep-buttons">
+                                <div style={{ background: 'rgba(30, 41, 59, 0.8)', padding: '1rem', borderRadius: '8px', border: '1px solid #334155', display: 'flex', flexDirection: 'column', gap: '0.5rem', marginTop: '1rem' }}>
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                        <div style={{ fontSize: '0.85rem', color: '#94a3b8', textTransform: 'uppercase' }}>Class</div>
+                                        <div style={{ fontWeight: 'bold', color: '#a78bfa' }}>{classType || 'Warrior'}</div>
+                                    </div>
+                                    
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                        <div style={{ fontSize: '0.85rem', color: '#94a3b8', textTransform: 'uppercase' }}>Ultimate</div>
+                                        <div style={{ fontWeight: 'bold', color: '#fde68a' }}>{ultimateName}</div>
+                                    </div>
+
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                        <div style={{ fontSize: '0.85rem', color: '#94a3b8', textTransform: 'uppercase' }}>Synergy</div>
+                                        <div style={{ fontWeight: 'bold', color: synergy.active ? '#a3e635' : '#475569', fontSize: '0.75rem' }}>
+                                            {synergy.description}
+                                        </div>
+                                    </div>
+
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                        <div style={{ fontSize: '0.85rem', color: '#94a3b8', textTransform: 'uppercase' }}>Synergy</div>
+                                        <div style={{ fontWeight: 'bold', color: synergy.active ? '#a3e635' : '#475569', fontSize: '0.75rem' }}>
+                                            {synergy.description}
+                                        </div>
+                                    </div>
+
+                                    <div style={{ marginTop: '0.5rem' }}>
+                                        <div style={{ fontSize: '0.85rem', color: '#94a3b8', marginBottom: '0.25rem', textTransform: 'uppercase' }}>Energy (Preview)</div>
+                                        <div className="energy-bar-wrap" style={{ position: 'relative', height: '12px', background: '#000', borderRadius: '4px', overflow: 'hidden' }}>
+                                            <div style={{ width: '0%', height: '100%', background: 'linear-gradient(90deg, #b45309, #d97706)' }} />
+                                            <span style={{ fontSize: '0.65rem', color: '#fbbf24', position: 'absolute', right: '4px', top: '50%', transform: 'translateY(-50%)' }}>0</span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div className="prep-buttons" style={{ marginTop: '1rem' }}>
                                     <GachaButton
                                         onClick={() => setView('map')}
                                         variant="secondary"
@@ -866,7 +923,10 @@ export const Arena = ({ onClose }: { onClose: () => void }) => {
 
         return (
             <div className="modal-overlay arena-overlay">
-                <div className={`arena-modal ${lastDamage?.target === 'player' ? 'shake' : ''}`}>
+                {phase === 'hit_stop' && (
+                    <div style={{ position: 'absolute', inset: 0, background: 'radial-gradient(circle, transparent 30%, rgba(0,0,0,0.85) 100%)', zIndex: 9000, pointerEvents: 'none' }} />
+                )}
+                <div className={`arena-modal ${lastDamage?.target === 'player' ? 'shake' : ''} ${phase === 'hit_stop' ? 'ultimate-hit-shake' : ''}`}>
                     <div className="battle-layout">
                         {/* TOP & BATTLEFIELD (60%) */}
                         <div className="battlefield-container">
@@ -887,8 +947,42 @@ export const Arena = ({ onClose }: { onClose: () => void }) => {
                         </div>
 
                         {/* ACTION BAR (25%) */}
-                        <div className="action-bar-container">
-
+                        <div className="action-bar-container" style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                            {player && (
+                                <div style={{ display: 'flex', justifyContent: 'center' }}>
+                                    <button
+                                        className={`command-btn ultimate-btn ${player.energy >= 100 ? 'ready' : 'locked'}`}
+                                        disabled={phase !== 'select_action' || autoAttack || isRolling || isHeavyRolling || player.energy < 100}
+                                        style={{ 
+                                            width: '100%', 
+                                            maxWidth: '400px',
+                                            padding: '0.75rem',
+                                            borderRadius: '8px',
+                                            border: player.energy >= 100 ? '2px solid #fbbf24' : '2px solid #475569',
+                                            background: player.energy >= 100 ? 'linear-gradient(135deg, #b45309 0%, #78350f 100%)' : '#1e293b',
+                                            color: player.energy >= 100 ? '#fff' : '#64748b',
+                                            boxShadow: player.energy >= 100 ? '0 0 15px rgba(251, 191, 36, 0.5)' : 'none',
+                                            fontWeight: 'bold',
+                                            textTransform: 'uppercase',
+                                            cursor: player.energy >= 100 ? 'pointer' : 'not-allowed',
+                                            transition: 'all 0.3s ease'
+                                        }}
+                                        onClick={() => {
+                                            if (phase === 'select_action' && player.energy >= 100) {
+                                                useBattleStore.getState().executeUltimate(ultimateName);
+                                            }
+                                        }}
+                                    >
+                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                            <span style={{ fontSize: '1.2rem' }}>💥</span>
+                                            <span>{ultimateName}</span>
+                                            <span style={{ fontSize: '0.85rem', color: player.energy >= 100 ? '#fde68a' : '#475569' }}>
+                                                {Math.floor(player.energy)}/100
+                                            </span>
+                                        </div>
+                                    </button>
+                                </div>
+                            )}
 
                             {player && (
                                 <div className="action-buttons">
@@ -907,47 +1001,69 @@ export const Arena = ({ onClose }: { onClose: () => void }) => {
                                     {/* 1. Heavy Attack */}
                                     <button
                                         className="command-btn attack heavy"
-                                        disabled={phase !== 'select_action' || autoAttack || isRolling || useBattleStore.getState().heavyAttackCooldown > 0}
+                                        disabled={phase !== 'select_action' || autoAttack || isRolling || isHeavyRolling || useBattleStore.getState().heavyAttackCooldown > 0}
                                         onClick={() => {
                                             if (phase === 'select_action' && useBattleStore.getState().heavyAttackCooldown === 0) {
+                                                setIsHeavyRolling(true);
                                                 const modifiedAtk = Math.max(1, player.atk * useBattleStore.getState().playerDamageModifier);
                                                 const lowHit = Math.max(1, Math.ceil(modifiedAtk * 0.5));
                                                 const bigHit = Math.max(1, Math.floor(modifiedAtk * 1.5));
                                                 
-                                                const isSuccess = Math.random() > 0.5;
-                                                const finalDamage = isSuccess ? bigHit : lowHit;
-                                                
-                                                // Buffer cooldown to 2 so it correctly blocks exactly 1 full player turn after this one finishes
-                                                useBattleStore.setState({ heavyAttackCooldown: 2 });
-                                                selectAbility({ 
-                                                    id: 'heavy_strike', 
-                                                    name: 'Heavy Strike', 
-                                                    type: 'attack', 
-                                                    description: '', 
-                                                    icon: '💥', 
-                                                    element: 'neutral', 
-                                                    damageMultiplier: 1.0, 
-                                                    cooldown: 0, 
-                                                    energyCost: 0,
-                                                    customDamageConfig: { type: 'heavy', rollValue: finalDamage }
-                                                });
-                                                setTimeout(executePlayerAction, 100);
+                                                let rolls = 0;
+                                                const maxRolls = 10;
+                                                const interval = setInterval(() => {
+                                                    const stepSuccess = Math.random() > 0.5;
+                                                    setHeavyRollValue(stepSuccess ? bigHit : lowHit);
+                                                    rolls++;
+                                                    if (rolls >= maxRolls) {
+                                                        clearInterval(interval);
+                                                        const isSuccess = Math.random() > 0.5;
+                                                        const finalDamage = isSuccess ? bigHit : lowHit;
+                                                        setHeavyRollValue(finalDamage);
+                                                        
+                                                        setTimeout(() => {
+                                                            useBattleStore.setState(state => ({
+                                                                combatLog: [...state.combatLog, { message: `🎲 Heavy Roll: ${finalDamage}!`, type: 'info' as const }],
+                                                                heavyAttackCooldown: 2 
+                                                            }));
+                                                            selectAbility({ 
+                                                                id: 'heavy_strike', 
+                                                                name: 'Heavy Strike', 
+                                                                type: 'attack', 
+                                                                description: '', 
+                                                                icon: '💥', 
+                                                                element: 'neutral', 
+                                                                damageMultiplier: 1.0, 
+                                                                cooldown: 0, 
+                                                                energyCost: 0,
+                                                                customDamageConfig: { type: 'heavy', rollValue: finalDamage }
+                                                            });
+                                                            executePlayerAction();
+                                                            setIsHeavyRolling(false);
+                                                            setHeavyRollValue(null);
+                                                        }, 400);
+                                                    }
+                                                }, 50);
                                             }
                                         }}
                                     >
                                         <div className="btn-top">💥 Heavy</div>
-                                        <div className="btn-mid">Hi-Dmg</div>
+                                        <div className="btn-mid" style={isHeavyRolling ? { color: '#fbbf24' } : {}}>
+                                            {isHeavyRolling && heavyRollValue !== null 
+                                                ? `🎲 ${heavyRollValue}` 
+                                                : `${Math.max(1, Math.ceil(Math.max(1, player.atk * useBattleStore.getState().playerDamageModifier) * 0.5))} or ${Math.max(1, Math.floor(Math.max(1, player.atk * useBattleStore.getState().playerDamageModifier) * 1.5))}`}
+                                        </div>
                                         <div className="btn-bot">
                                             {useBattleStore.getState().heavyAttackCooldown > 0
                                                 ? <span style={{ color: '#ef4444' }}>⚠️ Cooldown</span>
-                                                : <span>⚠️ 50% Hit</span>
+                                                : <span>🎲 50/50 Roll</span>
                                             }
                                         </div>
                                     </button>
 
                                     <button
                                         className="command-btn attack light"
-                                        disabled={phase !== 'select_action' || autoAttack || isRolling}
+                                        disabled={phase !== 'select_action' || autoAttack || isRolling || isHeavyRolling}
                                         onClick={() => {
                                             if (phase === 'select_action') {
                                                 setIsRolling(true);
@@ -963,6 +1079,9 @@ export const Arena = ({ onClose }: { onClose: () => void }) => {
                                                         const finalRoll = Math.floor(Math.random() * modifiedAtk) + 1;
                                                         setRollValue(finalRoll);
                                                         setTimeout(() => {
+                                                            useBattleStore.setState(state => ({
+                                                                combatLog: [...state.combatLog, { message: `🎲 Rolled ${finalRoll}!`, type: 'info' as const }]
+                                                            }));
                                                             selectAbility({ 
                                                                 id: 'light_strike', 
                                                                 name: 'Light Strike', 

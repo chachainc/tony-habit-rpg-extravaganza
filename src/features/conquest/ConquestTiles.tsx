@@ -1,23 +1,20 @@
-// ─── CONQUEST TILES — Tile Match 3 Engine + UI ────────
-import { useState, useCallback, useEffect, useRef } from 'react';
+import { useState, useCallback, useEffect, useRef, memo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-    generateBoard,
-    isTileBlocked,
-    DIFFICULTY_PRESETS,
+    trueTripleTileMap,
+    isTileLocked,
+    TILE_IMAGES,
+    TILE_COLORS,
     POWER_COSTS,
-    createSeededRng,
-    checkIsSolvable,
-    shuffleBoardState,
-    type BoardTile,
+    type TripleTileNode,
+    type DockTile,
+    type UndoEntry,
     type Difficulty,
 } from './tileConfig';
-import { useConquestStore } from '../../store/useConquestStore';
 import { useCurrencyStore } from '../../store/useCurrencyStore';
 import { useToastStore } from '../../components/ui/Toast';
 import './ConquestTiles.css';
 
-// ─── PROPS ────────────────────────────────────────
 interface ConquestTilesProps {
     onComplete: (result: 'win' | 'loss', difficulty: Difficulty, clearPct: number) => void;
     onClose: () => void;
@@ -25,760 +22,445 @@ interface ConquestTilesProps {
     canPlayImpossible: boolean;
 }
 
-// ─── TRAY CAPACITY ────────────────────────────────
-const TRAY_CAPACITY = 7;
+// ─── LAYOUT CONSTANTS ─────────────────────────────────
+// Close-to-square tile — dense, physical Mahjong piece feel
+const TILE_W   = 44;  // px wide (2 logical units)
+const TILE_H   = 40;  // px tall (ratio ~1.1 — near square)
+const Y_PITCH  = 40;  // tighter rows — 2px gap reduction for denser grid
+const Z_LIFT   =  5;  // increased: more visible stack depth per z-level
+const TRAY_CAP =  7;
+const MAX_Z    =  8;  // anchor stacks go to z=8
 
-// ─── COMPONENT ────────────────────────────────────
-export const ConquestTiles = ({ onComplete, onClose, canPlay, canPlayImpossible }: ConquestTilesProps) => {
-    // Game state
-    const [phase, setPhase] = useState<'select' | 'playing' | 'result'>('select');
-    const [difficulty, setDifficulty] = useState<Difficulty>(1);
-    const [board, setBoard] = useState<BoardTile[]>([]);
-    const [tray, setTray] = useState<BoardTile[]>([]);
-    const [points, setPoints] = useState(0);
-    const [comboTimer, setComboTimer] = useState<number | null>(null);
-    const [comboCount, setComboCount] = useState(0);
-    const [maxCombo, setMaxCombo] = useState(0);
-    const [result, setResult] = useState<'win' | 'loss' | null>(null);
-    const [clearingIds, setClearingIds] = useState<Set<number>>(new Set());
-    const [seed] = useState(() => Math.floor(Math.random() * 2147483647));
-    const [trayFull, setTrayFull] = useState(false);
-    const [trayFullMessage, setTrayFullMessage] = useState(false);
-    const [initialTileCount, setInitialTileCount] = useState(0);
-    const [showResultButton, setShowResultButton] = useState(false);
+// ─── MEMOIZED TILE COMPONENT ──────────────────────────
+const TileNodeComponent = memo(({ 
+    tile, locked, left, top, isHint, isBumping, stackBrightness, tileZ, onTileSelect, onTileBump
+}: {
+    tile: TripleTileNode, locked: boolean, left: number, top: number, isHint: boolean, isBumping: boolean,
+    stackBrightness: number, tileZ: number, onTileSelect: (t: TripleTileNode) => void, onTileBump: (id: string) => void
+}) => {
+    return (
+        <motion.div
+            layoutId={tile.id}
+            className={[
+                'tiles-board-tile',
+                locked    ? 'locked'   : 'unlocked',
+                isHint    ? 'hinted'   : '',
+                isBumping ? 'bumping'  : '',
+            ].filter(Boolean).join(' ')}
+            style={{
+                left, top,
+                width: TILE_W, height: TILE_H,
+                zIndex: tileZ,
+                filter: `brightness(${stackBrightness})`, // Blur removed for massive performance boost
+            }}
+            onClick={() => {
+                if (!locked) {
+                    onTileSelect(tile);
+                } else {
+                    onTileBump(tile.id);
+                }
+            }}
+            layout
+            initial={{ scale: 0.88, opacity: 0 }}
+            animate={{ scale: 1,    opacity: 1 }}
+            exit={{ scale: 0.72, opacity: 0 }}
+            whileHover={!locked ? { y: -4, scale: 1.02, zIndex: 9999 } : {}}
+            whileTap={!locked   ? { y: -8, scale: 1.05, zIndex: 9999 } : {}}
+            transition={{ duration: 0.14, ease: 'easeOut' }}
+        >
+            <div className="tiles-inner-frame">
+                <img src={TILE_IMAGES[tile.type]} alt={tile.type} className="tiles-tile-img" />
+            </div>
+        </motion.div>
+    );
+});
 
-    // Power-up state
-    const [ownedRemove, setOwnedRemove] = useState(0);
-    const [ownedUndo, setOwnedUndo] = useState(0);
-    const [ownedShuffle, setOwnedShuffle] = useState(0);
-    const [purchaseModal, setPurchaseModal] = useState<'remove' | 'undo' | 'shuffle' | null>(null);
-    // Daily use counters (reset when the game session reloads — stored per session only)
-    const [removeBoughtToday, setRemoveBoughtToday] = useState(0);
-    const [undoBoughtToday, setUndoBoughtToday] = useState(0);
-    const [shuffleBoughtToday, setShuffleBoughtToday] = useState(0);
-    const DAILY_BONUS_LIMIT = 3;
+export const ConquestTiles = ({ onComplete, onClose }: ConquestTilesProps) => {
+    const [phase,       setPhase]      = useState<'playing' | 'result'>('playing');
+    const [board,       setBoard]      = useState<TripleTileNode[]>([]);
+    const [dock,        setDock]       = useState<DockTile[]>([]);
+    const [score,       setScore]      = useState(0);
+    const [result,      setResult]     = useState<'win' | 'loss' | null>(null);
+    const [clearingIds, setClearingIds] = useState<Set<string>>(new Set());
+    const [hintTileIds, setHintTileIds] = useState<Set<string>>(new Set());
+    const [bumpingId,   setBumpingId]  = useState<string | null>(null);
 
-    // History for undo
-    const history = useRef<{ tile: BoardTile; traySnapshot: BoardTile[] }[]>([]);
+    // Power-up usage counters
+    const MAX_POWER_USE = 2;
+    const [usedUndo,    setUsedUndo]    = useState(0);
+    const [usedShuffle, setUsedShuffle] = useState(0);
+    const [usedHint,    setUsedHint]    = useState(0);
 
-    const conquest = useConquestStore();
-    const currency = useCurrencyStore();
-    const addToast = useToastStore(s => s.addToast);
+    const undoStack    = useRef<UndoEntry[]>([]);
+    const initialCount = useRef(trueTripleTileMap.length);
+    const currency     = useCurrencyStore();
+    const addToast     = useToastStore(s => s.addToast);
 
-    // ─── START GAME ───────────────────────────────
-    const startGame = useCallback((diff: Difficulty) => {
-        setDifficulty(diff);
-        const newBoard = generateBoard(diff, seed);
-        setBoard(newBoard);
-        setTray([]);
-        setPoints(0);
-        setComboCount(0);
-        setMaxCombo(0);
-        setComboTimer(null);
-        setResult(null);
+    // ─── INIT ──────────────────────────────────────────
+    useEffect(() => {
+        setBoard([...trueTripleTileMap]);
+        setDock([]); setScore(0); setResult(null);
         setClearingIds(new Set());
-        setInitialTileCount(newBoard.length);
-        history.current = [];
+        setHintTileIds(new Set());
+        undoStack.current = [];
         setPhase('playing');
-    }, [seed]);
-
-    // ─── CHECK TRIPLE CLEAR ──────────────────────
-    const checkAndClearTriples = useCallback((currentTray: BoardTile[]): { newTray: BoardTile[]; cleared: boolean } => {
-        const counts = new Map<string, number>();
-        let wildcardCount = 0;
-
-        for (const t of currentTray) {
-            if (t.symbolId === 'special_wildcard') {
-                wildcardCount++;
-            } else {
-                counts.set(t.symbolId, (counts.get(t.symbolId) || 0) + 1);
-            }
-        }
-
-        let targetSymbolId: string | null = null;
-
-        // 1. Try to form a triple using normal symbols + wildcards
-        for (const [symbolId, count] of counts) {
-            if (count + wildcardCount >= 3) {
-                targetSymbolId = symbolId;
-                break;
-            }
-        }
-
-        // 2. If no normal symbol works, maybe we have 3 wildcards?
-        if (!targetSymbolId && wildcardCount >= 3) {
-            targetSymbolId = 'special_wildcard';
-        }
-
-        if (targetSymbolId) {
-            // Collect exactly 3 tiles to remove
-            const toRemove: number[] = [];
-            let normalTaken = 0;
-
-            for (const t of currentTray) {
-                if (t.symbolId === targetSymbolId && normalTaken < 3) {
-                    toRemove.push(t.uid);
-                    normalTaken++;
-                }
-            }
-
-            let wildcardsNeeded = 3 - normalTaken;
-            for (const t of currentTray) {
-                if (t.symbolId === 'special_wildcard' && wildcardsNeeded > 0 && !toRemove.includes(t.uid)) {
-                    toRemove.push(t.uid);
-                    wildcardsNeeded--;
-                }
-            }
-
-            setClearingIds(new Set(toRemove));
-
-            // After animation, remove them
-            setTimeout(() => {
-                setClearingIds(new Set());
-            }, 350);
-
-            const newTray = currentTray.filter(t => !toRemove.includes(t.uid));
-            return { newTray, cleared: true };
-        }
-        return { newTray: currentTray, cleared: false };
+        setUsedUndo(0); setUsedShuffle(0); setUsedHint(0);
     }, []);
 
-    // ─── SELECT TILE ─────────────────────────────
-    const selectTile = useCallback((tile: BoardTile) => {
+    // ─── SELECT TILE ───────────────────────────────────
+    const selectTile = useCallback((tile: TripleTileNode) => {
         if (phase !== 'playing' || result) return;
-        if (tile.removed || isTileBlocked(tile, board)) return;
+        if (dock.length >= TRAY_CAP || clearingIds.size > 0) return;
+        if (isTileLocked(tile, board)) return;
 
-        // Save history
-        history.current.push({ tile, traySnapshot: [...tray] });
+        setHintTileIds(new Set());
+        const newBoard = board.filter(b => b.id !== tile.id);
+        const dockTile: DockTile = { id: tile.id, type: tile.type, x: tile.x, y: tile.y, z: tile.z };
+        const newDock  = [...dock, dockTile];
+        undoStack.current.push({ tile: dockTile, prevScore: score });
 
-        // Check specials that don't go to the tray
-        if (tile.symbolId === 'special_bomb') {
-            const boardAfterBomb = board.map(t => t.uid === tile.uid ? { ...t, removed: true } : t);
-            const detonationIds = new Set<number>([tile.uid]);
-            for (const t of boardAfterBomb) {
-                if (!t.removed) {
-                    const dx = t.x - tile.x;
-                    const dy = t.y - tile.y;
-                    const dist = Math.sqrt(dx * dx + dy * dy);
-                    if (dist < 2.0) detonationIds.add(t.uid); // Circular explosion radius
-                }
-            }
+        // Match-3 check
+        const counts = new Map<string, number>();
+        for (const t of newDock) counts.set(t.type, (counts.get(t.type) ?? 0) + 1);
+        let matchedType: string | null = null;
+        for (const [type, count] of counts) { if (count >= 3) { matchedType = type; break; } }
 
-            const newBoard = boardAfterBomb.map(t => detonationIds.has(t.uid) ? { ...t, removed: true } : t);
-            setBoard(newBoard);
-            setPoints(p => p + (detonationIds.size * 5));
-            addToast({ message: `💥 Bomb detonated! Cleared ${detonationIds.size - 1} tiles!`, type: 'info' });
-
-            if (newBoard.filter(t => !t.removed).length === 0 && tray.length === 0) {
-                setResult('win');
-                setPhase('result');
-            }
-            return;
-        }
-
-        if (tile.symbolId === 'special_shuffle') {
-            const boardAfterClick = board.map(t => t.uid === tile.uid ? { ...t, removed: true } : t);
-            const shuffled = shuffleBoardState(boardAfterClick);
-            setBoard(shuffled);
-            setPoints(p => p + 15);
-            addToast({ message: '🔀 Board Shuffled!', type: 'info' });
-
-            if (shuffled.filter(t => !t.removed).length === 0 && tray.length === 0) {
-                setResult('win');
-                setPhase('result');
-            }
-            return;
-        }
-
-        // Normal tile execution
-        const newBoard = board.map(t => t.uid === tile.uid ? { ...t, removed: true } : t);
-        setBoard(newBoard);
-
-        const newTray = [...tray, tile];
-        const trayCapacityLimit = difficulty >= 3 ? 6 : TRAY_CAPACITY;
-
-        const { newTray: afterClear, cleared } = checkAndClearTriples(newTray);
-
-        const applyAutoShuffle = (b: BoardTile[], t: BoardTile[]) => {
-            if (b.filter(x => !x.removed).length > 0 && !checkIsSolvable(b, t, trayCapacityLimit)) {
-                setTimeout(() => {
-                    setBoard(shuffleBoardState(b));
-                    addToast({ message: 'No moves detected - Auto Shuffled!', type: 'warning' });
-                }, 500);
-            }
-        };
-
-        if (cleared) {
-            // Award points
-            const now = Date.now();
-            let bonus = 0;
-            let currentCombo = 1;
-
-            if (comboTimer && now - comboTimer < 2500) {
-                currentCombo = comboCount + 1;
-                bonus = 5 * currentCombo;
-            }
-
-            setComboCount(currentCombo);
-            setMaxCombo(m => Math.max(m, currentCombo));
-            setComboTimer(now);
-            setPoints(p => p + 10 + bonus);
-
+        if (matchedType) {
+            const toRemove: string[] = [];
+            for (const t of newDock) { if (t.type === matchedType && toRemove.length < 3) toRemove.push(t.id); }
+            setClearingIds(new Set(toRemove));
+            setBoard(newBoard); setDock(newDock); setScore(s => s + 30);
             setTimeout(() => {
-                setTray(afterClear);
-                const remainingBoard = newBoard.filter(t => !t.removed);
-                if (remainingBoard.length === 0) {
-                    let finalTray = afterClear;
-                    let keepChecking = true;
-                    while (keepChecking) {
-                        const result2 = checkAndClearTriples(finalTray);
-                        if (result2.cleared) {
-                            finalTray = result2.newTray;
-                            setPoints(p => p + 10);
-                        } else {
-                            keepChecking = false;
-                        }
-                    }
-                    setTray(finalTray);
-                    if (finalTray.length === 0 || newBoard.filter(t => !t.removed).length === 0) {
-                        setResult('win');
-                        setPhase('result');
-                    }
-                } else {
-                    applyAutoShuffle(newBoard, afterClear);
-                }
-            }, 380);
-        } else {
-            setTray(newTray);
-            if (newTray.length >= trayCapacityLimit) {
-                setTrayFull(true);
-                setTrayFullMessage(true);
-                setTimeout(() => setTrayFull(false), 600);
-                setTimeout(() => {
-                    setTrayFullMessage(false);
-                    setResult('loss');
-                    setPhase('result');
-                }, 800);
-            } else {
-                applyAutoShuffle(newBoard, newTray);
-                const remainingBoard = newBoard.filter(t => !t.removed);
-                if (remainingBoard.length === 0 && newTray.length === 0) {
-                    setResult('win');
-                    setPhase('result');
-                }
-            }
+                setDock(p => p.filter(t => !toRemove.includes(t.id)));
+                setClearingIds(new Set());
+            }, 350);
+            return;
         }
-    }, [phase, result, board, tray, comboTimer, comboCount, checkAndClearTriples, difficulty, addToast]);
+        setBoard(newBoard); setDock(newDock); setScore(s => s + 10);
+    }, [phase, result, board, dock, score, clearingIds]);
 
-    // ─── POWER: REMOVE ───────────────────────────
-    const useRemove = useCallback(() => {
-        if (ownedRemove <= 0 || phase !== 'playing') return;
-        const selectable = board.filter(t => !t.removed && !isTileBlocked(t, board));
-        const toRemove = selectable.slice(0, 3);
-        if (toRemove.length === 0) return;
-
-        setOwnedRemove(c => c - 1);
-        setBoard(prev => prev.map(t =>
-            toRemove.find(r => r.uid === t.uid) ? { ...t, removed: true } : t
-        ));
-    }, [ownedRemove, board, phase]);
-
-    // ─── POWER: UNDO ─────────────────────────────
-    const useUndo = useCallback(() => {
-        if (ownedUndo <= 0 || phase !== 'playing' || history.current.length === 0) return;
-        const last = history.current.pop()!;
-        setOwnedUndo(c => c - 1);
-
-        // Restore tile to board
-        setBoard(prev => prev.map(t =>
-            t.uid === last.tile.uid ? { ...t, removed: false } : t
-        ));
-        // Restore tray
-        setTray(last.traySnapshot);
-    }, [ownedUndo, phase]);
-
-    // ─── POWER: SHUFFLE ──────────────────────────
-    const useShuffle = useCallback(() => {
-        if (ownedShuffle <= 0 || phase !== 'playing') return;
-        setOwnedShuffle(c => c - 1);
-
-        const remaining = board.filter(t => !t.removed);
-        const symbols = remaining.map(t => ({ symbolId: t.symbolId, symbol: t.symbol }));
-
-        // Shuffle symbols
-        const rng = createSeededRng(Date.now());
-        for (let i = symbols.length - 1; i > 0; i--) {
-            const j = Math.floor(rng() * (i + 1));
-            [symbols[i], symbols[j]] = [symbols[j], symbols[i]];
+    // ─── WIN / LOSS ────────────────────────────────────
+    useEffect(() => {
+        if (phase !== 'playing' || result || clearingIds.size > 0) return;
+        if (board.length === 0 && dock.length === 0) {
+            const t = setTimeout(() => { setResult('win'); setPhase('result'); }, 300);
+            return () => clearTimeout(t);
         }
+        if (dock.length >= TRAY_CAP) {
+            const t = setTimeout(() => { setResult('loss'); setPhase('result'); }, 600);
+            return () => clearTimeout(t);
+        }
+    }, [board, dock, phase, result, clearingIds]);
 
-        let idx = 0;
-        setBoard(prev => prev.map(t => {
-            if (t.removed) return t;
-            const sym = symbols[idx++];
-            return { ...t, symbolId: sym.symbolId, symbol: sym.symbol };
-        }));
-    }, [ownedShuffle, board, phase]);
-
-    // ─── PURCHASE ─────────────────────────────────
-    const handlePurchase = useCallback((type: 'remove' | 'undo' | 'shuffle') => {
-        const cost = POWER_COSTS[type];
-        const boughtCounts = { remove: removeBoughtToday, undo: undoBoughtToday, shuffle: shuffleBoughtToday };
-        if (boughtCounts[type] >= DAILY_BONUS_LIMIT) {
-            addToast({ message: `Daily limit reached for this bonus (${DAILY_BONUS_LIMIT}/day)`, type: 'warning' });
+    // ─── POWERS ──────────────────────────────────────────
+    const buyPower = (_type: string, cost: number, usedCount: number, setUsed: (u: number) => void, action: () => void) => {
+        if (usedCount >= MAX_POWER_USE) {
+            addToast({ message: 'Max uses reached for this game.', type: 'warning' });
             return;
         }
         if (!currency.spendGold(cost)) {
-            addToast({ message: `Not enough gold! Need ${cost}🪙`, type: 'error' });
+            addToast({ message: `Need ${cost}🪙`, type: 'error' });
             return;
         }
-        switch (type) {
-            case 'remove': setOwnedRemove(c => c + 1); setRemoveBoughtToday(c => c + 1); break;
-            case 'undo': setOwnedUndo(c => c + 1); setUndoBoughtToday(c => c + 1); break;
-            case 'shuffle': setOwnedShuffle(c => c + 1); setShuffleBoughtToday(c => c + 1); break;
-        }
-        setPurchaseModal(null);
-    }, [conquest, currency, removeBoughtToday, undoBoughtToday, shuffleBoughtToday, addToast]);
-
-    // ─── COMBO EXPIRY EFFECT ──────────────────────
-    useEffect(() => {
-        if (!comboTimer) return;
-        const interval = setInterval(() => {
-            if (Date.now() - comboTimer >= 2500) {
-                setComboCount(0);
-                setComboTimer(null);
-            }
-        }, 100);
-        return () => clearInterval(interval);
-    }, [comboTimer]);
-
-    // ─── TRAY CAPACITY (difficulty-scaled) ─────────
-    const trayCapacity = difficulty >= 3 ? 6 : TRAY_CAPACITY;
-
-    // ─── COMPUTE LAYOUT BOUNDS ────────────────────
-    const activeTiles = board.filter(t => !t.removed);
-    const tileSize = window.innerWidth < 600 ? 40 : 60;
-    const gap = tileSize * 0.85;
-
-    let boardWidth = 0;
-    let boardHeight = 0;
-    let offsetX = 0;
-    let offsetY = 0;
-    if (activeTiles.length > 0) {
-        const minX = Math.min(...activeTiles.map(t => t.x));
-        const minY = Math.min(...activeTiles.map(t => t.y));
-        const maxX = Math.max(...activeTiles.map(t => t.x));
-        const maxY = Math.max(...activeTiles.map(t => t.y));
-        offsetX = minX * gap;
-        offsetY = minY * gap;
-        boardWidth = (maxX - minX + 1) * gap + tileSize;
-        boardHeight = (maxY - minY + 1) * gap + tileSize;
-    }
-
-    // ─── SIGIL / GEM / XP REWARD CALC ─────────────
-    const preset = DIFFICULTY_PRESETS[difficulty];
-    const XP_MULTIPLIER: Record<number, number> = { 1: 1, 2: 2, 3: 3, 4: 4 };
-
-    // Calculate clear percentage
-    const tilesRemoved = board.filter(t => t.removed).length;
-    const clearPct = initialTileCount > 0 ? Math.round((tilesRemoved / initialTileCount) * 100) : 0;
-    const isPartialClear = result === 'loss' && clearPct >= 50;
-
-    const getXP = () => {
-        const base = XP_MULTIPLIER[difficulty] || 1;
-        const comboBonus = Math.floor(maxCombo / 3);
-        const fullXP = base + comboBonus;
-        if (result === 'win') return fullXP;
-        if (isPartialClear) return Math.max(1, Math.floor(fullXP / 2));
-        return 0;
+        setUsed(usedCount + 1);
+        action();
     };
 
-    const estimatedGold = (() => {
-        const fullGold = { 1: 5, 2: 15, 3: 30, 4: 50 }[difficulty] || 5;
-        if (result === 'win') return fullGold;
-        if (isPartialClear) return Math.max(1, Math.floor(fullGold / 2));
-        return 0;
-    })();
+    const handleUndo = useCallback(() => {
+        if (clearingIds.size > 0 || undoStack.current.length === 0) return;
+        buyPower('undo', POWER_COSTS.undo, usedUndo, setUsedUndo, () => {
+            const entry = undoStack.current.pop();
+            if (!entry) return;
+            const restored: TripleTileNode = {
+                id: entry.tile.id, type: entry.tile.type,
+                x: entry.tile.x, y: entry.tile.y, z: entry.tile.z, coveredBy: [],
+            };
+            setBoard(prev => [...prev, restored]);
+            setDock(prev => { const n = [...prev]; for (let i = n.length - 1; i >= 0; i--) { if (n[i].id === entry.tile.id) { n.splice(i, 1); break; } } return n; });
+            setScore(entry.prevScore);
+            setHintTileIds(new Set());
+        });
+    }, [usedUndo, clearingIds, currency]); // eslint-disable-line
 
-    // ─── EFFECTS ──────────────────────────────────
+    const handleShuffle = useCallback(() => {
+        if (clearingIds.size > 0 || board.length === 0) return;
+        buyPower('shuffle', POWER_COSTS.shuffle, usedShuffle, setUsedShuffle, () => {
+            const types = board.map(b => b.type);
+            for (let i = types.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [types[i], types[j]] = [types[j], types[i]];
+            }
+            setBoard(prev => prev.map((b, i) => ({ ...b, type: types[i] })));
+            setHintTileIds(new Set());
+        });
+    }, [usedShuffle, board, clearingIds, currency]); // eslint-disable-line
+
+    const handleHint = useCallback(() => {
+        if (clearingIds.size > 0) return;
+        buyPower('hint', POWER_COSTS.hint, usedHint, setUsedHint, () => {
+            const free = board.filter(t => !isTileLocked(t, board));
+            const counts = new Map<string, TripleTileNode[]>();
+            for (const t of free) {
+                if (!counts.has(t.type)) counts.set(t.type, []);
+                counts.get(t.type)!.push(t);
+            }
+            for (const tiles of counts.values()) {
+                if (tiles.length >= 3) {
+                    setHintTileIds(new Set(tiles.slice(0, 3).map(t => t.id)));
+                    return;
+                }
+            }
+            for (const tiles of counts.values()) {
+                if (tiles.length > 0) {
+                    setHintTileIds(new Set([tiles[0].id]));
+                    addToast({ message: 'No full triples free. Next move highlighted.', type: 'info' });
+                    return;
+                }
+            }
+        });
+    }, [usedHint, board, clearingIds, currency]); // eslint-disable-line
+
+    // ─── RESULT HANDLER ───────────────────────────────
+    const handleComplete = useCallback(() => {
+        const clearPct = Math.round(((initialCount.current - board.length) / initialCount.current) * 100);
+        onComplete(result ?? 'loss', 3, clearPct);
+    }, [result, board.length, onComplete]);
+
+    // ─── RENDER HELPERS ───────────────────────────────
+    //
+    // Tile logical size: 2 units wide, 1 unit tall.
+    // Each x-unit = TILE_W/2 pixels.
+    // So tile at x occupies pixels [x*(TILE_W/2), x*(TILE_W/2) + TILE_W).
+    //
+    // Stagger: odd-z tiles are at x = even+1, so they render
+    // centered between the two tiles they cover below.
+    //
+    //   z=0: tile at x=0 → left=0px
+    //   z=0: tile at x=2 → left=60px
+    //   z=1: tile at x=1 → left=30px  ← sits exactly between the two
+    //
+    // This produces the classic Mahjong split-coverage overlap.
+
+    const tileLeft = (t: TripleTileNode) => t.x * (TILE_W / 2);
+
+    // Higher z = visually higher (smaller y) — upper tiles lift slightly.
+    // Each layer offset: Z_LIFT px upward per z. Lower tiles peek at bottom.
+    const tileTop  = (t: TripleTileNode) => t.y * Y_PITCH - t.z * Z_LIFT;
+
+    // Painter's z-index: higher z always renders on top.
+    // Within same z: higher y (lower on screen) renders on top for perspective.
+    const tileZ    = (t: TripleTileNode) => t.z * 500 + t.y * 10 + 1;
+
+    // ─── SCALE TO FIT ─────────────────────────────────
+    const containerRef = useRef<HTMLDivElement>(null);
+    const [scale, setScale] = useState(1);
+
+    let contentW = 400, contentH = 300, minX = 0, minY = 0;
+    if (board.length > 0) {
+        minX = Math.min(...board.map(tileLeft));
+        minY = Math.min(...board.map(tileTop));
+        const maxX = Math.max(...board.map(t => tileLeft(t) + TILE_W));
+        const maxY = Math.max(...board.map(t => tileTop(t)  + TILE_H));
+        contentW = maxX - minX;
+        contentH = maxY - minY;
+    }
+    const PADDING    = 28;
+    const containerW = contentW + PADDING * 2;
+    const containerH = contentH + PADDING * 2;
+
     useEffect(() => {
-        if (phase === 'result') {
-            setShowResultButton(false);
-            const timer = setTimeout(() => setShowResultButton(true), 500);
-            return () => clearTimeout(timer);
-        }
-    }, [phase]);
+        const el = containerRef.current;
+        if (!el) return;
+        const ro = new ResizeObserver(entries => {
+            for (const e of entries) {
+                const { width, height } = e.contentRect;
+                const sx = width  / containerW;
+                const sy = height / containerH;
+                setScale(Math.min(sx, sy, 1.1));
+            }
+        });
+        ro.observe(el);
+        return () => ro.disconnect();
+    }, [containerW, containerH]);
 
-    // ─── RENDER: DIFFICULTY SELECT ────────────────
-    const renderDifficultySelect = () => (
-        <div className="tiles-difficulty-screen">
-            <div className="tiles-diff-title">🎴 Conquest Tiles</div>
-            <div className="tiles-diff-subtitle">
-                Match 3 identical tiles to clear them. Clear the entire board to win Sigils!
-            </div>
-
-            {!canPlay && (
-                <div className="tiles-already-played">
-                    ⏳ You've already played Tiles today. Come back tomorrow!
-                </div>
-            )}
-
-            <div className="tiles-diff-buttons">
-                {([1, 2, 3, 4] as Difficulty[]).map(d => {
-                    const p = DIFFICULTY_PRESETS[d];
-                    const locked = d === 4 && !canPlayImpossible;
-                    return (
-                        <button
-                            key={d}
-                            className="tiles-diff-btn"
-                            disabled={!canPlay || locked}
-                            onClick={() => startGame(d)}
-                        >
-                            <span>{p.label} — {p.totalTiles} tiles</span>
-                            <span className="tiles-diff-reward">
-                                {p.gemReward > 0 ? `💎 ${p.gemReward} Gems` : '🔱 Sigils'}
-                                {locked && ' 🔒'}
-                            </span>
-                        </button>
-                    );
-                })}
-            </div>
-            {!canPlayImpossible && (
-                <div style={{ color: '#64748b', fontSize: '0.75rem', textAlign: 'center' }}>
-                    Win 3 Hard games to unlock Impossible mode
-                </div>
-            )}
-        </div>
+    // Sort: z asc (bottom first), then y, then x — painter's algorithm
+    const sortedBoard = [...board].sort((a, b) =>
+        a.z !== b.z ? a.z - b.z : a.y !== b.y ? a.y - b.y : a.x - b.x
     );
 
-    // ─── RENDER: PURCHASE MODAL ───────────────────
-    const renderPurchaseModal = () => {
-        if (!purchaseModal) return null;
-        const info: Record<string, { icon: string; title: string; desc: string }> = {
-            remove: { icon: '🧲', title: 'Remove Item', desc: 'Remove 3 cards and place them aside' },
-            undo: { icon: '↩️', title: 'Withdraw Item', desc: 'Withdraw 1 card and put it back in its original position' },
-            shuffle: { icon: '🔀', title: 'Shuffle Item', desc: 'Randomly shuffle all unused cards' },
-        };
-        const item = info[purchaseModal];
-        const cost = POWER_COSTS[purchaseModal];
-        const owned = purchaseModal === 'remove' ? ownedRemove : purchaseModal === 'undo' ? ownedUndo : ownedShuffle;
+    const isWin    = result === 'win';
+    const clearPct = Math.round(((initialCount.current - board.length) / initialCount.current) * 100);
 
-        const boughtCounts: Record<string, number> = { remove: removeBoughtToday, undo: undoBoughtToday, shuffle: shuffleBoughtToday };
-        const usedToday = boughtCounts[purchaseModal] ?? 0;
-        const atLimit = usedToday >= DAILY_BONUS_LIMIT;
+    const handleTileSelect = useCallback((tile: TripleTileNode) => selectTile(tile), [selectTile]);
+    const handleTileBump = useCallback((id: string) => {
+        setBumpingId(id);
+        setTimeout(() => setBumpingId(null), 220);
+    }, []);
 
-        return (
-            <motion.div
-                className="tiles-purchase-overlay"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                onClick={() => setPurchaseModal(null)}
-            >
-                <motion.div
-                    className="tiles-purchase-card"
-                    initial={{ scale: 0.9, opacity: 0 }}
-                    animate={{ scale: 1, opacity: 1 }}
-                    exit={{ scale: 0.9, opacity: 0 }}
-                    onClick={e => e.stopPropagation()}
-                >
-                    <div className="tiles-purchase-header">
-                        <h3>⚙️ Purchase</h3>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.8rem' }}>
-                            <span className="tiles-purchase-owned">Owned: {owned}</span>
-                            <button className="tiles-purchase-close" onClick={() => setPurchaseModal(null)}>✕</button>
-                        </div>
-                    </div>
+    // ─── RENDER ─────────────────────────────────────────
+    return (
+        <div className="tiles-root">
 
-                    <div className="tiles-purchase-item">
-                        <div className="tiles-purchase-icon">{item.icon}</div>
-                        <div className="tiles-purchase-info">
-                            <h4>{item.title}</h4>
-                            <p>{item.desc}</p>
-                        </div>
-                    </div>
-
-                    <div className="tiles-purchase-cost">
-                        🪙 {cost} Gold {atLimit ? (
-                            <span style={{ color: '#ef4444', fontSize: '0.75rem', marginLeft: '0.5rem' }}>(Limit reached: {usedToday}/{DAILY_BONUS_LIMIT})</span>
-                        ) : (
-                            <span style={{ color: '#64748b', fontSize: '0.75rem', marginLeft: '0.5rem' }}>({usedToday}/{DAILY_BONUS_LIMIT} used today)</span>
-                        )}
-                    </div>
-
-                    <button
-                        className="tiles-purchase-buy-btn"
-                        disabled={currency.gold < cost || atLimit}
-                        onClick={() => handlePurchase(purchaseModal)}
-                    >
-                        Purchase
-                    </button>
-                </motion.div>
-            </motion.div>
-        );
-    };
-
-    // ─── RENDER: GAME BOARD ───────────────────────
-    const renderGame = () => (
-        <div className="tiles-game-area tiles-game-area--portrait">
-            {/* Top row: Combo Track */}
-            <div className="tiles-combo-container" style={{ height: 32, display: 'flex', justifyContent: 'center', alignItems: 'center', marginTop: '0.5rem' }}>
-                <AnimatePresence>
-                    {comboCount > 1 && (
-                        <motion.div
-                            initial={{ scale: 0.8, opacity: 0, y: -10 }}
-                            animate={{ scale: 1, opacity: 1, y: 0 }}
-                            exit={{ scale: 0.8, opacity: 0, y: -10 }}
-                            className="tiles-combo-badge"
-                        >
-                            <span>⚡ Combo x{comboCount}</span>
-                            <motion.div style={{ width: 40, height: 4, background: 'rgba(255,255,255,0.2)', borderRadius: 2, overflow: 'hidden' }}>
-                                <motion.div
-                                    initial={{ width: '100%' }} animate={{ width: '0%' }}
-                                    transition={{ duration: 2.5, ease: 'linear' }}
-                                    style={{ height: '100%', background: '#60a5fa', boxShadow: '0 0 8px #60a5fa' }}
-                                    key={`timer-${comboTimer}`}
-                                />
-                            </motion.div>
-                        </motion.div>
-                    )}
-                </AnimatePresence>
+            {/* ── TOP BAR ────────────────────────────────── */}
+            <div className="tiles-topbar">
+                <span className="tiles-topbar-label">🎴 TILE GAME</span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.8rem' }}>
+                    <span className="tiles-topbar-score" style={{ color: '#fff' }}>🪙 {currency.gold}</span>
+                    <span className="tiles-topbar-score">⭐ {score}</span>
+                    <button className="tiles-topbar-close" onClick={onClose}>✕</button>
+                </div>
             </div>
 
-            {/* Main Content Row */}
-            <div className="tiles-game-main">
-                {/* 1. Left: Power buttons */}
-                <div className="tiles-powers">
-                    <div className="tiles-power-wrapper">
-                        <button className="tiles-power-btn" disabled={ownedRemove <= 0} onClick={useRemove}>
-                            🧲<span className="tiles-power-badge">{ownedRemove}</span>
-                        </button>
-                        <div className="tiles-power-add" onClick={() => setPurchaseModal('remove')}>+</div>
+            {/* ── MAIN WRAP: Board Area + Side Panel ─────── */}
+            <div className="tiles-main-wrap">
+
+                {/* CONTENT AREA: board + dock stacked vertically */}
+                <div className="tiles-content-area">
+
+                    {/* BOARD */}
+                    <div className="tiles-board-container" ref={containerRef}>
+                        <div className="tiles-board-scaler" style={{ transform: `scale(${scale})`, transformOrigin: 'center center' }}>
+                            <div className="tiles-board" style={{ width: contentW, height: contentH }}>
+
+                                {sortedBoard.map(tile => {
+                                    const locked    = isTileLocked(tile, board);
+                                    const left      = tileLeft(tile) - minX;
+                                    const top       = tileTop(tile)  - minY;
+                                    const isHint    = hintTileIds.has(tile.id);
+                                    const isBumping = bumpingId === tile.id;
+
+                                    // 1. Unlocked tiles are bright
+                                    // 2. Locked tiles are beneath: darker based on absolute z-level
+                                    const stackBrightness = locked
+                                        ? Math.max(0.40, 0.95 - ((MAX_Z - tile.z) * 0.10))
+                                        : 1.15; // Playable tile indicator: slightly boosted brightness
+
+                                    return (
+                                        <TileNodeComponent
+                                            key={tile.id}
+                                            tile={tile}
+                                            locked={locked}
+                                            left={left}
+                                            top={top}
+                                            isHint={isHint}
+                                            isBumping={isBumping}
+                                            stackBrightness={stackBrightness}
+                                            tileZ={tileZ(tile)}
+                                            onTileSelect={handleTileSelect}
+                                            onTileBump={handleTileBump}
+                                        />
+                                    );
+                                })}
+
+                            </div>
+                        </div>
                     </div>
 
-                    <div className="tiles-power-wrapper">
-                        <button className="tiles-power-btn" disabled={ownedUndo <= 0 || history.current.length === 0} onClick={useUndo}>
-                            ↩️<span className="tiles-power-badge">{ownedUndo}</span>
-                        </button>
-                        <div className="tiles-power-add" onClick={() => setPurchaseModal('undo')}>+</div>
-                    </div>
-
-                    <div className="tiles-power-wrapper">
-                        <button className="tiles-power-btn" disabled={ownedShuffle <= 0} onClick={useShuffle}>
-                            🔀<span className="tiles-power-badge">{ownedShuffle}</span>
-                        </button>
-                        <div className="tiles-power-add" onClick={() => setPurchaseModal('shuffle')}>+</div>
-                    </div>
-                </div>
-
-                {/* 2. Center: Board */}
-                <div className="tiles-board-container">
-                    <div className="tiles-board" style={{ width: boardWidth, height: boardHeight }}>
-                        <AnimatePresence>
-                            {board.filter(t => !t.removed).map(tile => {
-                                const blocked = isTileBlocked(tile, board);
+                    {/* BOTTOM DOCK */}
+                    <div className="tiles-dock">
+                        <div className="tiles-tray-row">
+                            {Array.from({ length: TRAY_CAP }).map((_, i) => {
+                                const dt = dock[i];
+                                const clearing = dt ? clearingIds.has(dt.id) : false;
                                 return (
-                                    <motion.div
-                                        key={tile.uid}
-                                        className={`tiles-board-tile ${blocked ? 'blocked' : 'selectable'}`}
-                                        data-family={tile.symbol.colorFamily}
-                                        style={{
-                                            left: tile.x * gap - offsetX,
-                                            top: tile.y * gap - offsetY,
-                                            zIndex: tile.layer * 10,
-                                            width: tileSize,
-                                            height: tileSize,
-                                        }}
-                                        initial={{ scale: 0, opacity: 0 }}
-                                        animate={{ scale: 1, opacity: 1 }}
-                                        exit={{ scale: 0.8, opacity: 0, x: 50, y: -20 }}
-                                        transition={{ duration: 0.2 }}
-                                        onClick={() => !blocked && selectTile(tile)}
-                                        whileHover={!blocked ? { scale: 1.05, y: -2, zIndex: 9999 } : {}}
-                                        whileTap={!blocked ? { scale: 0.95 } : {}}
-                                    >
-                                        <div className="tile-inner">
-                                            {tile.symbol.imageSrc ? (
-                                                <img className="tile-face-img" src={tile.symbol.imageSrc} alt={tile.symbol.label} />
-                                            ) : (
-                                                <span className="tile-face">{tile.symbol.emoji}</span>
+                                    <div key={i} className={`tiles-tray-slot ${dt ? 'filled' : 'empty'} ${clearing ? 'clearing' : ''}`}>
+                                        <AnimatePresence>
+                                            {dt && (
+                                                <motion.div key={dt.id} layoutId={dt.id}
+                                                    className="tiles-board-tile dock-tile"
+                                                    layout
+                                                    initial={{ scale: 1.1, y: -8 }}
+                                                    animate={{ scale: 1, opacity: 1, y: 0 }}
+                                                    exit={{ scale: 0, opacity: 0, transition: { duration: 0.14 } }}
+                                                    transition={{ type: 'spring', stiffness: 380, damping: 28 }}
+                                                    style={{
+                                                        width: TILE_W, height: TILE_H,
+                                                        position: 'absolute',
+                                                        pointerEvents: 'none',
+                                                        backgroundColor: TILE_COLORS[dt.type] || '#1e293b',
+                                                    }}
+                                                >
+                                                    <div className="tiles-inner-frame">
+                                                        <img src={TILE_IMAGES[dt.type]} alt={dt.type} className="tiles-tile-img" />
+                                                    </div>
+                                                </motion.div>
                                             )}
-                                        </div>
-                                        <span className={`tile-rarity-dot ${tile.symbol.rarity}`} />
-                                    </motion.div>
+                                        </AnimatePresence>
+                                    </div>
                                 );
                             })}
-                        </AnimatePresence>
+                        </div>
+                        <div className="tiles-dock-meta">
+                            <span className="tiles-tray-count">{dock.length}/{TRAY_CAP}</span>
+                            <span className="tiles-tray-left" style={{ opacity: dock.length >= TRAY_CAP - 2 ? 1 : 0.4 }}>
+                                {dock.length >= TRAY_CAP ? 'FULL' : `${TRAY_CAP - dock.length} left`}
+                            </span>
+                            <span className="tiles-clear-pct">{clearPct}%</span>
+                        </div>
+                    </div>
+
+                </div>{/* end .tiles-content-area */}
+
+                {/* SIDE PANEL — Power-ups */}
+                <div className="tiles-side-panel">
+                    <div className="side-power"
+                        onClick={handleShuffle}
+                        aria-disabled={usedShuffle >= MAX_POWER_USE || currency.gold < POWER_COSTS.shuffle}
+                    >
+                        <div className="side-power-icon">🔀</div>
+                        <div className="side-power-name">Shuffle</div>
+                        <div className="side-power-meta">{usedShuffle}/{MAX_POWER_USE} · 20g</div>
+                    </div>
+                    <div className="side-power"
+                        onClick={handleHint}
+                        aria-disabled={usedHint >= MAX_POWER_USE || currency.gold < POWER_COSTS.hint}
+                    >
+                        <div className="side-power-icon">💡</div>
+                        <div className="side-power-name">Hint</div>
+                        <div className="side-power-meta">{usedHint}/{MAX_POWER_USE} · 20g</div>
+                    </div>
+                    <div className="side-power"
+                        onClick={handleUndo}
+                        aria-disabled={usedUndo >= MAX_POWER_USE || undoStack.current.length === 0 || currency.gold < POWER_COSTS.undo}
+                    >
+                        <div className="side-power-icon">↩️</div>
+                        <div className="side-power-name">Undo</div>
+                        <div className="side-power-meta">{usedUndo}/{MAX_POWER_USE} · 20g</div>
                     </div>
                 </div>
 
-                {/* 3. Right: Vertical Tray */}
-                <div className={`tiles-tray-bar ${trayFull ? 'tray-shake tray-flash' : ''}`}>
-                    <div className="tiles-tray-vertical">
-                        {Array.from({ length: trayCapacity }).map((_, i) => {
-                            const tile = tray[i];
-                            if (tile) {
-                                const isClearing = clearingIds.has(tile.uid);
-                                const matchCount = tray.filter(t => t.symbolId === tile.symbolId).length;
-                                const isMatching = matchCount >= 2 && !isClearing;
-                                return (
-                                    <motion.div
-                                        key={tile.uid}
-                                        className={`tiles-tray-tile ${isClearing ? 'clearing' : ''} ${isMatching ? 'matching' : ''}`}
-                                        data-family={tile.symbol.colorFamily}
-                                        initial={{ x: -20, opacity: 0, scale: 0.8 }}
-                                        animate={{ x: 0, opacity: 1, scale: 1 }}
-                                        transition={{ duration: 0.25, type: 'spring', stiffness: 300 }}
-                                        layout
-                                    >
-                                        <div className="tile-inner">
-                                            {tile.symbol.imageSrc ? (
-                                                <img className="tile-face-img" src={tile.symbol.imageSrc} alt={tile.symbol.label} />
-                                            ) : (
-                                                <span className="tile-face">{tile.symbol.emoji}</span>
-                                            )}
-                                        </div>
-                                    </motion.div>
-                                );
-                            }
-                            return <div key={`empty-${i}`} className="tiles-tray-slot" />;
-                        })}
-                    </div>
-                    {/* Tray Full Message */}
-                    <AnimatePresence>
-                        {trayFullMessage && (
-                            <motion.div className="tray-full-message" initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.8 }}>
-                                🚫 FULL!
-                            </motion.div>
-                        )}
-                    </AnimatePresence>
-                    <div className="tiles-tray-label">
-                        <div className="tiles-tray-count">{tray.length}/{trayCapacity}</div>
-                        <span className="tiles-tray-left" style={{ opacity: tray.length >= trayCapacity - 2 ? 1 : 0.4 }}>
-                            {trayCapacity - tray.length === 0 ? 'FULL' : `${trayCapacity - tray.length} left`}
-                        </span>
-                    </div>
-                </div>
-            </div>
+            </div>{/* end .tiles-main-wrap */}
 
-            {/* Result overlay */}
+            {/* ── RESULT OVERLAY ─────────────────────────── */}
             <AnimatePresence>
                 {result && (
-                    <motion.div
-                        className="tiles-result-overlay"
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        exit={{ opacity: 0 }}
+                    <motion.div className="tiles-result-overlay"
+                        initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
                     >
-                        <motion.div
-                            className={`tiles-result-card ${result === 'win' ? 'victory' : isPartialClear ? 'partial' : 'defeat'}`}
-                            initial={{ scale: 0.8, opacity: 0 }}
-                            animate={{ scale: 1, opacity: 1 }}
+                        <motion.div className={`tiles-result-card ${isWin ? 'victory' : 'defeat'}`}
+                            initial={{ scale: 0.8, opacity: 0, y: 30 }}
+                            animate={{ scale: 1, opacity: 1, y: 0 }}
+                            transition={{ type: 'spring', stiffness: 300, damping: 24 }}
                         >
-                            <h2>{result === 'win' ? '🏆 VICTORY!' : isPartialClear ? '🌓 HALF CLEARED!' : '💀 DEFEAT'}</h2>
+                            <h2>{isWin ? '🏆 VICTORY!' : '💀 Defeat'}</h2>
                             <div className="tiles-result-rewards">
-                                {result === 'win' || isPartialClear ? (
-                                    <>
-                                        <div className="tiles-reward-row">📊 Points: {points}</div>
-                                        <div className="tiles-reward-row">🗺️ Board Cleared: {clearPct}%</div>
-                                        {result === 'win' ? (
-                                            <>
-                                                <div className="tiles-reward-row highlight">🔱 Full Clear — Sigils Earned!</div>
-                                                <motion.div initial={{scale:0, opacity:0}} animate={{scale:1, opacity:1}} transition={{delay:0.2}} className="tiles-reward-row highlight">🎯 +{getXP()} Strategy XP {maxCombo >= 3 ? `(Combo Bonus!)` : ''}</motion.div>
-                                                {preset.gemReward > 0 && (
-                                                    <motion.div initial={{scale:0, opacity:0}} animate={{scale:1, opacity:1}} transition={{delay:0.3}} className="tiles-reward-row highlight">💎 +{preset.gemReward} Gems</motion.div>
-                                                )}
-                                                {estimatedGold > 0 && (
-                                                    <motion.div initial={{scale:0, y:20, opacity:0}} animate={{scale:1, y:0, opacity:1}} transition={{delay:0.4, type:'spring'}} className="tiles-reward-row highlight" style={{ color: '#fbbf24', fontSize: '1.2rem', fontWeight: 'bold', marginTop: '0.5rem' }}>🪙 +{estimatedGold} Gold</motion.div>
-                                                )}
-                                            </>
-                                        ) : (
-                                            <>
-                                                <div className="tiles-reward-row highlight" style={{ color: '#f59e0b' }}>🌓 Partial Reward Earned!</div>
-                                                <motion.div initial={{scale:0, opacity:0}} animate={{scale:1, opacity:1}} transition={{delay:0.2}} className="tiles-reward-row highlight" style={{ color: '#f59e0b' }}>🎯 +{getXP()} Strategy XP (50% reward)</motion.div>
-                                                {estimatedGold > 0 && (
-                                                    <motion.div initial={{scale:0, y:20, opacity:0}} animate={{scale:1, y:0, opacity:1}} transition={{delay:0.4, type:'spring'}} className="tiles-reward-row highlight" style={{ color: '#fbbf24', fontSize: '1.2rem', fontWeight: 'bold', marginTop: '0.5rem' }}>🪙 +{estimatedGold} Gold</motion.div>
-                                                )}
-                                            </>
-                                        )}
-                                    </>
-                                ) : (
-                                    <>
-                                        {points > 0 ? (
-                                            <>
-                                                <div className="tiles-reward-row">📊 Points: {points}</div>
-                                                <div className="tiles-reward-row">🗺️ Board Cleared: {clearPct}%</div>
-                                            </>
-                                        ) : (
-                                            <div className="tiles-reward-row">Run Abandoned —</div>
-                                        )}
-                                        <div className="tiles-reward-row" style={{ color: '#94a3b8' }}>Cleared less than 50% — no reward.</div>
-                                    </>
-                                )}
+                                <div className="tiles-reward-row">⭐ {score} pts</div>
+                                <div className="tiles-reward-row">🗺️ {clearPct}% cleared</div>
+                                {isWin && <div className="tiles-reward-row highlight">🔱 Full Board Clear!</div>}
                             </div>
-                            
-                            <AnimatePresence>
-                                {showResultButton && (
-                                    <motion.button 
-                                        className="tiles-play-again-btn" 
-                                        onClick={() => {
-                                            onComplete(result!, difficulty, result === 'win' ? 100 : clearPct);
-                                        }}
-                                        initial={{ opacity: 0, y: 10 }}
-                                        animate={{ opacity: 1, y: 0 }}
-                                        exit={{ opacity: 0 }}
-                                    >
-                                        {result === 'win' || isPartialClear ? 'Collect Rewards' : 'Return'}
-                                    </motion.button>
-                                )}
-                            </AnimatePresence>
+                            {!isWin && (
+                                <div className="tiles-revive-buttons">
+                                    <button className="tiles-revive-giveup" onClick={onClose}>Leave</button>
+                                </div>
+                            )}
+                            <button className="tiles-result-btn" onClick={handleComplete}>
+                                {isWin ? 'Collect Rewards' : 'Return'}
+                            </button>
                         </motion.div>
                     </motion.div>
                 )}
             </AnimatePresence>
 
-            {/* Purchase modal */}
-            <AnimatePresence>
-                {renderPurchaseModal()}
-            </AnimatePresence>
         </div>
-    );
-
-    // ─── MAIN RENDER ──────────────────────────────
-    return (
-        <motion.div
-            className="tiles-overlay"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-        >
-            <div className="tiles-bg-blur" />
-
-            {/* Top Bar */}
-            <div className="tiles-top-bar">
-                <div className="tiles-title">
-                    <span className="tiles-title-icon">🎴</span>
-                    <span className="tiles-title-text">Conquest Tiles</span>
-                </div>
-                {phase === 'playing' && (
-                    <div className="tiles-points-container">
-                        <div className="tiles-points-label">Score</div>
-                        <div className="tiles-points-value">{points}</div>
-                    </div>
-                )}
-                <button className="tiles-close-btn" style={{ opacity: phase === 'result' ? 0.3 : 1, pointerEvents: phase === 'result' ? 'none' : 'auto' }} onClick={() => {
-                    if (phase === 'playing') {
-                        setResult('loss');
-                        setPhase('result');
-                    } else {
-                        onClose();
-                    }
-                }}>✕</button>
-            </div>
-
-            {/* Content */}
-            {phase === 'select' && renderDifficultySelect()}
-            {(phase === 'playing' || phase === 'result') && renderGame()}
-        </motion.div>
     );
 };

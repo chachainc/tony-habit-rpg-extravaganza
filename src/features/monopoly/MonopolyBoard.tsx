@@ -1,10 +1,10 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Info, ChevronDown, ChevronUp, X, RefreshCw, Play, Square, Coins } from 'lucide-react';
-import { useMonopolyStore, getBoard, BOARD_ODDS, OWNERSHIP_TIERS, type BoardSpace, type MysteryRollResult, type MoveResult } from '../../store/useMonopolyStore';
+import { useMonopolyStore, getBoard, BOARD_ODDS, OWNERSHIP_TIERS, getPropertyMultiplier, type BoardSpace, type MysteryRollResult } from '../../store/useMonopolyStore';
 import { useCurrencyStore } from '../../store/useCurrencyStore';
 import { useConquestStore } from '../../store/useConquestStore';
-import { useHeroImage } from '../../hooks/useHeroImage';
+import { usePlayerAvatar } from '../../hooks/usePlayerAvatar';
 import './MonopolyBoard.css';
 
 import petCowSpin from '../../assets/pets/pet_cow_spin.jpg';
@@ -62,7 +62,7 @@ const MYSTERY_SHUFFLE_ITEMS = [
 ];
 
 // Flow phases
-type Phase = 'idle' | 'dice-spin' | 'dice-reveal' | 'moving' | 'result' | 'go-result' | 'mystery-spin' | 'mystery-result' | 'hazard-result';
+type Phase = 'idle' | 'dice-spin' | 'dice-reveal' | 'moving' | 'result' | 'go-result' | 'mystery-spin' | 'mystery-result' | 'hazard-result' | 'property-spin';
 
 // Build live odds rows from BOARD_ODDS
 const ODDS_ROWS = [
@@ -113,16 +113,16 @@ export const MonopolyBoard = ({ onClose }: { onClose: () => void }) => {
         canRoll, rollMysteryBox, streakMultiplierActive,
         lapCount, boardRefreshPending, regenerateBoard, getGoReward,
         ownedTiles, buyTile, upgradeTile,
-        canBuyTile, canUpgradeTile, getBuyCost, getUpgradeCost, getTileMultiplier,
+        canBuyTile, canUpgradeTile, getBuyCost, getUpgradeCost,
     } = useMonopolyStore();
-    const { addGold, addShmeckles, addTickets, gold, shmeckles, spendGold, spendShmeckles } = useCurrencyStore();
-    const heroImage = useHeroImage();
+    const { addGold, addShmeckles, addTickets, gold, spendCurrency, canAfford } = useCurrencyStore();
+    const heroImage = usePlayerAvatar();
 
     const addSigils = (n: number) => {
         try { useConquestStore.getState().addSigils(n); } catch {}
     };
 
-    // Derive player token from characterArchetype image
+    // Derive player token from classType image
     const playerToken = heroImage
         ? <img src={heroImage} alt="Player" style={{ width: '2rem', height: '2rem', borderRadius: '50%', objectFit: 'cover', objectPosition: 'top', border: '2px solid #6366f1' }} />
         : <span>🧙</span>;
@@ -134,10 +134,12 @@ export const MonopolyBoard = ({ onClose }: { onClose: () => void }) => {
     const [landedSpace, setLandedSpace] = useState<BoardSpace | null>(null);
     const [mysteryEvent, setMysteryEvent] = useState<MysteryRollResult | null>(null);
     const [goRewardAmount, setGoRewardAmount] = useState(0);
-    const [moveResultData, setMoveResultData] = useState<MoveResult | null>(null);
 
     const [boardKey, setBoardKey] = useState(0);
     const [isRefreshing, setIsRefreshing] = useState(false);
+
+    const [propertyMultiplierResult, setPropertyMultiplierResult] = useState<number>(1);
+    const [displayedMultiplier, setDisplayedMultiplier] = useState<number>(1);
 
     // Auto-roll
     const [autoRollActive, setAutoRollActive] = useState(false);
@@ -174,7 +176,6 @@ export const MonopolyBoard = ({ onClose }: { onClose: () => void }) => {
         setMysteryEvent(null);
         setFinalRng(null);
         setGoRewardAmount(0);
-        setMoveResultData(null);
 
         // Phase 1: dice spin animation
         setPhase('dice-spin');
@@ -214,13 +215,7 @@ export const MonopolyBoard = ({ onClose }: { onClose: () => void }) => {
                         setTimeout(() => {
                             const moveResult = movePlayer(roll);
                             setLandedSpace(moveResult.landedSpace);
-                            setMoveResultData(moveResult);
                             setAnimatingTo(null);
-
-                            // Collect rent from owned tiles
-                            if (moveResult.rentCollected > 0) {
-                                addGold(moveResult.rentCollected, { exact: true });
-                            }
 
                             if (moveResult.passedGo) {
                                 // GO was passed — award GO gold, show GO result
@@ -231,59 +226,76 @@ export const MonopolyBoard = ({ onClose }: { onClose: () => void }) => {
                             } else {
                                 // Normal tile landing
                                 const space = moveResult.landedSpace;
-                                const multiplier = getTileMultiplier(space.id);
+                                const ownership = useMonopolyStore.getState().ownedTiles[space.id];
 
-                                if (space.baseReward.gold) addGold(Math.floor(space.baseReward.gold * multiplier));
-                                if (space.baseReward.shmeckles) addShmeckles(Math.floor(space.baseReward.shmeckles * multiplier));
-                                if (space.baseReward.tickets) addTickets(space.baseReward.tickets);
-                                if ((space.baseReward as any).sigils) addSigils((space.baseReward as any).sigils);
+                                const processFinalRewards = (multiplier: number) => {
+                                    if (space.baseReward.gold) addGold(Math.floor(space.baseReward.gold * multiplier));
+                                    if (space.baseReward.shmeckles) addShmeckles(Math.floor(space.baseReward.shmeckles * multiplier));
+                                    if (space.baseReward.tickets) addTickets(space.baseReward.tickets);
+                                    if ((space.baseReward as any).sigils) addSigils((space.baseReward as any).sigils);
 
-                                if (space.type === 'mystery') {
-                                    const mystery = rollMysteryBox();
-                                    setMysteryEvent(mystery);
-                                    setPhase('mystery-spin');
+                                    if (space.type === 'mystery') {
+                                        const mystery = rollMysteryBox();
+                                        setMysteryEvent(mystery);
+                                        setPhase('mystery-spin');
 
-                                    let animFrame = 0;
-                                    const maxFrames = 30; // 30 frames total
-                                    let currentDelay = 50; // Initial fast speed
-                                    
-                                    // Custom timeout loop for slowing down over time (ease-out effect)
-                                    const runShuffle = () => {
-                                        animFrame++;
-                                        setDisplayedRng(Math.floor(Math.random() * MYSTERY_SHUFFLE_ITEMS.length));
+                                        let animFrame = 0;
+                                        const maxFrames = 30; // 30 frames total
+                                        let currentDelay = 50; // Initial fast speed
                                         
-                                        if (animFrame >= maxFrames) {
-                                            // Conclude spin
-                                            setFinalRng(0); // Arbitrary to trigger end visually
+                                        const runShuffle = () => {
+                                            animFrame++;
+                                            setDisplayedRng(Math.floor(Math.random() * MYSTERY_SHUFFLE_ITEMS.length));
                                             
-                                            // Distribute actual rewards
-                                            if (mystery.reward.gold) addGold(mystery.reward.gold);
-                                            if (mystery.reward.shmeckles) addShmeckles(mystery.reward.shmeckles);
-                                            if ((mystery.reward as any).sigils) addSigils((mystery.reward as any).sigils);
+                                            if (animFrame >= maxFrames) {
+                                                setFinalRng(0);
+                                                if (mystery.reward.gold) addGold(mystery.reward.gold);
+                                                if (mystery.reward.shmeckles) addShmeckles(mystery.reward.shmeckles);
+                                                if ((mystery.reward as any).sigils) addSigils((mystery.reward as any).sigils);
 
-                                            setTimeout(() => {
-                                                setPhase('mystery-result');
-                                                rollingRef.current = false;
-                                            }, 400); // Brief pause on the final frame before pop
-                                            return;
-                                        }
+                                                setTimeout(() => {
+                                                    setPhase('mystery-result');
+                                                    rollingRef.current = false;
+                                                }, 400); 
+                                                return;
+                                            }
 
-                                        // Increase delay progressively faster near the end to simulate wheel slowing
-                                        if (animFrame > 20) {
-                                            currentDelay += 35;
-                                        } else if (animFrame > 10) {
-                                            currentDelay += 10;
-                                        }
+                                            if (animFrame > 20) {
+                                                currentDelay += 35;
+                                            } else if (animFrame > 10) {
+                                                currentDelay += 10;
+                                            }
+                                            
+                                            setTimeout(runShuffle, currentDelay);
+                                        };
                                         
-                                        setTimeout(runShuffle, currentDelay);
-                                    };
+                                        runShuffle();
+                                    } else {
+                                        setPhase('result');
+                                        rollingRef.current = false;
+                                    }
+                                };
+
+                                if (ownership) {
+                                    const finalMul = getPropertyMultiplier(ownership.level);
+                                    setPropertyMultiplierResult(finalMul);
+                                    setPhase('property-spin');
                                     
-                                    // Start shuffle
-                                    runShuffle();
-                                    
+                                    let animFrame = 0;
+                                    const spinInterval = setInterval(() => {
+                                        animFrame++;
+                                        setDisplayedMultiplier([1, 2, 3][Math.floor(Math.random() * 3)]);
+                                        if (animFrame > 15) {
+                                            clearInterval(spinInterval);
+                                            setDisplayedMultiplier(finalMul);
+                                            setTimeout(() => {
+                                                processFinalRewards(finalMul);
+                                            }, 700);
+                                        }
+                                    }, 80);
                                 } else {
-                                    setPhase('result');
-                                    rollingRef.current = false;
+                                    setPropertyMultiplierResult(1);
+                                    processFinalRewards(1);
                                 }
                             }
                         }, 800); // Increased pause on final tile so it feels physical
@@ -301,7 +313,6 @@ export const MonopolyBoard = ({ onClose }: { onClose: () => void }) => {
         setFinalRng(null);
         setDiceResult(null);
         setGoRewardAmount(0);
-        setMoveResultData(null);
 
         // If board refresh is pending (after GO pass), trigger it now
         if (needsRefresh) {
@@ -317,7 +328,6 @@ export const MonopolyBoard = ({ onClose }: { onClose: () => void }) => {
         setFinalRng(null);
         setDiceResult(null);
         setGoRewardAmount(0);
-        setMoveResultData(null);
 
         if (needsRefresh) {
             handleBoardRefresh();
@@ -461,11 +471,16 @@ export const MonopolyBoard = ({ onClose }: { onClose: () => void }) => {
                                     transition={{ repeat: Infinity, duration: 2 }}
                                 >
                                     <div className="tile-icon">
-                                        {ownerInfo ? ownerInfo.icon : (isGoTile ? '🏠' : emptyIcon)}
+                                        {isGoTile ? '🏠' : emptyIcon}
                                     </div>
                                     <div className="tile-label">
-                                        {ownerInfo ? ownerInfo.name : (isGoTile ? 'GO' : space.name)}
+                                        {isGoTile ? 'GO' : space.name}
                                     </div>
+                                    {ownerInfo && (
+                                        <div className={`property-marker-badge level-${ownerInfo.level}`}>
+                                            {ownerInfo.icon}
+                                        </div>
+                                    )}
                                     {isGoTile && (
                                         <div className="go-reward-label">+{getGoReward()}<GoldIcon size={12} /></div>
                                     )}
@@ -550,6 +565,33 @@ export const MonopolyBoard = ({ onClose }: { onClose: () => void }) => {
                                             </span>
                                         </div>
                                     )}
+                                </div>
+                            </motion.div>
+                        )}
+                    </AnimatePresence>
+
+                    {/* Property Multiplier RNG spinner (on the board) */}
+                    <AnimatePresence mode="wait">
+                        {phase === 'property-spin' && (
+                            <motion.div
+                                className="dice-center-overlay"
+                                initial={{ opacity: 0 }}
+                                animate={{ opacity: 1 }}
+                                exit={{ opacity: 0 }}
+                                key="property-overlay"
+                            >
+                                <div className="rng-display" style={{ width: '220px', padding: '1rem', background: 'rgba(20,20,30,0.95)', border: '2px solid #a3e635', borderRadius: '16px' }}>
+                                    <div className="rng-header" style={{ marginBottom: '1rem', textAlign: 'center' }}>
+                                        <span className="rng-label" style={{ fontSize: '1rem', fontWeight: 800, color: '#bef264' }}>🏡 Owned Property</span>
+                                    </div>
+                                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px' }}>
+                                        <span style={{ fontSize: '3rem', fontWeight: 900, color: displayedMultiplier === 3 ? '#f59e0b' : displayedMultiplier === 2 ? '#60a5fa' : '#94a3b8' }}>
+                                            {displayedMultiplier}x
+                                        </span>
+                                        <span style={{ fontSize: '0.8rem', color: '#fff', opacity: 0.7 }}>
+                                            Reward Multiplier
+                                        </span>
+                                    </div>
                                 </div>
                             </motion.div>
                         )}
@@ -704,12 +746,6 @@ export const MonopolyBoard = ({ onClose }: { onClose: () => void }) => {
                                         <div style={{display: 'flex', alignItems: 'center', gap: '0.4rem'}}><GoldIcon size={18} /> <span>Gold</span></div>
                                         <span className="reward-val">+{goRewardAmount}</span>
                                     </div>
-                                    {moveResultData && moveResultData.rentCollected > 0 && (
-                                        <div className="reward-line gold" style={{ color: '#a3e635' }}>
-                                            <span>🏡 Rent Collected</span>
-                                            <span className="reward-val">+{moveResultData.rentCollected}</span>
-                                        </div>
-                                    )}
                                     <div className="go-refresh-notice">
                                         <RefreshCw size={14} />
                                         <span>Board will refresh with new tiles!</span>
@@ -843,13 +879,13 @@ export const MonopolyBoard = ({ onClose }: { onClose: () => void }) => {
                                             {landedSpace.baseReward.gold && (
                                                 <div className="reward-line gold">
                                                     <div style={{display: 'flex', alignItems: 'center', gap: '0.4rem'}}><GoldIcon size={18} /> <span>Gold</span></div>
-                                                    <span className="reward-val">+{Math.floor(landedSpace.baseReward.gold * getTileMultiplier(landedSpace.id))}</span>
+                                                    <span className="reward-val">+{Math.floor(landedSpace.baseReward.gold * propertyMultiplierResult)}</span>
                                                 </div>
                                             )}
                                             {landedSpace.baseReward.shmeckles && (
                                                 <div className="reward-line shmeckles">
                                                     <span>🐌 Schmeckles</span>
-                                                    <span className="reward-val">+{Math.floor(landedSpace.baseReward.shmeckles * getTileMultiplier(landedSpace.id))}</span>
+                                                    <span className="reward-val">+{Math.floor(landedSpace.baseReward.shmeckles * propertyMultiplierResult)}</span>
                                                 </div>
                                             )}
                                             {landedSpace.baseReward.tickets && (
@@ -864,9 +900,14 @@ export const MonopolyBoard = ({ onClose }: { onClose: () => void }) => {
                                                     <span className="reward-val">+{(landedSpace.baseReward as any).sigils}</span>
                                                 </div>
                                             )}
-                                            {ownedTiles[landedSpace.id] && (
+                                            {ownedTiles[landedSpace.id] && propertyMultiplierResult > 1 && (
                                                 <div className="reward-line" style={{ color: '#a3e635', fontSize: '0.7rem', marginTop: '0.25rem' }}>
-                                                    <span>🏡 Owned (×{getTileMultiplier(landedSpace.id)} payout)</span>
+                                                    <span>🏡 Owned ({propertyMultiplierResult}x payout!)</span>
+                                                </div>
+                                            )}
+                                            {ownedTiles[landedSpace.id] && propertyMultiplierResult === 1 && (
+                                                <div className="reward-line" style={{ color: '#94a3b8', fontSize: '0.7rem', marginTop: '0.25rem' }}>
+                                                    <span>🏡 Owned (Normal payout)</span>
                                                 </div>
                                             )}
                                         </>
@@ -878,22 +919,14 @@ export const MonopolyBoard = ({ onClose }: { onClose: () => void }) => {
                                         </div>
                                     )}
 
-                                    {/* Rent collected from passing over owned tiles */}
-                                    {moveResultData && moveResultData.rentCollected > 0 && (
-                                        <div className="reward-line gold" style={{ color: '#a3e635', borderTop: '1px solid rgba(255,255,255,0.1)', paddingTop: '0.4rem', marginTop: '0.3rem' }}>
-                                            <span>🏡 Rent Collected</span>
-                                            <span className="reward-val">+{moveResultData.rentCollected}</span>
-                                        </div>
-                                    )}
-
                                     {/* Buy tile button */}
                                     {canBuyTile(landedSpace.id) && (
                                         <button
                                             className="property-action-btn buy-btn"
-                                            disabled={gold < getBuyCost(landedSpace.id)}
+                                            disabled={gold < (getBuyCost(landedSpace.id)?.gold || 50)}
                                             onClick={() => {
                                                 const cost = getBuyCost(landedSpace.id);
-                                                if (spendGold(cost)) {
+                                                if (spendCurrency(cost)) {
                                                     buyTile(landedSpace.id);
                                                 }
                                             }}
@@ -901,27 +934,36 @@ export const MonopolyBoard = ({ onClose }: { onClose: () => void }) => {
                                             <div style={{display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px'}}>
                                                 <span>🏡 Buy Property</span>
                                                 <span style={{display: 'flex', alignItems: 'center', gap: '4px', background: 'rgba(0,0,0,0.2)', padding: '2px 8px', borderRadius: '12px'}}>
-                                                    ({getBuyCost(landedSpace.id)} <GoldIcon size={14} />)
+                                                    ({getBuyCost(landedSpace.id)?.gold} <GoldIcon size={14} />)
                                                 </span>
                                             </div>
                                         </button>
                                     )}
 
                                     {/* Upgrade tile button */}
-                                    {canUpgradeTile(landedSpace.id) && (
+                                    {canUpgradeTile(landedSpace.id) && (() => {
+                                        const costObj = getUpgradeCost(landedSpace.id);
+                                        const afford = costObj ? canAfford(costObj) : false;
+                                        return (
                                         <button
                                             className="property-action-btn upgrade-btn"
-                                            disabled={shmeckles < getUpgradeCost(landedSpace.id)}
+                                            disabled={!afford}
                                             onClick={() => {
-                                                const cost = getUpgradeCost(landedSpace.id);
-                                                if (spendShmeckles(cost)) {
+                                                if (costObj && spendCurrency(costObj)) {
                                                     upgradeTile(landedSpace.id);
                                                 }
                                             }}
                                         >
-                                            ⬆️ Upgrade ({getUpgradeCost(landedSpace.id)} Shmeckles)
+                                            <div style={{display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px'}}>
+                                                <span>⬆️ Upgrade</span>
+                                                <span style={{display: 'flex', alignItems: 'center', gap: '4px', background: 'rgba(0,0,0,0.2)', padding: '2px 8px', borderRadius: '12px'}}>
+                                                    ({costObj?.gold && <>{costObj.gold}<GoldIcon size={14} /></>}
+                                                    {costObj?.diamonds && <> + {costObj.diamonds}💎</>})
+                                                </span>
+                                            </div>
                                         </button>
-                                    )}
+                                        );
+                                    })()}
                                 </div>
 
                                 <div className="reward-action-row">

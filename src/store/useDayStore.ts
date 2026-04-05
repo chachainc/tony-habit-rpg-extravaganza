@@ -31,15 +31,19 @@ export interface ReadinessLogEntry {
 }
 
 interface DayState {
-    lastWakeDate: string | null; // YYYY-MM-DD or null if never woken
+    lastWakeDate: string | null; // Legacy
+    lastSleepLogDate: string | null;
+    lastReadinessLogDate: string | null;
     playerMaxHP: number;
     playerCurrentHP: number;
     sleepLogs: SleepLogEntry[];
     readinessLogs: ReadinessLogEntry[];
 
     isNewDay: () => boolean;
-    logSleep: (score: number, durationMinutes?: number) => number; // Returns total XP earned
+    logSleep: (score: number) => number; // Returns total XP earned
     logReadiness: (score: number) => number; // Returns total XP earned
+    hasLoggedSleepToday: () => boolean;
+    hasLoggedReadinessToday: () => boolean;
     wakeUp: (sleepScore: number, readinessScore: number) => number; // Legacy compatibility
     skipTracking: () => void;
     takeDamage: (amount: number) => void;
@@ -64,6 +68,8 @@ export const useDayStore = create<DayState>()(
     persist(
         (set, get) => ({
             lastWakeDate: null,
+            lastSleepLogDate: null,
+            lastReadinessLogDate: null,
             playerMaxHP: 100,
             playerCurrentHP: 100,
             sleepLogs: [],
@@ -75,14 +81,23 @@ export const useDayStore = create<DayState>()(
                 return !last || today > last;
             },
 
-            logSleep: (score: number, durationMinutes?: number) => {
+            hasLoggedSleepToday: () => {
+                const today = getEasternDateString();
+                return get().lastSleepLogDate === today;
+            },
+
+            hasLoggedReadinessToday: () => {
+                const today = getEasternDateString();
+                return get().lastReadinessLogDate === today;
+            },
+
+            logSleep: (score: number) => {
                 const today = getEasternDateString();
                 const xpEarned = calculateSleepXP(score);
 
                 const newEntry: SleepLogEntry = {
                     date: today,
                     score,
-                    durationMinutes,
                     xpEarned
                 };
 
@@ -98,7 +113,8 @@ export const useDayStore = create<DayState>()(
 
                     return {
                         lastWakeDate: today,
-                        playerCurrentHP: state.playerMaxHP, // Full heal on sleep log? Or maybe separate this. Legacy behavior heals on wakeUp.
+                        lastSleepLogDate: today,
+                        playerCurrentHP: state.playerMaxHP, // Full heal on sleep log
                         sleepLogs: newLogs,
                     };
                 });
@@ -127,6 +143,7 @@ export const useDayStore = create<DayState>()(
                     }
 
                     return {
+                        lastReadinessLogDate: today,
                         readinessLogs: newLogs,
                     };
                 });

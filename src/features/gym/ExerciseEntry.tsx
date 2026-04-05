@@ -11,6 +11,7 @@ interface Props {
     muscleGroup: MuscleGroup;
     date: string;
     editExerciseId?: string;
+    ghostWorkoutDate?: string;
     onClose: () => void;
 }
 
@@ -20,8 +21,8 @@ const DEFAULT_SETS: ExerciseSet[] = [
     { setNumber: 3, weight: 0, reps: 0 },
 ];
 
-export const ExerciseEntry = ({ muscleGroup, date, editExerciseId, onClose }: Props) => {
-    const { addExercise, updateExercise, getAutocompleteSuggestions, getLastSession, exercises } = useGymStore();
+export const ExerciseEntry = ({ muscleGroup, date, editExerciseId, ghostWorkoutDate, onClose }: Props) => {
+    const { addExercise, updateExercise, getAutocompleteSuggestions, getLastSession, getByDateAndMuscle, exercises } = useGymStore();
 
     // If editing, load existing data
     const existingExercise = editExerciseId
@@ -50,11 +51,18 @@ export const ExerciseEntry = ({ muscleGroup, date, editExerciseId, onClose }: Pr
         [exerciseName, suggestions]
     );
 
-    // Ghost letters — previous session for this exercise
+    // Ghost data — use specific ghostWorkoutDate if provided, otherwise last session
     const ghostSession = useMemo(() => {
         if (!exerciseName) return null;
+        if (ghostWorkoutDate) {
+            // Pull from a specific historical date for that muscle group
+            const dateExercises = getByDateAndMuscle(ghostWorkoutDate, muscleGroup);
+            return dateExercises.find(
+                e => e.exerciseName.toLowerCase() === exerciseName.toLowerCase()
+            ) || null;
+        }
         return getLastSession(exerciseName, muscleGroup, date);
-    }, [exerciseName, muscleGroup, date, getLastSession]);
+    }, [exerciseName, muscleGroup, date, ghostWorkoutDate, getLastSession, getByDateAndMuscle]);
 
     const getGhostSet = (setNum: number) => {
         if (!ghostSession) return null;

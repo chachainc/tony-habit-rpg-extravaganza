@@ -464,6 +464,79 @@ export const TasksPage = () => {
                         {bundleTasks.map((task, idx) => {
                             const catConfig = task.category ? CATEGORY_CONFIG[task.category] : null;
                             const isBeingDragged = dragState?.isDragging && dragState.taskId === task.id;
+
+                            // ─── GROUPED / TIERED TASK UI ───
+                            if (task.tiers && task.tiers.length > 0) {
+                                return (
+                                    <div
+                                        key={task.id}
+                                        className={`recurring-task grouped-task ${task.completed ? 'completed' : ''} ${isBeingDragged ? 'dragging' : ''}`}
+                                        data-drag-index={idx}
+                                        data-drag-bundle={bundleType}
+                                    >
+                                        <div className="drag-handle" onPointerDown={(e) => handleDragPointerDown(e, bundleType, idx, task.id)}>
+                                            <GripVertical size={16} />
+                                        </div>
+                                        <div className="grouped-tiers-container">
+                                            {task.tiers.map(tier => {
+                                                const isSelected = task.selectedTier === tier.id;
+                                                const isLocked = task.completed && !isSelected;
+                                                return (
+                                                    <div 
+                                                        key={tier.id}
+                                                        className={`tier-row ${isSelected ? 'tier-selected' : ''} ${isLocked ? 'tier-locked' : ''}`}
+                                                        onClick={() => {
+                                                            if (dragState?.isDragging) return;
+                                                            if (task.completed) {
+                                                                if (isSelected) uncompleteTask(task.id);
+                                                                return;
+                                                            }
+                                                            completeTask(task.id, { tierId: tier.id });
+                                                        }}
+                                                    >
+                                                        <div className="recurring-task__check">
+                                                            {isSelected ? (
+                                                                <CheckCircle size={24} className="check-done" />
+                                                            ) : (
+                                                                <Circle size={24} className="check-todo" style={{ opacity: isLocked ? 0.3 : 1 }} />
+                                                            )}
+                                                        </div>
+                                                        <div className="recurring-task__info">
+                                                            <div className="recurring-task__title-row">
+                                                                <span className="recurring-task__title" style={{ opacity: isLocked ? 0.5 : 1 }}>{tier.title}</span>
+                                                            </div>
+                                                            <div className="recurring-task__meta">
+                                                                {tier.rewards.map((reward, ridx) => (
+                                                                    <span
+                                                                        key={ridx}
+                                                                        className="skill-badge"
+                                                                        style={{ background: SKILL_COLORS[reward.skillId as keyof typeof SKILL_COLORS], opacity: isLocked ? 0.5 : 1 }}
+                                                                    >
+                                                                        {SKILL_ICONS[reward.skillId as keyof typeof SKILL_ICONS]} {reward.skillId} {reward.xp > 0 && `+${reward.xp}`}
+                                                                    </span>
+                                                                ))}
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                );
+                                            })}
+                                        </div>
+                                        <div className="task-action-btns">
+                                            <button
+                                                className="task-delete-btn"
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    if (confirm(`Remove "${task.title}"?`)) removeDailyTask(task.id);
+                                                }}
+                                            >
+                                                <MinusCircle size={18} />
+                                            </button>
+                                        </div>
+                                    </div>
+                                );
+                            }
+
+                            // ─── STANDARD TASK UI ───
                             return (
                                 <div
                                     key={task.id}

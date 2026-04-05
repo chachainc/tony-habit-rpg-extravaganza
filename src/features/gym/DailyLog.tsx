@@ -19,9 +19,10 @@ interface Props {
     date: string;
     onDateChange: (date: string) => void;
     onBack: () => void;
+    ghostWorkoutDate?: string;
 }
 
-export const DailyLog = ({ muscleGroup, date, onDateChange, onBack }: Props) => {
+export const DailyLog = ({ muscleGroup, date, onDateChange, onBack, ghostWorkoutDate }: Props) => {
     const [showAddExercise, setShowAddExercise] = useState(false);
     const [editingExerciseId, setEditingExerciseId] = useState<string | null>(null);
     const [showYesterday, setShowYesterday] = useState(false);
@@ -31,6 +32,9 @@ export const DailyLog = ({ muscleGroup, date, onDateChange, onBack }: Props) => 
 
     const groupInfo = MUSCLE_GROUPS.find(g => g.id === muscleGroup)!;
     const todayExercises = getByDateAndMuscle(date, muscleGroup);
+
+    // Ghost-load banner: when loading from a specific reference date
+    const showGhostBanner = !!ghostWorkoutDate;
 
     // Yesterday's exercises for summary
     const yesterdayDate = getLocalDateString(new Date(Date.now() - 86400000));
@@ -54,6 +58,13 @@ export const DailyLog = ({ muscleGroup, date, onDateChange, onBack }: Props) => 
                     <h3>{groupInfo.label}</h3>
                 </div>
             </div>
+
+            {/* Ghost load banner */}
+            {showGhostBanner && (
+                <div className="daily-log__ghost-banner">
+                    🔁 Ghost values from <strong>{getDateLabel(ghostWorkoutDate!)}</strong> — enter new numbers above each hint
+                </div>
+            )}
 
             {/* Date Navigator */}
             <DateNavigator selectedDate={date} onSelectDate={onDateChange} />
@@ -211,6 +222,7 @@ export const DailyLog = ({ muscleGroup, date, onDateChange, onBack }: Props) => 
                     <ExerciseEntry
                         muscleGroup={muscleGroup}
                         date={date}
+                        ghostWorkoutDate={ghostWorkoutDate}
                         onClose={() => setShowAddExercise(false)}
                     />
                 )}
@@ -222,6 +234,7 @@ export const DailyLog = ({ muscleGroup, date, onDateChange, onBack }: Props) => 
                     <ExerciseEntry
                         muscleGroup={muscleGroup}
                         date={date}
+                        ghostWorkoutDate={ghostWorkoutDate}
                         editExerciseId={editingExerciseId}
                         onClose={() => setEditingExerciseId(null)}
                     />

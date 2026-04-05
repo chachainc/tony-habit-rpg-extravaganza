@@ -5,9 +5,33 @@ import { useCurrencyStore } from '../../store/useCurrencyStore';
 import { useConquestStore } from '../../store/useConquestStore';
 import { Heart, Zap, Gamepad2, Utensils, Gift, Sparkles } from 'lucide-react';
 import { Card } from '../../components/ui/Card';
-import { ITEM_DATABASE } from '../../data/items';
 import { SharedFusionPanel } from '../fusion/SharedFusionPanel';
 import './PetPage.css';
+
+// ── Rarity helpers ─────────────────────────────────────────────────────────
+const RARITY_COLORS: Record<string, string> = {
+    common: '#9ca3af',
+    uncommon: '#34d399',
+    rare: '#60a5fa',
+    epic: '#a78bfa',
+    legendary: '#f59e0b',
+    mythic: '#f472b6',
+};
+
+const RARITY_ORDER: Record<string, number> = {
+    common: 0, uncommon: 1, rare: 2, epic: 3, legendary: 4, mythic: 5,
+};
+
+const OBTAIN_LABELS: Record<string, string> = {
+    shop_purchase: '🛒 Shop',
+    board_drop: '🎲 Board Drop',
+    gacha: '🎰 Gacha',
+    catch: '🪤 Catch',
+    jackpot: '💎 Jackpot',
+    daily_spin: '🎡 Daily Spin',
+    luck_roll: '🍀 Luck Roll',
+    other: '✨ Special',
+};
 
 const showFloatingFeedback = (text: string, type: 'xp' | 'gold' = 'xp') => {
     const el = document.createElement('div');
@@ -33,33 +57,94 @@ const getTodayStr = () => {
     return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 };
 
-// AI-generated pet images
-import etherealCowImg from '../../assets/pets/ethereal_cow.png';
-import emberfoxImg from '../../assets/pets/emberfox.png';
-import stormPupImg from '../../assets/pets/storm_pup.png';
-import clockworkOwlImg from '../../assets/pets/clockwork_owl.png';
-import bloomSpriteImg from '../../assets/pets/bloom_sprite.png';
-import mossGolemImg from '../../assets/pets/moss_golem.png';
-import obsidianBeetleImg from '../../assets/pets/obsidian_beetle.png';
-import lanternSlimeImg from '../../assets/pets/lantern_slime.png';
-import voidlingImg from '../../assets/pets/voidling.png';
-import petBearImg from '../../assets/pets/pet_bear.jpg';
+// ── All Pets Tab ────────────────────────────────────────────────────────────
+const AllPetsTab = () => {
+    const equippedPetId = usePetStore(s => s.equippedPetId);
+    const ownedPets = usePetStore(s => s.ownedPets);
+    const equipPet = usePetStore(s => s.equipPet);
 
-const PET_IMAGES: Record<string, string> = {
-    // Marketplace/shop pets — use their dedicated image assets for the Pet page display
-    ethereal_cow: etherealCowImg,
-    // Battle-system companion pets — map to their sprite art
-    spirit_fox: emberfoxImg,
-    cyber_dog: stormPupImg,
-    ancient_owl: clockworkOwlImg,
-    pixel_cat: bloomSpriteImg,
-    cosmic_turtle: mossGolemImg,
-    pet_porcupine: obsidianBeetleImg, // battle sprite (shop pet uses items.ts image)
-    dragon_hatchling: lanternSlimeImg,
-    pet_wolf: voidlingImg,
-    pet_bear: petBearImg,
+    // Sort: equipped first, then owned unlocked, then locked; within groups sort by rarity desc
+    const sorted = Object.values(PET_DATABASE).sort((a, b) => {
+        const aEquipped = a.id === equippedPetId ? 0 : 1;
+        const bEquipped = b.id === equippedPetId ? 0 : 1;
+        if (aEquipped !== bEquipped) return aEquipped - bEquipped;
+
+        const aOwned = ownedPets.includes(a.id) ? 0 : 1;
+        const bOwned = ownedPets.includes(b.id) ? 0 : 1;
+        if (aOwned !== bOwned) return aOwned - bOwned;
+
+        return (RARITY_ORDER[b.rarity] ?? 0) - (RARITY_ORDER[a.rarity] ?? 0);
+    });
+
+    return (
+        <div className="all-pets-grid">
+            {sorted.map(pet => {
+                const isOwned = ownedPets.includes(pet.id);
+                const isEquipped = pet.id === equippedPetId;
+                const rarityColor = RARITY_COLORS[pet.rarity] ?? '#9ca3af';
+
+                return (
+                    <div
+                        key={pet.id}
+                        className={`all-pets-card ${isEquipped ? 'equipped' : ''} ${!isOwned ? 'locked' : ''}`}
+                        style={{ '--rarity-color': rarityColor } as React.CSSProperties}
+                        onClick={() => isOwned && !isEquipped && equipPet(pet.id)}
+                        title={isOwned ? (isEquipped ? 'Currently equipped' : 'Tap to equip') : 'Not yet obtained'}
+                    >
+                        {/* Visual */}
+                        <div className="all-pets-card__visual">
+                            {pet.image ? (
+                                <img
+                                    src={pet.image}
+                                    alt={pet.name}
+                                    className="all-pets-card__img"
+                                    style={{ filter: !isOwned ? 'grayscale(100%) brightness(0.5)' : 'none' }}
+                                />
+                            ) : (
+                                <div
+                                    className="all-pets-card__emoji"
+                                    style={{ opacity: !isOwned ? 0.35 : 1 }}
+                                >
+                                    {pet.icon}
+                                </div>
+                            )}
+                            {/* Emoji badge over image */}
+                            {pet.image && (
+                                <span className="all-pets-card__emoji-badge">{pet.icon}</span>
+                            )}
+                        </div>
+
+                        {/* Info */}
+                        <div className="all-pets-card__info">
+                            <div className="all-pets-card__name">{pet.name}</div>
+                            <div className="all-pets-card__rarity" style={{ color: rarityColor }}>
+                                {pet.rarity.toUpperCase()}
+                            </div>
+                            <div className="all-pets-card__passive">{pet.passive.name}</div>
+                            <div className="all-pets-card__obtain">
+                                {OBTAIN_LABELS[pet.obtainMethod] ?? pet.obtainMethod}
+                            </div>
+                        </div>
+
+                        {/* State badge */}
+                        {isEquipped && (
+                            <div className="all-pets-card__badge equipped-badge">✓ Equipped</div>
+                        )}
+                        {!isOwned && (
+                            <div className="all-pets-card__badge locked-badge">🔒 Locked</div>
+                        )}
+                        {isOwned && !isEquipped && (
+                            <div className="all-pets-card__badge owned-badge">Tap to Equip</div>
+                        )}
+                    </div>
+                );
+            })}
+        </div>
+    );
 };
 
+
+// ── Main PetPage ────────────────────────────────────────────────────────────
 export const PetPage = () => {
     const { equippedPetId, name, health, hunger, mood, energy, feed, play } = usePetStore();
     const { items, removeItem } = useInventoryStore();
@@ -72,13 +157,12 @@ export const PetPage = () => {
     const [playAnim, setPlayAnim] = useState(false);
 
     // ── Sub-tab state ──────────────────────────────────────────────────────────
-    const [activeTab, setActiveTab] = useState<'pets' | 'fusion'>('pets');
+    const [activeTab, setActiveTab] = useState<'pets' | 'fusion' | 'all-pets'>('pets');
 
-    // Get active pet data from database
-    const petItem = equippedPetId ? ITEM_DATABASE[equippedPetId] : null;
+    // Get active pet data from PET_DATABASE (single source of truth)
     const petDef = equippedPetId ? PET_DATABASE[equippedPetId] : null;
-    const petSprite = petItem?.icon || '🐮'; // Fallback emoji
-    const petImage = equippedPetId ? PET_IMAGES[equippedPetId] : undefined; // AI-generated image if available
+    const petSprite = petDef?.icon || '🐮';
+    const petImage = petDef?.image;
 
     // Get usable items (food/toys/potions)
     const usableItems = Object.entries(items)
@@ -90,12 +174,8 @@ export const PetPage = () => {
     const handleUseItem = (itemId: string) => {
         const itemDef = ITEM_DB[itemId];
         if (!itemDef) return;
-
-        if (itemDef.type === 'food') {
-            feed(itemDef.value);
-        } else if (itemDef.type === 'toy') {
-            play(itemDef.value);
-        }
+        if (itemDef.type === 'food') feed(itemDef.value);
+        else if (itemDef.type === 'toy') play(itemDef.value);
         removeItem(itemId);
     };
 
@@ -107,8 +187,6 @@ export const PetPage = () => {
     const handleFeed = React.useCallback(() => {
         if (gold < FEED_COST || lastFed === getTodayStr()) return;
         useCurrencyStore.getState().spendGold(FEED_COST);
-
-        // Give 1 random rare resource instead of gold
         const roll = Math.random();
         let rewardLabel = '';
         if (roll < 0.33) {
@@ -121,7 +199,6 @@ export const PetPage = () => {
             useCurrencyStore.getState().addShmeckles(1);
             rewardLabel = '🐌 +1 Shmeckle!';
         }
-
         setLastFed(getTodayStr());
         setFeedAnim(true);
         showFloatingFeedback(rewardLabel, 'gold');
@@ -132,11 +209,9 @@ export const PetPage = () => {
         if (lastPlayedTs && (Date.now() - lastPlayedTs) / 3600000 < PLAY_COOLDOWN_HOURS) return;
         const reward = 5 + Math.floor(Math.random() * 15);
         useCurrencyStore.getState().addGold(reward, { exact: true });
-        
         setLastPlayedTs(Date.now());
         setPlayAnim(true);
         showFloatingFeedback(`+${reward}g`, 'gold');
-
         const roll = Math.random();
         let cum = 0;
         for (const item of DAILY_ITEMS) {
@@ -189,10 +264,27 @@ export const PetPage = () => {
                     >
                         🧬 Fusion
                     </button>
+                    <button
+                        className={`pet-sub-tab ${activeTab === 'all-pets' ? 'active' : ''}`}
+                        onClick={() => setActiveTab('all-pets')}
+                    >
+                        📖 All Pets
+                    </button>
                 </div>
 
                 {/* ── FUSION VIEW ─────────────────────────────────────────── */}
                 {activeTab === 'fusion' && <SharedFusionPanel mode="pet" />}
+
+                {/* ── ALL PETS VIEW ─────────────────────────────────────── */}
+                {activeTab === 'all-pets' && (
+                    <div>
+                        <div className="page-header">
+                            <h1>📖 Pet Collection</h1>
+                            <p className="subtitle">Every companion in the game — tap an owned pet to equip</p>
+                        </div>
+                        <AllPetsTab />
+                    </div>
+                )}
 
                 {/* ── PETS VIEW (existing content) ────────────────────────── */}
                 {activeTab === 'pets' && (
@@ -212,7 +304,7 @@ export const PetPage = () => {
                                         <div className="pet-sprite-large">{petSprite}</div>
                                     )}
                                     <h2 className="pet-name">{name}</h2>
-                                    {petItem && <p className="pet-type">{petItem.name}</p>}
+                                    {petDef && <p className="pet-type">{petDef.name}</p>}
                                 </Card>
 
                                 <div className="pet-direct-actions">
@@ -310,8 +402,6 @@ export const PetPage = () => {
                                     </Card>
                                 )}
                             </div>
-
-
 
                             {/* Inventory (Full Width at Bottom) */}
                             <Card className="inventory-card">

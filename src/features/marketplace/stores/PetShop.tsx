@@ -29,8 +29,12 @@ const PET_ITEMS = [
     'wizard_cow',
     'highland_archer_cow',
     'meditating_war_cow',
-    'pet_cat',
-];
+    'pixel_cat',
+].sort((a, b) => {
+    const costA = ITEM_DATABASE[a]?.cost.gold || 0;
+    const costB = ITEM_DATABASE[b]?.cost.gold || 0;
+    return costA - costB;
+});
 
 // Pet accessories (gated by Social level)
 const PET_ACCESSORY_ITEMS = [

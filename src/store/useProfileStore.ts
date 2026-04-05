@@ -21,7 +21,7 @@ interface ProfileState {
     hasSeenWelcomeTutorial: boolean;
 
     // Character Onboarding
-    characterArchetype: 'iron_vanguard' | 'shadow_rogue' | 'arcane_scholar' | 'verdant_guardian' | null;
+    classType: 'Warrior' | 'Mage' | 'Guardian' | 'Ranger' | null;
     appearance: { hairHue: number; skinHue: number };
     healthTrackingMode: 'sleep' | 'readiness' | 'none' | null;
 
@@ -43,7 +43,7 @@ interface ProfileState {
     completeWelcomeTutorial: () => void;
 
     // Onboarding Actions
-    setCharacterArchetype: (archetype: ProfileState['characterArchetype']) => void;
+    setClassType: (classType: ProfileState['classType']) => void;
     setAppearance: (appearance: ProfileState['appearance']) => void;
     setHealthTrackingMode: (mode: ProfileState['healthTrackingMode']) => void;
 
@@ -146,7 +146,7 @@ export const useProfileStore = create<ProfileState>()(
             serverVersion: 0,
             hasSeenWelcomeTutorial: false,
 
-            characterArchetype: null,
+            classType: null,
             appearance: { hairHue: 0, skinHue: 0 },
             healthTrackingMode: null,
 
@@ -212,7 +212,7 @@ export const useProfileStore = create<ProfileState>()(
                     lastSyncError: null,
                     serverVersion: 0,
                     hasSeenWelcomeTutorial: false,
-                    characterArchetype: null,
+                    classType: null,
                     appearance: { hairHue: 0, skinHue: 0 },
                     healthTrackingMode: null,
                 });
@@ -314,7 +314,7 @@ export const useProfileStore = create<ProfileState>()(
 
             completeWelcomeTutorial: () => set({ hasSeenWelcomeTutorial: true }),
 
-            setCharacterArchetype: (archetype) => set({ characterArchetype: archetype }),
+            setClassType: (classType) => set({ classType }),
             setAppearance: (appearance) => set({ appearance }),
             setHealthTrackingMode: (mode) => set({ healthTrackingMode: mode }),
 
@@ -330,7 +330,7 @@ export const useProfileStore = create<ProfileState>()(
         }),
         {
             name: 'gl-profile-storage',
-            version: 1,
+            version: 2,
             onRehydrateStorage: () => (state, error) => {
                 if (state) {
                     state.setHasHydrated(true);
@@ -354,6 +354,28 @@ export const useProfileStore = create<ProfileState>()(
                     if (persistedState.characterArchetype && translations[persistedState.characterArchetype]) {
                         persistedState.characterArchetype = translations[persistedState.characterArchetype];
                     }
+                }
+                if (version <= 1) {
+                    // Migrate version 1's characterArchetype to version 2's classType
+                    const classTranslations: Record<string, 'Warrior' | 'Mage' | 'Guardian' | 'Ranger'> = {
+                        iron_vanguard: 'Warrior',
+                        arcane_scholar: 'Mage',
+                        verdant_guardian: 'Guardian',
+                        shadow_rogue: 'Ranger'
+                    };
+
+                    const oldArch = persistedState.characterArchetype;
+                    if (oldArch) {
+                        persistedState.classType = classTranslations[oldArch] || 'Warrior';
+                    }
+                    
+                    // Force a valid default if null so they don't break
+                    if (!persistedState.classType && oldArch !== null) {
+                        persistedState.classType = 'Warrior';
+                    }
+
+                    // Delete the old key entirely to clean up storage
+                    delete persistedState.characterArchetype;
                 }
                 return persistedState;
             }

@@ -75,11 +75,19 @@ export const usePetStore = create<PetState>()(
                 const state = get();
                 if (state.ownedPets.includes(petId)) {
                     set({ equippedPetId: petId });
+                    // Mirror sync → useInventoryStore (lazy import avoids circular dependency)
+                    import('./useInventoryStore').then(({ useInventoryStore }) => {
+                        useInventoryStore.getState().equipItem(petId, 'pet');
+                    }).catch(console.error);
                 }
             },
 
             unequipPet: () => {
                 set({ equippedPetId: null });
+                // Mirror sync → useInventoryStore
+                import('./useInventoryStore').then(({ useInventoryStore }) => {
+                    useInventoryStore.getState().unequipItem('pet');
+                }).catch(console.error);
             },
 
             addPet: (petId) => {

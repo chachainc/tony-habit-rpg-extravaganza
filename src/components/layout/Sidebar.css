@@ -65,18 +65,36 @@
     /* Left border indicator */
 }
 
-/* ─── Mobile: Bottom Tab Bar ──────────────── */
-@media (max-width: 768px) {
+/* ─── Mobile Landscape: Compact Nav ──────────────── */
+@media (max-height: 500px) and (orientation: landscape), (max-width: 950px) and (orientation: landscape) {
     .sidebar {
-        position: fixed;
-        bottom: 0;
-        left: 0;
-        right: 0;
+        width: 64px;
+        min-width: 64px;
+        padding: var(--space-4) 0;
+    }
+    .logo-area {
+        padding: var(--space-2) 0;
+        justify-content: center;
+    }
+    .logo-text, .nav-label {
+        display: none;
+    }
+    .nav-item {
+        justify-content: center;
+        padding: var(--space-3) 0;
+    }
+}
+
+/* ─── Mobile: Bottom Tab Bar ──────────────── */
+@media (max-width: 768px) and (orientation: portrait) {
+    .sidebar {
+        order: 2;
+        position: relative;
+        bottom: calc(env(safe-area-inset-bottom, 0px) + 6px);
         width: 100%;
-        height: calc(60px + env(safe-area-inset-bottom, 0px));
+        height: 60px;
         flex-direction: row;
         padding: 0;
-        padding-bottom: env(safe-area-inset-bottom, 0px);
         border-right: none;
         border-top: 1px solid var(--border);
         z-index: 1000;

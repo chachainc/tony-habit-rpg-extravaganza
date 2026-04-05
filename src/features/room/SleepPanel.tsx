@@ -17,11 +17,10 @@ const getWeeklyGrade = (avgScore: number): { grade: string; color: string; bonus
 
 export const SleepPanel = ({ onClose }: { onClose: () => void }) => {
     const [activeTab, setActiveTab] = useState<'log' | 'history'>('log');
-    const { sleepLogs, readinessLogs, logSleep, logReadiness } = useDayStore();
+    const { sleepLogs, readinessLogs, logSleep, logReadiness, hasLoggedSleepToday, hasLoggedReadinessToday } = useDayStore();
     const { addSkillXp, addGlobalXp } = useGameStore();
     const navigate = useNavigate();
     const [sleepScore, setSleepScore] = useState(75);
-    const [durationMinutes, setDurationMinutes] = useState(480);
     const [readinessScore, setReadinessScore] = useState(75);
 
     // ── Streak calculation ──
@@ -52,12 +51,13 @@ export const SleepPanel = ({ onClose }: { onClose: () => void }) => {
 
     const handleLogSleep = (e: React.FormEvent) => {
         e.preventDefault();
-        const xp = logSleep(sleepScore, durationMinutes);
+        const xp = logSleep(sleepScore);
         if (xp > 0) {
             addSkillXp('Sleep', xp, { capExempt: true });
             addGlobalXp(Math.floor(xp * 0.2));
         }
-        setActiveTab('history');
+        // Don't auto-switch tabs so they can see the 'Logged' verification
+        // setActiveTab('history');
     };
 
     const handleLogReadiness = (e: React.FormEvent) => {
@@ -67,7 +67,8 @@ export const SleepPanel = ({ onClose }: { onClose: () => void }) => {
             addSkillXp('Sleep', xp, { capExempt: true });
             addGlobalXp(Math.floor(xp * 0.2));
         }
-        setActiveTab('history');
+        // Don't auto-switch tabs
+        // setActiveTab('history');
     };
 
     const mergedHistory = useMemo(() => {
@@ -134,40 +135,67 @@ export const SleepPanel = ({ onClose }: { onClose: () => void }) => {
             <div className="panel-content-scrollable">
                 {activeTab === 'log' ? (
                     <div className="log-forms-container">
-                        <form className="log-form sleep-log-form" onSubmit={handleLogSleep}>
+                        <div className="log-form sleep-log-form">
                             <div className="form-section-header">
                                 <Moon size={20} className="text-indigo-400" />
                                 <h3>Log Sleep</h3>
                             </div>
-                            <div className="form-group">
-                                <label>Sleep Score (0-100)</label>
-                                <div className="slider-row">
-                                    <input type="range" min="0" max="100" value={sleepScore} onChange={(e) => setSleepScore(Number(e.target.value))} />
-                                    <span className="score-badge">{sleepScore}</span>
+                            {hasLoggedSleepToday() ? (
+                                <div style={{ textAlign: 'center', padding: '1.5rem 0', color: '#e2e8f0' }}>
+                                    <h4 style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', color: '#4ade80', fontSize: '1.1rem', margin: '0 0 0.5rem 0' }}>
+                                        <div style={{ background: 'rgba(74, 222, 128, 0.2)', padding: '4px', borderRadius: '50%' }}>
+                                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                                        </div>
+                                        Sleep Logged Today
+                                    </h4>
+                                    <p style={{ color: '#94a3b8', fontSize: '0.9rem', margin: 0 }}>
+                                        Score: <strong>{sleepLogs.length > 0 ? sleepLogs.filter(l => !l.skipped).sort((a,b) => b.date.localeCompare(a.date))[0]?.score ?? '—' : '—'}</strong>
+                                    </p>
                                 </div>
-                            </div>
-                            <div className="form-group">
-                                <label>Duration (Minutes)</label>
-                                <input type="number" min="0" value={durationMinutes} onChange={(e) => setDurationMinutes(Number(e.target.value))} />
-                                <small className="duration-hint">({Math.floor(durationMinutes / 60)}h {durationMinutes % 60}m)</small>
-                            </div>
-                            <button type="submit" className="submit-btn full-width bg-indigo-600 hover:bg-indigo-700">Save Sleep Log</button>
-                        </form>
+                            ) : (
+                                <form onSubmit={handleLogSleep}>
+                                    <div className="form-group">
+                                        <label>Sleep Score (0-100)</label>
+                                        <div className="slider-row">
+                                            <input type="range" min="0" max="100" value={sleepScore} onChange={(e) => setSleepScore(Number(e.target.value))} />
+                                            <span className="score-badge">{sleepScore}</span>
+                                        </div>
+                                    </div>
+                                    <button type="submit" className="submit-btn full-width bg-indigo-600 hover:bg-indigo-700">Save Sleep Log</button>
+                                </form>
+                            )}
+                        </div>
                         <div className="form-divider" />
-                        <form className="log-form readiness-log-form" onSubmit={handleLogReadiness}>
+                        <div className="log-form readiness-log-form">
                             <div className="form-section-header">
                                 <Zap size={20} className="text-yellow-400" />
                                 <h3>Log Readiness</h3>
                             </div>
-                            <div className="form-group">
-                                <label>Daily Readiness Score (0-100)</label>
-                                <div className="slider-row">
-                                    <input type="range" min="0" max="100" value={readinessScore} onChange={(e) => setReadinessScore(Number(e.target.value))} />
-                                    <span className="score-badge">{readinessScore}</span>
+                            {hasLoggedReadinessToday() ? (
+                                <div style={{ textAlign: 'center', padding: '1.5rem 0', color: '#e2e8f0' }}>
+                                    <h4 style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', color: '#4ade80', fontSize: '1.1rem', margin: '0 0 0.5rem 0' }}>
+                                        <div style={{ background: 'rgba(74, 222, 128, 0.2)', padding: '4px', borderRadius: '50%' }}>
+                                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                                        </div>
+                                        Readiness Logged Today
+                                    </h4>
+                                    <p style={{ color: '#94a3b8', fontSize: '0.9rem', margin: 0 }}>
+                                        Score: <strong>{readinessLogs.length > 0 ? readinessLogs.filter(l => !l.skipped).sort((a,b) => b.date.localeCompare(a.date))[0]?.score ?? '—' : '—'}</strong>
+                                    </p>
                                 </div>
-                            </div>
-                            <button type="submit" className="submit-btn full-width bg-yellow-600 hover:bg-yellow-700">Save Readiness Log</button>
-                        </form>
+                            ) : (
+                                <form onSubmit={handleLogReadiness}>
+                                    <div className="form-group">
+                                        <label>Daily Readiness Score (0-100)</label>
+                                        <div className="slider-row">
+                                            <input type="range" min="0" max="100" value={readinessScore} onChange={(e) => setReadinessScore(Number(e.target.value))} />
+                                            <span className="score-badge">{readinessScore}</span>
+                                        </div>
+                                    </div>
+                                    <button type="submit" className="submit-btn full-width bg-yellow-600 hover:bg-yellow-700">Save Readiness Log</button>
+                                </form>
+                            )}
+                        </div>
                     </div>
                 ) : (
                     <div className="sleep-history-list">

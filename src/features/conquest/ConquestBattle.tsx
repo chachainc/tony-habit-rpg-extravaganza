@@ -6,8 +6,10 @@ import { useBattleStore } from '../../store/useBattleStore';
 import { useConquestStore } from '../../store/useConquestStore';
 import { useMagicStore } from '../../store/useMagicStore';
 import { useGameStore } from '../../store/useGameStore';
-import { useHeroImage } from '../../hooks/useHeroImage';
+import { usePlayerAvatar, getUltimateName } from '../../hooks/usePlayerAvatar';
+import { useProfileStore } from '../../store/useProfileStore';
 import { CONQUEST_ENEMIES, CONQUEST_ELEMENT_ICONS, type ConquestElement } from '../../data/conquest';
+import { getSkillSynergyBonus } from '../../store/useCombatFormulas';
 import bgMap from '../../assets/backgrounds/infernal_citadel.png';
 import './Conquest.css';
 
@@ -15,15 +17,20 @@ export const ConquestBattle = () => {
     const navigate = useNavigate();
     const conquest = useConquestStore();
     const battle = useBattleStore();
-    const heroImage = useHeroImage();
+    const heroImage = usePlayerAvatar();
+    const classType = useProfileStore(s => s.classType);
+    const ultimateName = getUltimateName(classType);
     const getMagicAttack = useGameStore(s => s.getMagicAttack);
     const getOwnedSpells = useMagicStore(s => s.getOwnedSpells);
+    const synergy = getSkillSynergyBonus();
 
     const [blessingApplied, setBlessingApplied] = useState(false);
     const [showVictoryModal, setShowVictoryModal] = useState(false);
     const [showDefeatModal, setShowDefeatModal] = useState(false);
     const [isRolling, setIsRolling] = useState(false);
     const [rollValue, setRollValue] = useState<number | null>(null);
+    const [isHeavyRolling, setIsHeavyRolling] = useState(false);
+    const [heavyRollValue, setHeavyRollValue] = useState<number | null>(null);
     const initialPlayerHpRef = useRef<number | null>(null);
     const [enemySpecialText, setEnemySpecialText] = useState<string | null>(null);
 
@@ -295,39 +302,116 @@ export const ConquestBattle = () => {
             {/* Action Buttons */}
             <div className="cq-action-panel">
                 {battle.phase === 'prep' ? (
-                    <button className="cq-action-btn primary" onClick={() => battle.startBattle()}>
-                        ⚔️ Start Battle
-                    </button>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', width: '100%', gridColumn: '1 / -1', alignItems: 'center' }}>
+                        <div style={{ background: 'rgba(30, 41, 59, 0.8)', padding: '1rem', borderRadius: '8px', width: '100%', maxWidth: '300px', border: '1px solid #334155' }}>
+                            <div style={{ fontSize: '0.85rem', color: '#94a3b8', marginBottom: '0.25rem', textTransform: 'uppercase' }}>Class</div>
+                            <div style={{ fontWeight: 'bold', color: '#a78bfa', marginBottom: '0.75rem' }}>{classType || 'Warrior'}</div>
+                            
+                            <div style={{ fontSize: '0.85rem', color: '#94a3b8', marginBottom: '0.25rem', textTransform: 'uppercase' }}>Ultimate</div>
+                            <div style={{ fontWeight: 'bold', color: '#fde68a', marginBottom: '0.75rem' }}>{ultimateName}</div>
+
+                            <div style={{ fontSize: '0.85rem', color: '#94a3b8', marginBottom: '0.25rem', textTransform: 'uppercase' }}>Synergy Bonus</div>
+                            <div style={{ fontWeight: 'bold', color: synergy.active ? '#a3e635' : '#475569', marginBottom: '0.75rem', fontSize: '0.85rem' }}>
+                                {synergy.description}
+                            </div>
+
+                            <div style={{ fontSize: '0.85rem', color: '#94a3b8', marginBottom: '0.25rem', textTransform: 'uppercase' }}>Energy (Preview)</div>
+                            <div className="cq-energy-bar-wrap" style={{ position: 'relative', height: '12px', background: '#000', borderRadius: '4px', overflow: 'hidden' }}>
+                                <div style={{ width: '0%', height: '100%', background: 'linear-gradient(90deg, #b45309, #d97706)' }} />
+                                <span style={{ fontSize: '0.65rem', color: '#fbbf24', position: 'absolute', right: '4px', top: '50%', transform: 'translateY(-50%)' }}>0</span>
+                            </div>
+                        </div>
+
+                        <button className="cq-action-btn primary" style={{ width: '100%', maxWidth: '300px' }} onClick={() => battle.startBattle()}>
+                            ⚔️ Start Battle
+                        </button>
+                    </div>
                 ) : (
                     <>
+                        <div style={{ display: 'flex', justifyContent: 'center', width: '100%', marginBottom: '0.5rem', gridColumn: '1 / -1' }}>
+                            <button
+                                className={`cq-action-btn ultimate-btn ${player.energy >= 100 ? 'ready' : 'locked'}`}
+                                disabled={!isPlayerTurn || isExecuting || isRolling || isHeavyRolling || player.energy < 100}
+                                style={{ 
+                                    width: '100%', 
+                                    padding: '0.75rem',
+                                    borderRadius: '8px',
+                                    border: player.energy >= 100 ? '2px solid #fbbf24' : '2px solid #475569',
+                                    background: player.energy >= 100 ? 'linear-gradient(135deg, #b45309 0%, #78350f 100%)' : '#1e293b',
+                                    color: player.energy >= 100 ? '#fff' : '#64748b',
+                                    fontWeight: 'bold',
+                                    textTransform: 'uppercase',
+                                    cursor: player.energy >= 100 ? 'pointer' : 'not-allowed',
+                                    transition: 'all 0.3s ease'
+                                }}
+                                onClick={() => {
+                                    if (isPlayerTurn && player.energy >= 100) {
+                                        useBattleStore.getState().executeUltimate(ultimateName);
+                                    }
+                                }}
+                            >
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
+                                    <span style={{ fontSize: '1.2rem' }}>💥</span>
+                                    <span>{ultimateName}</span>
+                                    <span style={{ fontSize: '0.85rem', color: player.energy >= 100 ? '#fde68a' : '#475569' }}>
+                                        {Math.floor(player.energy)}/100
+                                    </span>
+                                </div>
+                            </button>
+                        </div>
                         {/* 1. Heavy Attack */}
                         <button
                             className="cq-action-btn attack heavy"
-                            disabled={!isPlayerTurn || isExecuting || isRolling || battle.heavyAttackCooldown > 0}
+                            disabled={!isPlayerTurn || isExecuting || isRolling || isHeavyRolling || battle.heavyAttackCooldown > 0}
                             onClick={() => {
                                 if (battle.heavyAttackCooldown > 0) return;
+                                setIsHeavyRolling(true);
                                 const modifiedAtk = Math.max(1, player.atk * battle.playerDamageModifier);
                                 const lowHit = Math.max(1, Math.ceil(modifiedAtk * 0.5));
                                 const bigHit = Math.max(1, Math.floor(modifiedAtk * 1.5));
-                                const isSuccess = Math.random() > 0.5;
-                                const finalDamage = isSuccess ? bigHit : lowHit;
-                                useBattleStore.setState({ heavyAttackCooldown: 2 });
-                                conquest.trackDamageDealt(finalDamage);
-                                battle.selectAbility({
-                                    id: 'heavy_strike', name: 'Heavy Strike', type: 'attack',
-                                    description: '', icon: '💥', element: 'neutral',
-                                    damageMultiplier: 1.0, cooldown: 0, energyCost: 0,
-                                    customDamageConfig: { type: 'heavy', rollValue: finalDamage }
-                                });
-                                battle.executePlayerAction();
+                                
+                                let rolls = 0;
+                                const maxRolls = 10;
+                                const interval = setInterval(() => {
+                                    const stepSuccess = Math.random() > 0.5;
+                                    setHeavyRollValue(stepSuccess ? bigHit : lowHit);
+                                    rolls++;
+                                    if (rolls >= maxRolls) {
+                                        clearInterval(interval);
+                                        const isSuccess = Math.random() > 0.5;
+                                        const finalDamage = isSuccess ? bigHit : lowHit;
+                                        setHeavyRollValue(finalDamage);
+                                        
+                                        setTimeout(() => {
+                                            useBattleStore.setState(state => ({
+                                                combatLog: [...state.combatLog, { message: `🎲 Heavy Roll: ${finalDamage}!`, type: 'info' as const }],
+                                                heavyAttackCooldown: 2
+                                            }));
+                                            conquest.trackDamageDealt(finalDamage);
+                                            battle.selectAbility({
+                                                id: 'heavy_strike', name: 'Heavy Strike', type: 'attack',
+                                                description: '', icon: '💥', element: 'neutral',
+                                                damageMultiplier: 1.0, cooldown: 0, energyCost: 0,
+                                                customDamageConfig: { type: 'heavy', rollValue: finalDamage }
+                                            });
+                                            battle.executePlayerAction();
+                                            setIsHeavyRolling(false);
+                                            setHeavyRollValue(null);
+                                        }, 400);
+                                    }
+                                }, 50);
                             }}
                         >
                             <div className="cq-btn-top">💥 Heavy</div>
-                            <div className="cq-btn-mid">Hi-Dmg</div>
+                            <div className="cq-btn-mid" style={isHeavyRolling ? { color: '#fbbf24' } : {}}>
+                                {isHeavyRolling && heavyRollValue !== null 
+                                    ? `🎲 ${heavyRollValue}` 
+                                    : `${Math.max(1, Math.ceil(Math.max(1, player.atk * battle.playerDamageModifier) * 0.5))} or ${Math.max(1, Math.floor(Math.max(1, player.atk * battle.playerDamageModifier) * 1.5))}`}
+                            </div>
                             <div className="cq-btn-bot">
                                 {battle.heavyAttackCooldown > 0
                                     ? <span style={{ color: '#ef4444' }}>⚠️ Cooldown</span>
-                                    : <span>⚠️ 50% Hit</span>
+                                    : <span>🎲 50/50 Roll</span>
                                 }
                             </div>
                         </button>
@@ -335,7 +419,7 @@ export const ConquestBattle = () => {
                         {/* 2. Light Attack */}
                         <button
                             className="cq-action-btn attack light"
-                            disabled={!isPlayerTurn || isExecuting || isRolling}
+                            disabled={!isPlayerTurn || isExecuting || isRolling || isHeavyRolling}
                             onClick={() => {
                                 setIsRolling(true);
                                 const modifiedAtk = Math.max(1, Math.floor(player.atk * battle.playerDamageModifier));
@@ -350,6 +434,9 @@ export const ConquestBattle = () => {
                                         setRollValue(finalRoll);
                                         conquest.trackDamageDealt(finalRoll);
                                         setTimeout(() => {
+                                            useBattleStore.setState(state => ({
+                                                combatLog: [...state.combatLog, { message: `🎲 Rolled ${finalRoll}!`, type: 'info' as const }]
+                                            }));
                                             battle.selectAbility({
                                                 id: 'light_strike', name: 'Light Strike', type: 'attack',
                                                 description: '', icon: '⚡', element: 'neutral',

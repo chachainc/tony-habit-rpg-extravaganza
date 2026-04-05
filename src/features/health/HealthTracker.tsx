@@ -12,7 +12,15 @@ type ChartRange = 7 | 30 | 90;
 
 // ── Simple SVG Line Chart ──────────────────────────────────────
 
+const formatShortDate = (d: string) => {
+    const parts = d.split('-');
+    if (parts.length === 3) return `${parseInt(parts[1])}/${parseInt(parts[2])}`;
+    return d;
+};
+
 const LineChart = ({ data, color, label }: { data: { date: string; value: number }[]; color: string; label: string }) => {
+    const [activeIndex, setActiveIndex] = useState<number | null>(null);
+
     if (data.length < 2) {
         return <div className="chart-empty">Need at least 2 entries for {label} chart</div>;
     }
@@ -22,47 +30,135 @@ const LineChart = ({ data, color, label }: { data: { date: string; value: number
     const maxV = Math.max(...values) + 2;
     const range = maxV - minV || 1;
 
-    const W = 100;
-    const H = 100;
-    const padX = 8;
-    const padY = 10;
+    const W = 300;
+    const H = 140;
+    const padX = 14;
+    const padYTop = 8;
+    const padYBottom = 22;
     const plotW = W - padX * 2;
-    const plotH = H - padY * 2;
+    const plotH = H - padYTop - padYBottom;
 
     const points = data.map((entry, i) => {
         const x = padX + (i / (data.length - 1)) * plotW;
-        const y = padY + plotH - ((entry.value - minV) / range) * plotH;
-        return { x, y, entry };
+        const y = padYTop + plotH - ((entry.value - minV) / range) * plotH;
+        return { x, y, entry, index: i };
     });
 
     const pathD = points.map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.x} ${p.y}`).join(' ');
-    const areaD = pathD + ` L ${points[points.length - 1].x} ${padY + plotH} L ${points[0].x} ${padY + plotH} Z`;
+    const areaD = pathD + ` L ${points[points.length - 1].x} ${padYTop + plotH} L ${points[0].x} ${padYTop + plotH} Z`;
     const gradientId = `gradient-${label.replace(/\s/g, '')}`;
 
+    // X-axis label logic
+    let labelStep = 1;
+    if (data.length > 60) labelStep = Math.ceil(data.length / 4);
+    else if (data.length > 20) labelStep = Math.ceil(data.length / 5);
+    else if (data.length > 10) labelStep = Math.ceil(data.length / 5);
+
+    // Summary avg
+    const avg = Math.round(values.reduce((a, b) => a + b, 0) / values.length);
+
     return (
-        <svg className="weight-chart" viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none">
-            {[0, 0.25, 0.5, 0.75, 1].map((frac) => {
-                const y = padY + plotH - frac * plotH;
-                const val = minV + frac * range;
-                return (
-                    <g key={frac}>
-                        <line x1={padX} y1={y} x2={W - padX} y2={y} stroke="rgba(148,163,184,0.1)" strokeWidth="0.3" />
-                        <text x={padX - 1} y={y + 1} fill="#475569" fontSize="3" textAnchor="end">{Math.round(val)}</text>
-                    </g>
-                );
-            })}
-            <path d={areaD} fill={`url(#${gradientId})`} opacity="0.3" />
-            <path d={pathD} fill="none" stroke={color} strokeWidth="1" strokeLinecap="round" strokeLinejoin="round" />
-            {points.map((p, i) => (
-                <circle key={i} cx={p.x} cy={p.y} r="1.5" fill={color} stroke="#0f172a" strokeWidth="0.5" />
-            ))}
-            <defs>
-                <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor={color} stopOpacity="0.4" />
-                    <stop offset="100%" stopColor={color} stopOpacity="0" />
-                </linearGradient>
-            </defs>
-        </svg>
+        <div className="line-chart-wrapper" onMouseLeave={() => setActiveIndex(null)}>
+            {/* Top Right Summary Badge */}
+            <div className="chart-summary-badge">
+                <span className="chart-summary-lbl">Avg</span>
+                <span className="chart-summary-val">{avg}</span>
+            </div>
+
+            {/* Tooltip Overlay */}
+            <AnimatePresence>
+                {activeIndex !== null && points[activeIndex] && (
+                    <motion.div 
+                        initial={{ opacity: 0, y: 5 }} 
+                        animate={{ opacity: 1, y: 0 }} 
+                        exit={{ opacity: 0 }}
+                        transition={{ duration: 0.15 }}
+                        className="chart-tooltip"
+                        style={{
+                            left: `${Math.max(10, Math.min(90, (points[activeIndex].x / W) * 100))}%`
+                        }}
+                    >
+                        <div className="chart-tooltip-date">{formatShortDate(points[activeIndex].entry.date)}</div>
+                        <div className="chart-tooltip-val">
+                            <span className="chart-tooltip-dot" style={{ backgroundColor: color }} />
+                            {label}: <strong>{points[activeIndex].entry.value}</strong>
+                        </div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
+
+            <svg className="weight-chart" viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none">
+                <defs>
+                    <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stopColor={color} stopOpacity="0.3" />
+                        <stop offset="100%" stopColor={color} stopOpacity="0" />
+                    </linearGradient>
+                </defs>
+
+                {/* Y-axis grid lines conditionally faded */}
+                {[0, 0.5, 1].map((frac) => {
+                    const y = padYTop + plotH - frac * plotH;
+                    const val = minV + frac * range;
+                    return (
+                        <g key={frac}>
+                            <line x1={padX} y1={y} x2={W - padX} y2={y} stroke="rgba(148,163,184,0.06)" strokeWidth="0.5" />
+                            <text x={padX - 2} y={y + 1.5} fill="rgba(148,163,184,0.35)" fontSize="4" fontWeight="500" textAnchor="end">{Math.round(val)}</text>
+                        </g>
+                    );
+                })}
+
+                {/* X-axis labels */}
+                {points.map((p, i) => {
+                    const isLast = i === points.length - 1;
+                    const isFirst = i === 0;
+                    const showLabel = i % labelStep === 0 || isLast;
+                    
+                    // Avoid overlapping the last label dynamically
+                    if (isLast && !isFirst && i % labelStep !== 0) {
+                        const distFromLastStep = i - (i - (i % labelStep));
+                        if (distFromLastStep < labelStep * 0.5) return null;
+                    }
+
+                    if (!showLabel && !isFirst) return null;
+
+                    return (
+                        <text key={`x-${i}`} x={p.x} y={H - 4} fill="rgba(148,163,184,0.5)" fontSize="4.5" fontWeight="500" textAnchor="middle">
+                            {formatShortDate(p.entry.date)}
+                        </text>
+                    );
+                })}
+
+                <path d={areaD} fill={`url(#${gradientId})`} />
+                <path d={pathD} fill="none" stroke={color} strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" />
+                
+                {/* Points & Interactive Rects */}
+                {points.map((p, i) => {
+                    const isActive = activeIndex === i;
+                    const rectWidth = (plotW / (data.length - 1)) || 20;
+                    const rectX = Math.max(0, p.x - rectWidth / 2);
+
+                    return (
+                        <g key={i}>
+                            <circle 
+                                cx={p.x} cy={p.y} 
+                                r={isActive ? "2.5" : "1"} 
+                                fill={isActive ? "#ffffff" : color} 
+                                stroke={isActive ? color : "transparent"} 
+                                strokeWidth={isActive ? "1" : "0"} 
+                                style={{ transition: 'all 0.2s ease' }}
+                            />
+                            {/* Touch target covering full height */}
+                            <rect 
+                                x={rectX} y={0} width={rectWidth} height={H} 
+                                fill="transparent"
+                                onTouchStart={() => setActiveIndex(i)}
+                                onMouseEnter={() => setActiveIndex(i)}
+                            />
+                        </g>
+                    );
+                })}
+            </svg>
+        </div>
     );
 };
 

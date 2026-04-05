@@ -262,6 +262,7 @@
 
     .store-header {
         padding: 0.6rem 0.75rem;
+        padding-top: max(env(safe-area-inset-top, 0.6rem), 1.2rem);
     }
 
     .store-header h2 {

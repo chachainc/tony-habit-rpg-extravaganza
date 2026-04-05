@@ -37,22 +37,37 @@ export interface BoardSpace {
 
 // ── Ownership Tiers ────────────────────────────────────────────
 export interface OwnedTile {
-    level: number; // 1 = Homestead, 2 = Village, 3 = Fortress
+    level: number; // 1-4 = Houses, 5 = Hotel
 }
 
 export const OWNERSHIP_TIERS = [
-    { level: 1, icon: '🏡', name: 'Homestead', multiplier: 1.5 },
-    { level: 2, icon: '🏘️', name: 'Village', multiplier: 2.0, shmeckleCost: 3 },
-    { level: 3, icon: '🏰', name: 'Fortress', multiplier: 3.0, shmeckleCost: 5 },
+    { level: 1, icon: '🏠' },
+    { level: 2, icon: '🏠🏠' },
+    { level: 3, icon: '🏠🏠🏠' },
+    { level: 4, icon: '🏠🏠🏠🏠' },
+    { level: 5, icon: '🏨' },
 ];
 
-// Buy costs by tile type (gold)
-export const BUY_COSTS: Partial<Record<BoardSpaceType, number>> = {
-    gold: 20,
-    shmeckles: 30,
-    mystery: 40,
-    ticket: 50,
-    empty: 15,
+export const PROPERTY_UPGRADE_COSTS: Record<number, import('./useCurrencyStore').CurrencyCost> = {
+    1: { gold: 50 },
+    2: { gold: 100 },
+    3: { gold: 250 },
+    4: { gold: 500 },
+    5: { gold: 2000, diamonds: 5 },
+};
+
+export const getPropertyMultiplier = (level: number): number => {
+    const roll = Math.random() * 100;
+    let odds1x = 100, odds2x = 0;
+    if (level === 1) { odds1x = 80; odds2x = 18; }
+    else if (level === 2) { odds1x = 70; odds2x = 25; }
+    else if (level === 3) { odds1x = 55; odds2x = 35; }
+    else if (level === 4) { odds1x = 40; odds2x = 45; }
+    else if (level >= 5) { odds1x = 25; odds2x = 50; }
+
+    if (roll < odds1x) return 1;
+    if (roll < odds1x + odds2x) return 2;
+    return 3;
 };
 
 // ── Drop Tables & Odds ─────────────────────────────────────────
@@ -173,7 +188,6 @@ export interface MoveResult {
     landedSpace: BoardSpace;
     passedGo: boolean;
     goReward: number; // gold awarded for passing GO (0 if didn't pass)
-    rentCollected: number; // gold collected from owned tiles passed over
 }
 
 // ── Store ──────────────────────────────────────────────────────
@@ -205,11 +219,10 @@ interface MonopolyState {
     // Property actions
     buyTile: (tileId: number) => boolean;
     upgradeTile: (tileId: number) => boolean;
-    getBuyCost: (tileId: number) => number;
-    getUpgradeCost: (tileId: number) => number;
+    getBuyCost: (tileId: number) => import('./useCurrencyStore').CurrencyCost;
+    getUpgradeCost: (tileId: number) => import('./useCurrencyStore').CurrencyCost | null;
     canBuyTile: (tileId: number) => boolean;
     canUpgradeTile: (tileId: number) => boolean;
-    getTileMultiplier: (tileId: number) => number;
 }
 
 export const useMonopolyStore = create<MonopolyState>()(
@@ -258,19 +271,6 @@ export const useMonopolyStore = create<MonopolyState>()(
                 const rawNew = oldPos + spaces;
                 const passedGo = rawNew >= TOTAL_SPACES;
 
-                // Calculate rent from owned tiles passed over
-                let rentCollected = 0;
-                for (let step = 1; step <= spaces; step++) {
-                    const pos = (oldPos + step) % TOTAL_SPACES;
-                    const tileOwnership = state.ownedTiles[pos];
-                    if (tileOwnership) {
-                        const tile = currentBoard[pos];
-                        const baseGold = tile.baseReward.gold || 2;
-                        const tier = OWNERSHIP_TIERS.find(t => t.level === tileOwnership.level);
-                        rentCollected += Math.floor(baseGold * (tier?.multiplier || 1));
-                    }
-                }
-
                 if (passedGo) {
                     // Stop on GO tile, award scaled reward
                     const goReward = get().getGoReward();
@@ -284,7 +284,6 @@ export const useMonopolyStore = create<MonopolyState>()(
                         landedSpace: currentBoard[0],
                         passedGo: true,
                         goReward,
-                        rentCollected,
                     };
                 }
 
@@ -298,7 +297,6 @@ export const useMonopolyStore = create<MonopolyState>()(
                     landedSpace,
                     passedGo: false,
                     goReward: 0,
-                    rentCollected,
                 };
             },
 
@@ -331,20 +329,23 @@ export const useMonopolyStore = create<MonopolyState>()(
             },
 
             getGoReward: () => {
-                return 25 + get().lapCount;
+                let bonus = 0;
+                const state = get();
+                for (const tileId in state.ownedTiles) {
+                    bonus += state.ownedTiles[tileId].level * 5;
+                }
+                return 25 + state.lapCount + bonus;
             },
 
             // ── Property Ownership ────────────────────────────────
-            getBuyCost: (tileId) => {
-                const tile = currentBoard[tileId];
-                return BUY_COSTS[tile?.type] || 20;
+            getBuyCost: () => {
+                return PROPERTY_UPGRADE_COSTS[1];
             },
 
             getUpgradeCost: (tileId) => {
                 const owned = get().ownedTiles[tileId];
-                if (!owned || owned.level >= 3) return Infinity;
-                const nextTier = OWNERSHIP_TIERS.find(t => t.level === owned.level + 1);
-                return nextTier?.shmeckleCost || Infinity;
+                if (!owned || owned.level >= 5) return null;
+                return PROPERTY_UPGRADE_COSTS[owned.level + 1] || null;
             },
 
             canBuyTile: (tileId) => {
@@ -357,14 +358,7 @@ export const useMonopolyStore = create<MonopolyState>()(
 
             canUpgradeTile: (tileId) => {
                 const owned = get().ownedTiles[tileId];
-                return !!owned && owned.level < 3;
-            },
-
-            getTileMultiplier: (tileId) => {
-                const owned = get().ownedTiles[tileId];
-                if (!owned) return 1;
-                const tier = OWNERSHIP_TIERS.find(t => t.level === owned.level);
-                return tier?.multiplier || 1;
+                return !!owned && owned.level < 5;
             },
 
             buyTile: (tileId) => {

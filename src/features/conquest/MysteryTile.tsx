@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Sparkles } from 'lucide-react';
+import { X, Sparkles, Coins, Diamond } from 'lucide-react';
 import { useConquestStore } from '../../store/useConquestStore';
 import { useCurrencyStore } from '../../store/useCurrencyStore';
 import { CONQUEST_RELICS, type ConquestRelicDef } from '../../data/conquest';
@@ -90,12 +90,12 @@ export const MysteryTile = ({ onClose }: MysteryTileProps) => {
 
     // ─── Treasure Resolve ─────────────────────────────────────────────────────
     const handleTreasureGold = () => {
-        currency.addGold(100);
+        currency.addGold(20);
         setTreasureChoice('gold');
     };
     const handleTreasureGems = () => {
         import('../../store/useGameStore').then(({ useGameStore }) => {
-            useGameStore.getState().addGems(3);
+            useGameStore.getState().addGems(1);
         });
         setTreasureChoice('gems');
     };
@@ -240,24 +240,24 @@ export const MysteryTile = ({ onClose }: MysteryTileProps) => {
                                             <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'center' }}>
                                                 <button
                                                     className="continue-btn"
-                                                    style={{ background: '#b45309', flex: 1 }}
+                                                    style={{ background: '#b45309', flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}
                                                     onClick={handleTreasureGold}
                                                 >
-                                                    🪙 +100 Gold
+                                                    <Coins size={18} color="#fbbf24" /> +20 Gold
                                                 </button>
                                                 <button
                                                     className="continue-btn"
-                                                    style={{ flex: 1 }}
+                                                    style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}
                                                     onClick={handleTreasureGems}
                                                 >
-                                                    💎 +3 Gems
+                                                    <Diamond size={18} color="#60a5fa" /> +1 Gem
                                                 </button>
                                             </div>
                                         </>
                                     ) : (
                                         <>
-                                            <p style={{ color: '#fbbf24', fontSize: '1.2rem', fontWeight: 700 }}>
-                                                {treasureChoice === 'gold' ? '🪙 +100 Gold!' : '💎 +3 Gems!'}
+                                            <p style={{ color: '#fbbf24', fontSize: '1.2rem', fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
+                                                {treasureChoice === 'gold' ? <><Coins size={22} color="#fbbf24" /> +20 Gold!</> : <><Diamond size={22} color="#60a5fa" /> +1 Gem!</>}
                                             </p>
                                             <button className="continue-btn" onClick={onClose}>Continue</button>
                                         </>

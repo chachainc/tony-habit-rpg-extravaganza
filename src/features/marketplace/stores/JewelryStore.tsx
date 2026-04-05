@@ -3,102 +3,8 @@ import { motion } from 'framer-motion';
 import { Gem, Check, Crown } from 'lucide-react';
 import { StoreLayout } from './StoreLayout';
 import { useCurrencyStore } from '../../../store/useCurrencyStore';
-
-interface JewelryItem {
-    id: string;
-    name: string;
-    icon: string;
-    description: string;
-    gemCost: number;
-    rarity: 'common' | 'rare' | 'epic' | 'legendary';
-    type: 'hero' | 'pet';
-    statBonus: { atk?: number; def?: number; hp?: number };
-}
-
-const JEWELRY_DB: JewelryItem[] = [
-    // Hero Jewelry
-    {
-        id: 'silver-ring',
-        name: 'Silver Band',
-        icon: '💍',
-        description: 'A simple but elegant silver ring',
-        gemCost: 5,
-        rarity: 'common',
-        type: 'hero',
-        statBonus: { def: 1 },
-    },
-    {
-        id: 'ruby-pendant',
-        name: 'Ruby Pendant',
-        icon: '📿',
-        description: 'A crimson gem that pulses with power',
-        gemCost: 15,
-        rarity: 'rare',
-        type: 'hero',
-        statBonus: { atk: 3 },
-    },
-    {
-        id: 'sapphire-amulet',
-        name: 'Sapphire Amulet',
-        icon: '🔮',
-        description: 'Deep blue gem that enhances resilience',
-        gemCost: 15,
-        rarity: 'rare',
-        type: 'hero',
-        statBonus: { def: 3, hp: 5 },
-    },
-    {
-        id: 'emerald-brooch',
-        name: 'Emerald Brooch',
-        icon: '💚',
-        description: 'A verdant gem overflowing with life energy',
-        gemCost: 25,
-        rarity: 'epic',
-        type: 'hero',
-        statBonus: { hp: 15, def: 2 },
-    },
-    {
-        id: 'diamond-crown',
-        name: 'Diamond Crown',
-        icon: '👑',
-        description: 'The pinnacle of jewelry — a crown of pure diamond',
-        gemCost: 50,
-        rarity: 'legendary',
-        type: 'hero',
-        statBonus: { atk: 5, def: 5, hp: 10 },
-    },
-    // Pet Jewelry
-    {
-        id: 'pet-collar-gem',
-        name: 'Gem-Studded Collar',
-        icon: '🎀',
-        description: 'A sparkling collar for your companion',
-        gemCost: 10,
-        rarity: 'common',
-        type: 'pet',
-        statBonus: {},
-    },
-    {
-        id: 'pet-tiara',
-        name: 'Pet Tiara',
-        icon: '👸',
-        description: 'A tiny crown for your loyal friend',
-        gemCost: 20,
-        rarity: 'rare',
-        type: 'pet',
-        statBonus: {},
-    },
-    {
-        id: 'pet-enchanted-charm',
-        name: 'Enchanted Charm',
-        icon: '✨',
-        description: 'A magical pendant that bonds you closer to your pet',
-        gemCost: 35,
-        rarity: 'epic',
-        type: 'pet',
-        statBonus: {},
-    },
-];
+import { useInventoryStore } from '../../../store/useInventoryStore';
+import { ITEM_DATABASE, type Item } from '../../../data/items';
 
 const RARITY_COLORS: Record<string, string> = {
     common: '#94a3b8',
@@ -113,17 +19,20 @@ interface Props {
 
 export const JewelryStore = ({ onClose }: Props) => {
     const { diamonds, spendDiamonds } = useCurrencyStore();
-    const [purchasedItems, setPurchasedItems] = useState<Set<string>>(new Set());
+    const invStore = useInventoryStore();
     const [filter, setFilter] = useState<'all' | 'hero' | 'pet'>('all');
 
-    const filteredItems = filter === 'all'
-        ? JEWELRY_DB
-        : JEWELRY_DB.filter(item => item.type === filter);
+    const JEWELRY_ITEMS = Object.values(ITEM_DATABASE).filter(i => i.type === 'jewelry' || i.type === 'pet_accessory');
 
-    const handleBuy = (item: JewelryItem) => {
-        if (diamonds < item.gemCost || purchasedItems.has(item.id)) return;
-        spendDiamonds(item.gemCost);
-        setPurchasedItems(prev => new Set([...prev, item.id]));
+    const filteredItems = filter === 'all'
+        ? JEWELRY_ITEMS
+        : JEWELRY_ITEMS.filter(item => filter === 'hero' ? item.type === 'jewelry' : item.type === 'pet_accessory');
+
+    const handleBuy = (item: Item) => {
+        const cost = item.cost.diamonds || 0;
+        if (diamonds < cost || invStore.ownsMarketplaceItem(item.id)) return;
+        spendDiamonds(cost);
+        invStore.purchaseMarketplaceItem(item.id);
     };
 
     return (
@@ -194,9 +103,10 @@ export const JewelryStore = ({ onClose }: Props) => {
                 gap: '0.75rem',
             }}>
                 {filteredItems.map(item => {
-                    const owned = purchasedItems.has(item.id);
-                    const canAfford = diamonds >= item.gemCost;
-                    const rarityColor = RARITY_COLORS[item.rarity];
+                    const owned = invStore.ownsMarketplaceItem(item.id);
+                    const cost = item.cost.diamonds || 0;
+                    const canAfford = diamonds >= cost;
+                    const rarityColor = RARITY_COLORS[item.rarity || 'common'];
 
                     return (
                         <motion.div
@@ -250,16 +160,16 @@ export const JewelryStore = ({ onClose }: Props) => {
                                     </p>
                                     {/* Stat bonuses */}
                                     <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', marginTop: '0.3rem' }}>
-                                        {item.statBonus.atk && (
-                                            <span style={{ fontSize: '0.7rem', color: '#f87171', fontWeight: 600 }}>+{item.statBonus.atk} ATK</span>
+                                        {item.stats?.attack && (
+                                            <span style={{ fontSize: '0.7rem', color: '#f87171', fontWeight: 600 }}>+{item.stats.attack} ATK</span>
                                         )}
-                                        {item.statBonus.def && (
-                                            <span style={{ fontSize: '0.7rem', color: '#60a5fa', fontWeight: 600 }}>+{item.statBonus.def} DEF</span>
+                                        {item.stats?.defense && (
+                                            <span style={{ fontSize: '0.7rem', color: '#60a5fa', fontWeight: 600 }}>+{item.stats.defense} DEF</span>
                                         )}
-                                        {item.statBonus.hp && (
-                                            <span style={{ fontSize: '0.7rem', color: '#34d399', fontWeight: 600 }}>+{item.statBonus.hp} HP</span>
+                                        {item.stats?.hp && (
+                                            <span style={{ fontSize: '0.7rem', color: '#34d399', fontWeight: 600 }}>+{item.stats.hp} HP</span>
                                         )}
-                                        {item.type === 'pet' && (
+                                        {item.type === 'pet_accessory' && (
                                             <span style={{ fontSize: '0.7rem', color: '#a78bfa', fontWeight: 600 }}>🐾 Pet Cosmetic</span>
                                         )}
                                     </div>
@@ -295,7 +205,7 @@ export const JewelryStore = ({ onClose }: Props) => {
                                             cursor: canAfford ? 'pointer' : 'not-allowed',
                                         }}
                                     >
-                                        💎 {item.gemCost}
+                                        💎 {cost}
                                     </button>
                                 )}
                             </div>

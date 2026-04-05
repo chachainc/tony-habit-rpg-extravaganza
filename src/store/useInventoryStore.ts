@@ -153,6 +153,11 @@ export const ITEM_DB: Record<string, ItemDef> = mergeExternalItems({
     'commerce_tome_5': { id: 'commerce_tome_5', name: 'Commerce Tome V',   type: 'book', category: 'business', level: 5, fusionRequired: 0, effect: '+30% Gold', rarity: 'legendary', shopCategory: 'library', value: 0, price: 0, icon: '📓', statBonuses: { goldMultiplier: 30 } },
 });
 
+export const getItemById = (id: string | null | undefined): (ItemDef | any) => {
+    if (!id) return null;
+    return ITEM_DATABASE[id] ?? ITEM_DB[id] ?? null;
+};
+
 export type EquipmentSlot = 'weapon' | 'armor' | 'relic' | 'artifact' | 'pet' | 'pet_accessory' | 'book' | 'jewelry';
 
 /** Returns a summary string of the stat bonuses for display */
@@ -192,8 +197,6 @@ interface InventoryState {
 
     // Marketplace items (from ITEM_DATABASE)
     marketplaceOwned: string[];
-    marketplaceEquippedArmor: string | null;
-    marketplaceEquippedWeapon: string | null;
 
     discoveredItems: string[];
 
@@ -212,10 +215,6 @@ interface InventoryState {
     // Marketplace functions
     purchaseMarketplaceItem: (itemId: string) => boolean;
     ownsMarketplaceItem: (itemId: string) => boolean;
-    equipMarketplaceArmor: (itemId: string | null) => void;
-    equipMarketplaceWeapon: (itemId: string | null) => void;
-    getMarketplaceAttackBonus: () => number;
-    getMarketplaceDefenseBonus: () => number;
     getMarketplaceXpBonuses: () => Partial<Record<SkillName, number>>;
 
     // Cellar stash
@@ -239,8 +238,6 @@ export const useInventoryStore = create<InventoryState>()(
 
             // Marketplace state
             marketplaceOwned: ['pet_cow', 'wooden_stick'],
-            marketplaceEquippedArmor: null,
-            marketplaceEquippedWeapon: 'wooden_stick',
 
             discoveredItems: [],
             stashedItems: [],
@@ -267,7 +264,7 @@ export const useInventoryStore = create<InventoryState>()(
 
             equipItem: (itemId, slot) => {
                 if (slot !== 'pet') {
-                    const item = ITEM_DB[itemId];
+                    const item = getItemById(itemId);
                     if (!item) return;
                     // Type → slot validation
                     if (slot === 'weapon' && item.type !== 'weapon') return;
@@ -276,7 +273,7 @@ export const useInventoryStore = create<InventoryState>()(
                     if (slot === 'artifact' && item.type !== 'artifact') return;
                     if (slot === 'book' && item.type !== 'book') return;
                     if (slot === 'jewelry' && item.type !== 'jewelry') return;
-                    if (slot === 'pet_accessory' && item.type !== 'pet_accessory') return;
+                    if (slot === 'pet_accessory' && (item.type !== 'pet_accessory' && item.type !== 'pet_gear')) return;
                 }
 
                 set((state) => ({
@@ -326,13 +323,15 @@ export const useInventoryStore = create<InventoryState>()(
                 let bonus = 0;
 
                 Object.values(equipped).forEach(itemId => {
-                    if (itemId && ITEM_DB[itemId]) {
-                        const item = ITEM_DB[itemId];
-                        if (stat === 'attack') {
-                            bonus += item.statBonuses?.attack ?? (item.type === 'weapon' ? item.value : 0);
-                        }
-                        if (stat === 'defense') {
-                            bonus += item.statBonuses?.defense ?? (item.type === 'armor' ? item.value : 0);
+                    if (itemId) {
+                        const item = getItemById(itemId);
+                        if (item) {
+                            if (stat === 'attack') {
+                                bonus += item.statBonuses?.attack ?? item.stats?.attack ?? (item.type === 'weapon' ? item.value : 0);
+                            }
+                            if (stat === 'defense') {
+                                bonus += item.statBonuses?.defense ?? item.stats?.defense ?? (item.type === 'armor' ? item.value : 0);
+                            }
                         }
                     }
                 });
@@ -342,8 +341,8 @@ export const useInventoryStore = create<InventoryState>()(
             getEquippedWeapon: () => {
                 const { equipped } = get();
                 const weaponId = equipped.weapon;
-                if (weaponId && ITEM_DB[weaponId]) {
-                    return ITEM_DB[weaponId];
+                if (weaponId) {
+                    return getItemById(weaponId);
                 }
                 return null;
             },
@@ -351,8 +350,8 @@ export const useInventoryStore = create<InventoryState>()(
             getEquippedItemForSlot: (slot) => {
                 const { equipped } = get();
                 const itemId = equipped[slot];
-                if (!itemId || !ITEM_DB[itemId]) return null;
-                return ITEM_DB[itemId];
+                if (!itemId) return null;
+                return getItemById(itemId);
             },
 
             // ========== MARKETPLACE FUNCTIONS ==========
@@ -373,17 +372,17 @@ export const useInventoryStore = create<InventoryState>()(
                 set((state) => ({
                     marketplaceOwned: [...state.marketplaceOwned, itemId],
                 }));
+                get().addItem(itemId, 1);
 
+                // Auto-equip if slot is empty, or unconditionally to help user notice newly bought gear.
                 if (item.type === 'armor') {
-                    const currentArmor = get().marketplaceEquippedArmor;
-                    const currentDef = currentArmor ? ITEM_DATABASE[currentArmor]?.stats?.defense || 0 : 0;
-                    const newDef = item.stats?.defense || 0;
-                    if (newDef > currentDef) set({ marketplaceEquippedArmor: itemId });
+                    get().equipItem(itemId, 'armor');
                 } else if (item.type === 'weapon') {
-                    const currentWeapon = get().marketplaceEquippedWeapon;
-                    const currentAtk = currentWeapon ? ITEM_DATABASE[currentWeapon]?.stats?.attack || 0 : 0;
-                    const newAtk = item.stats?.attack || 0;
-                    if (newAtk > currentAtk) set({ marketplaceEquippedWeapon: itemId });
+                    get().equipItem(itemId, 'weapon');
+                } else if (item.type === 'jewelry') {
+                    if (!get().equipped.jewelry) get().equipItem(itemId, 'jewelry');
+                } else if (item.type === 'pet_accessory') {
+                    if (!get().equipped.pet_accessory) get().equipItem(itemId, 'pet_accessory');
                 }
 
                 return true;
@@ -391,30 +390,6 @@ export const useInventoryStore = create<InventoryState>()(
 
             ownsMarketplaceItem: (itemId: string) => {
                 return get().marketplaceOwned.includes(itemId);
-            },
-
-            equipMarketplaceArmor: (itemId: string | null) => {
-                if (itemId === null || get().marketplaceOwned.includes(itemId)) {
-                    set({ marketplaceEquippedArmor: itemId });
-                }
-            },
-
-            equipMarketplaceWeapon: (itemId: string | null) => {
-                if (itemId === null || get().marketplaceOwned.includes(itemId)) {
-                    set({ marketplaceEquippedWeapon: itemId });
-                }
-            },
-
-            getMarketplaceAttackBonus: () => {
-                const weaponId = get().marketplaceEquippedWeapon;
-                if (!weaponId) return 0;
-                return ITEM_DATABASE[weaponId]?.stats?.attack || 0;
-            },
-
-            getMarketplaceDefenseBonus: () => {
-                const armorId = get().marketplaceEquippedArmor;
-                if (!armorId) return 0;
-                return ITEM_DATABASE[armorId]?.stats?.defense || 0;
             },
 
             getMarketplaceXpBonuses: () => {
@@ -425,15 +400,19 @@ export const useInventoryStore = create<InventoryState>()(
                     const item = ITEM_DATABASE[itemId];
                     if (item?.type === 'furniture' && item?.stats?.bonusXp) {
                         for (const [skill, bonus] of Object.entries(item.stats.bonusXp)) {
-                            bonuses[skill as SkillName] = (bonuses[skill as SkillName] || 0) + bonus;
+                            if (typeof bonus === 'number') {
+                                bonuses[skill as SkillName] = (bonuses[skill as SkillName] || 0) + bonus;
+                            }
                         }
                     }
                 }
 
-                const armor = state.marketplaceEquippedArmor ? ITEM_DATABASE[state.marketplaceEquippedArmor] : null;
+                const armor = state.equipped.armor ? getItemById(state.equipped.armor) : null;
                 if (armor?.stats?.bonusXp) {
                     for (const [skill, bonus] of Object.entries(armor.stats.bonusXp)) {
-                        bonuses[skill as SkillName] = (bonuses[skill as SkillName] || 0) + bonus;
+                        if (typeof bonus === 'number') {
+                            bonuses[skill as SkillName] = (bonuses[skill as SkillName] || 0) + bonus;
+                        }
                     }
                 }
 

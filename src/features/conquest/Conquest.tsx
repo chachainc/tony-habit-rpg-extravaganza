@@ -12,7 +12,7 @@ import {
     getEnemiesForTier,
     type ConquestNodeData, type ResourceTileData,
 } from '../../data/conquest';
-import { useHeroImage } from '../../hooks/useHeroImage';
+import { usePlayerAvatar } from '../../hooks/usePlayerAvatar';
 import { ConquestStoreUI } from './ConquestStore';
 import { ChessGame } from './ChessGame';
 import { ConquestTiles } from './ConquestTiles';
@@ -53,7 +53,7 @@ export const Conquest = () => {
     const currency = useCurrencyStore();
     const strategy = useStrategyStore();
     const navigate = useNavigate();
-    const heroImage = useHeroImage();
+    const heroImage = usePlayerAvatar();
     const mapContainerRef = useRef<HTMLDivElement>(null);
     const mapContentRef = useRef<HTMLDivElement>(null);
     const [mapLines, setMapLines] = useState<{ id1: string, id2: string, x1: number, y1: number, x2: number, y2: number, status: string }[]>([]);

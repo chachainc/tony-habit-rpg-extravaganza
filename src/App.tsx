@@ -45,6 +45,8 @@ import { useGameStore } from './store/useGameStore';
 import { useProfileStore, triggerAutoSync } from './store/useProfileStore';
 import { useBudgetStore } from './store/useBudgetStore';
 import { WelcomeTutorialModal } from './features/onboarding/WelcomeTutorialModal';
+import { UltimateVideoOverlay } from './components/ui/UltimateVideoOverlay';
+
 // Town Hub wrapper to handle navigation
 const TownHubPage = () => {
   const navigate = useNavigate();
@@ -98,7 +100,7 @@ function HydrationGate({ children }: { children: React.ReactNode }) {
 function App() {
   const { isNewDay } = useDayStore();
   const { pendingLevelUp, clearLevelUp } = useGameStore();
-  const { isLoggedIn, characterArchetype } = useProfileStore();
+  const { isLoggedIn, classType } = useProfileStore();
   const [showWakeUp, setShowWakeUp] = useState(false);
   useEffect(() => {
     console.log('[BOOT] App mounted');
@@ -146,7 +148,7 @@ function App() {
   }
 
   // If no character selected, force character onboarding
-  if (isLoggedIn && !characterArchetype) {
+  if (isLoggedIn && !classType) {
     return (
       <Router>
         <CharacterCreation />
@@ -157,13 +159,16 @@ function App() {
   return (
     <>
       {/* Show the onboarding tutorial if logged in, character created, but tutorial not seen */}
-      {isLoggedIn && characterArchetype && !useProfileStore.getState().hasSeenWelcomeTutorial && (
+      {isLoggedIn && classType && !useProfileStore.getState().hasSeenWelcomeTutorial && (
         <WelcomeTutorialModal />
       )}
 
       <Router>
       {/* Toast notifications - always visible */}
       <ToastContainer />
+      
+      {/* Ultimate Video Overlay */}
+      <UltimateVideoOverlay />
 
       {/* Currency gain VFX - always visible */}
       <CurrencyPopVFX />
@@ -176,7 +181,7 @@ function App() {
       )}
 
       {/* Budget Setup Modal — only after wake-up flow is done */}
-      {isLoggedIn && characterArchetype && !showWakeUp && <BudgetSetupModal />}
+      {isLoggedIn && classType && !showWakeUp && <BudgetSetupModal />}
 
       {/* Level Up Modal */}
       <AnimatePresence>

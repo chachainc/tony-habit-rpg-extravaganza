@@ -21,8 +21,16 @@ export interface RecurringTask {
     completed: boolean;
     category?: TaskCategory;
 
-    // Rewards
+    // Rewards (for standard tasks)
     rewards: TaskReward[];
+
+    // Tiered options (for grouped tasks)
+    tiers?: {
+        id: string;
+        title: string;
+        rewards: TaskReward[];
+    }[];
+    selectedTier?: string | null;
 
     // Completion Logic
     requiresInput?: 'weight' | 'training';
@@ -60,7 +68,7 @@ interface RecurringTasksState {
     lastCardioDate: string | null;
 
     // Actions
-    completeTask: (id: string, inputData?: { weight?: number, trainingSelections?: string[] }) => void;
+    completeTask: (id: string, inputData?: { weight?: number, trainingSelections?: string[], tierId?: string }) => void;
     uncompleteTask: (id: string) => void; // Allow un-checking an accidentally completed task
 
     resetDailyTasks: () => void;
@@ -247,11 +255,16 @@ export const DAILY_TASKS_TEMPLATE: Omit<RecurringTask, 'completed'>[] = [
     //        → Brush/Floss → Magnesium → Tongue Exercises → Read → Charge/Oura → CPAP
     {
         id: 'daily_steps',
-        title: 'Walk 10,000 Steps',
+        title: 'Daily Steps',
         bundle: 'night',
         type: 'daily',
         category: 'fitness',
-        rewards: [{ skillId: 'Cardio', xp: 2 }],
+        rewards: [], // Rewards derived from tiers
+        tiers: [
+            { id: 'low', title: 'Walked 1–5,000 steps', rewards: [] },
+            { id: 'mid', title: 'Walked 5,001–8,000 steps', rewards: [{ skillId: 'Cardio', xp: 1 }] },
+            { id: 'high', title: 'Walked 8,000+ steps', rewards: [{ skillId: 'Cardio', xp: 2 }] }
+        ]
     },
     {
         id: 'water_night',
@@ -458,8 +471,18 @@ export const useRecurringTasksStore = create<RecurringTasksState>()(
                     if (dailyIndex !== -1) {
                         const newTasks = [...state.dailyTasks];
                         const task = newTasks[dailyIndex];
-                        newTasks[dailyIndex] = { ...task, completed: true };
-
+                        let rewardsToGrant: TaskReward[] = [];
+                        if (task.tiers && inputData?.tierId) {
+                            const chosenTier = task.tiers.find(t => t.id === inputData.tierId);
+                            if (chosenTier) {
+                                newTasks[dailyIndex] = { ...task, completed: true, selectedTier: inputData.tierId };
+                                rewardsToGrant = [...chosenTier.rewards];
+                            }
+                        } else {
+                            newTasks[dailyIndex] = { ...task, completed: true };
+                            rewardsToGrant = [...task.rewards];
+                        }
+                        
                         let newWeightHistory = [...state.weightHistory];
                         if (inputData?.weight) {
                             const today = getEasternDateString();
@@ -471,9 +494,6 @@ export const useRecurringTasksStore = create<RecurringTasksState>()(
                                 newWeightHistory.push({ date: today, weight: inputData.weight });
                             }
                         }
-
-                        // Handle XP Awards with daily cap enforcement
-                        const rewardsToGrant: TaskReward[] = [...task.rewards];
 
                         // Handle Training Logic (with workout block)
                         if (task.id === 'training_session' && inputData?.trainingSelections) {
@@ -616,12 +636,19 @@ export const useRecurringTasksStore = create<RecurringTasksState>()(
                     if (dailyIndex === -1) return {};
                     const newTasks = [...state.dailyTasks];
                     const task = newTasks[dailyIndex];
-                    newTasks[dailyIndex] = { ...task, completed: false };
+                    newTasks[dailyIndex] = { ...task, completed: false, selectedTier: null };
 
                     // Refund XP
                     import('./useGameStore').then(({ useGameStore }) => {
                         const gameStore = useGameStore.getState();
-                        task.rewards.forEach(r => {
+                        let rewardsToRevoke = task.rewards;
+                        if (task.tiers && task.selectedTier) {
+                            const chosenTier = task.tiers.find(t => t.id === task.selectedTier);
+                            if (chosenTier) {
+                                rewardsToRevoke = chosenTier.rewards;
+                            }
+                        }
+                        rewardsToRevoke.forEach(r => {
                             gameStore.removeSkillXp(r.skillId, r.xp);
                         });
                     });
@@ -641,7 +668,7 @@ export const useRecurringTasksStore = create<RecurringTasksState>()(
                         if (!t.conditional) return true;
                         return t.conditional.days?.includes(todayDow);
                     })
-                    .map(t => ({ ...t, completed: false }));
+                    .map(t => ({ ...t, completed: false, selectedTier: null }));
 
                 // Apply overrides
                 todaysTasks = todaysTasks.map(t => {

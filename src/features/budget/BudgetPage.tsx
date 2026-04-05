@@ -1,20 +1,21 @@
-import React, { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { DollarSign, Zap, Plus, Gift, History, PlusCircle, Trash2, TrendingDown, Flame, X, Clock } from 'lucide-react';
+import React, { useRef, useState } from 'react';
+import { motion } from 'framer-motion';
+import { DollarSign, Zap, Gift, History, PlusCircle, Trash2, TrendingDown, Flame, Clock } from 'lucide-react';
 import { Panel } from '../../components/ui/Panel';
 import { GachaButton } from '../../components/ui/GachaButton';
+import { SpendingCutscene } from '../../components/ui/SpendingCutscene';
 import { useBudgetStore, BUDGET_CATEGORIES, type Transaction, type BudgetCategory } from '../../store/useBudgetStore';
 import './BudgetPage.css';
 
 export const BudgetPage: React.FC = () => {
-    const { 
-        weeklyBudget, 
-        weeklyGiftType, 
-        transactions, 
-        addTransaction, 
+    const {
+        weeklyBudget,
+        weeklyGiftType,
+        transactions,
+        addTransaction,
         removeTransaction,
-        getTotalSpent, 
-        getPowerMultiplier, 
+        getTotalSpent,
+        getPowerMultiplier,
         getDailyGiftTier,
         quickPresets,
         usePreset,
@@ -26,15 +27,28 @@ export const BudgetPage: React.FC = () => {
         setForceShowSetup,
     } = useBudgetStore();
 
-    const [isAddingTx, setIsAddingTx] = useState(false);
+    // ── Transaction form state ───────────────────────────────────────────────
     const [txAmount, setTxAmount] = useState('');
     const [txLabel, setTxLabel] = useState('');
     const [txCategory, setTxCategory] = useState<BudgetCategory>('other');
-    const [showPresetForm, setShowPresetForm] = useState(false);
-    const [presetLabel, setPresetLabel] = useState('');
-    const [presetAmount, setPresetAmount] = useState('');
-    const [presetCategory, setPresetCategory] = useState<BudgetCategory>('other');
+    const [saveAsQuickAdd, setSaveAsQuickAdd] = useState(false);
 
+    // ── Cutscene state ───────────────────────────────────────────────────────
+    const [showCutscene, setShowCutscene] = useState(false);
+    const cutsceneFiring = useRef(false);
+
+    const triggerCutscene = () => {
+        if (cutsceneFiring.current) return;
+        cutsceneFiring.current = true;
+        setShowCutscene(true);
+    };
+
+    const dismissCutscene = () => {
+        setShowCutscene(false);
+        cutsceneFiring.current = false;
+    };
+
+    // ── No budget guard ──────────────────────────────────────────────────────
     if (!weeklyBudget) {
         return (
             <div className="budget-page-container">
@@ -42,8 +56,8 @@ export const BudgetPage: React.FC = () => {
                     <DollarSign size={48} className="text-muted" />
                     <h2>No Active Budget</h2>
                     <p>Your weekly budget has not been set yet.</p>
-                    <button 
-                        className="bp-preset-btn bp-preset-add mt-4 mx-auto" 
+                    <button
+                        className="bp-preset-btn bp-preset-add mt-4 mx-auto"
                         onClick={() => setForceShowSetup(true)}
                         style={{ marginTop: '1rem', background: '#3b82f6', color: '#fff', border: 'none', padding: '0.75rem 1.5rem', borderRadius: 8, fontWeight: 700 }}
                     >
@@ -52,7 +66,6 @@ export const BudgetPage: React.FC = () => {
                     </button>
                 </Panel>
 
-                {/* Show history even without active budget */}
                 {weekHistory.length > 0 && (
                     <div className="bp-card bp-history-card">
                         <div className="bp-card-header">
@@ -81,120 +94,78 @@ export const BudgetPage: React.FC = () => {
     const streakMul = getStreakMultiplier();
     const categorySpend = getSpentByCategory();
 
-    // Compute days until Sunday reset (Eastern)
     const getDaysUntilReset = () => {
         const now = new Date(new Date().toLocaleString('en-US', { timeZone: 'America/New_York' }));
-        const daysUntilSun = (7 - now.getDay()) % 7; // 0 = today is Sunday
+        const daysUntilSun = (7 - now.getDay()) % 7;
         return daysUntilSun === 0 ? 7 : daysUntilSun;
     };
     const daysUntilReset = getDaysUntilReset();
-
     const progressClass = progressPercent >= 100 ? 'danger' : progressPercent >= 80 ? 'warning' : 'safe';
 
+    // ── Handlers ─────────────────────────────────────────────────────────────
+
+    /** Only trigger cutscene for actual outflows (amount > 0 = spending) */
     const handleAddTransaction = (e: React.FormEvent) => {
         e.preventDefault();
         const amount = parseFloat(txAmount);
         if (isNaN(amount) || amount <= 0 || !txLabel.trim()) return;
 
+        // Save transaction first — always reliable
         addTransaction(amount, txLabel.trim(), txCategory);
+
+        // Save as Quick Add if requested and no duplicate label exists
+        if (saveAsQuickAdd) {
+            const isDupe = quickPresets.some(p => p.label.toLowerCase() === txLabel.trim().toLowerCase());
+            if (!isDupe) {
+                const cat = BUDGET_CATEGORIES[txCategory];
+                addPreset({ emoji: cat.emoji, label: txLabel.trim(), amount, category: txCategory });
+            }
+        }
+
+        // Reset form completely
         setTxAmount('');
         setTxLabel('');
         setTxCategory('other');
-        setIsAddingTx(false);
+        setSaveAsQuickAdd(false);
+
+        // Trigger cutscene only for spending (positive outflow)
+        triggerCutscene();
     };
 
-    const handleAddPreset = (e: React.FormEvent) => {
-        e.preventDefault();
-        const amount = parseFloat(presetAmount);
-        if (isNaN(amount) || amount <= 0 || !presetLabel.trim()) return;
-        const cat = BUDGET_CATEGORIES[presetCategory];
-        addPreset({ emoji: cat.emoji, label: presetLabel.trim(), amount, category: presetCategory });
-        setPresetLabel('');
-        setPresetAmount('');
-        setPresetCategory('other');
-        setShowPresetForm(false);
+    /** Quick Add preset — also triggers cutscene since presets are always spending */
+    const handleUsePreset = (presetId: string) => {
+        usePreset(presetId);
+        triggerCutscene();
     };
 
     return (
         <div className="budget-page-container fade-in">
 
-            {/* Page Header */}
+            {/* ══ 1. HEADER SUMMARY ══════════════════════════════════════════ */}
             <div className="budget-header">
                 <h1 className="budget-page-title">
                     <DollarSign size={22} className="budget-title-icon" />
                     Weekly Budget
                 </h1>
                 <p className="budget-subtitle">Track spending to maintain combat power &amp; earn daily gifts.</p>
-                {/* reset countdown */}
-                <div className="bp-streak-header" style={{ color: '#64748b', fontSize: '0.75rem' }}>
-                    <Clock size={13} />
-                    <span>Resets in {daysUntilReset} day{daysUntilReset !== 1 ? 's' : ''}</span>
-                </div>
-            {weeklyStreak > 0 && (
-                    <div className="bp-streak-header">
-                        <Flame size={16} className="bp-streak-flame" />
-                        <span>{weeklyStreak} Week Streak</span>
-                        <span className="bp-streak-mul">{streakMul.toFixed(1)}x chest bonus</span>
+                <div className="bp-header-meta">
+                    <div className="bp-streak-header" style={{ color: '#64748b', fontSize: '0.75rem' }}>
+                        <Clock size={13} />
+                        <span>Resets in {daysUntilReset} day{daysUntilReset !== 1 ? 's' : ''}</span>
                     </div>
-                )}
-            </div>
-
-            {/* ── Quick Presets ── */}
-            <div className="bp-presets-section">
-                <div className="bp-presets-header">
-                    <span className="bp-presets-label">⚡ Quick Add</span>
-                    <button className="bp-preset-manage" onClick={() => setShowPresetForm(!showPresetForm)}>
-                        {showPresetForm ? <X size={12} /> : <Plus size={12} />}
-                    </button>
-                </div>
-                <div className="bp-presets-row">
-                    {quickPresets.map(p => (
-                        <button key={p.id} className="bp-preset-btn" onClick={() => usePreset(p.id)}>
-                            <span className="bp-preset-emoji">{p.emoji}</span>
-                            <span className="bp-preset-name">{p.label}</span>
-                            <span className="bp-preset-amount">${p.amount}</span>
-                        </button>
-                    ))}
-                </div>
-
-                <AnimatePresence>
-                    {showPresetForm && (
-                        <motion.form
-                            className="bp-preset-form"
-                            initial={{ height: 0, opacity: 0 }}
-                            animate={{ height: 'auto', opacity: 1 }}
-                            exit={{ height: 0, opacity: 0 }}
-                            onSubmit={handleAddPreset}
-                        >
-                            <div className="form-row">
-                                <input type="text" placeholder="Label" value={presetLabel} onChange={e => setPresetLabel(e.target.value)} className="tx-input" />
-                                <div className="tx-amount-wrapper">
-                                    <span className="currency-symbol">$</span>
-                                    <input type="number" step="0.01" min="0.01" placeholder="0" value={presetAmount} onChange={e => setPresetAmount(e.target.value)} className="tx-input amount-input" />
-                                </div>
-                            </div>
-                            <div className="bp-cat-row">
-                                {Object.entries(BUDGET_CATEGORIES).map(([key, cat]) => (
-                                    <button
-                                        key={key}
-                                        type="button"
-                                        className={`bp-cat-chip ${presetCategory === key ? 'bp-cat-active' : ''}`}
-                                        style={{ '--cat-color': cat.color } as React.CSSProperties}
-                                        onClick={() => setPresetCategory(key as BudgetCategory)}
-                                    >
-                                        {cat.emoji}
-                                    </button>
-                                ))}
-                            </div>
-                            <GachaButton variant="primary" type="submit" disabled={!presetLabel || !presetAmount} className="w-full mt-2">
-                                Save Preset
-                            </GachaButton>
-                        </motion.form>
+                    {weeklyStreak > 0 && (
+                        <div className="bp-streak-header">
+                            <Flame size={16} className="bp-streak-flame" />
+                            <span>{weeklyStreak} Week Streak</span>
+                            <span className="bp-streak-mul">{streakMul.toFixed(1)}x chest bonus</span>
+                        </div>
                     )}
-                </AnimatePresence>
+                </div>
             </div>
 
-            {/* ── CARD 1: Budget Progress ── */}
+            {/* ══ 2. PRIMARY STATUS ═════════════════════════════════════════ */}
+
+            {/* Budget Progress */}
             <div className="bp-card">
                 <div className="bp-card-header">
                     <div className="bp-card-title">
@@ -207,8 +178,6 @@ export const BudgetPage: React.FC = () => {
                         <span className="bp-budget-total">${weeklyBudget.toFixed(2)}</span>
                     </span>
                 </div>
-
-                {/* Progress bar */}
                 <div className="bp-progress-track">
                     <motion.div
                         className={`bp-progress-fill bp-fill-${progressClass}`}
@@ -217,7 +186,6 @@ export const BudgetPage: React.FC = () => {
                         transition={{ duration: 1.1, ease: 'easeOut' }}
                     />
                 </div>
-
                 <div className="bp-progress-meta">
                     <span className="bp-meta-pct">{progressPercent.toFixed(0)}% spent</span>
                     <span className={`bp-meta-remaining ${progressClass === 'danger' ? 'bp-danger' : ''}`}>
@@ -226,7 +194,7 @@ export const BudgetPage: React.FC = () => {
                 </div>
             </div>
 
-            {/* ── CARDS 2+3: Power Bonus & Daily Gift (side by side) ── */}
+            {/* Power + Gift side by side */}
             <div className="bp-stats-row">
                 <div className="bp-card bp-stat-card">
                     <div className="bp-stat-icon-wrap bp-icon-gold">
@@ -251,7 +219,102 @@ export const BudgetPage: React.FC = () => {
                 </div>
             </div>
 
-            {/* ── Category Breakdown ── */}
+            {/* ══ 3. ACTION AREA ════════════════════════════════════════════ */}
+            <div className="bp-action-zone">
+                <div className="bp-action-zone-label">⚡ Actions</div>
+
+                {/* Quick Add presets */}
+                <div className="bp-presets-section">
+                    <div className="bp-presets-header">
+                        <span className="bp-presets-label">Quick Add</span>
+                    </div>
+                    <div className="bp-presets-row">
+                        {quickPresets.length === 0 && (
+                            <span className="bp-presets-empty">No presets yet — save one below!</span>
+                        )}
+                        {quickPresets.map(p => (
+                            <button key={p.id} className="bp-preset-btn" onClick={() => handleUsePreset(p.id)}>
+                                <span className="bp-preset-emoji">{p.emoji}</span>
+                                <span className="bp-preset-name">{p.label}</span>
+                                <span className="bp-preset-amount">${p.amount}</span>
+                            </button>
+                        ))}
+                    </div>
+                </div>
+
+                <div className="bp-action-divider" />
+
+                {/* Custom Transaction Form */}
+                <div className="bp-tx-action-section">
+                    <span className="bp-presets-label" style={{ marginBottom: '0.6rem', display: 'block' }}>Add Custom Spending</span>
+                    <form onSubmit={handleAddTransaction} className="add-tx-form">
+                        <div className="form-row">
+                            <input
+                                type="text"
+                                placeholder="What did you buy?"
+                                value={txLabel}
+                                onChange={(e) => setTxLabel(e.target.value)}
+                                className="tx-input"
+                            />
+                            <div className="tx-amount-wrapper">
+                                <span className="currency-symbol">$</span>
+                                <input
+                                    type="number"
+                                    step="0.01"
+                                    min="0.01"
+                                    placeholder="0.00"
+                                    value={txAmount}
+                                    onChange={(e) => setTxAmount(e.target.value)}
+                                    className="tx-input amount-input"
+                                />
+                            </div>
+                        </div>
+
+                        {/* Category selector */}
+                        <div className="bp-cat-row">
+                            {Object.entries(BUDGET_CATEGORIES).map(([key, cat]) => (
+                                <button
+                                    key={key}
+                                    type="button"
+                                    className={`bp-cat-chip ${txCategory === key ? 'bp-cat-active' : ''}`}
+                                    style={{ '--cat-color': cat.color } as React.CSSProperties}
+                                    onClick={() => setTxCategory(key as BudgetCategory)}
+                                >
+                                    {cat.emoji} <span className="bp-cat-chip-label">{cat.label}</span>
+                                </button>
+                            ))}
+                        </div>
+
+                        {/* Save as Quick Add checkbox */}
+                        <label className="bp-save-quick-add">
+                            <input
+                                type="checkbox"
+                                checked={saveAsQuickAdd}
+                                onChange={(e) => setSaveAsQuickAdd(e.target.checked)}
+                            />
+                            <span>Save as Quick Add</span>
+                            <span className="bp-save-quick-add-hint">
+                                {quickPresets.some(p => p.label.toLowerCase() === txLabel.trim().toLowerCase()) && txLabel.trim()
+                                    ? '· already saved'
+                                    : ''}
+                            </span>
+                        </label>
+
+                        <GachaButton
+                            variant="primary"
+                            type="submit"
+                            disabled={!txLabel || !txAmount}
+                            className="w-full mt-2"
+                        >
+                            <PlusCircle size={16} /> Log Spending
+                        </GachaButton>
+                    </form>
+                </div>
+            </div>
+
+            {/* ══ 4. REVIEW AREA ════════════════════════════════════════════ */}
+
+            {/* Spending Breakdown */}
             {totalSpent > 0 && (
                 <div className="bp-card bp-cat-card">
                     <div className="bp-card-header">
@@ -284,83 +347,15 @@ export const BudgetPage: React.FC = () => {
                 </div>
             )}
 
-            {/* ── CARD: Transaction Log ── */}
+            {/* Transaction Log */}
             <div className="bp-card bp-tx-card">
                 <div className="bp-card-header">
                     <div className="bp-card-title">
                         <History size={16} className="bp-card-icon" />
                         Transaction Log
                     </div>
-                    <button
-                        className={`bp-add-btn ${isAddingTx ? 'bp-add-btn-cancel' : ''}`}
-                        onClick={() => setIsAddingTx(!isAddingTx)}
-                    >
-                        {isAddingTx ? '✕ Cancel' : <><Plus size={14} /> ADD</>}
-                    </button>
                 </div>
-
                 <div className="bp-card-divider" />
-
-                {/* Add form */}
-                <AnimatePresence>
-                    {isAddingTx && (
-                        <motion.div
-                            initial={{ height: 0, opacity: 0 }}
-                            animate={{ height: 'auto', opacity: 1 }}
-                            exit={{ height: 0, opacity: 0 }}
-                            className="add-tx-form"
-                        >
-                            <form onSubmit={handleAddTransaction}>
-                                <div className="form-row">
-                                    <input
-                                        type="text"
-                                        placeholder="What did you buy?"
-                                        value={txLabel}
-                                        onChange={(e) => setTxLabel(e.target.value)}
-                                        className="tx-input"
-                                        autoFocus
-                                    />
-                                    <div className="tx-amount-wrapper">
-                                        <span className="currency-symbol">$</span>
-                                        <input
-                                            type="number"
-                                            step="0.01"
-                                            min="0.01"
-                                            placeholder="0.00"
-                                            value={txAmount}
-                                            onChange={(e) => setTxAmount(e.target.value)}
-                                            className="tx-input amount-input"
-                                        />
-                                    </div>
-                                </div>
-                                {/* Category selector */}
-                                <div className="bp-cat-row">
-                                    {Object.entries(BUDGET_CATEGORIES).map(([key, cat]) => (
-                                        <button
-                                            key={key}
-                                            type="button"
-                                            className={`bp-cat-chip ${txCategory === key ? 'bp-cat-active' : ''}`}
-                                            style={{ '--cat-color': cat.color } as React.CSSProperties}
-                                            onClick={() => setTxCategory(key as BudgetCategory)}
-                                        >
-                                            {cat.emoji} <span className="bp-cat-chip-label">{cat.label}</span>
-                                        </button>
-                                    ))}
-                                </div>
-                                <GachaButton
-                                    variant="primary"
-                                    type="submit"
-                                    disabled={!txLabel || !txAmount}
-                                    className="w-full mt-2"
-                                >
-                                    <PlusCircle size={16} /> Save Transaction
-                                </GachaButton>
-                            </form>
-                        </motion.div>
-                    )}
-                </AnimatePresence>
-
-                {/* List */}
                 <div className="tx-list">
                     {transactions.length === 0 ? (
                         <div className="tx-empty">
@@ -402,7 +397,7 @@ export const BudgetPage: React.FC = () => {
                 </div>
             </div>
 
-            {/* ── Budget History ── */}
+            {/* Past Weeks */}
             {weekHistory.length > 0 && (
                 <div className="bp-card bp-history-card">
                     <div className="bp-card-header">
@@ -414,6 +409,9 @@ export const BudgetPage: React.FC = () => {
                     <HistoryChart history={weekHistory} />
                 </div>
             )}
+
+            {/* ── Spending Cutscene Overlay ── */}
+            <SpendingCutscene isVisible={showCutscene} onDismiss={dismissCutscene} />
         </div>
     );
 };
