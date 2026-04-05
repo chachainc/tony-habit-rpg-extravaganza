@@ -10,7 +10,7 @@ import { useCampaignStore } from '../../store/useCampaignStore';
 import { usePetStore, PET_DATABASE } from '../../store/usePetStore';
 import { useMagicStore } from '../../store/useMagicStore';
 import { ArenaBattlefieldLayout } from './ArenaBattlefieldLayout';
-import { getDetailedCombatBreakdown, type StatBreakdown } from '../../store/useCombatFormulas';
+import { getDetailedCombatBreakdown, getSkillSynergyBonus, type StatBreakdown } from '../../store/useCombatFormulas';
 import { getPassiveBonuses } from '../../store/usePassiveEffects';
 import { WeaponEquipWidget } from './WeaponEquipWidget';
 import { useXpWeaponStore } from '../../store/useXpWeaponStore';
@@ -730,6 +730,7 @@ export const Arena = ({ onClose }: { onClose: () => void }) => {
 
                                             {showPowerDetails && (() => {
                                                 const breakdown = getDetailedCombatBreakdown();
+                                                const synergy = getSkillSynergyBonus();
                                                 const renderStat = (label: string, stat: StatBreakdown, unit: string = '') => (
                                                     <div className="breakdown-stat" key={label}>
                                                         <div className="breakdown-stat-header">
@@ -752,9 +753,9 @@ export const Arena = ({ onClose }: { onClose: () => void }) => {
                                                         {renderStat('❤️ HP', breakdown.hp)}
                                                         {renderStat('💎 MP', breakdown.mp)}
                                                         {renderStat('💨 SPD', breakdown.spd)}
-                                                        {breakdown.synergy.active && (
+                                                        {synergy.active && (
                                                             <div className="synergy-banner">
-                                                                🔗 {breakdown.synergy.description}
+                                                                🔗 {synergy.description}
                                                             </div>
                                                         )}
                                                     </div>
