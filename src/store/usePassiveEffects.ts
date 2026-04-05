@@ -1,8 +1,10 @@
-import { useInventoryStore, ITEM_DB, type ItemStatBonuses } from './useInventoryStore';
-import { ITEM_DATABASE } from '../data/items';
+import { useInventoryStore, getItemById, type ItemStatBonuses } from './useInventoryStore';
 import { PET_DATABASE } from '../data/pets';
+import { usePetStore } from './usePetStore';
 import { useRiskStore } from './useRiskStore';
 import { useTraitStore } from './useTraitStore';
+import { useAuraStore } from './useAuraStore';
+import { useTitleStore } from './useTitleStore';
 
 export interface PassiveBonuses {
     attack_bonus: number;
@@ -74,19 +76,27 @@ export const getPassiveBonuses = (): PassiveBonuses => {
 
     const equipped = useInventoryStore.getState().equipped;
 
-    // Process all gear slots that use ITEM_DB (weapon, armor, relic, artifact, book, jewelry)
+    // Process all gear slots (weapon, armor, relic, artifact, book, jewelry)
     const processGear = (itemId: string | null) => {
         if (!itemId) return;
-        const item = ITEM_DB[itemId];
+        const item = getItemById(itemId);
         if (!item) return;
 
-        // Prefer structured statBonuses when available
+        // Prefer structured statBonuses when available (LEGACY)
         if (item.statBonuses) {
             applyStatBonuses(bonuses, item.statBonuses);
+        } else if (item.stats) {
+            // New structured ITEM_DATABASE format support
+            if (item.stats.attack) bonuses.attack_bonus += item.stats.attack;
+            if (item.stats.defense) bonuses.defense_bonus += item.stats.defense;
+            if (item.stats.hp) bonuses.max_hp_bonus += item.stats.hp;
+            if (item.stats.magicAttack) bonuses.magic_attack_bonus += item.stats.magicAttack;
+            if (item.stats.magicDefense) bonuses.magic_defense_bonus += item.stats.magicDefense;
+            if (item.stats.maxMana) bonuses.max_mana_bonus += item.stats.maxMana;
         } else {
-            // Legacy fallback: use raw value field
-            if (item.type === 'weapon') bonuses.attack_bonus += item.value;
-            if (item.type === 'armor') bonuses.defense_bonus += item.value;
+            // Ultra-legacy fallback: use raw value field
+            if (item.type === 'weapon') bonuses.attack_bonus += item.value || 0;
+            if (item.type === 'armor') bonuses.defense_bonus += item.value || 0;
             if (item.critChance) bonuses.crit_bonus += Math.floor(item.critChance * 100);
         }
 
@@ -101,23 +111,13 @@ export const getPassiveBonuses = (): PassiveBonuses => {
     processGear(equipped.book);     // New: book slot
     processGear(equipped.jewelry);  // New: jewelry slot
 
-    // Process Pet (via PET_DATABASE or ITEM_DATABASE)
-    if (equipped.pet) {
-        const gachaPet = PET_DATABASE[equipped.pet];
-        if (gachaPet) {
-            const effectType = gachaPet.passive?.effectType;
-            if (effectType === 'bonus_gold') bonuses.gold_bonus += (gachaPet.passive?.value ?? 0);
-            // Note: new passive model is simpler — no attack/defense/skill_xp subtypes
-        }
-        
-        const marketPet = ITEM_DATABASE[equipped.pet];
-        if (marketPet && marketPet.stats) {
-            if (marketPet.stats.attack) bonuses.attack_bonus += marketPet.stats.attack;
-            if (marketPet.stats.defense) bonuses.defense_bonus += marketPet.stats.defense;
-            if (marketPet.stats.magicAttack) bonuses.magic_attack_bonus += marketPet.stats.magicAttack;
-            if (marketPet.stats.magicDefense) bonuses.magic_defense_bonus += marketPet.stats.magicDefense;
-            if (marketPet.stats.maxMana) bonuses.max_mana_bonus += marketPet.stats.maxMana;
-            // Note: bonusXp for skill is generally handled via getMarketplaceXpBonuses, but we capture the raw stats here.
+    // ── Process Pet (via PET_DATABASE — usePetStore is the single source of truth) ──
+    // We read from usePetStore.equippedPetId, NOT useInventoryStore.equipped.pet
+    const equippedPetId = usePetStore.getState().equippedPetId;
+    if (equippedPetId) {
+        const petDef = PET_DATABASE[equippedPetId];
+        if (petDef?.passive?.effectType === 'bonus_gold') {
+            bonuses.gold_bonus += petDef.passive.value ?? 0;
         }
     }
 
@@ -149,6 +149,34 @@ export const getPassiveBonuses = (): PassiveBonuses => {
     if (activeRiskRegions.includes('ember_wastes')) bonuses.max_hp_bonus += 10; // +10 Max HP
     if (activeRiskRegions.includes('shadow_rift')) bonuses.defense_bonus += Math.floor(bonuses.defense_bonus * 0.20) || 2; // +20% DEF
     if (activeRiskRegions.includes('cursed_tundra')) bonuses.xp_multiplier += 15; // +15% XP
+
+    // Process Aura
+    const activeAura = useAuraStore.getState().getActiveAura();
+    if (activeAura?.bonus) {
+        const { type, value } = activeAura.bonus;
+        if (type === 'atk') bonuses.attack_bonus += Math.floor(bonuses.attack_bonus * value) || (value >= 1 ? value : 1);
+        if (type === 'def') bonuses.defense_bonus += Math.floor(bonuses.defense_bonus * value) || (value >= 1 ? value : 1);
+        if (type === 'hp') bonuses.max_hp_bonus += value;
+        if (type === 'xp') bonuses.xp_multiplier += value * 100;
+        if (type === 'gold') bonuses.gold_multiplier += value * 100;
+        if (type === 'crit') bonuses.crit_bonus += value * 100;
+        if (type === 'speed') bonuses.strategy_bonus += value * 100; // proxy speed
+    }
+
+    // Process Title
+    const titleDefs = useTitleStore.getState().getUnlockedTitleDefs();
+    const activeTitleId = useTitleStore.getState().activeTitle;
+    const activeTitle = titleDefs.find(t => t.id === activeTitleId);
+    if (activeTitle?.bonus) {
+        const { type, value } = activeTitle.bonus;
+        if (type === 'atk') bonuses.attack_bonus += Math.floor(bonuses.attack_bonus * value) || (value >= 1 ? value : 1);
+        if (type === 'def') bonuses.defense_bonus += Math.floor(bonuses.defense_bonus * value) || (value >= 1 ? value : 1);
+        if (type === 'hp') bonuses.max_hp_bonus += value;
+        if (type === 'xp') bonuses.xp_multiplier += value * 100;
+        if (type === 'gold') bonuses.gold_multiplier += value * 100;
+        if (type === 'crit') bonuses.crit_bonus += value * 100;
+        if (type === 'speed') bonuses.strategy_bonus += value * 100; // proxy speed
+    }
 
     return bonuses;
 };

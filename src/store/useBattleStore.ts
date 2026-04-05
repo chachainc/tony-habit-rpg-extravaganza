@@ -6,6 +6,7 @@ import { useMagicStore, SPELL_DB } from './useMagicStore';
 import { useRoomStore } from './useRoomStore';
 import { useCampaignStore } from './useCampaignStore';
 import { getSkillSynergyBonus } from './useCombatFormulas';
+import { getPassiveBonuses } from './usePassiveEffects';
 
 export interface Combatant {
     id: string;
@@ -57,7 +58,7 @@ export interface CombatLog {
     value?: number;
 }
 
-export type BattlePhase = 'idle' | 'prep' | 'select_action' | 'executing' | 'enemy_turn' | 'victory' | 'defeat' | 'escaped';
+export type BattlePhase = 'idle' | 'prep' | 'select_action' | 'hit_stop' | 'executing' | 'enemy_turn' | 'victory' | 'defeat' | 'escaped';
 
 interface BattleState {
     phase: BattlePhase;
@@ -68,7 +69,7 @@ interface BattleState {
     turnNumber: number;
     combatLog: CombatLog[];
     selectedAbility: Ability | null;
-    lastDamage: { target: string; amount: number; isCrit: boolean; elementBonus: number } | null;
+    lastDamage: { target: string; amount: number; isCrit: boolean; elementBonus?: number; type?: 'damage' | 'heal' | 'ultimate' | 'ultimateActivation'; energyGain?: number } | null;
     isGoldenSlime: boolean; // Track if current enemy is Golden Slime
     goldenSlimeTurnsRemaining: number; // Turns before Golden Slime escapes
     currentMP: number; // Player's current mana for spells
@@ -98,6 +99,9 @@ interface BattleState {
     applyDamage: (attacker: Combatant, defender: Combatant, ability: Ability) => number;
     resetBattle: () => void;
     playerDefend: () => void; // New action
+    executeUltimate: (ultimateName: string) => void; // Execute ultimate action
+    resumeFromUltimate: () => void; // Called when ultimate video concludes
+    activeUltimateVideo: string | null;
     castSpell: (spellId: string) => void; // Cast a spell from magic store
     restoreMP: (amount: number) => void; // Restore MP (used by room resting)
     startBattle: () => void;
@@ -158,6 +162,7 @@ export const useBattleStore = create<BattleState>()((set, get) => ({
     lastDamage: null,
     isGoldenSlime: false,
     goldenSlimeTurnsRemaining: 3,
+    activeUltimateVideo: null,
     currentMP: 60, // Default, updated on battle init
     maxMP: 60,
     equippedSpells: [],
@@ -189,17 +194,16 @@ export const useBattleStore = create<BattleState>()((set, get) => ({
         const totalXp = Object.values(gameStore.skills).reduce((sum, s) => sum + s.totalXp, 0);
         
         // Arena Scaling:
-        // Base stats from enemyDef.
-        // HP scales up steadily so fights don't become one-shots (e.g. +15% per level).
-        // ATK/DEF scale slower (e.g. +5% per level) to prevent enemies from one-shotting the player.
-        // xpScaling adds a tiny flat boost from raw playtime.
         const xpScaling = Math.floor(totalXp * 0.0005);
         const levelScaleHp = 1 + (globalLevel * 0.15);
         const levelScaleStats = 1 + (globalLevel * 0.05);
 
-        let playerHp = Math.round((gameStore.skills['Health']?.level ?? 1) * 2 + 80) + roomBonuses.maxHP;
+        const passives = getPassiveBonuses();
+
+        let playerHp = Math.round((gameStore.skills['Health']?.level ?? 1) * 2 + 80) + roomBonuses.maxHP + passives.max_hp_bonus;
         let playerAtk = Math.round(gameStore.getAttack());
         let playerDef = Math.round(gameStore.getDefense());
+
         // Speed determined by Cardio speed tier (not Flexibility)
         const cardioTier = gameStore.getAttackSpeedTier();
         let playerSpd = Math.round(cardioTier * 20 + 10); // Tier 1=30, 2=50, 3=70, 4=90, 5=110
@@ -440,12 +444,15 @@ export const useBattleStore = create<BattleState>()((set, get) => ({
         }
 
         // Consume energy for ultimate
+        let energyGainAmount = 0;
         let newEnergy = player.energy;
         if (selectedAbility.type === 'ultimate') {
             newEnergy = 0;
         } else {
             // Gain energy on non-ultimate attacks
-            newEnergy = Math.min(100, newEnergy + 20);
+            const cardioLevel = useGameStore.getState().skills['Cardio']?.level || 1;
+            energyGainAmount = Math.min(6, 4 + Math.floor(cardioLevel / 5));
+            newEnergy = Math.min(100, newEnergy + energyGainAmount);
         }
 
         // Apply self effects (buffs from ability)
@@ -475,6 +482,7 @@ export const useBattleStore = create<BattleState>()((set, get) => ({
                 player: updatedPlayer,
                 enemy: { ...enemy, hp: 0 },
                 selectedAbility: null,
+                lastDamage: { target: 'enemy', amount: damage, isCrit: false, energyGain: energyGainAmount > 0 ? energyGainAmount : undefined } as any,
                 combatLog: [
                     ...get().combatLog,
                     { message: `🏆 Victory! ${enemy.name} defeated!`, type: 'victory' },
@@ -487,10 +495,94 @@ export const useBattleStore = create<BattleState>()((set, get) => ({
             player: updatedPlayer,
             enemy: { ...enemy, hp: newHp },
             selectedAbility: null,
+            lastDamage: { target: 'enemy', amount: damage, isCrit: false, energyGain: energyGainAmount > 0 ? energyGainAmount : undefined } as any,
         });
 
         // End player turn
         setTimeout(() => get().endTurn(), 800);
+    },
+
+    executeUltimate: (ultimateName: string) => {
+        const { player, enemy, phase } = get();
+        if (phase !== 'select_action' || !player || !enemy) return;
+        if (player.energy < 100) return;
+
+        // Trigger hit stop first
+        set({ phase: 'hit_stop' });
+
+        // Let the UI know an ultimate is activating to trigger the screen shake
+        set({
+            lastDamage: { target: 'enemy', amount: 0, isCrit: false, type: 'ultimateActivation' }
+        });
+
+        // Delay the execution (120ms Hit Stop)
+        setTimeout(() => {
+            const currentStore = get();
+            if (currentStore.phase !== 'hit_stop') return; // Safety check
+
+            set({ phase: 'executing', activeUltimateVideo: ultimateName });
+
+            // Build a temporary absolute/true ability acting as the Ultimate
+            const ultimateAbility: Ability = {
+                id: 'class_ultimate',
+                name: ultimateName,
+                type: 'ultimate',
+                description: 'Class specific ultimate.',
+                icon: '💥',
+                element: 'neutral',
+                damageMultiplier: 3.0, // totalAttack * 3
+                cooldown: 0,
+                energyCost: 100
+            };
+
+            // Apply damage explicitly (resolves immediately as required)
+            const damage = get().applyDamage(player, enemy, ultimateAbility);
+
+            // Reset Energy to 0
+            const updatedPlayer = {
+                ...player,
+                energy: 0,
+            };
+
+            const newHp = enemy.hp - damage;
+
+            set({
+                player: updatedPlayer,
+                enemy: { ...enemy, hp: newHp },
+                selectedAbility: null,
+                lastDamage: { target: 'enemy', amount: damage, isCrit: true, type: 'ultimate' }, // 1.5x popup
+                combatLog: [
+                    ...get().combatLog,
+                    { message: `💥 ${player.name} unleashes ${ultimateName} for ${damage} damage!`, type: 'damage' }
+                ]
+            });
+            
+        }, 120);
+    },
+
+    resumeFromUltimate: () => {
+        const { player, enemy } = get();
+        if (!player || !enemy) {
+            set({ activeUltimateVideo: null });
+            return;
+        }
+
+        set({ activeUltimateVideo: null });
+
+        if (enemy.hp <= 0) {
+            set({
+                phase: 'victory',
+                enemy: { ...enemy, hp: 0 },
+                combatLog: [
+                    ...get().combatLog,
+                    { message: `🏆 Victory! ${enemy.name} defeated!`, type: 'victory' },
+                ],
+            });
+            return;
+        }
+
+        // Enemy survived, end turn
+        get().endTurn();
     },
 
     executeEnemyAction: () => {
@@ -540,12 +632,16 @@ export const useBattleStore = create<BattleState>()((set, get) => ({
             energy: newEnergy,
         };
 
+        // Grant player +1 energy for being hit
+        const newPlayerEnergy = Math.min(100, player.energy + 1);
+
         // Check for defeat
         if (player.hp - damage <= 0) {
             set({
                 phase: 'defeat',
-                player: { ...player, hp: 0 },
+                player: { ...player, hp: 0, energy: newPlayerEnergy },
                 enemy: updatedEnemy,
+                lastDamage: { target: 'player', amount: damage, isCrit: false, energyGain: 1 } as any,
                 combatLog: [
                     ...get().combatLog,
                     { message: `💀 Defeated... But you can try again!`, type: 'defeat' },
@@ -555,8 +651,9 @@ export const useBattleStore = create<BattleState>()((set, get) => ({
         }
 
         set({
-            player: { ...player, hp: player.hp - damage },
+            player: { ...player, hp: player.hp - damage, energy: newPlayerEnergy },
             enemy: updatedEnemy,
+            lastDamage: { target: 'player', amount: damage, isCrit: false, energyGain: 1 } as any,
         });
 
         // End enemy turn

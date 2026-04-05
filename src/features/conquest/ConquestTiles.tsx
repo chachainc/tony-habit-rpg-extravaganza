@@ -1,5 +1,4 @@
-// ─── CONQUEST TILES — Mahjong Board Engine ────────────
-import { useState, useCallback, useEffect, useRef } from 'react';
+import { useState, useCallback, useEffect, useRef, memo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
     trueTripleTileMap,
@@ -31,6 +30,50 @@ const Y_PITCH  = 40;  // tighter rows — 2px gap reduction for denser grid
 const Z_LIFT   =  5;  // increased: more visible stack depth per z-level
 const TRAY_CAP =  7;
 const MAX_Z    =  8;  // anchor stacks go to z=8
+
+// ─── MEMOIZED TILE COMPONENT ──────────────────────────
+const TileNodeComponent = memo(({ 
+    tile, locked, left, top, isHint, isBumping, stackBrightness, tileZ, onTileSelect, onTileBump
+}: {
+    tile: TripleTileNode, locked: boolean, left: number, top: number, isHint: boolean, isBumping: boolean,
+    stackBrightness: number, tileZ: number, onTileSelect: (t: TripleTileNode) => void, onTileBump: (id: string) => void
+}) => {
+    return (
+        <motion.div
+            layoutId={tile.id}
+            className={[
+                'tiles-board-tile',
+                locked    ? 'locked'   : 'unlocked',
+                isHint    ? 'hinted'   : '',
+                isBumping ? 'bumping'  : '',
+            ].filter(Boolean).join(' ')}
+            style={{
+                left, top,
+                width: TILE_W, height: TILE_H,
+                zIndex: tileZ,
+                filter: `brightness(${stackBrightness})`, // Blur removed for massive performance boost
+            }}
+            onClick={() => {
+                if (!locked) {
+                    onTileSelect(tile);
+                } else {
+                    onTileBump(tile.id);
+                }
+            }}
+            layout
+            initial={{ scale: 0.88, opacity: 0 }}
+            animate={{ scale: 1,    opacity: 1 }}
+            exit={{ scale: 0.72, opacity: 0 }}
+            whileHover={!locked ? { y: -4, scale: 1.02, zIndex: 9999 } : {}}
+            whileTap={!locked   ? { y: -8, scale: 1.05, zIndex: 9999 } : {}}
+            transition={{ duration: 0.14, ease: 'easeOut' }}
+        >
+            <div className="tiles-inner-frame">
+                <img src={TILE_IMAGES[tile.type]} alt={tile.type} className="tiles-tile-img" />
+            </div>
+        </motion.div>
+    );
+});
 
 export const ConquestTiles = ({ onComplete, onClose }: ConquestTilesProps) => {
     const [phase,       setPhase]      = useState<'playing' | 'result'>('playing');
@@ -248,6 +291,12 @@ export const ConquestTiles = ({ onComplete, onClose }: ConquestTilesProps) => {
     const isWin    = result === 'win';
     const clearPct = Math.round(((initialCount.current - board.length) / initialCount.current) * 100);
 
+    const handleTileSelect = useCallback((tile: TripleTileNode) => selectTile(tile), [selectTile]);
+    const handleTileBump = useCallback((id: string) => {
+        setBumpingId(id);
+        setTimeout(() => setBumpingId(null), 220);
+    }, []);
+
     // ─── RENDER ─────────────────────────────────────────
     return (
         <div className="tiles-root">
@@ -280,53 +329,26 @@ export const ConquestTiles = ({ onComplete, onClose }: ConquestTilesProps) => {
                                     const isHint    = hintTileIds.has(tile.id);
                                     const isBumping = bumpingId === tile.id;
 
-                                    // 1. Unlocked tiles are top playable tiles: bright & sharp
-                                    // 2. Locked tiles are beneath: darker & blurrier based on absolute z-level
+                                    // 1. Unlocked tiles are bright
+                                    // 2. Locked tiles are beneath: darker based on absolute z-level
                                     const stackBrightness = locked
                                         ? Math.max(0.40, 0.95 - ((MAX_Z - tile.z) * 0.10))
                                         : 1.15; // Playable tile indicator: slightly boosted brightness
 
-                                    const stackBlur = locked
-                                        ? Math.min(1.5, ((MAX_Z - tile.z) * 0.18))
-                                        : 0; // Playable tiles are perfectly sharp
-
                                     return (
-                                        <motion.div
+                                        <TileNodeComponent
                                             key={tile.id}
-                                            layoutId={tile.id}
-                                            className={[
-                                                'tiles-board-tile',
-                                                locked    ? 'locked'   : 'unlocked',
-                                                isHint    ? 'hinted'   : '',
-                                                isBumping ? 'bumping'  : '',
-                                            ].filter(Boolean).join(' ')}
-                                            style={{
-                                                left, top,
-                                                width: TILE_W, height: TILE_H,
-                                                zIndex: tileZ(tile),
-                                                filter: `brightness(${stackBrightness}) blur(${stackBlur}px)`,
-                                            }}
-                                            onClick={() => {
-                                                if (!locked) {
-                                                    selectTile(tile);
-                                                } else {
-                                                    // Bump feedback for blocked-tile tap
-                                                    setBumpingId(tile.id);
-                                                    setTimeout(() => setBumpingId(null), 220);
-                                                }
-                                            }}
-                                            layout
-                                            initial={{ scale: 0.88, opacity: 0 }}
-                                            animate={{ scale: 1,    opacity: 1 }}
-                                            exit={{ scale: 0.72, opacity: 0 }}
-                                            whileHover={!locked ? { y: -4, scale: 1.02, zIndex: 9999 } : {}}
-                                            whileTap={!locked   ? { y: -8, scale: 1.05, zIndex: 9999 } : {}}
-                                            transition={{ duration: 0.14, ease: 'easeOut' }}
-                                        >
-                                            <div className="tiles-inner-frame">
-                                                <img src={TILE_IMAGES[tile.type]} alt={tile.type} className="tiles-tile-img" />
-                                            </div>
-                                        </motion.div>
+                                            tile={tile}
+                                            locked={locked}
+                                            left={left}
+                                            top={top}
+                                            isHint={isHint}
+                                            isBumping={isBumping}
+                                            stackBrightness={stackBrightness}
+                                            tileZ={tileZ(tile)}
+                                            onTileSelect={handleTileSelect}
+                                            onTileBump={handleTileBump}
+                                        />
                                     );
                                 })}
 

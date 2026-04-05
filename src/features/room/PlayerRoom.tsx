@@ -2,11 +2,10 @@ import { useState, useMemo, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, ArrowLeft, Dumbbell, Scale, BedDouble, BookOpen, Shirt } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { usePetStore } from '../../store/usePetStore';
+import { usePetStore, PET_DATABASE } from '../../store/usePetStore';
 import { useTitleStore } from '../../store/useTitleStore';
 import { useAuraStore, AURAS } from '../../store/useAuraStore';
 import { useHealthStore } from '../../store/useHealthStore';
-import { ITEM_DATABASE } from '../../data/items';
 import { SceneShell } from '../../components/scene';
 import { WardrobePanel } from './WardrobePanel';
 import { LibraryCodex } from '../library/LibraryCodex';
@@ -16,7 +15,7 @@ import { FurniturePlacementPanel, DraggableFurniturePiece } from './FurniturePla
 import { useRoomStore } from '../../store/useRoomStore';
 
 import homeCampBg from '../../assets/room-bg.jpg';
-import { useHeroImage } from '../../hooks/useHeroImage';
+import { usePlayerAvatar } from '../../hooks/usePlayerAvatar';
 import './PlayerRoom.css';
 
 type ActivePanel = 'wardrobe' | 'bookshelf' | 'sleep' | 'body' | 'loadout' | 'furniture_edit' | null;
@@ -195,7 +194,7 @@ export const PlayerRoom = ({ onClose: _onClose }: { onClose: () => void }) => {
     const { activeTitle, getUnlockedTitleDefs } = useTitleStore();
     const { activeAuraId } = useAuraStore();
     const { placedRoomFurniture } = useRoomStore();
-    const heroImage = useHeroImage();
+    const heroImage = usePlayerAvatar();
 
     const { editMode, setEditMode } = useRoomStore();
     const [activePanel, setActivePanel] = useState<ActivePanel>(editMode ? 'furniture_edit' : null);
@@ -219,8 +218,8 @@ export const PlayerRoom = ({ onClose: _onClose }: { onClose: () => void }) => {
     const activeAura = useMemo(() => AURAS.find(a => a.id === activeAuraId), [activeAuraId]);
     const activeTitleDef = useMemo(() => getUnlockedTitleDefs().find(t => t.id === activeTitle), [activeTitle, getUnlockedTitleDefs]);
 
-    // Pet Sprite
-    const petData = equippedPetId ? ITEM_DATABASE[equippedPetId] : null;
+    // Pet Sprite — from PET_DATABASE (single source of truth)
+    const petData = equippedPetId ? PET_DATABASE[equippedPetId] : null;
     const petSprite = petData?.icon || '🐮';
 
     const handleHotspotTap = (hotspot: Hotspot) => {

@@ -4,7 +4,7 @@ import { Info, ChevronDown, ChevronUp, X, RefreshCw, Play, Square, Coins } from 
 import { useMonopolyStore, getBoard, BOARD_ODDS, OWNERSHIP_TIERS, getPropertyMultiplier, type BoardSpace, type MysteryRollResult } from '../../store/useMonopolyStore';
 import { useCurrencyStore } from '../../store/useCurrencyStore';
 import { useConquestStore } from '../../store/useConquestStore';
-import { useHeroImage } from '../../hooks/useHeroImage';
+import { usePlayerAvatar } from '../../hooks/usePlayerAvatar';
 import './MonopolyBoard.css';
 
 import petCowSpin from '../../assets/pets/pet_cow_spin.jpg';
@@ -116,13 +116,13 @@ export const MonopolyBoard = ({ onClose }: { onClose: () => void }) => {
         canBuyTile, canUpgradeTile, getBuyCost, getUpgradeCost,
     } = useMonopolyStore();
     const { addGold, addShmeckles, addTickets, gold, spendCurrency, canAfford } = useCurrencyStore();
-    const heroImage = useHeroImage();
+    const heroImage = usePlayerAvatar();
 
     const addSigils = (n: number) => {
         try { useConquestStore.getState().addSigils(n); } catch {}
     };
 
-    // Derive player token from characterArchetype image
+    // Derive player token from classType image
     const playerToken = heroImage
         ? <img src={heroImage} alt="Player" style={{ width: '2rem', height: '2rem', borderRadius: '50%', objectFit: 'cover', objectPosition: 'top', border: '2px solid #6366f1' }} />
         : <span>🧙</span>;

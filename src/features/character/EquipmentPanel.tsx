@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useInventoryStore, ITEM_DB, type EquipmentSlot, type ItemDef, formatStatBonuses, getStatDelta } from '../../store/useInventoryStore';
 import { PET_DATABASE } from '../../data/pets';
 import { usePetStore } from '../../store/usePetStore';
-import { useHeroImage } from '../../hooks/useHeroImage';
+import { usePlayerAvatar } from '../../hooks/usePlayerAvatar';
 import { Sword, Shield, Gem, Sparkles, Dog, X, BookOpen, Gem as JewelIcon, Badge } from 'lucide-react';
 import './EquipmentPanel.css';
 
@@ -33,16 +33,24 @@ interface DisplayItem {
 export const EquipmentPanel = () => {
     const inventory = useInventoryStore();
     const petStore = usePetStore();
-    const heroImage = useHeroImage();
+    const heroImage = usePlayerAvatar();
     const [activeModalSlot, setActiveModalSlot] = useState<EquipmentSlot | null>(null);
 
     const handleEquip = (itemId: string, slot: EquipmentSlot) => {
-        inventory.equipItem(itemId, slot);
+        if (slot === 'pet') {
+            petStore.equipPet(itemId);
+        } else {
+            inventory.equipItem(itemId, slot);
+        }
         setActiveModalSlot(null);
     };
 
     const handleUnequip = (slot: EquipmentSlot) => {
-        inventory.unequipItem(slot);
+        if (slot === 'pet') {
+            petStore.unequipPet();
+        } else {
+            inventory.unequipItem(slot);
+        }
         setActiveModalSlot(null);
     };
 
@@ -54,11 +62,11 @@ export const EquipmentPanel = () => {
                 name: PET_DATABASE[id]?.name || 'Unknown Pet',
                 icon: PET_DATABASE[id]?.icon || '🐾',
                 rarity: PET_DATABASE[id]?.rarity || 'common',
-                effectText: `Passive: ${PET_DATABASE[id]?.passive?.name || 'none'}`,
-                description: PET_DATABASE[id]?.obtainMethod ? `Obtain: ${PET_DATABASE[id]?.obtainMethod}` : undefined,
+                effectText: `Passive: ${PET_DATABASE[id]?.passive?.name || 'none'} — ${PET_DATABASE[id]?.passive?.description || ''}`,
+                description: undefined,
                 itemDef: null,
                 isLocked: !petStore.ownedPets.includes(id),
-            })).sort((a, b) => Number(a.isLocked) - Number(b.isLocked)); // Unlocked first
+            })).sort((a, b) => Number(a.isLocked) - Number(b.isLocked));
         }
 
         // Match items in inventory to the slot's accepted ItemType
@@ -100,15 +108,17 @@ export const EquipmentPanel = () => {
         if (!equippedId) return null;
 
         if (slot === 'pet') {
-            const pet = PET_DATABASE[equippedId];
+            const petId = petStore.equippedPetId;
+            if (!petId) return null;
+            const pet = PET_DATABASE[petId];
             if (!pet) return null;
             return {
-                id: equippedId,
+                id: petId,
                 name: pet.name,
                 icon: pet.icon,
                 rarity: pet.rarity,
-                effectText: `Passive: ${pet.passive?.name || 'none'}`,
-                description: pet.obtainMethod ? `Obtain: ${pet.obtainMethod}` : undefined,
+                effectText: `Passive: ${pet.passive?.name || 'none'} — ${pet.passive?.description || ''}`,
+                description: undefined,
                 itemDef: null,
             };
         }

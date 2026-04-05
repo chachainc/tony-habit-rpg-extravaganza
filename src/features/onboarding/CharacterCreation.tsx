@@ -7,33 +7,33 @@ import { Particles } from '../../components/vfx/Particles';
 import './CharacterCreation.css';
 
 // We'll use absolute paths for the imported generated assets
-import ironVanguardImg from '../../assets/characters/iron_vanguard.jpg';
-import verdantGuardianImg from '../../assets/characters/verdant_guardian.jpg';
-import shadowRogueImg from '../../assets/characters/shadow_rogue.png';
-import arcaneScholarImg from '../../assets/characters/arcane_scholar.jpg';
+import ironVanguardImg from '../../assets/characters/iron_vanguard_new.jpg';
+import verdantGuardianImg from '../../assets/characters/verdant_guardian_new.jpg';
+import shadowRogueImg from '../../assets/characters/shadow_rogue_new.jpg';
+import arcaneScholarImg from '../../assets/characters/arcane_scholar_new.jpg';
 
 // Video asset for sleep tracking
 import cowsSleepingVid from '../../assets/cows_sleeping.mp4';
 
-const ARCHETYPES = [
-    { id: 'iron_vanguard', name: 'Iron Vanguard', img: ironVanguardImg, desc: 'A heavily-armored warrior. Wields a colossal blade radiating crimson energy to dominate the battlefield.' },
-    { id: 'verdant_guardian', name: 'Verdant Guardian', img: verdantGuardianImg, desc: 'A guardian of the wilds. Channels nature\'s magic through an enchanted staff to protect the innocent.' },
-    { id: 'shadow_rogue', name: 'Shadow Rogue', img: shadowRogueImg, desc: 'A swift assassin clothed in darkness. Strikes with dual ethereal blades and unparalleled agility.' },
-    { id: 'arcane_scholar', name: 'Arcane Scholar', img: arcaneScholarImg, desc: 'A master of the mystic arts. Summons cosmic power and ancient runes from forbidden tomes.' }
+const CLASSES = [
+    { id: 'Warrior', name: 'Warrior', img: ironVanguardImg, desc: 'A heavily-armored warrior. Wields a colossal blade radiating crimson energy to dominate the battlefield.' },
+    { id: 'Guardian', name: 'Guardian', img: verdantGuardianImg, desc: 'A guardian of the wilds. Channels nature\'s magic through an enchanted staff to protect the innocent.' },
+    { id: 'Ranger', name: 'Ranger', img: shadowRogueImg, desc: 'A swift hunter of the wilds. Strikes from the shadows with an enchanted bow and piercing precision.' },
+    { id: 'Mage', name: 'Mage', img: arcaneScholarImg, desc: 'A master of the mystic arts. Summons cosmic power and ancient runes from forbidden tomes.' }
 ] as const;
 
 export const CharacterCreation: React.FC = () => {
     const navigate = useNavigate();
-    const { setCharacterArchetype, setAppearance, setHealthTrackingMode } = useProfileStore();
+    const { setClassType, setAppearance, setHealthTrackingMode } = useProfileStore();
 
     const [step, setStep] = useState<1 | 2>(1);
-    const [selectedArchetype, setSelectedArchetype] = useState<string | null>(null);
+    const [selectedClass, setSelectedClass] = useState<string | null>(null);
     const [healthMode, setHealthMode] = useState<'sleep' | 'readiness' | 'none' | null>(null);
 
     const handleComplete = () => {
-        if (!selectedArchetype || !healthMode) return;
+        if (!selectedClass || !healthMode) return;
 
-        setCharacterArchetype(selectedArchetype as any);
+        setClassType(selectedClass as any);
         setAppearance({ hairHue: 0, skinHue: 0 });
         setHealthTrackingMode(healthMode);
 
@@ -63,18 +63,18 @@ export const CharacterCreation: React.FC = () => {
             <div className="char-create-content">
                 {step === 1 && <h1 className="cc-title text-gold">Awaken, Hero</h1>}
 
-                {/* STEP 1: Archetype */}
+                {/* STEP 1: Class Selection */}
                 {step === 1 && (
                     <Panel variant="glass" padding="lg" className="cc-panel animation-slide-up">
                         <h2>Choose Your Path</h2>
                         <p className="text-muted">Select your class. You can switch later.</p>
 
                         <div className="archetype-grid">
-                            {ARCHETYPES.map((arch) => (
+                            {CLASSES.map((arch) => (
                                 <div
                                     key={arch.id}
-                                    className={`archetype-card ${selectedArchetype === arch.id ? 'selected' : ''}`}
-                                    onClick={() => setSelectedArchetype(arch.id)}
+                                    className={`archetype-card ${selectedClass === arch.id ? 'selected' : ''}`}
+                                    onClick={() => setSelectedClass(arch.id)}
                                 >
                                     <div className="arch-img-frame">
                                         <img src={arch.img} alt={arch.name} draggable={false} />
@@ -89,7 +89,7 @@ export const CharacterCreation: React.FC = () => {
                             <GachaButton
                                 variant="primary"
                                 size="lg"
-                                disabled={!selectedArchetype}
+                                disabled={!selectedClass}
                                 onClick={() => setStep(2)}
                             >
                                 Confirm Path

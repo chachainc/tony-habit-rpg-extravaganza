@@ -375,6 +375,95 @@
     -webkit-text-stroke: 1px #15803d;
 }
 
+.floating-number.ultimate {
+    font-size: 3.5rem;
+    color: #fca5a5;
+    -webkit-text-stroke: 1.5px #7f1d1d;
+    filter: drop-shadow(0 0 10px rgba(239, 68, 68, 0.8));
+    animation: ultimateBounce 1.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+}
+
+.floating-number.energy {
+    font-size: 1.2rem;
+    color: #fde047;
+    -webkit-text-stroke: 1px #a16207;
+    animation: floatUpSlow 1.5s ease-out forwards;
+}
+
+/* --- Energy & Ultimate Shimmer/Pulse --- */
+
+.energy-full-shimmer {
+    position: relative;
+    overflow: hidden;
+}
+
+.energy-full-shimmer::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 50%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.6), transparent);
+    animation: shimmerSlide 2s infinite;
+}
+
+@keyframes shimmerSlide {
+    0% { left: -100%; }
+    100% { left: 200%; }
+}
+
+@keyframes ultimateBounce {
+    0% { transform: translateY(0) scale(0.5); opacity: 0; }
+    20% { transform: translateY(-30px) scale(1.6); opacity: 1; }
+    40% { transform: translateY(-10px) scale(1.3); opacity: 1; }
+    60% { transform: translateY(-20px) scale(1.5); opacity: 1; }
+    100% { transform: translateY(-100px) scale(1.2); opacity: 0; }
+}
+
+@keyframes floatUpSlow {
+    0% { transform: translateY(0) scale(0.5); opacity: 0; }
+    20% { transform: translateY(-10px) scale(1.1); opacity: 1; }
+    100% { transform: translateY(-60px) scale(1); opacity: 0; }
+}
+
+@keyframes ultimateBreathing {
+    0% { transform: scale(1); box-shadow: 0 0 10px rgba(251, 191, 36, 0.3); }
+    50% { transform: scale(1.05); box-shadow: 0 0 25px rgba(251, 191, 36, 0.8); filter: brightness(1.2); }
+    100% { transform: scale(1); box-shadow: 0 0 10px rgba(251, 191, 36, 0.3); }
+}
+
+.ultimate-btn.ready {
+    animation: ultimateBreathing 1.2s infinite ease-in-out;
+}
+.ultimate-btn.ready:hover {
+    transform: scale(1.08) !important;
+    filter: brightness(1.3);
+    animation: none; /* pause breathing on hover to scale up perfectly */
+}
+.ultimate-btn.ready:active {
+    transform: scale(0.95) !important;
+    transition: transform 0.1s;
+}
+
+.ultimate-btn.locked {
+    opacity: 0.5;
+    filter: grayscale(80%);
+    transition: all 0.3s ease;
+}
+
+.ultimate-hit-shake {
+    animation: hardShake 0.12s infinite cubic-bezier(.36, .07, .19, .97);
+}
+
+@keyframes hardShake {
+    0% { transform: translate3d(0, 0, 0); }
+    25% { transform: translate3d(-10px, 8px, 0); }
+    50% { transform: translate3d(12px, -6px, 0); }
+    75% { transform: translate3d(-8px, -10px, 0); }
+    100% { transform: translate3d(6px, 12px, 0); }
+}
+
 @keyframes floatUp {
     0% {
         transform: translateY(0) scale(0.5);

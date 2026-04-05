@@ -6,7 +6,7 @@ import { getPassiveBonuses } from '../../store/usePassiveEffects';
 import { SKILL_COMBAT_ROLES, getDetailedCombatBreakdown } from '../../store/useCombatFormulas';
 import { useNavigate } from 'react-router-dom';
 import { Sword, Shield, Sparkles, Droplet, Heart, Crown, BookOpen } from 'lucide-react';
-import { useHeroImage } from '../../hooks/useHeroImage';
+import { usePlayerAvatar } from '../../hooks/usePlayerAvatar';
 import { EquipmentPanel } from './EquipmentPanel';
 import './CharacterPage.css';
 
@@ -23,7 +23,7 @@ export const CharacterPage = () => {
     const day = useDayStore();
     const { appearance } = useProfileStore();
     const navigate = useNavigate();
-    const heroImage = useHeroImage();
+    const heroImage = usePlayerAvatar();
 
     // Dynamic rank icon based on global level
     const getRankIcon = () => {

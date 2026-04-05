@@ -1,9 +1,9 @@
 import type { SkillName } from '../store/useGameStore';
 import type { CurrencyCost } from '../store/useCurrencyStore';
 
-import warCowImg from '../assets/pets/war_cow.png';
-import archerCowImg from '../assets/pets/archer_cow.png';
-import wizardCowImg from '../assets/pets/wizard_cow.png';
+import warCowImg from '../assets/pets/war_cow.jpg';
+import archerCowImg from '../assets/pets/archer_cow.jpg';
+import wizardCowImg from '../assets/pets/wizard_cow.jpg';
 import cowKingImg from '../assets/pets/cow_king.png';
 
 import petPorcupineImg from '../assets/pets/pet_porcupine.jpg';
@@ -14,7 +14,7 @@ import petElephantImg from '../assets/pets/pet_elephant.jpg';
 import petRhinoImg from '../assets/pets/pet_rhino.jpg';
 import petBearImg from '../assets/pets/pet_bear.jpg';
 
-export type ItemType = 'armor' | 'weapon' | 'pet' | 'furniture' | 'consumable' | 'cosmetic' | 'pet_accessory';
+export type ItemType = 'armor' | 'weapon' | 'pet' | 'furniture' | 'consumable' | 'cosmetic' | 'pet_accessory' | 'jewelry';
 export type ItemCategory = 'hygiene' | 'sleep' | 'general' | 'combat' | 'social';
 
 export interface UnlockRequirement {
@@ -31,6 +31,7 @@ export interface ItemStats {
     magicDefense?: number;
     maxMana?: number;
     bonusXp?: Partial<Record<SkillName, number>>; // Percentage bonus
+    hp?: number; // max hp bonus
 }
 
 export interface Item {
@@ -303,8 +304,8 @@ const PET_ITEMS: Item[] = [
         rarity: 'common' },
     {
         id: 'pet_porcupine',
-        name: 'Porcupine',
-        description: 'Spiky legend',
+        name: 'Elephant',
+        description: 'Mighty legend',
         icon: '🦔',
         image: petPorcupineImg,
         type: 'pet',
@@ -326,8 +327,8 @@ const PET_ITEMS: Item[] = [
         rarity: 'uncommon' },
     {
         id: 'pet_giraffe',
-        name: 'Giraffe',
-        description: 'A tall Nature companion that sees all.',
+        name: 'Otter',
+        description: 'A playful Water companion that adapts to anything.',
         icon: '🦒',
         image: petGiraffeImg,
         type: 'pet',
@@ -337,7 +338,7 @@ const PET_ITEMS: Item[] = [
         rarity: 'rare' },
     {
         id: 'pet_raven',
-        name: 'Raven',
+        name: 'Rhino',
         description: 'A swift Shadow bird.',
         icon: '🐦‍⬛',
         image: petRavenImg,
@@ -348,7 +349,7 @@ const PET_ITEMS: Item[] = [
         rarity: 'rare' },
     {
         id: 'pet_elephant',
-        name: 'Elephant',
+        name: 'Raven',
         description: 'An ancient Earth behemoth.',
         icon: '🐘',
         image: petElephantImg,
@@ -359,7 +360,7 @@ const PET_ITEMS: Item[] = [
         rarity: 'epic' },
     {
         id: 'pet_rhino',
-        name: 'Rhino',
+        name: 'Giraffe',
         description: 'A massive Earth juggernaut.',
         icon: '🦏',
         image: petRhinoImg,
@@ -962,6 +963,96 @@ const CONSUMABLE_ITEMS: Item[] = [
         rarity: 'rare' },
 ];
 
+// ==================== JEWELRY ITEMS ====================
+const JEWELRY_ITEMS: Item[] = [
+    {
+        id: 'silver-ring',
+        name: 'Silver Band',
+        description: 'A simple but elegant silver ring',
+        icon: '💍',
+        type: 'jewelry',
+        unlockRequirement: {},
+        cost: { diamonds: 5 },
+        stats: { defense: 1 },
+        rarity: 'common'
+    },
+    {
+        id: 'ruby-pendant',
+        name: 'Ruby Pendant',
+        description: 'A crimson gem that pulses with power',
+        icon: '📿',
+        type: 'jewelry',
+        unlockRequirement: {},
+        cost: { diamonds: 15 },
+        stats: { attack: 3 },
+        rarity: 'rare'
+    },
+    {
+        id: 'sapphire-amulet',
+        name: 'Sapphire Amulet',
+        description: 'Deep blue gem that enhances resilience',
+        icon: '🔮',
+        type: 'jewelry',
+        unlockRequirement: {},
+        cost: { diamonds: 15 },
+        stats: { defense: 3, hp: 5 },
+        rarity: 'rare'
+    },
+    {
+        id: 'emerald-brooch',
+        name: 'Emerald Brooch',
+        description: 'A verdant gem overflowing with life energy',
+        icon: '💚',
+        type: 'jewelry',
+        unlockRequirement: {},
+        cost: { diamonds: 25 },
+        stats: { hp: 15, defense: 2 },
+        rarity: 'epic'
+    },
+    {
+        id: 'diamond-crown',
+        name: 'Diamond Crown',
+        description: 'The pinnacle of jewelry — a crown of pure diamond',
+        icon: '👑',
+        type: 'jewelry',
+        unlockRequirement: {},
+        cost: { diamonds: 50 },
+        stats: { attack: 5, defense: 5, hp: 10 },
+        rarity: 'legendary'
+    },
+    // Pet Jewelry (mapped as cosmetic / pet_accessory type or just jewelry with category)
+    {
+        id: 'pet-collar-gem',
+        name: 'Gem-Studded Collar',
+        description: 'A sparkling collar for your companion',
+        icon: '🎀',
+        type: 'pet_accessory',
+        unlockRequirement: {},
+        cost: { diamonds: 10 },
+        rarity: 'common'
+    },
+    {
+        id: 'pet-tiara',
+        name: 'Pet Tiara',
+        description: 'A tiny crown for your loyal friend',
+        icon: '👸',
+        type: 'pet_accessory',
+        unlockRequirement: {},
+        cost: { diamonds: 20 },
+        rarity: 'rare'
+    },
+    {
+        id: 'pet-enchanted-charm',
+        name: 'Enchanted Charm',
+        description: 'A magical pendant that bonds you closer to your pet',
+        icon: '✨',
+        type: 'pet_accessory',
+        unlockRequirement: {},
+        cost: { diamonds: 35 },
+        rarity: 'epic'
+    }
+];
+
 // ==================== COMBINED DATABASE ====================
 export const ITEM_DATABASE: Record<string, Item> = [
     ...ARMOR_ITEMS,
@@ -970,6 +1061,7 @@ export const ITEM_DATABASE: Record<string, Item> = [
     ...PET_ACCESSORY_ITEMS,
     ...FURNITURE_ITEMS,
     ...CONSUMABLE_ITEMS,
+    ...JEWELRY_ITEMS,
 ].reduce((acc, item) => {
     acc[item.id] = item;
     return acc;

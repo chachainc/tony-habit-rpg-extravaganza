@@ -19,10 +19,10 @@ export const TILE_IMAGES: Record<string, string> = {
 };
 
 export const DIFFICULTY_PRESETS = {
-    1: { name: 'Normal', totalTiles: 242, symbolCount: 0, layers: 5, label: '🎴 Mahjong', gemReward: 2 },
-    2: { name: 'Normal', totalTiles: 242, symbolCount: 0, layers: 5, label: '🎴 Mahjong', gemReward: 2 },
-    3: { name: 'Normal', totalTiles: 242, symbolCount: 0, layers: 5, label: '🎴 Mahjong', gemReward: 2 },
-    4: { name: 'Normal', totalTiles: 242, symbolCount: 0, layers: 5, label: '🎴 Mahjong', gemReward: 2 },
+    1: { name: 'Normal', totalTiles: 222, symbolCount: 0, layers: 5, label: '🎴 Mahjong', gemReward: 2 },
+    2: { name: 'Normal', totalTiles: 222, symbolCount: 0, layers: 5, label: '🎴 Mahjong', gemReward: 2 },
+    3: { name: 'Normal', totalTiles: 222, symbolCount: 0, layers: 5, label: '🎴 Mahjong', gemReward: 2 },
+    4: { name: 'Normal', totalTiles: 222, symbolCount: 0, layers: 5, label: '🎴 Mahjong', gemReward: 2 },
 } as const;
 
 export const POWER_COSTS = { remove: 30, undo: 20, shuffle: 20, hint: 20 } as const;
@@ -62,26 +62,10 @@ export type UndoEntry = {
 
 export const trueTripleTileMap: TripleTileNode[] = [
     { id: "t0000", x: 2, y: 0, z: 0, type: "chest", coveredBy: ["t0066", "t0132"] },
-    { id: "t0001", x: 4, y: 0, z: 0, type: "sword", coveredBy: ["t0066", "t0067", "t0133", "t0182"] },
     { id: "t0002", x: 6, y: 0, z: 0, type: "scroll", coveredBy: ["t0067", "t0068", "t0134", "t0182", "t0183", "t0216"] },
-    { id: "t0003", x: 9, y: 0, z: 0, type: "moon", coveredBy: ["t0069"] },
-    { id: "t0004", x: 11, y: 0, z: 0, type: "ring", coveredBy: ["t0069", "t0070"] },
-    { id: "t0005", x: 14, y: 0, z: 0, type: "helmet", coveredBy: ["t0071", "t0135", "t0184", "t0217"] },
-    { id: "t0006", x: 16, y: 0, z: 0, type: "helmet", coveredBy: ["t0071", "t0072", "t0136", "t0184", "t0185"] },
-    { id: "t0007", x: 18, y: 0, z: 0, type: "gem", coveredBy: ["t0072", "t0073", "t0137", "t0185"] },
-    { id: "t0008", x: 2, y: 1, z: 0, type: "potion", coveredBy: ["t0074", "t0138"] },
-    { id: "t0009", x: 4, y: 1, z: 0, type: "sword", coveredBy: ["t0074", "t0075", "t0139", "t0186"] },
-    { id: "t0010", x: 6, y: 1, z: 0, type: "potion", coveredBy: ["t0075", "t0076", "t0140", "t0186", "t0187", "t0218"] },
     { id: "t0011", x: 9, y: 1, z: 0, type: "shield", coveredBy: ["t0077"] },
-    { id: "t0012", x: 11, y: 1, z: 0, type: "ring", coveredBy: ["t0077", "t0078"] },
-    { id: "t0013", x: 14, y: 1, z: 0, type: "key", coveredBy: ["t0079", "t0141", "t0188", "t0219"] },
-    { id: "t0014", x: 16, y: 1, z: 0, type: "potion", coveredBy: ["t0079", "t0080", "t0142", "t0188", "t0189"] },
-    { id: "t0015", x: 18, y: 1, z: 0, type: "moon", coveredBy: ["t0080", "t0081", "t0143", "t0189"] },
     { id: "t0016", x: 0, y: 2, z: 0, type: "flame", coveredBy: ["t0082"] },
     { id: "t0017", x: 2, y: 2, z: 0, type: "sword", coveredBy: ["t0082", "t0083", "t0144"] },
-    { id: "t0018", x: 4, y: 2, z: 0, type: "key", coveredBy: ["t0083", "t0084", "t0145", "t0190"] },
-    { id: "t0019", x: 6, y: 2, z: 0, type: "key", coveredBy: ["t0084", "t0085", "t0146", "t0190", "t0191", "t0220"] },
-    { id: "t0020", x: 14, y: 2, z: 0, type: "helmet", coveredBy: ["t0086", "t0147", "t0192", "t0221"] },
     { id: "t0021", x: 16, y: 2, z: 0, type: "sword", coveredBy: ["t0086", "t0087", "t0148", "t0192", "t0193"] },
     { id: "t0022", x: 18, y: 2, z: 0, type: "gauntlet", coveredBy: ["t0087", "t0088", "t0149", "t0193"] },
     { id: "t0023", x: 20, y: 2, z: 0, type: "gauntlet", coveredBy: ["t0088", "t0089"] },
@@ -89,9 +73,7 @@ export const trueTripleTileMap: TripleTileNode[] = [
     { id: "t0025", x: 2, y: 3, z: 0, type: "helmet", coveredBy: ["t0090", "t0091", "t0150"] },
     { id: "t0026", x: 4, y: 3, z: 0, type: "relic", coveredBy: ["t0091", "t0092", "t0151", "t0194"] },
     { id: "t0027", x: 6, y: 3, z: 0, type: "shield", coveredBy: ["t0092", "t0093", "t0152", "t0194", "t0195", "t0222"] },
-    { id: "t0028", x: 14, y: 3, z: 0, type: "moon", coveredBy: ["t0094", "t0153", "t0196", "t0223"] },
     { id: "t0029", x: 16, y: 3, z: 0, type: "coin", coveredBy: ["t0094", "t0095", "t0154", "t0196", "t0197"] },
-    { id: "t0030", x: 18, y: 3, z: 0, type: "gem", coveredBy: ["t0095", "t0096", "t0155", "t0197"] },
     { id: "t0031", x: 20, y: 3, z: 0, type: "book", coveredBy: ["t0096", "t0097"] },
     { id: "t0032", x: 0, y: 4, z: 0, type: "crown", coveredBy: ["t0098"] },
     { id: "t0033", x: 2, y: 4, z: 0, type: "book", coveredBy: ["t0098", "t0099", "t0156"] },
@@ -109,7 +91,6 @@ export const trueTripleTileMap: TripleTileNode[] = [
     { id: "t0045", x: 16, y: 5, z: 0, type: "moon", coveredBy: ["t0110", "t0111", "t0166", "t0204", "t0205"] },
     { id: "t0046", x: 18, y: 5, z: 0, type: "moon", coveredBy: ["t0111", "t0112", "t0167", "t0205"] },
     { id: "t0047", x: 20, y: 5, z: 0, type: "book", coveredBy: ["t0112", "t0113"] },
-    { id: "t0048", x: 0, y: 6, z: 0, type: "ring", coveredBy: ["t0114"] },
     { id: "t0049", x: 2, y: 6, z: 0, type: "flame", coveredBy: ["t0114", "t0115", "t0168"] },
     { id: "t0050", x: 4, y: 6, z: 0, type: "gauntlet", coveredBy: ["t0115", "t0116", "t0169", "t0206"] },
     { id: "t0051", x: 6, y: 6, z: 0, type: "sword", coveredBy: ["t0116", "t0117", "t0170", "t0206", "t0207", "t0228"] },
@@ -125,7 +106,6 @@ export const trueTripleTileMap: TripleTileNode[] = [
     { id: "t0061", x: 16, y: 7, z: 0, type: "gauntlet", coveredBy: ["t0126", "t0127", "t0178", "t0212", "t0213"] },
     { id: "t0062", x: 18, y: 7, z: 0, type: "sword", coveredBy: ["t0127", "t0128", "t0179", "t0213"] },
     { id: "t0063", x: 20, y: 7, z: 0, type: "potion", coveredBy: ["t0128", "t0129"] },
-    { id: "t0064", x: -3, y: 9, z: 0, type: "gem", coveredBy: ["t0130", "t0180", "t0214", "t0232", "t0234", "t0236", "t0238", "t0240"] },
     { id: "t0065", x: 23, y: 9, z: 0, type: "flame", coveredBy: ["t0131", "t0181", "t0215", "t0233", "t0235", "t0237", "t0239", "t0241"] },
     { id: "t0066", x: 3, y: 0, z: 1, type: "relic", coveredBy: ["t0132", "t0133"] },
     { id: "t0067", x: 5, y: 0, z: 1, type: "book", coveredBy: ["t0133", "t0134", "t0182", "t0216"] },

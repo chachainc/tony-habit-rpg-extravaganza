@@ -51,7 +51,8 @@ import generalInertiaImg from '../../assets/bosses/general_inertia.png';
 import flickerBurnoutImg from '../../assets/bosses/flicker_burnout.png';
 
 // Player sprite
-import { useHeroImage } from '../../hooks/useHeroImage';
+import { useProfileStore } from '../../store/useProfileStore';
+import { usePlayerAvatar, getUltimateName } from '../../hooks/usePlayerAvatar';
 
 // Map floor ranges to background images
 const getBackgroundForFloor = (floor: number): string => {
@@ -241,7 +242,10 @@ const getWinChanceColor = (winRate: number): string => {
 export const Arena = ({ onClose }: { onClose: () => void }) => {
     const navigate = useNavigate();
     const location = useLocation();
-    const heroImage = useHeroImage();
+    const heroImage = usePlayerAvatar();
+    const classType = useProfileStore(s => s.classType);
+    const ultimateName = getUltimateName(classType);
+    const synergy = getSkillSynergyBonus();
     const { getMagicAttack } = useGameStore();
     const { addGold } = useCurrencyStore();
     const { markDefeated } = useEnemyStore();
@@ -312,20 +316,11 @@ export const Arena = ({ onClose }: { onClose: () => void }) => {
                 return;
             }
 
-            if (currentPlayer.energy >= 100) {
-                // Use Ultimate when rage is full
-                const ult = currentPlayer.abilities.find(a => a.type === 'ultimate');
-                if (ult) {
-                    selectAbility(ult);
-                    setTimeout(executePlayerAction, 100);
-                }
-            } else {
-                // Use Basic Strike
-                const strike = currentPlayer.abilities.find(a => a.id === 'basic_strike');
-                if (strike) {
-                    selectAbility(strike);
-                    setTimeout(executePlayerAction, 100);
-                }
+            // Use Basic Strike only
+            const strike = currentPlayer.abilities.find(a => a.id === 'basic_strike');
+            if (strike) {
+                selectAbility(strike);
+                setTimeout(executePlayerAction, 100);
             }
         }, 1500);
 
@@ -867,7 +862,41 @@ export const Arena = ({ onClose }: { onClose: () => void }) => {
                                     </Panel>
                                 </div>
 
-                                <div className="prep-buttons">
+                                <div style={{ background: 'rgba(30, 41, 59, 0.8)', padding: '1rem', borderRadius: '8px', border: '1px solid #334155', display: 'flex', flexDirection: 'column', gap: '0.5rem', marginTop: '1rem' }}>
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                        <div style={{ fontSize: '0.85rem', color: '#94a3b8', textTransform: 'uppercase' }}>Class</div>
+                                        <div style={{ fontWeight: 'bold', color: '#a78bfa' }}>{classType || 'Warrior'}</div>
+                                    </div>
+                                    
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                        <div style={{ fontSize: '0.85rem', color: '#94a3b8', textTransform: 'uppercase' }}>Ultimate</div>
+                                        <div style={{ fontWeight: 'bold', color: '#fde68a' }}>{ultimateName}</div>
+                                    </div>
+
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                        <div style={{ fontSize: '0.85rem', color: '#94a3b8', textTransform: 'uppercase' }}>Synergy</div>
+                                        <div style={{ fontWeight: 'bold', color: synergy.active ? '#a3e635' : '#475569', fontSize: '0.75rem' }}>
+                                            {synergy.description}
+                                        </div>
+                                    </div>
+
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                        <div style={{ fontSize: '0.85rem', color: '#94a3b8', textTransform: 'uppercase' }}>Synergy</div>
+                                        <div style={{ fontWeight: 'bold', color: synergy.active ? '#a3e635' : '#475569', fontSize: '0.75rem' }}>
+                                            {synergy.description}
+                                        </div>
+                                    </div>
+
+                                    <div style={{ marginTop: '0.5rem' }}>
+                                        <div style={{ fontSize: '0.85rem', color: '#94a3b8', marginBottom: '0.25rem', textTransform: 'uppercase' }}>Energy (Preview)</div>
+                                        <div className="energy-bar-wrap" style={{ position: 'relative', height: '12px', background: '#000', borderRadius: '4px', overflow: 'hidden' }}>
+                                            <div style={{ width: '0%', height: '100%', background: 'linear-gradient(90deg, #b45309, #d97706)' }} />
+                                            <span style={{ fontSize: '0.65rem', color: '#fbbf24', position: 'absolute', right: '4px', top: '50%', transform: 'translateY(-50%)' }}>0</span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div className="prep-buttons" style={{ marginTop: '1rem' }}>
                                     <GachaButton
                                         onClick={() => setView('map')}
                                         variant="secondary"
@@ -894,7 +923,10 @@ export const Arena = ({ onClose }: { onClose: () => void }) => {
 
         return (
             <div className="modal-overlay arena-overlay">
-                <div className={`arena-modal ${lastDamage?.target === 'player' ? 'shake' : ''}`}>
+                {phase === 'hit_stop' && (
+                    <div style={{ position: 'absolute', inset: 0, background: 'radial-gradient(circle, transparent 30%, rgba(0,0,0,0.85) 100%)', zIndex: 9000, pointerEvents: 'none' }} />
+                )}
+                <div className={`arena-modal ${lastDamage?.target === 'player' ? 'shake' : ''} ${phase === 'hit_stop' ? 'ultimate-hit-shake' : ''}`}>
                     <div className="battle-layout">
                         {/* TOP & BATTLEFIELD (60%) */}
                         <div className="battlefield-container">
@@ -915,8 +947,42 @@ export const Arena = ({ onClose }: { onClose: () => void }) => {
                         </div>
 
                         {/* ACTION BAR (25%) */}
-                        <div className="action-bar-container">
-
+                        <div className="action-bar-container" style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                            {player && (
+                                <div style={{ display: 'flex', justifyContent: 'center' }}>
+                                    <button
+                                        className={`command-btn ultimate-btn ${player.energy >= 100 ? 'ready' : 'locked'}`}
+                                        disabled={phase !== 'select_action' || autoAttack || isRolling || isHeavyRolling || player.energy < 100}
+                                        style={{ 
+                                            width: '100%', 
+                                            maxWidth: '400px',
+                                            padding: '0.75rem',
+                                            borderRadius: '8px',
+                                            border: player.energy >= 100 ? '2px solid #fbbf24' : '2px solid #475569',
+                                            background: player.energy >= 100 ? 'linear-gradient(135deg, #b45309 0%, #78350f 100%)' : '#1e293b',
+                                            color: player.energy >= 100 ? '#fff' : '#64748b',
+                                            boxShadow: player.energy >= 100 ? '0 0 15px rgba(251, 191, 36, 0.5)' : 'none',
+                                            fontWeight: 'bold',
+                                            textTransform: 'uppercase',
+                                            cursor: player.energy >= 100 ? 'pointer' : 'not-allowed',
+                                            transition: 'all 0.3s ease'
+                                        }}
+                                        onClick={() => {
+                                            if (phase === 'select_action' && player.energy >= 100) {
+                                                useBattleStore.getState().executeUltimate(ultimateName);
+                                            }
+                                        }}
+                                    >
+                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                            <span style={{ fontSize: '1.2rem' }}>💥</span>
+                                            <span>{ultimateName}</span>
+                                            <span style={{ fontSize: '0.85rem', color: player.energy >= 100 ? '#fde68a' : '#475569' }}>
+                                                {Math.floor(player.energy)}/100
+                                            </span>
+                                        </div>
+                                    </button>
+                                </div>
+                            )}
 
                             {player && (
                                 <div className="action-buttons">

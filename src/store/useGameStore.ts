@@ -491,7 +491,8 @@ export const useGameStore = create<GameState>()(
                     if (ebStore) { bonus = ebStore.getState().shrineBonusStats; }
                     else { import('./useEconomyBalanceStore').then(m => { (globalThis as any).__useEconomyBalanceStore = m.useEconomyBalanceStore; }); }
                 } catch {}
-                return 1 + strengthLevel + bonus;
+                const passives = getPassiveBonuses();
+                return 1 + strengthLevel + bonus + passives.attack_bonus;
             },
 
             getDefense: () => {
@@ -504,7 +505,8 @@ export const useGameStore = create<GameState>()(
                     if (ebStore) { bonus = ebStore.getState().shrineBonusStats; }
                     else { import('./useEconomyBalanceStore').then(m => { (globalThis as any).__useEconomyBalanceStore = m.useEconomyBalanceStore; }); }
                 } catch {}
-                return 1 + hygieneLevel + bonus;
+                const passives = getPassiveBonuses();
+                return 1 + hygieneLevel + bonus + passives.defense_bonus;
             },
 
             getMagicAttack: () => {
@@ -528,12 +530,13 @@ export const useGameStore = create<GameState>()(
                 return 20 + ((sleepLevel - 1) * 5) + passives.max_mana_bonus;
             },
 
-            // Crit Rate from Habit Building
+            // Crit Rate from Habit Building + Passives
             getCritRate: () => {
                 const { skills } = get();
                 const habitLevel = skills['Habit']?.level ?? 1;
-                // CritChance = HabitLevel %
-                return habitLevel / 100;
+                const passives = getPassiveBonuses();
+                // CritChance = HabitLevel % + Passives
+                return (habitLevel / 100) + (passives.crit_bonus / 100);
             },
 
             // Max Spell Tier from Flexibility

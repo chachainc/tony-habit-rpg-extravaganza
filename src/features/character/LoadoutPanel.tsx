@@ -2,16 +2,18 @@ import { useState, useMemo, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Save, Box } from 'lucide-react';
 import { useCharacterStore, COSMETICS_DB } from '../../store/useCharacterStore';
-import { useEquipmentStore, EQUIPMENT_DB } from '../../store/useEquipmentStore';
-import { useInventoryStore, ITEM_DB } from '../../store/useInventoryStore';
+import { useEquipmentStore } from '../../store/useEquipmentStore';
+import { useInventoryStore, getItemById } from '../../store/useInventoryStore';
 import { useAuraStore, AURAS } from '../../store/useAuraStore';
-import { usePetStore } from '../../store/usePetStore';
+import { usePetStore, PET_DATABASE } from '../../store/usePetStore';
 import { useGameStore } from '../../store/useGameStore';
 import type { SkillName } from '../../store/useGameStore';
-import { ITEM_DATABASE } from '../../data/items';
-import { useHeroImage } from '../../hooks/useHeroImage';
+
+import { usePlayerAvatar } from '../../hooks/usePlayerAvatar';
 import { useMagicStore, SPELL_DB } from '../../store/useMagicStore';
 import { useTitleStore, TITLES } from '../../store/useTitleStore';
+import { useProfileStore } from '../../store/useProfileStore';
+import { getSkillSynergyBonus } from '../../store/useCombatFormulas';
 import './LoadoutPanel.css';
 
 type RadialSlotId = 
@@ -27,7 +29,7 @@ interface SelectionItem {
 }
 
 export const LoadoutPanel = ({ onClose }: { onClose: () => void }) => {
-    const heroImage = useHeroImage();
+    const heroImage = usePlayerAvatar();
     const gameStore = useGameStore();
 
     // ── Stores ──
@@ -38,6 +40,9 @@ export const LoadoutPanel = ({ onClose }: { onClose: () => void }) => {
     const petStore = usePetStore();
     const magicStore = useMagicStore();
     const titleStore = useTitleStore();
+    
+    const classType = useProfileStore(s => s.classType);
+    const synergy = getSkillSynergyBonus();
 
     // ── UI State ──
     const [activeSlot, setActiveSlot] = useState<RadialSlotId | null>(null);
@@ -60,13 +65,13 @@ export const LoadoutPanel = ({ onClose }: { onClose: () => void }) => {
                 const aura = activeAuraId !== 'none' ? AURAS.find(a => a.id === auraStore.activeAuraId) : null;
                 return { icon: aura ? aura.icon : '', name: aura?.name || '', emptyIcon: '✨' };
             case 'weapon':
-                const wep = equipStore.equippedWeapon ? EQUIPMENT_DB[equipStore.equippedWeapon] : null;
+                const wep = invStore.equipped.weapon ? getItemById(invStore.equipped.weapon) : null;
                 return { icon: wep?.icon || '', name: wep?.name || '', emptyIcon: '⚔️' };
             case 'body':
                 const body = charStore.equipped.body ? COSMETICS_DB[charStore.equipped.body] : null;
                 return { icon: body ? '👕' : '', name: body?.name || '', emptyIcon: '🦺' };
             case 'shield':
-                const shield = invStore.equipped.armor ? ITEM_DB[invStore.equipped.armor] : null;
+                const shield = invStore.equipped.armor ? getItemById(invStore.equipped.armor) : null;
                 return { icon: shield?.icon || '', name: shield?.name || '', emptyIcon: '🛡️' };
             case 'legs':
                 const legs = charStore.equipped.legs ? COSMETICS_DB[charStore.equipped.legs] : null;
@@ -77,22 +82,22 @@ export const LoadoutPanel = ({ onClose }: { onClose: () => void }) => {
                 const boots = charStore.equipped.feet ? COSMETICS_DB[charStore.equipped.feet] : null;
                 return { icon: boots ? '👟' : '', name: boots?.name || '', emptyIcon: '👢' };
             case 'ring':
-                const ring = equipStore.equippedAccessory ? EQUIPMENT_DB[equipStore.equippedAccessory] : null;
+                const ring = invStore.equipped.jewelry ? getItemById(invStore.equipped.jewelry) : null;
                 return { icon: ring?.icon || '', name: ring?.name || '', emptyIcon: '💍' };
             case 'pet':
-                const pet = petStore.equippedPetId ? ITEM_DATABASE[petStore.equippedPetId] : null;
-                return { icon: pet?.icon || '', name: pet?.name || '', emptyIcon: '🐾' };
+                const petDef = petStore.equippedPetId ? PET_DATABASE[petStore.equippedPetId] : null;
+                return { icon: petDef?.icon || '', name: petDef?.name || '', emptyIcon: '🐾' };
             case 'book':
-                const book = invStore.equipped.book ? ITEM_DB[invStore.equipped.book] : null;
+                const book = invStore.equipped.book ? getItemById(invStore.equipped.book) : null;
                 return { icon: book?.icon || '', name: book?.name || '', emptyIcon: '📚' };
             case 'artifact':
-                const artifact = invStore.equipped.artifact ? ITEM_DB[invStore.equipped.artifact] : null;
+                const artifact = invStore.equipped.artifact ? getItemById(invStore.equipped.artifact) : null;
                 return { icon: artifact?.icon || '', name: artifact?.name || '', emptyIcon: '🔮' };
             case 'relic':
-                const relic = invStore.equipped.relic ? ITEM_DB[invStore.equipped.relic] : null;
+                const relic = invStore.equipped.relic ? getItemById(invStore.equipped.relic) : null;
                 return { icon: relic?.icon || '', name: relic?.name || '', emptyIcon: '🏺' };
             case 'pet_accessory':
-                const pAcc = invStore.equipped.pet_accessory ? ITEM_DATABASE[invStore.equipped.pet_accessory] : null;
+                const pAcc = invStore.equipped.pet_accessory ? getItemById(invStore.equipped.pet_accessory) : null;
                 return { icon: pAcc?.icon || '', name: pAcc?.name || '', emptyIcon: '🎀' };
             case 'spell':
                 const spelling = magicStore.equippedSpell ? SPELL_DB[magicStore.equippedSpell] : null;
@@ -199,8 +204,8 @@ export const LoadoutPanel = ({ onClose }: { onClose: () => void }) => {
         
         if (snapshot.cape) auraStore.setActiveAura(snapshot.cape); else auraStore.setActiveAura('none');
         
-        if (snapshot.weapon) equipStore.equipItem(snapshot.weapon); else equipStore.unequipSlot('weapon');
-        if (snapshot.ring) equipStore.equipItem(snapshot.ring); else equipStore.unequipSlot('accessory');
+        if (snapshot.weapon) invStore.equipItem(snapshot.weapon, 'weapon'); else invStore.unequipItem('weapon');
+        if (snapshot.ring) invStore.equipItem(snapshot.ring, 'jewelry'); else invStore.unequipItem('jewelry');
         
         if (snapshot.shield) invStore.equipItem(snapshot.shield, 'armor'); else invStore.unequipItem('armor');
         if (snapshot.book) invStore.equipItem(snapshot.book, 'book'); else invStore.unequipItem('book');
@@ -242,36 +247,56 @@ export const LoadoutPanel = ({ onClose }: { onClose: () => void }) => {
                 list = AURAS.map(a => ({ id: a.id, name: a.name, icon: a.icon, desc: 'Aura boost', isLocked: !auraStore.unlockedAuras.includes(a.id) }));
                 break;
             case 'weapon':
-                list = Object.values(EQUIPMENT_DB).filter(e => e && e.slot === 'weapon')
-                    .map(e => ({ id: e.id, name: e.name, icon: e.icon, desc: `ATK +${e.atkBonus}`, isLocked: !equipStore.ownedEquipment.includes(e.id) }));
+                list = Object.keys(invStore.items)
+                    .map(id => getItemById(id))
+                    .filter(i => i && i.type === 'weapon')
+                    .map(e => ({ id: e.id, name: e.name, icon: e.icon, desc: `ATK +${e.stats?.attack || e.statBonuses?.attack || e.value || 0}`, isLocked: false }));
                 break;
             case 'shield':
-                list = Object.values(ITEM_DB).filter(i => i && i.type === 'armor')
-                    .map(i => ({ id: i.id, name: i.name, icon: i.icon, desc: `DEF +${i.value}`, isLocked: (invStore.items[i.id] || 0) <= 0 }));
+                list = Object.keys(invStore.items)
+                    .map(id => getItemById(id))
+                    .filter(i => i && i.type === 'armor')
+                    .map(i => ({ id: i.id, name: i.name, icon: i.icon, desc: `DEF +${i.stats?.defense || i.statBonuses?.defense || i.value || 0}`, isLocked: false }));
                 break;
             case 'ring':
-                list = Object.values(EQUIPMENT_DB).filter(e => e && e.slot === 'accessory')
-                    .map(e => ({ id: e.id, name: e.name, icon: e.icon, desc: `ATK +${e.atkBonus}`, isLocked: !equipStore.ownedEquipment.includes(e.id) }));
+                list = Object.keys(invStore.items)
+                    .map(id => getItemById(id))
+                    .filter(i => i && i.type === 'jewelry')
+                    .map(e => ({ id: e.id, name: e.name, icon: e.icon, desc: `ATK +${e.stats?.attack || e.statBonuses?.attack || 0} DEF +${e.stats?.defense || e.statBonuses?.defense || 0}`, isLocked: false }));
                 break;
             case 'pet':
-                list = Object.values(ITEM_DATABASE).filter(i => i && i.type === 'pet')
-                    .map(i => ({ id: i.id, name: i.name, icon: i.icon, desc: 'Companion', isLocked: !petStore.ownedPets.includes(i.id) }));
+                // List ALL pets from PET_DATABASE — full collection
+                list = Object.values(PET_DATABASE).map(p => ({
+                    id: p.id,
+                    name: p.name,
+                    icon: p.icon,
+                    desc: `${p.passive.name} · ${p.passive.description}`,
+                    isLocked: !petStore.ownedPets.includes(p.id),
+                }));
                 break;
             case 'pet_accessory':
-                list = Object.values(ITEM_DATABASE).filter(i => i && i.type === 'pet_accessory')
-                    .map(i => ({ id: i.id, name: i.name, icon: i.icon, desc: 'Cosmetic', isLocked: !invStore.marketplaceOwned.includes(i.id) }));
+                list = Object.keys(invStore.items)
+                    .map(id => getItemById(id))
+                    .filter(i => i && (i.type === 'pet_accessory' || i.type === 'pet_gear'))
+                    .map(i => ({ id: i.id, name: i.name, icon: i.icon, desc: 'Pet Accessory', isLocked: false }));
                 break;
             case 'book':
-                list = Object.values(ITEM_DB).filter(i => i && i.type === 'book')
-                    .map(i => ({ id: i.id, name: i.name, icon: i.icon, desc: i.effect || '', isLocked: (invStore.items[i.id] || 0) <= 0 }));
+                list = Object.keys(invStore.items)
+                    .map(id => getItemById(id))
+                    .filter(i => i && i.type === 'book')
+                    .map(i => ({ id: i.id, name: i.name, icon: i.icon, desc: i.effect || '', isLocked: false }));
                 break;
             case 'artifact':
-                list = Object.values(ITEM_DB).filter(i => i && i.type === 'artifact')
-                    .map(i => ({ id: i.id, name: i.name, icon: i.icon, desc: i.effect || '', isLocked: (invStore.items[i.id] || 0) <= 0 }));
+                list = Object.keys(invStore.items)
+                    .map(id => getItemById(id))
+                    .filter(i => i && i.type === 'artifact')
+                    .map(i => ({ id: i.id, name: i.name, icon: i.icon, desc: i.effect || '', isLocked: false }));
                 break;
             case 'relic':
-                list = Object.values(ITEM_DB).filter(i => i && i.type === 'relic')
-                    .map(i => ({ id: i.id, name: i.name, icon: i.icon, desc: i.effect || '', isLocked: (invStore.items[i.id] || 0) <= 0 }));
+                list = Object.keys(invStore.items)
+                    .map(id => getItemById(id))
+                    .filter(i => i && i.type === 'relic')
+                    .map(i => ({ id: i.id, name: i.name, icon: i.icon, desc: i.effect || '', isLocked: false }));
                 break;
             case 'spell':
                 list = magicStore.ownedSpells.map(id => {
@@ -305,7 +330,7 @@ export const LoadoutPanel = ({ onClose }: { onClose: () => void }) => {
                 case 'weapon': equipStore.unequipSlot('weapon'); break;
                 case 'shield': invStore.unequipItem('armor'); break;
                 case 'ring': equipStore.unequipSlot('accessory'); break;
-                case 'pet': break; // Pet cannot be fully unequiped natively, just switched. Or maybe switch to empty string if store allowed.
+                case 'pet': petStore.unequipPet(); break;
                 case 'pet_accessory': invStore.unequipItem('pet_accessory'); break;
                 case 'book': invStore.unequipItem('book'); break;
                 case 'artifact': invStore.unequipItem('artifact'); break;
@@ -370,6 +395,19 @@ export const LoadoutPanel = ({ onClose }: { onClose: () => void }) => {
             <div className="loadout-panel-content">
                 {/* ── Left/Center: Radial RuneScape Layout ── */}
                 <div className="loadout-radial-area">
+                    <div style={{ position: 'absolute', top: '10px', left: '10px', background: 'rgba(30,20,60,0.8)', border: '1px solid rgba(139,92,246,0.3)', padding: '0.75rem', borderRadius: '8px', zIndex: 10 }}>
+                        <div style={{ fontSize: '0.75rem', color: '#94a3b8', textTransform: 'uppercase', marginBottom: '4px' }}>Class</div>
+                        <div style={{ fontWeight: 'bold', color: '#a78bfa', marginBottom: '8px', fontSize: '1.1rem' }}>{classType || 'Warrior'}</div>
+                        
+                        <div style={{ fontSize: '0.75rem', color: '#94a3b8', textTransform: 'uppercase', marginBottom: '4px' }}>Active Synergy</div>
+                        <div 
+                            title="Synergy activates when both skills >= 1"
+                            style={{ fontWeight: 'bold', color: synergy.active ? '#a3e635' : '#475569', fontSize: '0.85rem', maxWidth: '200px', cursor: 'help' }}
+                        >
+                            {synergy.description}
+                        </div>
+                    </div>
+
                     <div className="loadout-character-avatar">
                         <img src={heroImage} alt="Player Avatar" />
                     </div>
