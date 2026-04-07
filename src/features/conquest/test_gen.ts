@@ -1,4 +1,5 @@
-import { trueTripleTileMap, TILE_TYPES, TripleTileNode, isTileLocked } from './tileConfig';
+import { trueTripleTileMap, TILE_TYPES, isTileLocked } from './tileConfig';
+import type { TripleTileNode } from './tileConfig';
 
 type Accessibility = 'easy' | 'medium' | 'deep';
 
@@ -152,15 +153,6 @@ function validateAndScoreBoard(board: TripleTileNode[]): { valid: boolean, score
         }
     }
 
-    // Check deep burial
-    for (const [type, count] of Object.entries(typeCounts)) {
-        if (count === 3) {
-            const tiles = board.filter(t => t.type === type);
-            // Re-classify to check if all are deep? Actually we don't have bucket in `board` easily unless we keep it.
-            // Let's do it via distance to surface or initial free state
-        }
-    }
-
     // Opening state
     const freeTiles = board.filter(t => !isTileLocked(t, board));
     const freeCounts: Record<string, number> = {};
@@ -226,7 +218,7 @@ function test() {
     let successCount = 0;
     for (let i = 0; i < 100; i++) {
         try {
-            const b = generateValidBoard();
+            generateValidBoard();
             successCount++;
         } catch (e) {
             console.error("error", e);
