@@ -2,6 +2,7 @@ import { useState, useCallback, useEffect, useRef, memo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
     trueTripleTileMap,
+    generateValidBoard,
     isTileLocked,
     TILE_IMAGES,
     TILE_COLORS,
@@ -98,7 +99,7 @@ export const ConquestTiles = ({ onComplete, onClose }: ConquestTilesProps) => {
 
     // ─── INIT ──────────────────────────────────────────
     useEffect(() => {
-        setBoard([...trueTripleTileMap]);
+        setBoard(generateValidBoard());
         setDock([]); setScore(0); setResult(null);
         setClearingIds(new Set());
         setHintTileIds(new Set());

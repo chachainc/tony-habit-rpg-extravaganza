@@ -87,6 +87,7 @@ interface BlackjackState {
     stand: () => void;
     doubleDown: () => void;
     newHand: () => void;
+    cashOut: () => void;
     
     selectDealer: (id: DealerId) => void;
     selectTheme: (id: ThemeId) => void;
@@ -288,6 +289,19 @@ export const useBlackjackStore = create<BlackjackState>()(
 
             newHand: () => {
                 set({ phase: 'idle', playerHand: [], dealerHand: [], deck: [], currentBet: 0, result: null, message: '' });
+            },
+
+            cashOut: () => {
+                const s = get();
+                if (s.phase !== 'playing') return;
+                // Treat as "surrender" (forfeit half bet) if mid-hand, "awards current winnings" will just be half back.
+                const returned = Math.floor(s.currentBet / 2);
+                set({
+                    phase: 'idle',
+                    casinoCoins: s.casinoCoins + returned,
+                    playerHand: [], dealerHand: [], deck: [],
+                    currentBet: 0, result: null, message: 'Cashed out'
+                });
             },
         }),
         { 

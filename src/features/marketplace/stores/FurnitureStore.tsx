@@ -9,6 +9,7 @@ import { canPurchaseItem } from '../../../data/unlocks';
 import { useState, useCallback } from 'react';
 import { PurchaseConfirmModal } from '../../../components/ui/PurchaseConfirmModal';
 import { PurchaseSuccessOverlay } from '../../../components/ui/PurchaseSuccessOverlay';
+import { SeedShopModal } from './SeedShopModal';
 import furnitureStoreBg from '../../../assets/backgrounds/furniture_store.png';
 import './FurnitureStore.css';
 
@@ -26,6 +27,7 @@ export const FurnitureStore = ({ onClose }: Props) => {
     const [confirmItem, setConfirmItem] = useState<Item | null>(null);
     const [successItem, setSuccessItem] = useState<Item | null>(null);
     const [showSuccess, setShowSuccess] = useState(false);
+    const [showSeedShop, setShowSeedShop] = useState(false);
 
     const handlePurchaseClick = (itemId: string) => {
         const item = ITEM_DATABASE[itemId];
@@ -76,6 +78,17 @@ export const FurnitureStore = ({ onClose }: Props) => {
                 storeColor="#f59e0b"
                 onClose={onClose}
                 backgroundImage={furnitureStoreBg}
+                topBar={
+                    <div style={{ display: 'flex', justifyContent: 'flex-end', padding: '0.5rem 1rem' }}>
+                        <button 
+                            className="seed-shop-buy-btn" 
+                            style={{ margin: 0, padding: '0.5rem 1rem', fontSize: '0.9rem' }}
+                            onClick={() => setShowSeedShop(true)}
+                        >
+                            🌱 Premium Seed Shop
+                        </button>
+                    </div>
+                }
                 glowPoints={[
                     { x: 20, y: 25, color: '#fbbf24', intensity: 1.0 },
                     { x: 80, y: 45, color: '#fbbf24', intensity: 0.8 },
@@ -190,6 +203,10 @@ export const FurnitureStore = ({ onClose }: Props) => {
                 isVisible={showSuccess}
                 onComplete={handleSuccessComplete}
             />
+
+            {showSeedShop && (
+                <SeedShopModal onClose={() => setShowSeedShop(false)} />
+            )}
         </>
     );
 };

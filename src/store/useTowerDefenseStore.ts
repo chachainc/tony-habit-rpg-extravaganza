@@ -45,6 +45,7 @@ export interface DamagePopup {
     age: number; // ms since spawn
     text?: string;
     color?: string;
+    isGold?: boolean;
 }
 
 export interface WaveStats {
@@ -577,7 +578,8 @@ export const useTowerDefenseStore = create<TowerDefenseState>()(
                         // Per-kill reward
                         const enemyDef = TD_ENEMIES[e.type];
                         const rewardMul = e.isElite ? 2 : 1;
-                        const killGold = 10 * rewardMul;
+                        const originalKillGold = 10 * rewardMul;
+                        const killGold = Math.max(1, Math.floor(originalKillGold / 10));
                         
                         useCurrencyStore.getState().addGold(killGold, { exact: true });
                         goldThisTick += killGold;
@@ -588,7 +590,7 @@ export const useTowerDefenseStore = create<TowerDefenseState>()(
                         const dp2 = TD_PATH[e.pathIndex + 1] || dp1;
                         const dx = dp1.x + (dp2.x - dp1.x) * e.progress;
                         const dy = dp1.y + (dp2.y - dp1.y) * e.progress;
-                        newDamagePopups.push({ id: `kill-${now}-${e.id}`, x: dx, y: dy, value: killGold, isCrit: false, isHeal: false, age: 0, text: `+${killGold} 🪙`, color: '#facc15' });
+                        newDamagePopups.push({ id: `kill-${now}-${e.id}`, x: dx, y: dy, value: killGold, isCrit: false, isHeal: false, age: 0, isGold: true });
 
                         // Arena stats
                         arenaStats.recordKill();
@@ -620,7 +622,8 @@ export const useTowerDefenseStore = create<TowerDefenseState>()(
                     // Wave Complete Rewards (Global)
                     const passives = getPassiveBonuses();
                     const sigils = Math.floor(state.currentWave / 2) + 1 + passives.sigil_bonus;
-                    const gold = (state.currentWave * 5) + passives.gold_bonus;
+                    const originalGold = (state.currentWave * 5) + passives.gold_bonus;
+                    const gold = Math.max(1, Math.floor(originalGold / 10));
                     const shmeckles = (state.currentWave * 5) + passives.gold_bonus;
 
                     goldThisTick += gold;

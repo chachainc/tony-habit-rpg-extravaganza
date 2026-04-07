@@ -1,25 +1,27 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Info } from 'lucide-react';
+import { X, Info, Coins } from 'lucide-react';
 import { useGardenStore, SEEDS } from '../../store/useGardenStore';
 import { useCurrencyStore } from '../../store/useCurrencyStore';
 import { useToastStore } from '../../components/ui/Toast';
+import { SeedShopModal } from '../marketplace/stores/SeedShopModal';
+import { Lock } from 'lucide-react';
 import './GardenPanel.css';
 
 type Tool = 'plant' | 'water' | 'harvest';
 
 interface FloatingText {
     id: number;
-    text: string;
+    text: React.ReactNode;
     x: number;
     y: number;
-    type: 'gold' | 'xp' | 'material';
+    type: 'gold' | 'xp' | 'material' | 'reward_box';
 }
 
 // ── Seed Selector Modal ──
 const SeedModal = ({
-    open, onClose, onSelect, gold,
-}: { open: boolean; onClose: () => void; onSelect: (seedId: string) => void; gold: number }) => {
+    open, onClose, onSelect, gold, isSeedUnlocked, onOpenShop
+}: { open: boolean; onClose: () => void; onSelect: (seedId: string) => void; gold: number, isSeedUnlocked: (id: string) => boolean, onOpenShop: (id: string) => void }) => {
     if (!open) return null;
     return (
         <motion.div
@@ -35,24 +37,38 @@ const SeedModal = ({
                 <h3>🌱 Choose a Seed</h3>
                 <div className="seed-modal-grid">
                     {SEEDS.map(seed => {
+                        const unlocked = isSeedUnlocked(seed.id);
                         const canAfford = gold >= seed.cost;
                         const hrs = Math.floor(seed.growTimeMs / 3600000);
+                        
+                        const disabled = !unlocked || !canAfford;
+                        const isPremium = seed.unlockCost && seed.unlockCost > 0;
+
                         return (
                             <button
                                 key={seed.id}
-                                className={`seed-modal-card ${!canAfford ? 'disabled' : ''}`}
-                                disabled={!canAfford}
-                                onClick={() => { onSelect(seed.id); onClose(); }}
+                                className={`seed-modal-card ${!unlocked ? 'locked' : ''} ${!canAfford && unlocked ? 'disabled' : ''} ${unlocked && isPremium ? 'premium-unlocked' : ''}`}
+                                disabled={disabled && unlocked} // Can still click if locked to open shop
+                                onClick={() => { 
+                                    if (!unlocked) {
+                                        onOpenShop(seed.id);
+                                    } else {
+                                        onSelect(seed.id); 
+                                        onClose(); 
+                                    }
+                                }}
                             >
                                 <span className="seed-modal-icon">{seed.icon}</span>
-                                <span className="seed-modal-name">{seed.name}</span>
-                                <span className="seed-modal-cost">🪙 {seed.cost}</span>
-                                <span className="seed-modal-time">⏱ {hrs}h</span>
-                                <span className="seed-modal-yield">
-                                    {seed.yields.map(y =>
-                                        y.type === 'gold' ? `+${y.value}🪙` : `+${y.value} 📦`
-                                    ).join(' ')}
-                                </span>
+                                <div className="seed-modal-info">
+                                    <span className="seed-modal-name">
+                                        {seed.name} {!unlocked && <Lock size={12} className="card-lock-icon" />}
+                                    </span>
+                                    <span className="seed-modal-details">
+                                        <span style={{color: '#b8860b', fontWeight: 'bold'}}>{seed.cost} Gold</span> • {hrs}h • Returns{' '}
+                                        <span style={{color: '#b8860b', fontWeight: 'bold'}}>{seed.reward.goldReturn} Gold</span>
+                                        {seed.reward.boxes > 0 && <span> • +{seed.reward.boxes} Box{seed.reward.boxes > 1 ? 'es' : ''}</span>}
+                                    </span>
+                                </div>
                             </button>
                         );
                     })}
@@ -94,8 +110,14 @@ const InfoModal = ({ open, onClose }: { open: boolean; onClose: () => void }) =>
 
 export const GardenPanel = ({ onClose }: { onClose: () => void }) => {
     const garden = useGardenStore();
+    const isSeedUnlocked = useGardenStore(s => s.isSeedUnlocked);
     const currencyStore = useCurrencyStore();
-    const addToast = useToastStore(s => s.addToast);
+    const gold = currencyStore.gold;
+    const { addToast } = useToastStore();
+    
+    // Seed Shop State
+    const [showSeedShop, setShowSeedShop] = useState(false);
+    const [shopFocusId, setShopFocusId] = useState<string | undefined>(undefined);
 
     const [tool, setTool] = useState<Tool>('plant');
     const [seedModal, setSeedModal] = useState(false);
@@ -116,9 +138,8 @@ export const GardenPanel = ({ onClose }: { onClose: () => void }) => {
         return () => clearInterval(id);
     }, []);
 
-    const gold = currencyStore.gold;
 
-    const addFloat = useCallback((text: string, type: FloatingText['type'], plotIdx: number) => {
+    const addFloat = useCallback((text: React.ReactNode, type: FloatingText['type'], plotIdx: number) => {
         const plotEl = document.querySelector(`.garden-plot-cell[data-idx="${plotIdx}"]`);
         const rect = plotEl?.getBoundingClientRect();
         const id = Date.now() + Math.random();
@@ -168,19 +189,42 @@ export const GardenPanel = ({ onClose }: { onClose: () => void }) => {
             setTimeout(() => setHarvestPlots(prev => { const s = new Set(prev); s.delete(plotIdx); return s; }), 1200);
 
             const bonusMult = result.watered ? 1.25 : 1.0;
-            for (const y of result.yields) {
-                if (y.type === 'gold') {
-                    const amt = Math.floor(y.value * bonusMult);
-                    currencyStore.addGold(amt);
-                    addFloat(`+${amt} 🪙`, 'gold', plotIdx);
-                } else if (y.type === 'material' && y.materialId) {
-                    const amt = Math.floor(y.value * bonusMult);
-                    import('../../store/useWorkshopStore').then(({ useWorkshopStore }) => {
-                        useWorkshopStore.getState().addMaterial(y.materialId!, amt);
-                    });
-                    addFloat(`+${amt} 📦`, 'material', plotIdx);
-                }
-            }
+            
+            // Handle Gold Return
+            const goldAmt = Math.floor(result.reward.goldReturn * bonusMult);
+            useCurrencyStore.getState().addGold(goldAmt);
+            addFloat(<span>+{goldAmt} <Coins size={12} color="#fbbf24" style={{verticalAlign: 'text-bottom'}}/></span>, 'gold', plotIdx);
+            
+            // Handle Boxes
+            const boxes = Math.floor(result.reward.boxes * bonusMult);
+            for (let i = 0; i < boxes; i++) {
+                        setTimeout(() => {
+                            const roll = Math.random();
+                            let rewardAmount = 1;
+                            let emoji = '';
+                            if (roll < 0.30) {
+                                rewardAmount = Math.random() < 0.5 ? 1 : 2;
+                                emoji = '🐌'; // Shmeckles
+                                useCurrencyStore.getState().addShmeckles(rewardAmount);
+                            } else if (roll < 0.60) {
+                                rewardAmount = Math.random() < 0.5 ? 1 : 2;
+                                emoji = '🎈'; // Balloons
+                                useCurrencyStore.getState().addBalloons(rewardAmount);
+                            } else if (roll < 0.90) {
+                                rewardAmount = Math.random() < 0.5 ? 1 : 2;
+                                emoji = '🔱'; // Sigils
+                                import('../../store/useConquestStore').then(({ useConquestStore }) => {
+                                    useConquestStore.getState().addSigils(rewardAmount);
+                                });
+                            } else {
+                                rewardAmount = 1;
+                                emoji = '💎'; // Gem
+                                useCurrencyStore.getState().addDiamonds(rewardAmount);
+                            }
+                            addFloat(`+${rewardAmount} ${emoji}`, 'reward_box', plotIdx);
+                        }, i * 300);
+                    }
+            
             addToast({ message: `🌾 Harvested ${result.seed.name}!${result.watered ? ' (Watered bonus!)' : ''}`, type: 'success', duration: 3000 });
         }
     }, [tool, garden, addFloat, currencyStore, addToast]);
@@ -191,7 +235,7 @@ export const GardenPanel = ({ onClose }: { onClose: () => void }) => {
 
         const seed = SEEDS.find(s => s.id === seedId);
         if (!seed || gold < seed.cost) {
-            addToast({ message: `Not enough gold! Need ${seed?.cost}🪙`, type: 'error' });
+            addToast({ message: `Not enough gold! Need ${seed?.cost} Gold`, type: 'error' });
             setTimeout(() => { isProcessingRef.current = false; }, 300);
             return;
         }
@@ -204,7 +248,7 @@ export const GardenPanel = ({ onClose }: { onClose: () => void }) => {
         setPopPlots(prev => new Set(prev).add(plotIdx));
         setTimeout(() => setPopPlots(prev => { const s = new Set(prev); s.delete(plotIdx); return s; }), 600);
         const h = Math.floor(seed.growTimeMs / 3600000);
-        addToast({ message: `🌱 Bought & planted ${seed.name} (-${seed.cost} 🪙). Ready in ~${h}h.`, type: 'success', duration: 3500 });
+        addToast({ message: `🌱 Bought & planted ${seed.name} (-${seed.cost} Gold). Ready in ~${h}h.`, type: 'success', duration: 3500 });
         
         setTimeout(() => { isProcessingRef.current = false; }, 300);
     }, [pendingSeedPlotIdx, gold, currencyStore, garden, addToast]);
@@ -225,7 +269,7 @@ export const GardenPanel = ({ onClose }: { onClose: () => void }) => {
             {/* Resource + info strip */}
             <div className="garden-hud">
                 <div className="garden-hud-pill">
-                    <span className="garden-hud-gold">🪙 {gold}</span>
+                    <span className="garden-hud-gold"><Coins size={14} color="#fbbf24" style={{marginRight: '4px', verticalAlign: 'text-bottom'}}/> {gold}</span>
                     <span className="garden-hud-name">MEADOW MIST FARM</span>
                     <button className="garden-info-btn" onClick={() => setInfoModal(true)}><Info size={16} /></button>
                 </div>
@@ -399,7 +443,20 @@ export const GardenPanel = ({ onClose }: { onClose: () => void }) => {
                     onClose={() => { setSeedModal(false); setPendingSeedPlotIdx(null); }}
                     onSelect={handleSeedSelect}
                     gold={gold}
+                    isSeedUnlocked={isSeedUnlocked}
+                    onOpenShop={(id) => {
+                        setSeedModal(false);
+                        setShopFocusId(id);
+                        setShowSeedShop(true);
+                    }}
                 />
+                
+                {showSeedShop && (
+                    <SeedShopModal 
+                        onClose={() => setShowSeedShop(false)} 
+                        focusedSeedId={shopFocusId}
+                    />
+                )}
             </AnimatePresence>
             <AnimatePresence>
                 <InfoModal open={infoModal} onClose={() => setInfoModal(false)} />

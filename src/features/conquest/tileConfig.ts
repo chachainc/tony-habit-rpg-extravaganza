@@ -1,4 +1,4 @@
-// ─── TILE CONFIG — Hardcoded Board Engine ─────────────
+// ─── TILE CONFIG — Pyramid Mahjong Board ─────────────
 export type TileRarity      = 'common' | 'rare' | 'epic';
 export type TileColorFamily = 'blue' | 'gold' | 'red' | 'green' | 'purple';
 export interface TileSymbol {
@@ -19,10 +19,10 @@ export const TILE_IMAGES: Record<string, string> = {
 };
 
 export const DIFFICULTY_PRESETS = {
-    1: { name: 'Normal', totalTiles: 222, symbolCount: 0, layers: 5, label: '🎴 Mahjong', gemReward: 2 },
-    2: { name: 'Normal', totalTiles: 222, symbolCount: 0, layers: 5, label: '🎴 Mahjong', gemReward: 2 },
-    3: { name: 'Normal', totalTiles: 222, symbolCount: 0, layers: 5, label: '🎴 Mahjong', gemReward: 2 },
-    4: { name: 'Normal', totalTiles: 222, symbolCount: 0, layers: 5, label: '🎴 Mahjong', gemReward: 2 },
+    1: { name: 'Normal', totalTiles: 132, symbolCount: 0, layers: 5, label: '🎴 Mahjong', gemReward: 2 },
+    2: { name: 'Normal', totalTiles: 132, symbolCount: 0, layers: 5, label: '🎴 Mahjong', gemReward: 2 },
+    3: { name: 'Normal', totalTiles: 132, symbolCount: 0, layers: 5, label: '🎴 Mahjong', gemReward: 2 },
+    4: { name: 'Normal', totalTiles: 132, symbolCount: 0, layers: 5, label: '🎴 Mahjong', gemReward: 2 },
 } as const;
 
 export const POWER_COSTS = { remove: 30, undo: 20, shuffle: 20, hint: 20 } as const;
@@ -60,235 +60,282 @@ export type UndoEntry = {
     prevScore: number;
 };
 
-export const trueTripleTileMap: TripleTileNode[] = [
-    { id: "t0000", x: 2, y: 0, z: 0, type: "chest", coveredBy: ["t0066", "t0132"] },
-    { id: "t0002", x: 6, y: 0, z: 0, type: "scroll", coveredBy: ["t0067", "t0068", "t0134", "t0182", "t0183", "t0216"] },
-    { id: "t0011", x: 9, y: 1, z: 0, type: "shield", coveredBy: ["t0077"] },
-    { id: "t0016", x: 0, y: 2, z: 0, type: "flame", coveredBy: ["t0082"] },
-    { id: "t0017", x: 2, y: 2, z: 0, type: "sword", coveredBy: ["t0082", "t0083", "t0144"] },
-    { id: "t0021", x: 16, y: 2, z: 0, type: "sword", coveredBy: ["t0086", "t0087", "t0148", "t0192", "t0193"] },
-    { id: "t0022", x: 18, y: 2, z: 0, type: "gauntlet", coveredBy: ["t0087", "t0088", "t0149", "t0193"] },
-    { id: "t0023", x: 20, y: 2, z: 0, type: "gauntlet", coveredBy: ["t0088", "t0089"] },
-    { id: "t0024", x: 0, y: 3, z: 0, type: "gauntlet", coveredBy: ["t0090"] },
-    { id: "t0025", x: 2, y: 3, z: 0, type: "helmet", coveredBy: ["t0090", "t0091", "t0150"] },
-    { id: "t0026", x: 4, y: 3, z: 0, type: "relic", coveredBy: ["t0091", "t0092", "t0151", "t0194"] },
-    { id: "t0027", x: 6, y: 3, z: 0, type: "shield", coveredBy: ["t0092", "t0093", "t0152", "t0194", "t0195", "t0222"] },
-    { id: "t0029", x: 16, y: 3, z: 0, type: "coin", coveredBy: ["t0094", "t0095", "t0154", "t0196", "t0197"] },
-    { id: "t0031", x: 20, y: 3, z: 0, type: "book", coveredBy: ["t0096", "t0097"] },
-    { id: "t0032", x: 0, y: 4, z: 0, type: "crown", coveredBy: ["t0098"] },
-    { id: "t0033", x: 2, y: 4, z: 0, type: "book", coveredBy: ["t0098", "t0099", "t0156"] },
-    { id: "t0034", x: 4, y: 4, z: 0, type: "helmet", coveredBy: ["t0099", "t0100", "t0157", "t0198"] },
-    { id: "t0035", x: 6, y: 4, z: 0, type: "book", coveredBy: ["t0100", "t0101", "t0158", "t0198", "t0199", "t0224"] },
-    { id: "t0036", x: 14, y: 4, z: 0, type: "coin", coveredBy: ["t0102", "t0159", "t0200", "t0225"] },
-    { id: "t0037", x: 16, y: 4, z: 0, type: "sword", coveredBy: ["t0102", "t0103", "t0160", "t0200", "t0201"] },
-    { id: "t0038", x: 18, y: 4, z: 0, type: "helmet", coveredBy: ["t0103", "t0104", "t0161", "t0201"] },
-    { id: "t0039", x: 20, y: 4, z: 0, type: "gauntlet", coveredBy: ["t0104", "t0105"] },
-    { id: "t0040", x: 0, y: 5, z: 0, type: "scroll", coveredBy: ["t0106"] },
-    { id: "t0041", x: 2, y: 5, z: 0, type: "helmet", coveredBy: ["t0106", "t0107", "t0162"] },
-    { id: "t0042", x: 4, y: 5, z: 0, type: "sword", coveredBy: ["t0107", "t0108", "t0163", "t0202"] },
-    { id: "t0043", x: 6, y: 5, z: 0, type: "moon", coveredBy: ["t0108", "t0109", "t0164", "t0202", "t0203", "t0226"] },
-    { id: "t0044", x: 14, y: 5, z: 0, type: "potion", coveredBy: ["t0110", "t0165", "t0204", "t0227"] },
-    { id: "t0045", x: 16, y: 5, z: 0, type: "moon", coveredBy: ["t0110", "t0111", "t0166", "t0204", "t0205"] },
-    { id: "t0046", x: 18, y: 5, z: 0, type: "moon", coveredBy: ["t0111", "t0112", "t0167", "t0205"] },
-    { id: "t0047", x: 20, y: 5, z: 0, type: "book", coveredBy: ["t0112", "t0113"] },
-    { id: "t0049", x: 2, y: 6, z: 0, type: "flame", coveredBy: ["t0114", "t0115", "t0168"] },
-    { id: "t0050", x: 4, y: 6, z: 0, type: "gauntlet", coveredBy: ["t0115", "t0116", "t0169", "t0206"] },
-    { id: "t0051", x: 6, y: 6, z: 0, type: "sword", coveredBy: ["t0116", "t0117", "t0170", "t0206", "t0207", "t0228"] },
-    { id: "t0052", x: 14, y: 6, z: 0, type: "chest", coveredBy: ["t0118", "t0171", "t0208", "t0229"] },
-    { id: "t0053", x: 16, y: 6, z: 0, type: "book", coveredBy: ["t0118", "t0119", "t0172", "t0208", "t0209"] },
-    { id: "t0054", x: 18, y: 6, z: 0, type: "moon", coveredBy: ["t0119", "t0120", "t0173", "t0209"] },
-    { id: "t0055", x: 20, y: 6, z: 0, type: "chest", coveredBy: ["t0120", "t0121"] },
-    { id: "t0056", x: 0, y: 7, z: 0, type: "potion", coveredBy: ["t0122"] },
-    { id: "t0057", x: 2, y: 7, z: 0, type: "scroll", coveredBy: ["t0122", "t0123", "t0174"] },
-    { id: "t0058", x: 4, y: 7, z: 0, type: "shield", coveredBy: ["t0123", "t0124", "t0175", "t0210"] },
-    { id: "t0059", x: 6, y: 7, z: 0, type: "relic", coveredBy: ["t0124", "t0125", "t0176", "t0210", "t0211", "t0230"] },
-    { id: "t0060", x: 14, y: 7, z: 0, type: "flame", coveredBy: ["t0126", "t0177", "t0212", "t0231"] },
-    { id: "t0061", x: 16, y: 7, z: 0, type: "gauntlet", coveredBy: ["t0126", "t0127", "t0178", "t0212", "t0213"] },
-    { id: "t0062", x: 18, y: 7, z: 0, type: "sword", coveredBy: ["t0127", "t0128", "t0179", "t0213"] },
-    { id: "t0063", x: 20, y: 7, z: 0, type: "potion", coveredBy: ["t0128", "t0129"] },
-    { id: "t0065", x: 23, y: 9, z: 0, type: "flame", coveredBy: ["t0131", "t0181", "t0215", "t0233", "t0235", "t0237", "t0239", "t0241"] },
-    { id: "t0066", x: 3, y: 0, z: 1, type: "relic", coveredBy: ["t0132", "t0133"] },
-    { id: "t0067", x: 5, y: 0, z: 1, type: "book", coveredBy: ["t0133", "t0134", "t0182", "t0216"] },
-    { id: "t0068", x: 7, y: 0, z: 1, type: "gauntlet", coveredBy: ["t0134", "t0183", "t0216"] },
-    { id: "t0069", x: 10, y: 0, z: 1, type: "relic", coveredBy: [] },
-    { id: "t0070", x: 12, y: 0, z: 1, type: "relic", coveredBy: [] },
-    { id: "t0071", x: 15, y: 0, z: 1, type: "moon", coveredBy: ["t0135", "t0136", "t0184", "t0217"] },
-    { id: "t0072", x: 17, y: 0, z: 1, type: "relic", coveredBy: ["t0136", "t0137", "t0185"] },
-    { id: "t0073", x: 19, y: 0, z: 1, type: "book", coveredBy: ["t0137"] },
-    { id: "t0074", x: 3, y: 1, z: 1, type: "chest", coveredBy: ["t0138", "t0139"] },
-    { id: "t0075", x: 5, y: 1, z: 1, type: "crown", coveredBy: ["t0139", "t0140", "t0186", "t0218"] },
-    { id: "t0076", x: 7, y: 1, z: 1, type: "flame", coveredBy: ["t0140", "t0187", "t0218"] },
-    { id: "t0077", x: 10, y: 1, z: 1, type: "book", coveredBy: [] },
-    { id: "t0078", x: 12, y: 1, z: 1, type: "gauntlet", coveredBy: [] },
-    { id: "t0079", x: 15, y: 1, z: 1, type: "scroll", coveredBy: ["t0141", "t0142", "t0188", "t0219"] },
-    { id: "t0080", x: 17, y: 1, z: 1, type: "coin", coveredBy: ["t0142", "t0143", "t0189"] },
-    { id: "t0081", x: 19, y: 1, z: 1, type: "ring", coveredBy: ["t0143"] },
-    { id: "t0082", x: 1, y: 2, z: 1, type: "relic", coveredBy: ["t0144"] },
-    { id: "t0083", x: 3, y: 2, z: 1, type: "gem", coveredBy: ["t0144", "t0145"] },
-    { id: "t0084", x: 5, y: 2, z: 1, type: "key", coveredBy: ["t0145", "t0146", "t0190", "t0220"] },
-    { id: "t0085", x: 7, y: 2, z: 1, type: "ring", coveredBy: ["t0146", "t0191", "t0220"] },
-    { id: "t0086", x: 15, y: 2, z: 1, type: "gem", coveredBy: ["t0147", "t0148", "t0192", "t0221"] },
-    { id: "t0087", x: 17, y: 2, z: 1, type: "scroll", coveredBy: ["t0148", "t0149", "t0193"] },
-    { id: "t0088", x: 19, y: 2, z: 1, type: "flame", coveredBy: ["t0149"] },
-    { id: "t0089", x: 21, y: 2, z: 1, type: "gauntlet", coveredBy: [] },
-    { id: "t0090", x: 1, y: 3, z: 1, type: "sword", coveredBy: ["t0150"] },
-    { id: "t0091", x: 3, y: 3, z: 1, type: "shield", coveredBy: ["t0150", "t0151"] },
-    { id: "t0092", x: 5, y: 3, z: 1, type: "crown", coveredBy: ["t0151", "t0152", "t0194", "t0222"] },
-    { id: "t0093", x: 7, y: 3, z: 1, type: "gem", coveredBy: ["t0152", "t0195", "t0222"] },
-    { id: "t0094", x: 15, y: 3, z: 1, type: "ring", coveredBy: ["t0153", "t0154", "t0196", "t0223"] },
-    { id: "t0095", x: 17, y: 3, z: 1, type: "ring", coveredBy: ["t0154", "t0155", "t0197"] },
-    { id: "t0096", x: 19, y: 3, z: 1, type: "scroll", coveredBy: ["t0155"] },
-    { id: "t0097", x: 21, y: 3, z: 1, type: "crown", coveredBy: [] },
-    { id: "t0098", x: 1, y: 4, z: 1, type: "ring", coveredBy: ["t0156"] },
-    { id: "t0099", x: 3, y: 4, z: 1, type: "flame", coveredBy: ["t0156", "t0157"] },
-    { id: "t0100", x: 5, y: 4, z: 1, type: "helmet", coveredBy: ["t0157", "t0158", "t0198", "t0224"] },
-    { id: "t0101", x: 7, y: 4, z: 1, type: "scroll", coveredBy: ["t0158", "t0199", "t0224"] },
-    { id: "t0102", x: 15, y: 4, z: 1, type: "flame", coveredBy: ["t0159", "t0160", "t0200", "t0225"] },
-    { id: "t0103", x: 17, y: 4, z: 1, type: "scroll", coveredBy: ["t0160", "t0161", "t0201"] },
-    { id: "t0104", x: 19, y: 4, z: 1, type: "ring", coveredBy: ["t0161"] },
-    { id: "t0105", x: 21, y: 4, z: 1, type: "potion", coveredBy: [] },
-    { id: "t0106", x: 1, y: 5, z: 1, type: "key", coveredBy: ["t0162"] },
-    { id: "t0107", x: 3, y: 5, z: 1, type: "flame", coveredBy: ["t0162", "t0163"] },
-    { id: "t0108", x: 5, y: 5, z: 1, type: "gauntlet", coveredBy: ["t0163", "t0164", "t0202", "t0226"] },
-    { id: "t0109", x: 7, y: 5, z: 1, type: "ring", coveredBy: ["t0164", "t0203", "t0226"] },
-    { id: "t0110", x: 15, y: 5, z: 1, type: "helmet", coveredBy: ["t0165", "t0166", "t0204", "t0227"] },
-    { id: "t0111", x: 17, y: 5, z: 1, type: "flame", coveredBy: ["t0166", "t0167", "t0205"] },
-    { id: "t0112", x: 19, y: 5, z: 1, type: "crown", coveredBy: ["t0167"] },
-    { id: "t0113", x: 21, y: 5, z: 1, type: "book", coveredBy: [] },
-    { id: "t0114", x: 1, y: 6, z: 1, type: "flame", coveredBy: ["t0168"] },
-    { id: "t0115", x: 3, y: 6, z: 1, type: "sword", coveredBy: ["t0168", "t0169"] },
-    { id: "t0116", x: 5, y: 6, z: 1, type: "book", coveredBy: ["t0169", "t0170", "t0206", "t0228"] },
-    { id: "t0117", x: 7, y: 6, z: 1, type: "potion", coveredBy: ["t0170", "t0207", "t0228"] },
-    { id: "t0118", x: 15, y: 6, z: 1, type: "relic", coveredBy: ["t0171", "t0172", "t0208", "t0229"] },
-    { id: "t0119", x: 17, y: 6, z: 1, type: "moon", coveredBy: ["t0172", "t0173", "t0209"] },
-    { id: "t0120", x: 19, y: 6, z: 1, type: "book", coveredBy: ["t0173"] },
-    { id: "t0121", x: 21, y: 6, z: 1, type: "scroll", coveredBy: [] },
-    { id: "t0122", x: 1, y: 7, z: 1, type: "crown", coveredBy: ["t0174"] },
-    { id: "t0123", x: 3, y: 7, z: 1, type: "gem", coveredBy: ["t0174", "t0175"] },
-    { id: "t0124", x: 5, y: 7, z: 1, type: "gauntlet", coveredBy: ["t0175", "t0176", "t0210", "t0230"] },
-    { id: "t0125", x: 7, y: 7, z: 1, type: "shield", coveredBy: ["t0176", "t0211", "t0230"] },
-    { id: "t0126", x: 15, y: 7, z: 1, type: "shield", coveredBy: ["t0177", "t0178", "t0212", "t0231"] },
-    { id: "t0127", x: 17, y: 7, z: 1, type: "ring", coveredBy: ["t0178", "t0179", "t0213"] },
-    { id: "t0128", x: 19, y: 7, z: 1, type: "crown", coveredBy: ["t0179"] },
-    { id: "t0129", x: 21, y: 7, z: 1, type: "ring", coveredBy: [] },
-    { id: "t0130", x: -3, y: 9, z: 1, type: "key", coveredBy: ["t0180", "t0214", "t0232", "t0234", "t0236", "t0238", "t0240"] },
-    { id: "t0131", x: 23, y: 9, z: 1, type: "helmet", coveredBy: ["t0181", "t0215", "t0233", "t0235", "t0237", "t0239", "t0241"] },
-    { id: "t0132", x: 2, y: 0, z: 2, type: "chest", coveredBy: [] },
-    { id: "t0133", x: 4, y: 0, z: 2, type: "gem", coveredBy: ["t0182"] },
-    { id: "t0134", x: 6, y: 0, z: 2, type: "book", coveredBy: ["t0182", "t0183", "t0216"] },
-    { id: "t0135", x: 14, y: 0, z: 2, type: "helmet", coveredBy: ["t0184", "t0217"] },
-    { id: "t0136", x: 16, y: 0, z: 2, type: "gem", coveredBy: ["t0184", "t0185"] },
-    { id: "t0137", x: 18, y: 0, z: 2, type: "key", coveredBy: ["t0185"] },
-    { id: "t0138", x: 2, y: 1, z: 2, type: "helmet", coveredBy: [] },
-    { id: "t0139", x: 4, y: 1, z: 2, type: "potion", coveredBy: ["t0186"] },
-    { id: "t0140", x: 6, y: 1, z: 2, type: "coin", coveredBy: ["t0186", "t0187", "t0218"] },
-    { id: "t0141", x: 14, y: 1, z: 2, type: "coin", coveredBy: ["t0188", "t0219"] },
-    { id: "t0142", x: 16, y: 1, z: 2, type: "gem", coveredBy: ["t0188", "t0189"] },
-    { id: "t0143", x: 18, y: 1, z: 2, type: "moon", coveredBy: ["t0189"] },
-    { id: "t0144", x: 2, y: 2, z: 2, type: "coin", coveredBy: [] },
-    { id: "t0145", x: 4, y: 2, z: 2, type: "gauntlet", coveredBy: ["t0190"] },
-    { id: "t0146", x: 6, y: 2, z: 2, type: "coin", coveredBy: ["t0190", "t0191", "t0220"] },
-    { id: "t0147", x: 14, y: 2, z: 2, type: "relic", coveredBy: ["t0192", "t0221"] },
-    { id: "t0148", x: 16, y: 2, z: 2, type: "book", coveredBy: ["t0192", "t0193"] },
-    { id: "t0149", x: 18, y: 2, z: 2, type: "potion", coveredBy: ["t0193"] },
-    { id: "t0150", x: 2, y: 3, z: 2, type: "sword", coveredBy: [] },
-    { id: "t0151", x: 4, y: 3, z: 2, type: "shield", coveredBy: ["t0194"] },
-    { id: "t0152", x: 6, y: 3, z: 2, type: "key", coveredBy: ["t0194", "t0195", "t0222"] },
-    { id: "t0153", x: 14, y: 3, z: 2, type: "gem", coveredBy: ["t0196", "t0223"] },
-    { id: "t0154", x: 16, y: 3, z: 2, type: "moon", coveredBy: ["t0196", "t0197"] },
-    { id: "t0155", x: 18, y: 3, z: 2, type: "chest", coveredBy: ["t0197"] },
-    { id: "t0156", x: 2, y: 4, z: 2, type: "potion", coveredBy: [] },
-    { id: "t0157", x: 4, y: 4, z: 2, type: "gem", coveredBy: ["t0198"] },
-    { id: "t0158", x: 6, y: 4, z: 2, type: "relic", coveredBy: ["t0198", "t0199", "t0224"] },
-    { id: "t0159", x: 14, y: 4, z: 2, type: "gauntlet", coveredBy: ["t0200", "t0225"] },
-    { id: "t0160", x: 16, y: 4, z: 2, type: "chest", coveredBy: ["t0200", "t0201"] },
-    { id: "t0161", x: 18, y: 4, z: 2, type: "chest", coveredBy: ["t0201"] },
-    { id: "t0162", x: 2, y: 5, z: 2, type: "gem", coveredBy: [] },
-    { id: "t0163", x: 4, y: 5, z: 2, type: "ring", coveredBy: ["t0202"] },
-    { id: "t0164", x: 6, y: 5, z: 2, type: "flame", coveredBy: ["t0202", "t0203", "t0226"] },
-    { id: "t0165", x: 14, y: 5, z: 2, type: "gem", coveredBy: ["t0204", "t0227"] },
-    { id: "t0166", x: 16, y: 5, z: 2, type: "chest", coveredBy: ["t0204", "t0205"] },
-    { id: "t0167", x: 18, y: 5, z: 2, type: "ring", coveredBy: ["t0205"] },
-    { id: "t0168", x: 2, y: 6, z: 2, type: "gauntlet", coveredBy: [] },
-    { id: "t0169", x: 4, y: 6, z: 2, type: "scroll", coveredBy: ["t0206"] },
-    { id: "t0170", x: 6, y: 6, z: 2, type: "coin", coveredBy: ["t0206", "t0207", "t0228"] },
-    { id: "t0171", x: 14, y: 6, z: 2, type: "shield", coveredBy: ["t0208", "t0229"] },
-    { id: "t0172", x: 16, y: 6, z: 2, type: "moon", coveredBy: ["t0208", "t0209"] },
-    { id: "t0173", x: 18, y: 6, z: 2, type: "scroll", coveredBy: ["t0209"] },
-    { id: "t0174", x: 2, y: 7, z: 2, type: "coin", coveredBy: [] },
-    { id: "t0175", x: 4, y: 7, z: 2, type: "scroll", coveredBy: ["t0210"] },
-    { id: "t0176", x: 6, y: 7, z: 2, type: "moon", coveredBy: ["t0210", "t0211", "t0230"] },
-    { id: "t0177", x: 14, y: 7, z: 2, type: "gem", coveredBy: ["t0212", "t0231"] },
-    { id: "t0178", x: 16, y: 7, z: 2, type: "crown", coveredBy: ["t0212", "t0213"] },
-    { id: "t0179", x: 18, y: 7, z: 2, type: "coin", coveredBy: ["t0213"] },
-    { id: "t0180", x: -3, y: 9, z: 2, type: "scroll", coveredBy: ["t0214", "t0232", "t0234", "t0236", "t0238", "t0240"] },
-    { id: "t0181", x: 23, y: 9, z: 2, type: "book", coveredBy: ["t0215", "t0233", "t0235", "t0237", "t0239", "t0241"] },
-    { id: "t0182", x: 5, y: 0, z: 3, type: "chest", coveredBy: ["t0216"] },
-    { id: "t0183", x: 7, y: 0, z: 3, type: "relic", coveredBy: ["t0216"] },
-    { id: "t0184", x: 15, y: 0, z: 3, type: "shield", coveredBy: ["t0217"] },
-    { id: "t0185", x: 17, y: 0, z: 3, type: "key", coveredBy: [] },
-    { id: "t0186", x: 5, y: 1, z: 3, type: "flame", coveredBy: ["t0218"] },
-    { id: "t0187", x: 7, y: 1, z: 3, type: "potion", coveredBy: ["t0218"] },
-    { id: "t0188", x: 15, y: 1, z: 3, type: "shield", coveredBy: ["t0219"] },
-    { id: "t0189", x: 17, y: 1, z: 3, type: "sword", coveredBy: [] },
-    { id: "t0190", x: 5, y: 2, z: 3, type: "relic", coveredBy: ["t0220"] },
-    { id: "t0191", x: 7, y: 2, z: 3, type: "book", coveredBy: ["t0220"] },
-    { id: "t0192", x: 15, y: 2, z: 3, type: "potion", coveredBy: ["t0221"] },
-    { id: "t0193", x: 17, y: 2, z: 3, type: "crown", coveredBy: [] },
-    { id: "t0194", x: 5, y: 3, z: 3, type: "crown", coveredBy: ["t0222"] },
-    { id: "t0195", x: 7, y: 3, z: 3, type: "coin", coveredBy: ["t0222"] },
-    { id: "t0196", x: 15, y: 3, z: 3, type: "shield", coveredBy: ["t0223"] },
-    { id: "t0197", x: 17, y: 3, z: 3, type: "relic", coveredBy: [] },
-    { id: "t0198", x: 5, y: 4, z: 3, type: "flame", coveredBy: ["t0224"] },
-    { id: "t0199", x: 7, y: 4, z: 3, type: "helmet", coveredBy: ["t0224"] },
-    { id: "t0200", x: 15, y: 4, z: 3, type: "key", coveredBy: ["t0225"] },
-    { id: "t0201", x: 17, y: 4, z: 3, type: "scroll", coveredBy: [] },
-    { id: "t0202", x: 5, y: 5, z: 3, type: "key", coveredBy: ["t0226"] },
-    { id: "t0203", x: 7, y: 5, z: 3, type: "relic", coveredBy: ["t0226"] },
-    { id: "t0204", x: 15, y: 5, z: 3, type: "chest", coveredBy: ["t0227"] },
-    { id: "t0205", x: 17, y: 5, z: 3, type: "chest", coveredBy: [] },
-    { id: "t0206", x: 5, y: 6, z: 3, type: "crown", coveredBy: ["t0228"] },
-    { id: "t0207", x: 7, y: 6, z: 3, type: "ring", coveredBy: ["t0228"] },
-    { id: "t0208", x: 15, y: 6, z: 3, type: "sword", coveredBy: ["t0229"] },
-    { id: "t0209", x: 17, y: 6, z: 3, type: "crown", coveredBy: [] },
-    { id: "t0210", x: 5, y: 7, z: 3, type: "chest", coveredBy: ["t0230"] },
-    { id: "t0211", x: 7, y: 7, z: 3, type: "crown", coveredBy: ["t0230"] },
-    { id: "t0212", x: 15, y: 7, z: 3, type: "chest", coveredBy: ["t0231"] },
-    { id: "t0213", x: 17, y: 7, z: 3, type: "shield", coveredBy: [] },
-    { id: "t0214", x: -3, y: 9, z: 3, type: "helmet", coveredBy: ["t0232", "t0234", "t0236", "t0238", "t0240"] },
-    { id: "t0215", x: 23, y: 9, z: 3, type: "coin", coveredBy: ["t0233", "t0235", "t0237", "t0239", "t0241"] },
-    { id: "t0216", x: 6, y: 0, z: 4, type: "sword", coveredBy: [] },
-    { id: "t0217", x: 14, y: 0, z: 4, type: "relic", coveredBy: [] },
-    { id: "t0218", x: 6, y: 1, z: 4, type: "sword", coveredBy: [] },
-    { id: "t0219", x: 14, y: 1, z: 4, type: "scroll", coveredBy: [] },
-    { id: "t0220", x: 6, y: 2, z: 4, type: "moon", coveredBy: [] },
-    { id: "t0221", x: 14, y: 2, z: 4, type: "moon", coveredBy: [] },
-    { id: "t0222", x: 6, y: 3, z: 4, type: "crown", coveredBy: [] },
-    { id: "t0223", x: 14, y: 3, z: 4, type: "chest", coveredBy: [] },
-    { id: "t0224", x: 6, y: 4, z: 4, type: "potion", coveredBy: [] },
-    { id: "t0225", x: 14, y: 4, z: 4, type: "sword", coveredBy: [] },
-    { id: "t0226", x: 6, y: 5, z: 4, type: "shield", coveredBy: [] },
-    { id: "t0227", x: 14, y: 5, z: 4, type: "key", coveredBy: [] },
-    { id: "t0228", x: 6, y: 6, z: 4, type: "key", coveredBy: [] },
-    { id: "t0229", x: 14, y: 6, z: 4, type: "shield", coveredBy: [] },
-    { id: "t0230", x: 6, y: 7, z: 4, type: "crown", coveredBy: [] },
-    { id: "t0231", x: 14, y: 7, z: 4, type: "coin", coveredBy: [] },
-    { id: "t0232", x: -3, y: 9, z: 4, type: "key", coveredBy: ["t0234", "t0236", "t0238", "t0240"] },
-    { id: "t0233", x: 23, y: 9, z: 4, type: "key", coveredBy: ["t0235", "t0237", "t0239", "t0241"] },
-    { id: "t0234", x: -3, y: 9, z: 5, type: "sword", coveredBy: ["t0236", "t0238", "t0240"] },
-    { id: "t0235", x: 23, y: 9, z: 5, type: "coin", coveredBy: ["t0237", "t0239", "t0241"] },
-    { id: "t0236", x: -3, y: 9, z: 6, type: "potion", coveredBy: ["t0238", "t0240"] },
-    { id: "t0237", x: 23, y: 9, z: 6, type: "helmet", coveredBy: ["t0239", "t0241"] },
-    { id: "t0238", x: -3, y: 9, z: 7, type: "flame", coveredBy: ["t0240"] },
-    { id: "t0239", x: 23, y: 9, z: 7, type: "gauntlet", coveredBy: ["t0241"] },
-    { id: "t0240", x: -3, y: 9, z: 8, type: "shield", coveredBy: [] },
-    { id: "t0241", x: 23, y: 9, z: 8, type: "coin", coveredBy: [] }
+// ─────────────────────────────────────────────────────
+//  PYRAMID MAHJONG BOARD — 132 tiles (44 triplets)
+//
+//  Layout philosophy:
+//  • Center-heavy pyramid: 5 z-layers, widest at bottom
+//  • z=0 base: wide rectangle of buried tiles (many covered)
+//  • z=1..4: progressively narrower and centered
+//  • z=4: small peaked top (5-9 tiles)
+//
+//  isTileLocked checks BOTH:
+//    1. Top-covering: any coveredBy tile still on board
+//    2. Left/right: tile at (x-2, same y, same z) OR (x+2, same y, same z)
+//       still on board → blocked on that side (must have at least one side free)
+//
+//  Match distribution (controlled exposure):
+//  • z=4 top  : 3 triplets (sword×3, gem×3, key×3)       — always 3 free matches peak
+//  • z=3      : 4 triplets — mostly buried by z=4
+//  • z=2      : 8 triplets — mostly buried by z=3
+//  • z=1      : 14 triplets — mostly buried by z=2
+//  • z=0 base : 15 triplets — all buried by z=1+
+//
+//  Tile types per layer spread so no type appears 3x on surface until
+//  top is consumed — forces layer-by-layer unlocking decisions.
+//
+//  Grid: x is col (each tile = 2 x-units wide), y is row.
+//  Tile at (x,y) occupies x-columns [x, x+1].
+//  A tile at (x+1, y, z+1) sits half-overlapping = classic stagger.
+//  CoveredBy: all z-1 tiles that overlap this tile's footprint.
+// ─────────────────────────────────────────────────────
+
+// Helper: build id
+function tid(n: number) { return `t${String(n).padStart(4, '0')}`; }
+
+// ─── LAYER 4 (PEAK) — 9 tiles = 3 triplets, always free ─
+// Small 3×3 grid at center. Nothing covers them (z=4 = top).
+// x: 8,10,12  y: 3,4,5  z:4
+// Every tile at z=4 has coveredBy=[] and no left/right neighbors at same z.
+// 3 types × 3 = sword, gem, key
+const z4: TripleTileNode[] = [
+    // Row y=3: sword, gem, key
+    { id: tid(400), x: 8,  y: 3, z: 4, type: 'sword', coveredBy: [] },
+    { id: tid(401), x: 10, y: 3, z: 4, type: 'gem',   coveredBy: [] },
+    { id: tid(402), x: 12, y: 3, z: 4, type: 'key',   coveredBy: [] },
+    // Row y=4: sword, gem, key
+    { id: tid(403), x: 8,  y: 4, z: 4, type: 'sword', coveredBy: [] },
+    { id: tid(404), x: 10, y: 4, z: 4, type: 'gem',   coveredBy: [] },
+    { id: tid(405), x: 12, y: 4, z: 4, type: 'key',   coveredBy: [] },
+    // Row y=5: sword, gem, key
+    { id: tid(406), x: 8,  y: 5, z: 4, type: 'sword', coveredBy: [] },
+    { id: tid(407), x: 10, y: 5, z: 4, type: 'gem',   coveredBy: [] },
+    { id: tid(408), x: 12, y: 5, z: 4, type: 'key',   coveredBy: [] },
 ];
 
+// ─── LAYER 3 — 15 tiles = 5 triplets ─────────────────────
+// Wider: x: 7..13  y: 2..6  z:3
+// Tiles directly under z=4 are covered. Edge tiles may be free initially
+// but left/right neighbors at same z block them.
+// Types: shield, crown, scroll, coin, relic
+const z3: TripleTileNode[] = [
+    // y=2 (top of z3): partially free (no z4 above, but left/right blocked by neighbors)
+    { id: tid(300), x: 7,  y: 2, z: 3, type: 'shield', coveredBy: [] },
+    { id: tid(301), x: 9,  y: 2, z: 3, type: 'crown',  coveredBy: [] },
+    { id: tid(302), x: 11, y: 2, z: 3, type: 'shield', coveredBy: [] },
+    { id: tid(303), x: 13, y: 2, z: 3, type: 'crown',  coveredBy: [] },
+    // y=3: covered by z4 t400,401,402
+    { id: tid(304), x: 7,  y: 3, z: 3, type: 'scroll', coveredBy: [tid(400)] },
+    { id: tid(305), x: 9,  y: 3, z: 3, type: 'crown',  coveredBy: [tid(400), tid(401)] },
+    { id: tid(306), x: 11, y: 3, z: 3, type: 'scroll', coveredBy: [tid(401), tid(402)] },
+    { id: tid(307), x: 13, y: 3, z: 3, type: 'coin',   coveredBy: [tid(402)] },
+    // y=4: covered by z4
+    { id: tid(308), x: 7,  y: 4, z: 3, type: 'relic',  coveredBy: [tid(403)] },
+    { id: tid(309), x: 9,  y: 4, z: 3, type: 'scroll', coveredBy: [tid(403), tid(404)] },
+    { id: tid(310), x: 11, y: 4, z: 3, type: 'relic',  coveredBy: [tid(404), tid(405)] },
+    { id: tid(311), x: 13, y: 4, z: 3, type: 'coin',   coveredBy: [tid(405)] },
+    // y=5: covered by z4
+    { id: tid(312), x: 7,  y: 5, z: 3, type: 'shield', coveredBy: [tid(406)] },
+    { id: tid(313), x: 9,  y: 5, z: 3, type: 'coin',   coveredBy: [tid(406), tid(407)] },
+    { id: tid(314), x: 11, y: 5, z: 3, type: 'relic',  coveredBy: [tid(407), tid(408)] },
+    { id: tid(315), x: 13, y: 5, z: 3, type: 'coin',   coveredBy: [tid(408)] },
+    // y=6 (bottom of z3): free from above
+    { id: tid(316), x: 7,  y: 6, z: 3, type: 'scroll', coveredBy: [] },
+    { id: tid(317), x: 9,  y: 6, z: 3, type: 'relic',  coveredBy: [] },
+    { id: tid(318), x: 11, y: 6, z: 3, type: 'shield', coveredBy: [] },
+    { id: tid(319), x: 13, y: 6, z: 3, type: 'scroll', coveredBy: [] },
+];
+
+// ─── LAYER 2 — 24 tiles = 8 triplets ─────────────────────
+// x: 6..14  y: 1..7  z:2
+// Types: helmet, potion, ring, flame, book, gauntlet, chest, moon
+const z2: TripleTileNode[] = [
+    // y=1 (top of z2, no z3 above unless overlap)
+    { id: tid(200), x: 6,  y: 1, z: 2, type: 'helmet',  coveredBy: [] },
+    { id: tid(201), x: 8,  y: 1, z: 2, type: 'potion',  coveredBy: [tid(300)] },
+    { id: tid(202), x: 10, y: 1, z: 2, type: 'helmet',  coveredBy: [tid(301), tid(302)] },
+    { id: tid(203), x: 12, y: 1, z: 2, type: 'potion',  coveredBy: [tid(302), tid(303)] },
+    { id: tid(204), x: 14, y: 1, z: 2, type: 'helmet',  coveredBy: [tid(303)] },
+    // y=2
+    { id: tid(205), x: 6,  y: 2, z: 2, type: 'ring',    coveredBy: [tid(300)] },
+    { id: tid(206), x: 8,  y: 2, z: 2, type: 'flame',   coveredBy: [tid(300), tid(301), tid(304), tid(305)] },
+    { id: tid(207), x: 10, y: 2, z: 2, type: 'ring',    coveredBy: [tid(301), tid(302), tid(305), tid(306)] },
+    { id: tid(208), x: 12, y: 2, z: 2, type: 'flame',   coveredBy: [tid(302), tid(303), tid(306), tid(307)] },
+    { id: tid(209), x: 14, y: 2, z: 2, type: 'ring',    coveredBy: [tid(303), tid(307)] },
+    // y=3 middle rows
+    { id: tid(210), x: 6,  y: 3, z: 2, type: 'book',    coveredBy: [tid(304)] },
+    { id: tid(211), x: 14, y: 3, z: 2, type: 'book',    coveredBy: [tid(307)] },
+    // y=4
+    { id: tid(212), x: 6,  y: 4, z: 2, type: 'gauntlet',coveredBy: [tid(308)] },
+    { id: tid(213), x: 14, y: 4, z: 2, type: 'gauntlet',coveredBy: [tid(311)] },
+    // y=5
+    { id: tid(214), x: 6,  y: 5, z: 2, type: 'chest',   coveredBy: [tid(312)] },
+    { id: tid(215), x: 14, y: 5, z: 2, type: 'chest',   coveredBy: [tid(315)] },
+    // y=6
+    { id: tid(216), x: 6,  y: 6, z: 2, type: 'moon',    coveredBy: [tid(316)] },
+    { id: tid(217), x: 8,  y: 6, z: 2, type: 'book',    coveredBy: [tid(316), tid(317)] },
+    { id: tid(218), x: 10, y: 6, z: 2, type: 'gauntlet',coveredBy: [tid(317), tid(318)] },
+    { id: tid(219), x: 12, y: 6, z: 2, type: 'moon',    coveredBy: [tid(318), tid(319)] },
+    { id: tid(220), x: 14, y: 6, z: 2, type: 'chest',   coveredBy: [tid(319)] },
+    // y=7 (bottom of z2)
+    { id: tid(221), x: 6,  y: 7, z: 2, type: 'moon',    coveredBy: [] },
+    { id: tid(222), x: 10, y: 7, z: 2, type: 'potion',  coveredBy: [] },
+    { id: tid(223), x: 14, y: 7, z: 2, type: 'flame',   coveredBy: [] },
+];
+
+// ─── LAYER 1 — 30 tiles = 10 triplets ────────────────────
+// x: 4..16  y: 0..8  z:1
+// Types: sword(r), shield(r), potion(r), gem(r), key(r), scroll(r), helmet(r), coin(r), relic(r), crown(r)
+// Note: we re-introduce some types here that are also in z=4 (sword/gem/key)
+// but they're buried — player must unlock them.
+const z1: TripleTileNode[] = [
+    // Row y=0
+    { id: tid(100), x: 4,  y: 0, z: 1, type: 'sword',   coveredBy: [tid(200)] },
+    { id: tid(101), x: 6,  y: 0, z: 1, type: 'gem',     coveredBy: [tid(200), tid(201)] },
+    { id: tid(102), x: 8,  y: 0, z: 1, type: 'sword',   coveredBy: [tid(201), tid(202)] },
+    { id: tid(103), x: 10, y: 0, z: 1, type: 'gem',     coveredBy: [tid(202), tid(203)] },
+    { id: tid(104), x: 12, y: 0, z: 1, type: 'sword',   coveredBy: [tid(203), tid(204)] },
+    { id: tid(105), x: 14, y: 0, z: 1, type: 'gem',     coveredBy: [tid(204)] },
+    { id: tid(106), x: 16, y: 0, z: 1, type: 'key',     coveredBy: [] },
+    // Row y=1
+    { id: tid(107), x: 4,  y: 1, z: 1, type: 'shield',  coveredBy: [tid(200), tid(205)] },
+    { id: tid(108), x: 16, y: 1, z: 1, type: 'shield',  coveredBy: [tid(204)] },
+    // Row y=2
+    { id: tid(109), x: 4,  y: 2, z: 1, type: 'key',     coveredBy: [tid(205)] },
+    { id: tid(110), x: 16, y: 2, z: 1, type: 'scroll',  coveredBy: [tid(209)] },
+    // Row y=3
+    { id: tid(111), x: 4,  y: 3, z: 1, type: 'scroll',  coveredBy: [tid(205), tid(210)] },
+    { id: tid(112), x: 16, y: 3, z: 1, type: 'key',     coveredBy: [tid(209), tid(211)] },
+    // Row y=4
+    { id: tid(113), x: 4,  y: 4, z: 1, type: 'helmet',  coveredBy: [tid(210), tid(212)] },
+    { id: tid(114), x: 16, y: 4, z: 1, type: 'helmet',  coveredBy: [tid(211), tid(213)] },
+    // Row y=5
+    { id: tid(115), x: 4,  y: 5, z: 1, type: 'coin',    coveredBy: [tid(212), tid(214)] },
+    { id: tid(116), x: 16, y: 5, z: 1, type: 'coin',    coveredBy: [tid(213), tid(215)] },
+    // Row y=6
+    { id: tid(117), x: 4,  y: 6, z: 1, type: 'relic',   coveredBy: [tid(214), tid(216)] },
+    { id: tid(118), x: 16, y: 6, z: 1, type: 'relic',   coveredBy: [tid(215), tid(220)] },
+    // Row y=7
+    { id: tid(119), x: 4,  y: 7, z: 1, type: 'crown',   coveredBy: [tid(216), tid(221)] },
+    { id: tid(120), x: 6,  y: 7, z: 1, type: 'scroll',  coveredBy: [tid(221)] },
+    { id: tid(121), x: 8,  y: 7, z: 1, type: 'coin',    coveredBy: [tid(221), tid(222)] },
+    { id: tid(122), x: 10, y: 7, z: 1, type: 'relic',   coveredBy: [tid(222)] },
+    { id: tid(123), x: 12, y: 7, z: 1, type: 'crown',   coveredBy: [tid(222), tid(223)] },
+    { id: tid(124), x: 14, y: 7, z: 1, type: 'helmet',  coveredBy: [tid(223)] },
+    { id: tid(125), x: 16, y: 7, z: 1, type: 'crown',   coveredBy: [tid(220), tid(223)] },
+    // Row y=8 bottom edge
+    { id: tid(126), x: 4,  y: 8, z: 1, type: 'shield',  coveredBy: [] },
+    { id: tid(127), x: 8,  y: 8, z: 1, type: 'helmet',  coveredBy: [tid(119), tid(121)] },
+    { id: tid(128), x: 12, y: 8, z: 1, type: 'coin',    coveredBy: [tid(123), tid(124)] },
+    { id: tid(129), x: 16, y: 8, z: 1, type: 'shield',  coveredBy: [] },
+];
+
+// ─── LAYER 0 (BASE) — 54 tiles = 18 triplets ─────────────
+// Widest layer, all partially or fully buried.
+// x: 2..18  y: 0..9  z:0
+// Types: all 16, spread so that matching types are on different sides
+// or buried — no type has 3 free simultaneously until layers above clear.
+const z0: TripleTileNode[] = [
+    // ── top rows (y=0..1) — covered by z1 row y=0
+    { id: tid(0),   x: 2,  y: 0, z: 0, type: 'flame',   coveredBy: [tid(100)] },
+    { id: tid(1),   x: 4,  y: 0, z: 0, type: 'gauntlet',coveredBy: [tid(100), tid(101)] },
+    { id: tid(2),   x: 6,  y: 0, z: 0, type: 'chest',   coveredBy: [tid(101), tid(102)] },
+    { id: tid(3),   x: 8,  y: 0, z: 0, type: 'moon',    coveredBy: [tid(102), tid(103)] },
+    { id: tid(4),   x: 10, y: 0, z: 0, type: 'ring',    coveredBy: [tid(103), tid(104)] },
+    { id: tid(5),   x: 12, y: 0, z: 0, type: 'book',    coveredBy: [tid(104), tid(105)] },
+    { id: tid(6),   x: 14, y: 0, z: 0, type: 'potion',  coveredBy: [tid(105), tid(106)] },
+    { id: tid(7),   x: 16, y: 0, z: 0, type: 'flame',   coveredBy: [tid(106)] },
+    { id: tid(8),   x: 18, y: 0, z: 0, type: 'gauntlet',coveredBy: [] },
+    // y=1
+    { id: tid(9),   x: 2,  y: 1, z: 0, type: 'chest',   coveredBy: [tid(100), tid(107)] },
+    { id: tid(10),  x: 4,  y: 1, z: 0, type: 'moon',    coveredBy: [tid(107)] },
+    { id: tid(11),  x: 14, y: 1, z: 0, type: 'ring',    coveredBy: [tid(108)] },
+    { id: tid(12),  x: 16, y: 1, z: 0, type: 'book',    coveredBy: [tid(108)] },
+    { id: tid(13),  x: 18, y: 1, z: 0, type: 'potion',  coveredBy: [] },
+    // y=2
+    { id: tid(14),  x: 2,  y: 2, z: 0, type: 'ring',    coveredBy: [tid(109)] },
+    { id: tid(15),  x: 4,  y: 2, z: 0, type: 'flame',   coveredBy: [tid(109)] },
+    { id: tid(16),  x: 14, y: 2, z: 0, type: 'gauntlet',coveredBy: [tid(110)] },
+    { id: tid(17),  x: 16, y: 2, z: 0, type: 'chest',   coveredBy: [tid(110)] },
+    { id: tid(18),  x: 18, y: 2, z: 0, type: 'moon',    coveredBy: [] },
+    // y=3
+    { id: tid(19),  x: 2,  y: 3, z: 0, type: 'book',    coveredBy: [tid(111)] },
+    { id: tid(20),  x: 4,  y: 3, z: 0, type: 'ring',    coveredBy: [tid(111)] },
+    { id: tid(21),  x: 14, y: 3, z: 0, type: 'flame',   coveredBy: [tid(112)] },
+    { id: tid(22),  x: 16, y: 3, z: 0, type: 'gauntlet',coveredBy: [tid(112)] },
+    { id: tid(23),  x: 18, y: 3, z: 0, type: 'book',    coveredBy: [] },
+    // y=4
+    { id: tid(24),  x: 2,  y: 4, z: 0, type: 'potion',  coveredBy: [tid(113)] },
+    { id: tid(25),  x: 4,  y: 4, z: 0, type: 'chest',   coveredBy: [tid(113)] },
+    { id: tid(26),  x: 14, y: 4, z: 0, type: 'moon',    coveredBy: [tid(114)] },
+    { id: tid(27),  x: 16, y: 4, z: 0, type: 'potion',  coveredBy: [tid(114)] },
+    { id: tid(28),  x: 18, y: 4, z: 0, type: 'ring',    coveredBy: [] },
+    // y=5
+    { id: tid(29),  x: 2,  y: 5, z: 0, type: 'flame',   coveredBy: [tid(115)] },
+    { id: tid(30),  x: 4,  y: 5, z: 0, type: 'gauntlet',coveredBy: [tid(115)] },
+    { id: tid(31),  x: 14, y: 5, z: 0, type: 'book',    coveredBy: [tid(116)] },
+    { id: tid(32),  x: 16, y: 5, z: 0, type: 'flame',   coveredBy: [tid(116)] },
+    { id: tid(33),  x: 18, y: 5, z: 0, type: 'chest',   coveredBy: [] },
+    // y=6
+    { id: tid(34),  x: 2,  y: 6, z: 0, type: 'moon',    coveredBy: [tid(117)] },
+    { id: tid(35),  x: 4,  y: 6, z: 0, type: 'ring',    coveredBy: [tid(117)] },
+    { id: tid(36),  x: 14, y: 6, z: 0, type: 'potion',  coveredBy: [tid(118)] },
+    { id: tid(37),  x: 16, y: 6, z: 0, type: 'gauntlet',coveredBy: [tid(118)] },
+    { id: tid(38),  x: 18, y: 6, z: 0, type: 'moon',    coveredBy: [] },
+    // y=7
+    { id: tid(39),  x: 2,  y: 7, z: 0, type: 'book',    coveredBy: [tid(119)] },
+    { id: tid(40),  x: 4,  y: 7, z: 0, type: 'chest',   coveredBy: [tid(119), tid(120)] },
+    { id: tid(41),  x: 6,  y: 7, z: 0, type: 'flame',   coveredBy: [tid(120), tid(121)] },
+    { id: tid(42),  x: 8,  y: 7, z: 0, type: 'gauntlet',coveredBy: [tid(121), tid(122)] },
+    { id: tid(43),  x: 10, y: 7, z: 0, type: 'book',    coveredBy: [tid(122), tid(123)] },
+    { id: tid(44),  x: 12, y: 7, z: 0, type: 'chest',   coveredBy: [tid(123), tid(124)] },
+    { id: tid(45),  x: 14, y: 7, z: 0, type: 'potion',  coveredBy: [tid(124), tid(125)] },
+    { id: tid(46),  x: 16, y: 7, z: 0, type: 'ring',    coveredBy: [tid(125)] },
+    { id: tid(47),  x: 18, y: 7, z: 0, type: 'flame',   coveredBy: [] },
+    { id: tid(48),  x: 2,  y: 8, z: 0, type: 'gauntlet',coveredBy: [tid(126)] },
+    { id: tid(49),  x: 18, y: 8, z: 0, type: 'ring',    coveredBy: [tid(129)] },
+    { id: tid(50),  x: 6,  y: 9, z: 0, type: 'moon',    coveredBy: [tid(127)] },
+    { id: tid(51),  x: 14, y: 9, z: 0, type: 'book',    coveredBy: [tid(128)] },
+];
+
+export const trueTripleTileMap: TripleTileNode[] = [
+    ...z0,
+    ...z1,
+    ...z2,
+    ...z3,
+    ...z4,
+];
+
+// ─────────────────────────────────────────────────────────
+//  isTileLocked — DUAL RULE:
+//
+//  A tile is LOCKED (not selectable) if ANY of:
+//    1. TOP-COVERED: any ID in tile.coveredBy still exists on the board.
+//    2. SIDE-BLOCKED: tile has both a left neighbor (x-2, same y/z) AND
+//       a right neighbor (x+2, same y/z) still on the board.
+//       i.e. BOTH sides must be occupied → blocked.
+//       If at least one side is free → selectable (even if top free).
+//
+//  This matches classic Mahjong rules exactly:
+//    ✅ Fully exposed AND at least one side clear = selectable
+//    ❌ Covered from above = locked
+//    ❌ Flanked on both sides = locked
+// ─────────────────────────────────────────────────────────
 export function isTileLocked(tile: TripleTileNode, board: TripleTileNode[]): boolean {
-    if (tile.coveredBy.length === 0) return false;
     const boardIds = new Set(board.map(b => b.id));
-    return tile.coveredBy.some(id => boardIds.has(id));
+
+    // Rule 1: top-covered
+    if (tile.coveredBy.some(id => boardIds.has(id))) return true;
+
+    // Rule 2: both sides blocked at same layer
+    // A "left neighbor" is a tile at x = tile.x - 2, same y and z.
+    // A "right neighbor" is a tile at x = tile.x + 2, same y and z.
+    const hasLeft  = board.some(b => b.z === tile.z && b.y === tile.y && b.x === tile.x - 2 && b.id !== tile.id);
+    const hasRight = board.some(b => b.z === tile.z && b.y === tile.y && b.x === tile.x + 2 && b.id !== tile.id);
+
+    if (hasLeft && hasRight) return true; // fully flanked
+
+    return false;
 }
 
 export const bedrockDivots: { x: number; y: number }[] = [];
@@ -298,4 +345,237 @@ export function isDirectStackLocked(tile: TripleTileNode, tiles: TripleTileNode[
 export function isLeftRightBlocked() { return false; }
 export function generateBoard() { return []; }
 export function generateStackBoard() { return []; }
-export function generateValidBoard() { return trueTripleTileMap; }
+type Accessibility = 'easy' | 'medium' | 'deep';
+
+interface BoardCell extends TripleTileNode {
+    bucket: Accessibility;
+    wave: number;
+}
+
+interface TileGroup {
+    type: string;
+    count: 3 | 6;
+}
+
+function classifyBoardCells(layout: TripleTileNode[]): BoardCell[] {
+    let cells: BoardCell[] = layout.map(t => ({ ...t, bucket: 'deep', wave: -1 }));
+    let remainingIds = new Set(cells.map(c => c.id));
+    
+    let wave = 0;
+    while (remainingIds.size > 0) {
+        const remainingCells = cells.filter(c => remainingIds.has(c.id));
+        const freeInWave = remainingCells.filter(c => !isTileLocked(c, remainingCells));
+        
+        if (freeInWave.length === 0) {
+            // Deadlock fallback -> dump rest in last wave
+            for (let id of remainingIds) {
+                const c = cells.find(x => x.id === id)!;
+                c.wave = wave;
+            }
+            break;
+        }
+
+        for (let c of freeInWave) {
+            const cell = cells.find(x => x.id === c.id)!;
+            cell.wave = wave;
+            remainingIds.delete(c.id);
+        }
+        wave++;
+    }
+
+    cells.sort((a, b) => a.wave - b.wave);
+    
+    const easyCount = Math.floor(cells.length * 0.35);
+    const mediumCount = Math.floor(cells.length * 0.40);
+    
+    for (let i = 0; i < cells.length; i++) {
+        if (i < easyCount) cells[i].bucket = 'easy';
+        else if (i < easyCount + mediumCount) cells[i].bucket = 'medium';
+        else cells[i].bucket = 'deep';
+    }
+
+    return cells;
+}
+
+function generateTileGroups(totalTiles: number, types: readonly string[]): TileGroup[] {
+    if (totalTiles % 3 !== 0) throw new Error("totalTiles must be divisible by 3");
+    
+    const groupsNeeded = totalTiles / 3;
+    let shuffledTypes = [...types].sort(() => Math.random() - 0.5);
+    const usedTypeCount = Math.min(shuffledTypes.length, groupsNeeded);
+    const usedTypes = shuffledTypes.slice(0, usedTypeCount);
+
+    const groupsPerType: Record<string, number> = {};
+    for (const type of usedTypes) groupsPerType[type] = 1;
+
+    let remainingGroups = groupsNeeded - usedTypes.length;
+    let expandable = [...usedTypes].sort(() => Math.random() - 0.5);
+    
+    let guard = 0;
+    while (remainingGroups > 0 && guard < 10000) {
+        const type = expandable[guard % expandable.length];
+        if (groupsPerType[type] < 2) {
+            groupsPerType[type] += 1;
+            remainingGroups--;
+        }
+        guard++;
+    }
+
+    return Object.entries(groupsPerType).map(([type, groups]) => ({
+        type,
+        count: (groups * 3) as 3 | 6
+    }));
+}
+
+function placeGroupsAcrossBuckets(groups: TileGroup[], classifiedCells: BoardCell[]): TripleTileNode[] {
+    let easySlots = classifiedCells.filter(c => c.bucket === 'easy').sort(() => Math.random() - 0.5);
+    let mediumSlots = classifiedCells.filter(c => c.bucket === 'medium').sort(() => Math.random() - 0.5);
+    let deepSlots = classifiedCells.filter(c => c.bucket === 'deep').sort(() => Math.random() - 0.5);
+
+    const pickSlot = (preferred: Accessibility[]) => {
+        for (let pref of preferred) {
+            if (pref === 'easy' && easySlots.length > 0) return easySlots.pop()!;
+            if (pref === 'medium' && mediumSlots.length > 0) return mediumSlots.pop()!;
+            if (pref === 'deep' && deepSlots.length > 0) return deepSlots.pop()!;
+        }
+        if (easySlots.length > 0) return easySlots.pop()!;
+        if (mediumSlots.length > 0) return mediumSlots.pop()!;
+        if (deepSlots.length > 0) return deepSlots.pop()!;
+        throw new Error("No slots left");
+    };
+
+    let result: TripleTileNode[] = [];
+    let shuffledGroups = [...groups].sort(() => Math.random() - 0.5);
+
+    for (let group of shuffledGroups) {
+        const slots: BoardCell[] = [];
+        if (group.count === 3) {
+            const p1 = Math.random() > 0.5 ? 'easy' : 'medium';
+            slots.push(pickSlot([p1, 'medium', 'easy']));
+            
+            // intentionally spread the rest, avoid all deep
+            const remainingPref = Math.random() > 0.5 ? ['medium', 'deep'] : ['deep', 'medium'];
+            slots.push(pickSlot(remainingPref as Accessibility[]));
+            slots.push(pickSlot(['deep', 'medium', 'easy']));
+        } else if (group.count === 6) {
+            slots.push(pickSlot(['easy']));
+            slots.push(pickSlot(['easy']));
+            slots.push(pickSlot(['medium']));
+            slots.push(pickSlot(['medium']));
+            slots.push(pickSlot(['deep']));
+            slots.push(pickSlot(['deep']));
+        }
+        
+        for (const s of slots) {
+            result.push({ ...s, type: group.type });
+        }
+    }
+    return result;
+}
+
+function validateAndScoreBoard(board: TripleTileNode[]): { valid: boolean, score: number, issues: string[] } {
+    let issues: string[] = [];
+    let score = 100;
+    let isValid = true;
+    
+    if (board.length % 3 !== 0) {
+        issues.push("Length not divisible by 3");
+        return { valid: false, score: -1000, issues };
+    }
+
+    const typeToTiles = new Map<string, TripleTileNode[]>();
+    for (const t of board) {
+        if (!typeToTiles.has(t.type)) typeToTiles.set(t.type, []);
+        typeToTiles.get(t.type)!.push(t);
+    }
+    
+    // Hard check: count exactly 3 or 6
+    for (const [type, tiles] of typeToTiles) {
+        if (tiles.length !== 3 && tiles.length !== 6) {
+            issues.push(`Type ${type} has invalid count ${tiles.length}`);
+            return { valid: false, score: -1000, issues };
+        }
+    }
+
+    // Opening state checks
+    const freeTiles = board.filter(t => !isTileLocked(t, board));
+    const freeCounts = new Map<string, number>();
+    for (const t of freeTiles) freeCounts.set(t.type, (freeCounts.get(t.type) || 0) + 1);
+
+    let matchCount = 0;
+    let pairCount = 0;
+    let typesExposed = freeCounts.size;
+
+    for (const count of freeCounts.values()) {
+        if (count >= 3) matchCount++;
+        else if (count === 2) pairCount++;
+    }
+
+    if (matchCount < 1) { isValid = false; issues.push("No legal match-3 in opening"); score -= 50; }
+    if (pairCount < 2) { isValid = false; issues.push("Less than 2 extra pairs in opening"); score -= 20; }
+    if (typesExposed < 6) { isValid = false; issues.push("Less than 6 types exposed in opening"); score -= 30; }
+
+    // Clustering check on free tiles (Manhattan <= 2)
+    let duplicateClusters = 0;
+    for (let i = 0; i < freeTiles.length; i++) {
+        for (let j = i + 1; j < freeTiles.length; j++) {
+            const t1 = freeTiles[i];
+            const t2 = freeTiles[j];
+            if (t1.type === t2.type) {
+                // Approximate Mahjong space distance
+                const manhattan = Math.abs(t1.x - t2.x) + Math.abs(t1.y - t2.y);
+                if (manhattan <= 2) {
+                    duplicateClusters++;
+                    score -= 5;
+                }
+                if (t1.x === t2.x && Math.abs(t1.y - t2.y) <= 1) {
+                    score -= 10;
+                }
+                if (t1.y === t2.y && Math.abs(t1.x - t2.x) <= 2) {
+                    score -= 10;
+                }
+            }
+        }
+    }
+    
+    if (duplicateClusters > 5) {
+        isValid = false; 
+        issues.push("Too many duplicate visible clusters");
+        score -= 20;
+    }
+
+    return { valid: isValid, score, issues };
+}
+
+export function generateValidBoard(): TripleTileNode[] {
+    const totalTiles = trueTripleTileMap.length;
+    const classified = classifyBoardCells(trueTripleTileMap);
+    
+    let bestBoard: TripleTileNode[] = [];
+    let bestScore = -9999;
+    
+    const TARGET_RETRIES = 60;
+    const MAX_RETRIES = 100;
+    
+    for (let i = 0; i < MAX_RETRIES; i++) {
+        const groups = generateTileGroups(totalTiles, TILE_TYPES);
+        const board = placeGroupsAcrossBuckets(groups, classified);
+        
+        const result = validateAndScoreBoard(board);
+        if (result.valid) {
+            return board;
+        }
+        
+        if (result.score > bestScore) {
+            bestScore = result.score;
+            bestBoard = board;
+        }
+        
+        if (i >= TARGET_RETRIES && bestScore > 50) {
+            break;
+        }
+    }
+    
+    console.warn(`[BoardGen] Exhausted retries, returning fallback board (score ${bestScore})`);
+    return bestBoard;
+}

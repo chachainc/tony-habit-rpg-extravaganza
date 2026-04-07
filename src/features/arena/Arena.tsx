@@ -285,9 +285,15 @@ export const Arena = ({ onClose }: { onClose: () => void }) => {
     const [autoAttack, setAutoAttack] = useState(false);
     const [showPowerDetails, setShowPowerDetails] = useState(false);
     const [isRolling, setIsRolling] = useState(false);
-    const [rollValue, setRollValue] = useState<number | null>(null);
     const [isHeavyRolling, setIsHeavyRolling] = useState(false);
-    const [heavyRollValue, setHeavyRollValue] = useState<number | null>(null);
+
+    // ── Arena center dice overlay ──────────────────────────────
+    const [arenaDice, setArenaDice] = useState<{
+        visible: boolean;
+        value: number | null;
+        type: 'light' | 'heavy';
+        phase: 'rolling' | 'hold' | 'exit';
+    }>({ visible: false, value: null, type: 'light', phase: 'rolling' });
 
     // Auto-attack timer ref - MUST use ref so cleanup works properly
     const autoTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -928,9 +934,45 @@ export const Arena = ({ onClose }: { onClose: () => void }) => {
                 )}
                 <div className={`arena-modal ${lastDamage?.target === 'player' ? 'shake' : ''} ${phase === 'hit_stop' ? 'ultimate-hit-shake' : ''}`}>
                     <div className="battle-layout">
-                        {/* TOP & BATTLEFIELD (60%) */}
-                        <div className="battlefield-container">
+                        {/* TOP & BATTLEFIELD */}
+                        <div className="battlefield-container" style={{ position: 'relative' }}>
                             <ArenaBattlefieldLayout />
+
+                            {/* ── ARENA DICE OVERLAY ─────────────────────── */}
+                            <AnimatePresence>
+                                {arenaDice.visible && arenaDice.value !== null && (
+                                    <motion.div
+                                        key="arena-dice"
+                                        className={`arena-dice-overlay arena-dice--${arenaDice.type} arena-dice--${arenaDice.phase}`}
+                                        initial={{ scale: 0.3, opacity: 0, y: 20 }}
+                                        animate={{
+                                            scale: arenaDice.phase === 'hold' ? 1.15 : 1,
+                                            opacity: arenaDice.phase === 'exit' ? 0 : 1,
+                                            y: 0,
+                                        }}
+                                        exit={{ scale: 0.5, opacity: 0, y: -20 }}
+                                        transition={{ duration: 0.25, ease: 'backOut' }}
+                                    >
+                                        <div className="arena-dice-face">
+                                            🎲
+                                        </div>
+                                        <motion.div
+                                            className="arena-dice-value"
+                                            key={arenaDice.value}
+                                            initial={{ scale: 1.4, opacity: 0 }}
+                                            animate={{ scale: 1, opacity: 1 }}
+                                            transition={{ duration: 0.12 }}
+                                        >
+                                            {arenaDice.value}
+                                        </motion.div>
+                                        {arenaDice.phase === 'hold' && (
+                                            <div className="arena-dice-label">
+                                                {arenaDice.type === 'heavy' ? 'HEAVY HIT' : 'ROLL'}
+                                            </div>
+                                        )}
+                                    </motion.div>
+                                )}
+                            </AnimatePresence>
                         </div>
                         {/* COMBAT LOG (15%) */}
                         <div className="combat-log-container">
@@ -1008,50 +1050,56 @@ export const Arena = ({ onClose }: { onClose: () => void }) => {
                                                 const modifiedAtk = Math.max(1, player.atk * useBattleStore.getState().playerDamageModifier);
                                                 const lowHit = Math.max(1, Math.ceil(modifiedAtk * 0.5));
                                                 const bigHit = Math.max(1, Math.floor(modifiedAtk * 1.5));
-                                                
+
+                                                // ── Arena dice: rolling phase ──
+                                                setArenaDice({ visible: true, value: lowHit, type: 'heavy', phase: 'rolling' });
+
                                                 let rolls = 0;
-                                                const maxRolls = 10;
+                                                const maxRolls = 12; // ~0.6s of rolling at 50ms
                                                 const interval = setInterval(() => {
                                                     const stepSuccess = Math.random() > 0.5;
-                                                    setHeavyRollValue(stepSuccess ? bigHit : lowHit);
+                                                    const stepVal = stepSuccess ? bigHit : lowHit;
+                                                    setArenaDice(prev => ({ ...prev, value: stepVal }));
                                                     rolls++;
                                                     if (rolls >= maxRolls) {
                                                         clearInterval(interval);
                                                         const isSuccess = Math.random() > 0.5;
                                                         const finalDamage = isSuccess ? bigHit : lowHit;
-                                                        setHeavyRollValue(finalDamage);
-                                                        
+                                                        // Hold the result visibly
+                                                        setArenaDice({ visible: true, value: finalDamage, type: 'heavy', phase: 'hold' });
+
                                                         setTimeout(() => {
+                                                            // Execute the action
                                                             useBattleStore.setState(state => ({
                                                                 combatLog: [...state.combatLog, { message: `🎲 Heavy Roll: ${finalDamage}!`, type: 'info' as const }],
-                                                                heavyAttackCooldown: 2 
+                                                                heavyAttackCooldown: 2
                                                             }));
-                                                            selectAbility({ 
-                                                                id: 'heavy_strike', 
-                                                                name: 'Heavy Strike', 
-                                                                type: 'attack', 
-                                                                description: '', 
-                                                                icon: '💥', 
-                                                                element: 'neutral', 
-                                                                damageMultiplier: 1.0, 
-                                                                cooldown: 0, 
+                                                            selectAbility({
+                                                                id: 'heavy_strike',
+                                                                name: 'Heavy Strike',
+                                                                type: 'attack',
+                                                                description: '',
+                                                                icon: '💥',
+                                                                element: 'neutral',
+                                                                damageMultiplier: 1.0,
+                                                                cooldown: 0,
                                                                 energyCost: 0,
                                                                 customDamageConfig: { type: 'heavy', rollValue: finalDamage }
                                                             });
                                                             executePlayerAction();
                                                             setIsHeavyRolling(false);
-                                                            setHeavyRollValue(null);
-                                                        }, 400);
+                                                            // Fade dice out
+                                                            setArenaDice(prev => ({ ...prev, phase: 'exit' }));
+                                                            setTimeout(() => setArenaDice(prev => ({ ...prev, visible: false })), 400);
+                                                        }, 400); // 400ms hold
                                                     }
                                                 }, 50);
                                             }
                                         }}
                                     >
                                         <div className="btn-top">💥 Heavy</div>
-                                        <div className="btn-mid" style={isHeavyRolling ? { color: '#fbbf24' } : {}}>
-                                            {isHeavyRolling && heavyRollValue !== null 
-                                                ? `🎲 ${heavyRollValue}` 
-                                                : `${Math.max(1, Math.ceil(Math.max(1, player.atk * useBattleStore.getState().playerDamageModifier) * 0.5))} or ${Math.max(1, Math.floor(Math.max(1, player.atk * useBattleStore.getState().playerDamageModifier) * 1.5))}`}
+                                        <div className="btn-mid">
+                                            {`${Math.max(1, Math.ceil(Math.max(1, player.atk * useBattleStore.getState().playerDamageModifier) * 0.5))} or ${Math.max(1, Math.floor(Math.max(1, player.atk * useBattleStore.getState().playerDamageModifier) * 1.5))}`}
                                         </div>
                                         <div className="btn-bot">
                                             {useBattleStore.getState().heavyAttackCooldown > 0
@@ -1068,35 +1116,43 @@ export const Arena = ({ onClose }: { onClose: () => void }) => {
                                             if (phase === 'select_action') {
                                                 setIsRolling(true);
                                                 const modifiedAtk = Math.max(1, Math.floor(player.atk * useBattleStore.getState().playerDamageModifier));
-                                                
+
+                                                // ── Arena dice: rolling phase ──
+                                                setArenaDice({ visible: true, value: 1, type: 'light', phase: 'rolling' });
+
                                                 let rolls = 0;
-                                                const maxRolls = 10;
+                                                const maxRolls = 12;
                                                 const interval = setInterval(() => {
-                                                    setRollValue(Math.floor(Math.random() * modifiedAtk) + 1);
+                                                    const stepVal = Math.floor(Math.random() * modifiedAtk) + 1;
+                                                    setArenaDice(prev => ({ ...prev, value: stepVal }));
                                                     rolls++;
                                                     if (rolls >= maxRolls) {
                                                         clearInterval(interval);
                                                         const finalRoll = Math.floor(Math.random() * modifiedAtk) + 1;
-                                                        setRollValue(finalRoll);
+                                                        // Hold result
+                                                        setArenaDice({ visible: true, value: finalRoll, type: 'light', phase: 'hold' });
+
                                                         setTimeout(() => {
                                                             useBattleStore.setState(state => ({
                                                                 combatLog: [...state.combatLog, { message: `🎲 Rolled ${finalRoll}!`, type: 'info' as const }]
                                                             }));
-                                                            selectAbility({ 
-                                                                id: 'light_strike', 
-                                                                name: 'Light Strike', 
-                                                                type: 'attack', 
-                                                                description: '', 
-                                                                icon: '⚡', 
-                                                                element: 'neutral', 
-                                                                damageMultiplier: 1.0, 
-                                                                cooldown: 0, 
+                                                            selectAbility({
+                                                                id: 'light_strike',
+                                                                name: 'Light Strike',
+                                                                type: 'attack',
+                                                                description: '',
+                                                                icon: '⚡',
+                                                                element: 'neutral',
+                                                                damageMultiplier: 1.0,
+                                                                cooldown: 0,
                                                                 energyCost: 0,
                                                                 customDamageConfig: { type: 'light', rollValue: finalRoll }
                                                             });
                                                             executePlayerAction();
                                                             setIsRolling(false);
-                                                            setRollValue(null);
+                                                            // Fade out dice
+                                                            setArenaDice(prev => ({ ...prev, phase: 'exit' }));
+                                                            setTimeout(() => setArenaDice(prev => ({ ...prev, visible: false })), 400);
                                                         }, 400);
                                                     }
                                                 }, 50);
@@ -1104,8 +1160,8 @@ export const Arena = ({ onClose }: { onClose: () => void }) => {
                                         }}
                                     >
                                         <div className="btn-top">⚡ Light</div>
-                                        <div className="btn-mid" style={isRolling ? { color: '#fbbf24' } : {}}>
-                                            {isRolling && rollValue !== null ? `🎲 ${rollValue}` : `1–${Math.max(1, Math.floor(player.atk * useBattleStore.getState().playerDamageModifier))}`}
+                                        <div className="btn-mid">
+                                            {`1–${Math.max(1, Math.floor(player.atk * useBattleStore.getState().playerDamageModifier))}`}
                                         </div>
                                         <div className="btn-bot">Always Hits</div>
                                     </button>

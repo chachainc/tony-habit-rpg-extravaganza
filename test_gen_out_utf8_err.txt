@@ -1,0 +1,3320 @@
+﻿node.exe : npm warn config 
+production Use 
+`--omit=dev` instead.
+At line:1 char:1
++ & "C:\Program 
+Files\nodejs/node.exe" 
+"C:\Program 
+Files\nodejs/node_mo ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~
+    + CategoryInfo         
+     : NotSpecified: (npm  
+   warn config...t=dev`    
+ instead.:String) [], R    
+emoteException
+    + FullyQualifiedErrorI 
+   d : NativeCommandError
+ 
+error Error: totalTiles 
+must be divisible by 3
+    at generateTileGroups (
+C:\Users\aduca\.gemini\anti
+gravity\scratch\gamified-li
+fe\src\features\conquest\te
+st_gen.ts:57:37)
+    at generateValidBoard (
+C:\Users\aduca\.gemini\anti
+gravity\scratch\gamified-li
+fe\src\features\conquest\te
+st_gen.ts:206:24)
+    at test (C:\Users\aduca
+\.gemini\antigravity\scratc
+h\gamified-life\src\feature
+s\conquest\test_gen.ts:229:
+23)
+    at <anonymous> (C:\User
+s\aduca\.gemini\antigravity
+\scratch\gamified-life\src\
+features\conquest\test_gen.
+ts:238:1)
+    at ModuleJob.run (node:
+internal/modules/esm/module
+_job:413:25)
+    at async onImport.trace
+Promise.__proto__ (node:int
+ernal/modules/esm/loader:66
+0:26)
+    at async asyncRunEntryP
+ointWithESMLoader (node:int
+ernal/modules/run_main:101:
+5)
+error Error: totalTiles 
+must be divisible by 3
+    at generateTileGroups (
+C:\Users\aduca\.gemini\anti
+gravity\scratch\gamified-li
+fe\src\features\conquest\te
+st_gen.ts:57:37)
+    at generateValidBoard (
+C:\Users\aduca\.gemini\anti
+gravity\scratch\gamified-li
+fe\src\features\conquest\te
+st_gen.ts:206:24)
+    at test (C:\Users\aduca
+\.gemini\antigravity\scratc
+h\gamified-life\src\feature
+s\conquest\test_gen.ts:229:
+23)
+    at <anonymous> (C:\User
+s\aduca\.gemini\antigravity
+\scratch\gamified-life\src\
+features\conquest\test_gen.
+ts:238:1)
+    at ModuleJob.run (node:
+internal/modules/esm/module
+_job:413:25)
+    at async onImport.trace
+Promise.__proto__ (node:int
+ernal/modules/esm/loader:66
+0:26)
+    at async asyncRunEntryP
+ointWithESMLoader (node:int
+ernal/modules/run_main:101:
+5)
+error Error: totalTiles 
+must be divisible by 3
+    at generateTileGroups (
+C:\Users\aduca\.gemini\anti
+gravity\scratch\gamified-li
+fe\src\features\conquest\te
+st_gen.ts:57:37)
+    at generateValidBoard (
+C:\Users\aduca\.gemini\anti
+gravity\scratch\gamified-li
+fe\src\features\conquest\te
+st_gen.ts:206:24)
+    at test (C:\Users\aduca
+\.gemini\antigravity\scratc
+h\gamified-life\src\feature
+s\conquest\test_gen.ts:229:
+23)
+    at <anonymous> (C:\User
+s\aduca\.gemini\antigravity
+\scratch\gamified-life\src\
+features\conquest\test_gen.
+ts:238:1)
+    at ModuleJob.run (node:
+internal/modules/esm/module
+_job:413:25)
+    at async onImport.trace
+Promise.__proto__ (node:int
+ernal/modules/esm/loader:66
+0:26)
+    at async asyncRunEntryP
+ointWithESMLoader (node:int
+ernal/modules/run_main:101:
+5)
+error Error: totalTiles 
+must be divisible by 3
+    at generateTileGroups (
+C:\Users\aduca\.gemini\anti
+gravity\scratch\gamified-li
+fe\src\features\conquest\te
+st_gen.ts:57:37)
+    at generateValidBoard (
+C:\Users\aduca\.gemini\anti
+gravity\scratch\gamified-li
+fe\src\features\conquest\te
+st_gen.ts:206:24)
+    at test (C:\Users\aduca
+\.gemini\antigravity\scratc
+h\gamified-life\src\feature
+s\conquest\test_gen.ts:229:
+23)
+    at <anonymous> (C:\User
+s\aduca\.gemini\antigravity
+\scratch\gamified-life\src\
+features\conquest\test_gen.
+ts:238:1)
+    at ModuleJob.run (node:
+internal/modules/esm/module
+_job:413:25)
+    at async onImport.trace
+Promise.__proto__ (node:int
+ernal/modules/esm/loader:66
+0:26)
+    at async asyncRunEntryP
+ointWithESMLoader (node:int
+ernal/modules/run_main:101:
+5)
+error Error: totalTiles 
+must be divisible by 3
+    at generateTileGroups (
+C:\Users\aduca\.gemini\anti
+gravity\scratch\gamified-li
+fe\src\features\conquest\te
+st_gen.ts:57:37)
+    at generateValidBoard (
+C:\Users\aduca\.gemini\anti
+gravity\scratch\gamified-li
+fe\src\features\conquest\te
+st_gen.ts:206:24)
+    at test (C:\Users\aduca
+\.gemini\antigravity\scratc
+h\gamified-life\src\feature
+s\conquest\test_gen.ts:229:
+23)
+    at <anonymous> (C:\User
+s\aduca\.gemini\antigravity
+\scratch\gamified-life\src\
+features\conquest\test_gen.
+ts:238:1)
+    at ModuleJob.run (node:
+internal/modules/esm/module
+_job:413:25)
+    at async onImport.trace
+Promise.__proto__ (node:int
+ernal/modules/esm/loader:66
+0:26)
+    at async asyncRunEntryP
+ointWithESMLoader (node:int
+ernal/modules/run_main:101:
+5)
+error Error: totalTiles 
+must be divisible by 3
+    at generateTileGroups (
+C:\Users\aduca\.gemini\anti
+gravity\scratch\gamified-li
+fe\src\features\conquest\te
+st_gen.ts:57:37)
+    at generateValidBoard (
+C:\Users\aduca\.gemini\anti
+gravity\scratch\gamified-li
+fe\src\features\conquest\te
+st_gen.ts:206:24)
+    at test (C:\Users\aduca
+\.gemini\antigravity\scratc
+h\gamified-life\src\feature
+s\conquest\test_gen.ts:229:
+23)
+    at <anonymous> (C:\User
+s\aduca\.gemini\antigravity
+\scratch\gamified-life\src\
+features\conquest\test_gen.
+ts:238:1)
+    at ModuleJob.run (node:
+internal/modules/esm/module
+_job:413:25)
+    at async onImport.trace
+Promise.__proto__ (node:int
+ernal/modules/esm/loader:66
+0:26)
+    at async asyncRunEntryP
+ointWithESMLoader (node:int
+ernal/modules/run_main:101:
+5)
+error Error: totalTiles 
+must be divisible by 3
+    at generateTileGroups (
+C:\Users\aduca\.gemini\anti
+gravity\scratch\gamified-li
+fe\src\features\conquest\te
+st_gen.ts:57:37)
+    at generateValidBoard (
+C:\Users\aduca\.gemini\anti
+gravity\scratch\gamified-li
+fe\src\features\conquest\te
+st_gen.ts:206:24)
+    at test (C:\Users\aduca
+\.gemini\antigravity\scratc
+h\gamified-life\src\feature
+s\conquest\test_gen.ts:229:
+23)
+    at <anonymous> (C:\User
+s\aduca\.gemini\antigravity
+\scratch\gamified-life\src\
+features\conquest\test_gen.
+ts:238:1)
+    at ModuleJob.run (node:
+internal/modules/esm/module
+_job:413:25)
+    at async onImport.trace
+Promise.__proto__ (node:int
+ernal/modules/esm/loader:66
+0:26)
+    at async asyncRunEntryP
+ointWithESMLoader (node:int
+ernal/modules/run_main:101:
+5)
+error Error: totalTiles 
+must be divisible by 3
+    at generateTileGroups (
+C:\Users\aduca\.gemini\anti
+gravity\scratch\gamified-li
+fe\src\features\conquest\te
+st_gen.ts:57:37)
+    at generateValidBoard (
+C:\Users\aduca\.gemini\anti
+gravity\scratch\gamified-li
+fe\src\features\conquest\te
+st_gen.ts:206:24)
+    at test (C:\Users\aduca
+\.gemini\antigravity\scratc
+h\gamified-life\src\feature
+s\conquest\test_gen.ts:229:
+23)
+    at <anonymous> (C:\User
+s\aduca\.gemini\antigravity
+\scratch\gamified-life\src\
+features\conquest\test_gen.
+ts:238:1)
+    at ModuleJob.run (node:
+internal/modules/esm/module
+_job:413:25)
+    at async onImport.trace
+Promise.__proto__ (node:int
+ernal/modules/esm/loader:66
+0:26)
+    at async asyncRunEntryP
+ointWithESMLoader (node:int
+ernal/modules/run_main:101:
+5)
+error Error: totalTiles 
+must be divisible by 3
+    at generateTileGroups (
+C:\Users\aduca\.gemini\anti
+gravity\scratch\gamified-li
+fe\src\features\conquest\te
+st_gen.ts:57:37)
+    at generateValidBoard (
+C:\Users\aduca\.gemini\anti
+gravity\scratch\gamified-li
+fe\src\features\conquest\te
+st_gen.ts:206:24)
+    at test (C:\Users\aduca
+\.gemini\antigravity\scratc
+h\gamified-life\src\feature
+s\conquest\test_gen.ts:229:
+23)
+    at <anonymous> (C:\User
+s\aduca\.gemini\antigravity
+\scratch\gamified-life\src\
+features\conquest\test_gen.
+ts:238:1)
+    at ModuleJob.run (node:
+internal/modules/esm/module
+_job:413:25)
+    at async onImport.trace
+Promise.__proto__ (node:int
+ernal/modules/esm/loader:66
+0:26)
+    at async asyncRunEntryP
+ointWithESMLoader (node:int
+ernal/modules/run_main:101:
+5)
+error Error: totalTiles 
+must be divisible by 3
+    at generateTileGroups (
+C:\Users\aduca\.gemini\anti
+gravity\scratch\gamified-li
+fe\src\features\conquest\te
+st_gen.ts:57:37)
+    at generateValidBoard (
+C:\Users\aduca\.gemini\anti
+gravity\scratch\gamified-li
+fe\src\features\conquest\te
+st_gen.ts:206:24)
+    at test (C:\Users\aduca
+\.gemini\antigravity\scratc
+h\gamified-life\src\feature
+s\conquest\test_gen.ts:229:
+23)
+    at <anonymous> (C:\User
+s\aduca\.gemini\antigravity
+\scratch\gamified-life\src\
+features\conquest\test_gen.
+ts:238:1)
+    at ModuleJob.run (node:
+internal/modules/esm/module
+_job:413:25)
+    at async onImport.trace
+Promise.__proto__ (node:int
+ernal/modules/esm/loader:66
+0:26)
+    at async asyncRunEntryP
+ointWithESMLoader (node:int
+ernal/modules/run_main:101:
+5)
+error Error: totalTiles 
+must be divisible by 3
+    at generateTileGroups (
+C:\Users\aduca\.gemini\anti
+gravity\scratch\gamified-li
+fe\src\features\conquest\te
+st_gen.ts:57:37)
+    at generateValidBoard (
+C:\Users\aduca\.gemini\anti
+gravity\scratch\gamified-li
+fe\src\features\conquest\te
+st_gen.ts:206:24)
+    at test (C:\Users\aduca
+\.gemini\antigravity\scratc
+h\gamified-life\src\feature
+s\conquest\test_gen.ts:229:
+23)
+    at <anonymous> (C:\User
+s\aduca\.gemini\antigravity
+\scratch\gamified-life\src\
+features\conquest\test_gen.
+ts:238:1)
+    at ModuleJob.run (node:
+internal/modules/esm/module
+_job:413:25)
+    at async onImport.trace
+Promise.__proto__ (node:int
+ernal/modules/esm/loader:66
+0:26)
+    at async asyncRunEntryP
+ointWithESMLoader (node:int
+ernal/modules/run_main:101:
+5)
+error Error: totalTiles 
+must be divisible by 3
+    at generateTileGroups (
+C:\Users\aduca\.gemini\anti
+gravity\scratch\gamified-li
+fe\src\features\conquest\te
+st_gen.ts:57:37)
+    at generateValidBoard (
+C:\Users\aduca\.gemini\anti
+gravity\scratch\gamified-li
+fe\src\features\conquest\te
+st_gen.ts:206:24)
+    at test (C:\Users\aduca
+\.gemini\antigravity\scratc
+h\gamified-life\src\feature
+s\conquest\test_gen.ts:229:
+23)
+    at <anonymous> (C:\User
+s\aduca\.gemini\antigravity
+\scratch\gamified-life\src\
+features\conquest\test_gen.
+ts:238:1)
+    at ModuleJob.run (node:
+internal/modules/esm/module
+_job:413:25)
+    at async onImport.trace
+Promise.__proto__ (node:int
+ernal/modules/esm/loader:66
+0:26)
+    at async asyncRunEntryP
+ointWithESMLoader (node:int
+ernal/modules/run_main:101:
+5)
+error Error: totalTiles 
+must be divisible by 3
+    at generateTileGroups (
+C:\Users\aduca\.gemini\anti
+gravity\scratch\gamified-li
+fe\src\features\conquest\te
+st_gen.ts:57:37)
+    at generateValidBoard (
+C:\Users\aduca\.gemini\anti
+gravity\scratch\gamified-li
+fe\src\features\conquest\te
+st_gen.ts:206:24)
+    at test (C:\Users\aduca
+\.gemini\antigravity\scratc
+h\gamified-life\src\feature
+s\conquest\test_gen.ts:229:
+23)
+    at <anonymous> (C:\User
+s\aduca\.gemini\antigravity
+\scratch\gamified-life\src\
+features\conquest\test_gen.
+ts:238:1)
+    at ModuleJob.run (node:
+internal/modules/esm/module
+_job:413:25)
+    at async onImport.trace
+Promise.__proto__ (node:int
+ernal/modules/esm/loader:66
+0:26)
+    at async asyncRunEntryP
+ointWithESMLoader (node:int
+ernal/modules/run_main:101:
+5)
+error Error: totalTiles 
+must be divisible by 3
+    at generateTileGroups (
+C:\Users\aduca\.gemini\anti
+gravity\scratch\gamified-li
+fe\src\features\conquest\te
+st_gen.ts:57:37)
+    at generateValidBoard (
+C:\Users\aduca\.gemini\anti
+gravity\scratch\gamified-li
+fe\src\features\conquest\te
+st_gen.ts:206:24)
+    at test (C:\Users\aduca
+\.gemini\antigravity\scratc
+h\gamified-life\src\feature
+s\conquest\test_gen.ts:229:
+23)
+    at <anonymous> (C:\User
+s\aduca\.gemini\antigravity
+\scratch\gamified-life\src\
+features\conquest\test_gen.
+ts:238:1)
+    at ModuleJob.run (node:
+internal/modules/esm/module
+_job:413:25)
+    at async onImport.trace
+Promise.__proto__ (node:int
+ernal/modules/esm/loader:66
+0:26)
+    at async asyncRunEntryP
+ointWithESMLoader (node:int
+ernal/modules/run_main:101:
+5)
+error Error: totalTiles 
+must be divisible by 3
+    at generateTileGroups (
+C:\Users\aduca\.gemini\anti
+gravity\scratch\gamified-li
+fe\src\features\conquest\te
+st_gen.ts:57:37)
+    at generateValidBoard (
+C:\Users\aduca\.gemini\anti
+gravity\scratch\gamified-li
+fe\src\features\conquest\te
+st_gen.ts:206:24)
+    at test (C:\Users\aduca
+\.gemini\antigravity\scratc
+h\gamified-life\src\feature
+s\conquest\test_gen.ts:229:
+23)
+    at <anonymous> (C:\User
+s\aduca\.gemini\antigravity
+\scratch\gamified-life\src\
+features\conquest\test_gen.
+ts:238:1)
+    at ModuleJob.run (node:
+internal/modules/esm/module
+_job:413:25)
+    at async onImport.trace
+Promise.__proto__ (node:int
+ernal/modules/esm/loader:66
+0:26)
+    at async asyncRunEntryP
+ointWithESMLoader (node:int
+ernal/modules/run_main:101:
+5)
+error Error: totalTiles 
+must be divisible by 3
+    at generateTileGroups (
+C:\Users\aduca\.gemini\anti
+gravity\scratch\gamified-li
+fe\src\features\conquest\te
+st_gen.ts:57:37)
+    at generateValidBoard (
+C:\Users\aduca\.gemini\anti
+gravity\scratch\gamified-li
+fe\src\features\conquest\te
+st_gen.ts:206:24)
+    at test (C:\Users\aduca
+\.gemini\antigravity\scratc
+h\gamified-life\src\feature
+s\conquest\test_gen.ts:229:
+23)
+    at <anonymous> (C:\User
+s\aduca\.gemini\antigravity
+\scratch\gamified-life\src\
+features\conquest\test_gen.
+ts:238:1)
+    at ModuleJob.run (node:
+internal/modules/esm/module
+_job:413:25)
+    at async onImport.trace
+Promise.__proto__ (node:int
+ernal/modules/esm/loader:66
+0:26)
+    at async asyncRunEntryP
+ointWithESMLoader (node:int
+ernal/modules/run_main:101:
+5)
+error Error: totalTiles 
+must be divisible by 3
+    at generateTileGroups (
+C:\Users\aduca\.gemini\anti
+gravity\scratch\gamified-li
+fe\src\features\conquest\te
+st_gen.ts:57:37)
+    at generateValidBoard (
+C:\Users\aduca\.gemini\anti
+gravity\scratch\gamified-li
+fe\src\features\conquest\te
+st_gen.ts:206:24)
+    at test (C:\Users\aduca
+\.gemini\antigravity\scratc
+h\gamified-life\src\feature
+s\conquest\test_gen.ts:229:
+23)
+    at <anonymous> (C:\User
+s\aduca\.gemini\antigravity
+\scratch\gamified-life\src\
+features\conquest\test_gen.
+ts:238:1)
+    at ModuleJob.run (node:
+internal/modules/esm/module
+_job:413:25)
+    at async onImport.trace
+Promise.__proto__ (node:int
+ernal/modules/esm/loader:66
+0:26)
+    at async asyncRunEntryP
+ointWithESMLoader (node:int
+ernal/modules/run_main:101:
+5)
+error Error: totalTiles 
+must be divisible by 3
+    at generateTileGroups (
+C:\Users\aduca\.gemini\anti
+gravity\scratch\gamified-li
+fe\src\features\conquest\te
+st_gen.ts:57:37)
+    at generateValidBoard (
+C:\Users\aduca\.gemini\anti
+gravity\scratch\gamified-li
+fe\src\features\conquest\te
+st_gen.ts:206:24)
+    at test (C:\Users\aduca
+\.gemini\antigravity\scratc
+h\gamified-life\src\feature
+s\conquest\test_gen.ts:229:
+23)
+    at <anonymous> (C:\User
+s\aduca\.gemini\antigravity
+\scratch\gamified-life\src\
+features\conquest\test_gen.
+ts:238:1)
+    at ModuleJob.run (node:
+internal/modules/esm/module
+_job:413:25)
+    at async onImport.trace
+Promise.__proto__ (node:int
+ernal/modules/esm/loader:66
+0:26)
+    at async asyncRunEntryP
+ointWithESMLoader (node:int
+ernal/modules/run_main:101:
+5)
+error Error: totalTiles 
+must be divisible by 3
+    at generateTileGroups (
+C:\Users\aduca\.gemini\anti
+gravity\scratch\gamified-li
+fe\src\features\conquest\te
+st_gen.ts:57:37)
+    at generateValidBoard (
+C:\Users\aduca\.gemini\anti
+gravity\scratch\gamified-li
+fe\src\features\conquest\te
+st_gen.ts:206:24)
+    at test (C:\Users\aduca
+\.gemini\antigravity\scratc
+h\gamified-life\src\feature
+s\conquest\test_gen.ts:229:
+23)
+    at <anonymous> (C:\User
+s\aduca\.gemini\antigravity
+\scratch\gamified-life\src\
+features\conquest\test_gen.
+ts:238:1)
+    at ModuleJob.run (node:
+internal/modules/esm/module
+_job:413:25)
+    at async onImport.trace
+Promise.__proto__ (node:int
+ernal/modules/esm/loader:66
+0:26)
+    at async asyncRunEntryP
+ointWithESMLoader (node:int
+ernal/modules/run_main:101:
+5)
+error Error: totalTiles 
+must be divisible by 3
+    at generateTileGroups (
+C:\Users\aduca\.gemini\anti
+gravity\scratch\gamified-li
+fe\src\features\conquest\te
+st_gen.ts:57:37)
+    at generateValidBoard (
+C:\Users\aduca\.gemini\anti
+gravity\scratch\gamified-li
+fe\src\features\conquest\te
+st_gen.ts:206:24)
+    at test (C:\Users\aduca
+\.gemini\antigravity\scratc
+h\gamified-life\src\feature
+s\conquest\test_gen.ts:229:
+23)
+    at <anonymous> (C:\User
+s\aduca\.gemini\antigravity
+\scratch\gamified-life\src\
+features\conquest\test_gen.
+ts:238:1)
+    at ModuleJob.run (node:
+internal/modules/esm/module
+_job:413:25)
+    at async onImport.trace
+Promise.__proto__ (node:int
+ernal/modules/esm/loader:66
+0:26)
+    at async asyncRunEntryP
+ointWithESMLoader (node:int
+ernal/modules/run_main:101:
+5)
+error Error: totalTiles 
+must be divisible by 3
+    at generateTileGroups (
+C:\Users\aduca\.gemini\anti
+gravity\scratch\gamified-li
+fe\src\features\conquest\te
+st_gen.ts:57:37)
+    at generateValidBoard (
+C:\Users\aduca\.gemini\anti
+gravity\scratch\gamified-li
+fe\src\features\conquest\te
+st_gen.ts:206:24)
+    at test (C:\Users\aduca
+\.gemini\antigravity\scratc
+h\gamified-life\src\feature
+s\conquest\test_gen.ts:229:
+23)
+    at <anonymous> (C:\User
+s\aduca\.gemini\antigravity
+\scratch\gamified-life\src\
+features\conquest\test_gen.
+ts:238:1)
+    at ModuleJob.run (node:
+internal/modules/esm/module
+_job:413:25)
+    at async onImport.trace
+Promise.__proto__ (node:int
+ernal/modules/esm/loader:66
+0:26)
+    at async asyncRunEntryP
+ointWithESMLoader (node:int
+ernal/modules/run_main:101:
+5)
+error Error: totalTiles 
+must be divisible by 3
+    at generateTileGroups (
+C:\Users\aduca\.gemini\anti
+gravity\scratch\gamified-li
+fe\src\features\conquest\te
+st_gen.ts:57:37)
+    at generateValidBoard (
+C:\Users\aduca\.gemini\anti
+gravity\scratch\gamified-li
+fe\src\features\conquest\te
+st_gen.ts:206:24)
+    at test (C:\Users\aduca
+\.gemini\antigravity\scratc
+h\gamified-life\src\feature
+s\conquest\test_gen.ts:229:
+23)
+    at <anonymous> (C:\User
+s\aduca\.gemini\antigravity
+\scratch\gamified-life\src\
+features\conquest\test_gen.
+ts:238:1)
+    at ModuleJob.run (node:
+internal/modules/esm/module
+_job:413:25)
+    at async onImport.trace
+Promise.__proto__ (node:int
+ernal/modules/esm/loader:66
+0:26)
+    at async asyncRunEntryP
+ointWithESMLoader (node:int
+ernal/modules/run_main:101:
+5)
+error Error: totalTiles 
+must be divisible by 3
+    at generateTileGroups (
+C:\Users\aduca\.gemini\anti
+gravity\scratch\gamified-li
+fe\src\features\conquest\te
+st_gen.ts:57:37)
+    at generateValidBoard (
+C:\Users\aduca\.gemini\anti
+gravity\scratch\gamified-li
+fe\src\features\conquest\te
+st_gen.ts:206:24)
+    at test (C:\Users\aduca
+\.gemini\antigravity\scratc
+h\gamified-life\src\feature
+s\conquest\test_gen.ts:229:
+23)
+    at <anonymous> (C:\User
+s\aduca\.gemini\antigravity
+\scratch\gamified-life\src\
+features\conquest\test_gen.
+ts:238:1)
+    at ModuleJob.run (node:
+internal/modules/esm/module
+_job:413:25)
+    at async onImport.trace
+Promise.__proto__ (node:int
+ernal/modules/esm/loader:66
+0:26)
+    at async asyncRunEntryP
+ointWithESMLoader (node:int
+ernal/modules/run_main:101:
+5)
+error Error: totalTiles 
+must be divisible by 3
+    at generateTileGroups (
+C:\Users\aduca\.gemini\anti
+gravity\scratch\gamified-li
+fe\src\features\conquest\te
+st_gen.ts:57:37)
+    at generateValidBoard (
+C:\Users\aduca\.gemini\anti
+gravity\scratch\gamified-li
+fe\src\features\conquest\te
+st_gen.ts:206:24)
+    at test (C:\Users\aduca
+\.gemini\antigravity\scratc
+h\gamified-life\src\feature
+s\conquest\test_gen.ts:229:
+23)
+    at <anonymous> (C:\User
+s\aduca\.gemini\antigravity
+\scratch\gamified-life\src\
+features\conquest\test_gen.
+ts:238:1)
+    at ModuleJob.run (node:
+internal/modules/esm/module
+_job:413:25)
+    at async onImport.trace
+Promise.__proto__ (node:int
+ernal/modules/esm/loader:66
+0:26)
+    at async asyncRunEntryP
+ointWithESMLoader (node:int
+ernal/modules/run_main:101:
+5)
+error Error: totalTiles 
+must be divisible by 3
+    at generateTileGroups (
+C:\Users\aduca\.gemini\anti
+gravity\scratch\gamified-li
+fe\src\features\conquest\te
+st_gen.ts:57:37)
+    at generateValidBoard (
+C:\Users\aduca\.gemini\anti
+gravity\scratch\gamified-li
+fe\src\features\conquest\te
+st_gen.ts:206:24)
+    at test (C:\Users\aduca
+\.gemini\antigravity\scratc
+h\gamified-life\src\feature
+s\conquest\test_gen.ts:229:
+23)
+    at <anonymous> (C:\User
+s\aduca\.gemini\antigravity
+\scratch\gamified-life\src\
+features\conquest\test_gen.
+ts:238:1)
+    at ModuleJob.run (node:
+internal/modules/esm/module
+_job:413:25)
+    at async onImport.trace
+Promise.__proto__ (node:int
+ernal/modules/esm/loader:66
+0:26)
+    at async asyncRunEntryP
+ointWithESMLoader (node:int
+ernal/modules/run_main:101:
+5)
+error Error: totalTiles 
+must be divisible by 3
+    at generateTileGroups (
+C:\Users\aduca\.gemini\anti
+gravity\scratch\gamified-li
+fe\src\features\conquest\te
+st_gen.ts:57:37)
+    at generateValidBoard (
+C:\Users\aduca\.gemini\anti
+gravity\scratch\gamified-li
+fe\src\features\conquest\te
+st_gen.ts:206:24)
+    at test (C:\Users\aduca
+\.gemini\antigravity\scratc
+h\gamified-life\src\feature
+s\conquest\test_gen.ts:229:
+23)
+    at <anonymous> (C:\User
+s\aduca\.gemini\antigravity
+\scratch\gamified-life\src\
+features\conquest\test_gen.
+ts:238:1)
+    at ModuleJob.run (node:
+internal/modules/esm/module
+_job:413:25)
+    at async onImport.trace
+Promise.__proto__ (node:int
+ernal/modules/esm/loader:66
+0:26)
+    at async asyncRunEntryP
+ointWithESMLoader (node:int
+ernal/modules/run_main:101:
+5)
+error Error: totalTiles 
+must be divisible by 3
+    at generateTileGroups (
+C:\Users\aduca\.gemini\anti
+gravity\scratch\gamified-li
+fe\src\features\conquest\te
+st_gen.ts:57:37)
+    at generateValidBoard (
+C:\Users\aduca\.gemini\anti
+gravity\scratch\gamified-li
+fe\src\features\conquest\te
+st_gen.ts:206:24)
+    at test (C:\Users\aduca
+\.gemini\antigravity\scratc
+h\gamified-life\src\feature
+s\conquest\test_gen.ts:229:
+23)
+    at <anonymous> (C:\User
+s\aduca\.gemini\antigravity
+\scratch\gamified-life\src\
+features\conquest\test_gen.
+ts:238:1)
+    at ModuleJob.run (node:
+internal/modules/esm/module
+_job:413:25)
+    at async onImport.trace
+Promise.__proto__ (node:int
+ernal/modules/esm/loader:66
+0:26)
+    at async asyncRunEntryP
+ointWithESMLoader (node:int
+ernal/modules/run_main:101:
+5)
+error Error: totalTiles 
+must be divisible by 3
+    at generateTileGroups (
+C:\Users\aduca\.gemini\anti
+gravity\scratch\gamified-li
+fe\src\features\conquest\te
+st_gen.ts:57:37)
+    at generateValidBoard (
+C:\Users\aduca\.gemini\anti
+gravity\scratch\gamified-li
+fe\src\features\conquest\te
+st_gen.ts:206:24)
+    at test (C:\Users\aduca
+\.gemini\antigravity\scratc
+h\gamified-life\src\feature
+s\conquest\test_gen.ts:229:
+23)
+    at <anonymous> (C:\User
+s\aduca\.gemini\antigravity
+\scratch\gamified-life\src\
+features\conquest\test_gen.
+ts:238:1)
+    at ModuleJob.run (node:
+internal/modules/esm/module
+_job:413:25)
+    at async onImport.trace
+Promise.__proto__ (node:int
+ernal/modules/esm/loader:66
+0:26)
+    at async asyncRunEntryP
+ointWithESMLoader (node:int
+ernal/modules/run_main:101:
+5)
+error Error: totalTiles 
+must be divisible by 3
+    at generateTileGroups (
+C:\Users\aduca\.gemini\anti
+gravity\scratch\gamified-li
+fe\src\features\conquest\te
+st_gen.ts:57:37)
+    at generateValidBoard (
+C:\Users\aduca\.gemini\anti
+gravity\scratch\gamified-li
+fe\src\features\conquest\te
+st_gen.ts:206:24)
+    at test (C:\Users\aduca
+\.gemini\antigravity\scratc
+h\gamified-life\src\feature
+s\conquest\test_gen.ts:229:
+23)
+    at <anonymous> (C:\User
+s\aduca\.gemini\antigravity
+\scratch\gamified-life\src\
+features\conquest\test_gen.
+ts:238:1)
+    at ModuleJob.run (node:
+internal/modules/esm/module
+_job:413:25)
+    at async onImport.trace
+Promise.__proto__ (node:int
+ernal/modules/esm/loader:66
+0:26)
+    at async asyncRunEntryP
+ointWithESMLoader (node:int
+ernal/modules/run_main:101:
+5)
+error Error: totalTiles 
+must be divisible by 3
+    at generateTileGroups (
+C:\Users\aduca\.gemini\anti
+gravity\scratch\gamified-li
+fe\src\features\conquest\te
+st_gen.ts:57:37)
+    at generateValidBoard (
+C:\Users\aduca\.gemini\anti
+gravity\scratch\gamified-li
+fe\src\features\conquest\te
+st_gen.ts:206:24)
+    at test (C:\Users\aduca
+\.gemini\antigravity\scratc
+h\gamified-life\src\feature
+s\conquest\test_gen.ts:229:
+23)
+    at <anonymous> (C:\User
+s\aduca\.gemini\antigravity
+\scratch\gamified-life\src\
+features\conquest\test_gen.
+ts:238:1)
+    at ModuleJob.run (node:
+internal/modules/esm/module
+_job:413:25)
+    at async onImport.trace
+Promise.__proto__ (node:int
+ernal/modules/esm/loader:66
+0:26)
+    at async asyncRunEntryP
+ointWithESMLoader (node:int
+ernal/modules/run_main:101:
+5)
+error Error: totalTiles 
+must be divisible by 3
+    at generateTileGroups (
+C:\Users\aduca\.gemini\anti
+gravity\scratch\gamified-li
+fe\src\features\conquest\te
+st_gen.ts:57:37)
+    at generateValidBoard (
+C:\Users\aduca\.gemini\anti
+gravity\scratch\gamified-li
+fe\src\features\conquest\te
+st_gen.ts:206:24)
+    at test (C:\Users\aduca
+\.gemini\antigravity\scratc
+h\gamified-life\src\feature
+s\conquest\test_gen.ts:229:
+23)
+    at <anonymous> (C:\User
+s\aduca\.gemini\antigravity
+\scratch\gamified-life\src\
+features\conquest\test_gen.
+ts:238:1)
+    at ModuleJob.run (node:
+internal/modules/esm/module
+_job:413:25)
+    at async onImport.trace
+Promise.__proto__ (node:int
+ernal/modules/esm/loader:66
+0:26)
+    at async asyncRunEntryP
+ointWithESMLoader (node:int
+ernal/modules/run_main:101:
+5)
+error Error: totalTiles 
+must be divisible by 3
+    at generateTileGroups (
+C:\Users\aduca\.gemini\anti
+gravity\scratch\gamified-li
+fe\src\features\conquest\te
+st_gen.ts:57:37)
+    at generateValidBoard (
+C:\Users\aduca\.gemini\anti
+gravity\scratch\gamified-li
+fe\src\features\conquest\te
+st_gen.ts:206:24)
+    at test (C:\Users\aduca
+\.gemini\antigravity\scratc
+h\gamified-life\src\feature
+s\conquest\test_gen.ts:229:
+23)
+    at <anonymous> (C:\User
+s\aduca\.gemini\antigravity
+\scratch\gamified-life\src\
+features\conquest\test_gen.
+ts:238:1)
+    at ModuleJob.run (node:
+internal/modules/esm/module
+_job:413:25)
+    at async onImport.trace
+Promise.__proto__ (node:int
+ernal/modules/esm/loader:66
+0:26)
+    at async asyncRunEntryP
+ointWithESMLoader (node:int
+ernal/modules/run_main:101:
+5)
+error Error: totalTiles 
+must be divisible by 3
+    at generateTileGroups (
+C:\Users\aduca\.gemini\anti
+gravity\scratch\gamified-li
+fe\src\features\conquest\te
+st_gen.ts:57:37)
+    at generateValidBoard (
+C:\Users\aduca\.gemini\anti
+gravity\scratch\gamified-li
+fe\src\features\conquest\te
+st_gen.ts:206:24)
+    at test (C:\Users\aduca
+\.gemini\antigravity\scratc
+h\gamified-life\src\feature
+s\conquest\test_gen.ts:229:
+23)
+    at <anonymous> (C:\User
+s\aduca\.gemini\antigravity
+\scratch\gamified-life\src\
+features\conquest\test_gen.
+ts:238:1)
+    at ModuleJob.run (node:
+internal/modules/esm/module
+_job:413:25)
+    at async onImport.trace
+Promise.__proto__ (node:int
+ernal/modules/esm/loader:66
+0:26)
+    at async asyncRunEntryP
+ointWithESMLoader (node:int
+ernal/modules/run_main:101:
+5)
+error Error: totalTiles 
+must be divisible by 3
+    at generateTileGroups (
+C:\Users\aduca\.gemini\anti
+gravity\scratch\gamified-li
+fe\src\features\conquest\te
+st_gen.ts:57:37)
+    at generateValidBoard (
+C:\Users\aduca\.gemini\anti
+gravity\scratch\gamified-li
+fe\src\features\conquest\te
+st_gen.ts:206:24)
+    at test (C:\Users\aduca
+\.gemini\antigravity\scratc
+h\gamified-life\src\feature
+s\conquest\test_gen.ts:229:
+23)
+    at <anonymous> (C:\User
+s\aduca\.gemini\antigravity
+\scratch\gamified-life\src\
+features\conquest\test_gen.
+ts:238:1)
+    at ModuleJob.run (node:
+internal/modules/esm/module
+_job:413:25)
+    at async onImport.trace
+Promise.__proto__ (node:int
+ernal/modules/esm/loader:66
+0:26)
+    at async asyncRunEntryP
+ointWithESMLoader (node:int
+ernal/modules/run_main:101:
+5)
+error Error: totalTiles 
+must be divisible by 3
+    at generateTileGroups (
+C:\Users\aduca\.gemini\anti
+gravity\scratch\gamified-li
+fe\src\features\conquest\te
+st_gen.ts:57:37)
+    at generateValidBoard (
+C:\Users\aduca\.gemini\anti
+gravity\scratch\gamified-li
+fe\src\features\conquest\te
+st_gen.ts:206:24)
+    at test (C:\Users\aduca
+\.gemini\antigravity\scratc
+h\gamified-life\src\feature
+s\conquest\test_gen.ts:229:
+23)
+    at <anonymous> (C:\User
+s\aduca\.gemini\antigravity
+\scratch\gamified-life\src\
+features\conquest\test_gen.
+ts:238:1)
+    at ModuleJob.run (node:
+internal/modules/esm/module
+_job:413:25)
+    at async onImport.trace
+Promise.__proto__ (node:int
+ernal/modules/esm/loader:66
+0:26)
+    at async asyncRunEntryP
+ointWithESMLoader (node:int
+ernal/modules/run_main:101:
+5)
+error Error: totalTiles 
+must be divisible by 3
+    at generateTileGroups (
+C:\Users\aduca\.gemini\anti
+gravity\scratch\gamified-li
+fe\src\features\conquest\te
+st_gen.ts:57:37)
+    at generateValidBoard (
+C:\Users\aduca\.gemini\anti
+gravity\scratch\gamified-li
+fe\src\features\conquest\te
+st_gen.ts:206:24)
+    at test (C:\Users\aduca
+\.gemini\antigravity\scratc
+h\gamified-life\src\feature
+s\conquest\test_gen.ts:229:
+23)
+    at <anonymous> (C:\User
+s\aduca\.gemini\antigravity
+\scratch\gamified-life\src\
+features\conquest\test_gen.
+ts:238:1)
+    at ModuleJob.run (node:
+internal/modules/esm/module
+_job:413:25)
+    at async onImport.trace
+Promise.__proto__ (node:int
+ernal/modules/esm/loader:66
+0:26)
+    at async asyncRunEntryP
+ointWithESMLoader (node:int
+ernal/modules/run_main:101:
+5)
+error Error: totalTiles 
+must be divisible by 3
+    at generateTileGroups (
+C:\Users\aduca\.gemini\anti
+gravity\scratch\gamified-li
+fe\src\features\conquest\te
+st_gen.ts:57:37)
+    at generateValidBoard (
+C:\Users\aduca\.gemini\anti
+gravity\scratch\gamified-li
+fe\src\features\conquest\te
+st_gen.ts:206:24)
+    at test (C:\Users\aduca
+\.gemini\antigravity\scratc
+h\gamified-life\src\feature
+s\conquest\test_gen.ts:229:
+23)
+    at <anonymous> (C:\User
+s\aduca\.gemini\antigravity
+\scratch\gamified-life\src\
+features\conquest\test_gen.
+ts:238:1)
+    at ModuleJob.run (node:
+internal/modules/esm/module
+_job:413:25)
+    at async onImport.trace
+Promise.__proto__ (node:int
+ernal/modules/esm/loader:66
+0:26)
+    at async asyncRunEntryP
+ointWithESMLoader (node:int
+ernal/modules/run_main:101:
+5)
+error Error: totalTiles 
+must be divisible by 3
+    at generateTileGroups (
+C:\Users\aduca\.gemini\anti
+gravity\scratch\gamified-li
+fe\src\features\conquest\te
+st_gen.ts:57:37)
+    at generateValidBoard (
+C:\Users\aduca\.gemini\anti
+gravity\scratch\gamified-li
+fe\src\features\conquest\te
+st_gen.ts:206:24)
+    at test (C:\Users\aduca
+\.gemini\antigravity\scratc
+h\gamified-life\src\feature
+s\conquest\test_gen.ts:229:
+23)
+    at <anonymous> (C:\User
+s\aduca\.gemini\antigravity
+\scratch\gamified-life\src\
+features\conquest\test_gen.
+ts:238:1)
+    at ModuleJob.run (node:
+internal/modules/esm/module
+_job:413:25)
+    at async onImport.trace
+Promise.__proto__ (node:int
+ernal/modules/esm/loader:66
+0:26)
+    at async asyncRunEntryP
+ointWithESMLoader (node:int
+ernal/modules/run_main:101:
+5)
+error Error: totalTiles 
+must be divisible by 3
+    at generateTileGroups (
+C:\Users\aduca\.gemini\anti
+gravity\scratch\gamified-li
+fe\src\features\conquest\te
+st_gen.ts:57:37)
+    at generateValidBoard (
+C:\Users\aduca\.gemini\anti
+gravity\scratch\gamified-li
+fe\src\features\conquest\te
+st_gen.ts:206:24)
+    at test (C:\Users\aduca
+\.gemini\antigravity\scratc
+h\gamified-life\src\feature
+s\conquest\test_gen.ts:229:
+23)
+    at <anonymous> (C:\User
+s\aduca\.gemini\antigravity
+\scratch\gamified-life\src\
+features\conquest\test_gen.
+ts:238:1)
+    at ModuleJob.run (node:
+internal/modules/esm/module
+_job:413:25)
+    at async onImport.trace
+Promise.__proto__ (node:int
+ernal/modules/esm/loader:66
+0:26)
+    at async asyncRunEntryP
+ointWithESMLoader (node:int
+ernal/modules/run_main:101:
+5)
+error Error: totalTiles 
+must be divisible by 3
+    at generateTileGroups (
+C:\Users\aduca\.gemini\anti
+gravity\scratch\gamified-li
+fe\src\features\conquest\te
+st_gen.ts:57:37)
+    at generateValidBoard (
+C:\Users\aduca\.gemini\anti
+gravity\scratch\gamified-li
+fe\src\features\conquest\te
+st_gen.ts:206:24)
+    at test (C:\Users\aduca
+\.gemini\antigravity\scratc
+h\gamified-life\src\feature
+s\conquest\test_gen.ts:229:
+23)
+    at <anonymous> (C:\User
+s\aduca\.gemini\antigravity
+\scratch\gamified-life\src\
+features\conquest\test_gen.
+ts:238:1)
+    at ModuleJob.run (node:
+internal/modules/esm/module
+_job:413:25)
+    at async onImport.trace
+Promise.__proto__ (node:int
+ernal/modules/esm/loader:66
+0:26)
+    at async asyncRunEntryP
+ointWithESMLoader (node:int
+ernal/modules/run_main:101:
+5)
+error Error: totalTiles 
+must be divisible by 3
+    at generateTileGroups (
+C:\Users\aduca\.gemini\anti
+gravity\scratch\gamified-li
+fe\src\features\conquest\te
+st_gen.ts:57:37)
+    at generateValidBoard (
+C:\Users\aduca\.gemini\anti
+gravity\scratch\gamified-li
+fe\src\features\conquest\te
+st_gen.ts:206:24)
+    at test (C:\Users\aduca
+\.gemini\antigravity\scratc
+h\gamified-life\src\feature
+s\conquest\test_gen.ts:229:
+23)
+    at <anonymous> (C:\User
+s\aduca\.gemini\antigravity
+\scratch\gamified-life\src\
+features\conquest\test_gen.
+ts:238:1)
+    at ModuleJob.run (node:
+internal/modules/esm/module
+_job:413:25)
+    at async onImport.trace
+Promise.__proto__ (node:int
+ernal/modules/esm/loader:66
+0:26)
+    at async asyncRunEntryP
+ointWithESMLoader (node:int
+ernal/modules/run_main:101:
+5)
+error Error: totalTiles 
+must be divisible by 3
+    at generateTileGroups (
+C:\Users\aduca\.gemini\anti
+gravity\scratch\gamified-li
+fe\src\features\conquest\te
+st_gen.ts:57:37)
+    at generateValidBoard (
+C:\Users\aduca\.gemini\anti
+gravity\scratch\gamified-li
+fe\src\features\conquest\te
+st_gen.ts:206:24)
+    at test (C:\Users\aduca
+\.gemini\antigravity\scratc
+h\gamified-life\src\feature
+s\conquest\test_gen.ts:229:
+23)
+    at <anonymous> (C:\User
+s\aduca\.gemini\antigravity
+\scratch\gamified-life\src\
+features\conquest\test_gen.
+ts:238:1)
+    at ModuleJob.run (node:
+internal/modules/esm/module
+_job:413:25)
+    at async onImport.trace
+Promise.__proto__ (node:int
+ernal/modules/esm/loader:66
+0:26)
+    at async asyncRunEntryP
+ointWithESMLoader (node:int
+ernal/modules/run_main:101:
+5)
+error Error: totalTiles 
+must be divisible by 3
+    at generateTileGroups (
+C:\Users\aduca\.gemini\anti
+gravity\scratch\gamified-li
+fe\src\features\conquest\te
+st_gen.ts:57:37)
+    at generateValidBoard (
+C:\Users\aduca\.gemini\anti
+gravity\scratch\gamified-li
+fe\src\features\conquest\te
+st_gen.ts:206:24)
+    at test (C:\Users\aduca
+\.gemini\antigravity\scratc
+h\gamified-life\src\feature
+s\conquest\test_gen.ts:229:
+23)
+    at <anonymous> (C:\User
+s\aduca\.gemini\antigravity
+\scratch\gamified-life\src\
+features\conquest\test_gen.
+ts:238:1)
+    at ModuleJob.run (node:
+internal/modules/esm/module
+_job:413:25)
+    at async onImport.trace
+Promise.__proto__ (node:int
+ernal/modules/esm/loader:66
+0:26)
+    at async asyncRunEntryP
+ointWithESMLoader (node:int
+ernal/modules/run_main:101:
+5)
+error Error: totalTiles 
+must be divisible by 3
+    at generateTileGroups (
+C:\Users\aduca\.gemini\anti
+gravity\scratch\gamified-li
+fe\src\features\conquest\te
+st_gen.ts:57:37)
+    at generateValidBoard (
+C:\Users\aduca\.gemini\anti
+gravity\scratch\gamified-li
+fe\src\features\conquest\te
+st_gen.ts:206:24)
+    at test (C:\Users\aduca
+\.gemini\antigravity\scratc
+h\gamified-life\src\feature
+s\conquest\test_gen.ts:229:
+23)
+    at <anonymous> (C:\User
+s\aduca\.gemini\antigravity
+\scratch\gamified-life\src\
+features\conquest\test_gen.
+ts:238:1)
+    at ModuleJob.run (node:
+internal/modules/esm/module
+_job:413:25)
+    at async onImport.trace
+Promise.__proto__ (node:int
+ernal/modules/esm/loader:66
+0:26)
+    at async asyncRunEntryP
+ointWithESMLoader (node:int
+ernal/modules/run_main:101:
+5)
+error Error: totalTiles 
+must be divisible by 3
+    at generateTileGroups (
+C:\Users\aduca\.gemini\anti
+gravity\scratch\gamified-li
+fe\src\features\conquest\te
+st_gen.ts:57:37)
+    at generateValidBoard (
+C:\Users\aduca\.gemini\anti
+gravity\scratch\gamified-li
+fe\src\features\conquest\te
+st_gen.ts:206:24)
+    at test (C:\Users\aduca
+\.gemini\antigravity\scratc
+h\gamified-life\src\feature
+s\conquest\test_gen.ts:229:
+23)
+    at <anonymous> (C:\User
+s\aduca\.gemini\antigravity
+\scratch\gamified-life\src\
+features\conquest\test_gen.
+ts:238:1)
+    at ModuleJob.run (node:
+internal/modules/esm/module
+_job:413:25)
+    at async onImport.trace
+Promise.__proto__ (node:int
+ernal/modules/esm/loader:66
+0:26)
+    at async asyncRunEntryP
+ointWithESMLoader (node:int
+ernal/modules/run_main:101:
+5)
+error Error: totalTiles 
+must be divisible by 3
+    at generateTileGroups (
+C:\Users\aduca\.gemini\anti
+gravity\scratch\gamified-li
+fe\src\features\conquest\te
+st_gen.ts:57:37)
+    at generateValidBoard (
+C:\Users\aduca\.gemini\anti
+gravity\scratch\gamified-li
+fe\src\features\conquest\te
+st_gen.ts:206:24)
+    at test (C:\Users\aduca
+\.gemini\antigravity\scratc
+h\gamified-life\src\feature
+s\conquest\test_gen.ts:229:
+23)
+    at <anonymous> (C:\User
+s\aduca\.gemini\antigravity
+\scratch\gamified-life\src\
+features\conquest\test_gen.
+ts:238:1)
+    at ModuleJob.run (node:
+internal/modules/esm/module
+_job:413:25)
+    at async onImport.trace
+Promise.__proto__ (node:int
+ernal/modules/esm/loader:66
+0:26)
+    at async asyncRunEntryP
+ointWithESMLoader (node:int
+ernal/modules/run_main:101:
+5)
+error Error: totalTiles 
+must be divisible by 3
+    at generateTileGroups (
+C:\Users\aduca\.gemini\anti
+gravity\scratch\gamified-li
+fe\src\features\conquest\te
+st_gen.ts:57:37)
+    at generateValidBoard (
+C:\Users\aduca\.gemini\anti
+gravity\scratch\gamified-li
+fe\src\features\conquest\te
+st_gen.ts:206:24)
+    at test (C:\Users\aduca
+\.gemini\antigravity\scratc
+h\gamified-life\src\feature
+s\conquest\test_gen.ts:229:
+23)
+    at <anonymous> (C:\User
+s\aduca\.gemini\antigravity
+\scratch\gamified-life\src\
+features\conquest\test_gen.
+ts:238:1)
+    at ModuleJob.run (node:
+internal/modules/esm/module
+_job:413:25)
+    at async onImport.trace
+Promise.__proto__ (node:int
+ernal/modules/esm/loader:66
+0:26)
+    at async asyncRunEntryP
+ointWithESMLoader (node:int
+ernal/modules/run_main:101:
+5)
+error Error: totalTiles 
+must be divisible by 3
+    at generateTileGroups (
+C:\Users\aduca\.gemini\anti
+gravity\scratch\gamified-li
+fe\src\features\conquest\te
+st_gen.ts:57:37)
+    at generateValidBoard (
+C:\Users\aduca\.gemini\anti
+gravity\scratch\gamified-li
+fe\src\features\conquest\te
+st_gen.ts:206:24)
+    at test (C:\Users\aduca
+\.gemini\antigravity\scratc
+h\gamified-life\src\feature
+s\conquest\test_gen.ts:229:
+23)
+    at <anonymous> (C:\User
+s\aduca\.gemini\antigravity
+\scratch\gamified-life\src\
+features\conquest\test_gen.
+ts:238:1)
+    at ModuleJob.run (node:
+internal/modules/esm/module
+_job:413:25)
+    at async onImport.trace
+Promise.__proto__ (node:int
+ernal/modules/esm/loader:66
+0:26)
+    at async asyncRunEntryP
+ointWithESMLoader (node:int
+ernal/modules/run_main:101:
+5)
+error Error: totalTiles 
+must be divisible by 3
+    at generateTileGroups (
+C:\Users\aduca\.gemini\anti
+gravity\scratch\gamified-li
+fe\src\features\conquest\te
+st_gen.ts:57:37)
+    at generateValidBoard (
+C:\Users\aduca\.gemini\anti
+gravity\scratch\gamified-li
+fe\src\features\conquest\te
+st_gen.ts:206:24)
+    at test (C:\Users\aduca
+\.gemini\antigravity\scratc
+h\gamified-life\src\feature
+s\conquest\test_gen.ts:229:
+23)
+    at <anonymous> (C:\User
+s\aduca\.gemini\antigravity
+\scratch\gamified-life\src\
+features\conquest\test_gen.
+ts:238:1)
+    at ModuleJob.run (node:
+internal/modules/esm/module
+_job:413:25)
+    at async onImport.trace
+Promise.__proto__ (node:int
+ernal/modules/esm/loader:66
+0:26)
+    at async asyncRunEntryP
+ointWithESMLoader (node:int
+ernal/modules/run_main:101:
+5)
+error Error: totalTiles 
+must be divisible by 3
+    at generateTileGroups (
+C:\Users\aduca\.gemini\anti
+gravity\scratch\gamified-li
+fe\src\features\conquest\te
+st_gen.ts:57:37)
+    at generateValidBoard (
+C:\Users\aduca\.gemini\anti
+gravity\scratch\gamified-li
+fe\src\features\conquest\te
+st_gen.ts:206:24)
+    at test (C:\Users\aduca
+\.gemini\antigravity\scratc
+h\gamified-life\src\feature
+s\conquest\test_gen.ts:229:
+23)
+    at <anonymous> (C:\User
+s\aduca\.gemini\antigravity
+\scratch\gamified-life\src\
+features\conquest\test_gen.
+ts:238:1)
+    at ModuleJob.run (node:
+internal/modules/esm/module
+_job:413:25)
+    at async onImport.trace
+Promise.__proto__ (node:int
+ernal/modules/esm/loader:66
+0:26)
+    at async asyncRunEntryP
+ointWithESMLoader (node:int
+ernal/modules/run_main:101:
+5)
+error Error: totalTiles 
+must be divisible by 3
+    at generateTileGroups (
+C:\Users\aduca\.gemini\anti
+gravity\scratch\gamified-li
+fe\src\features\conquest\te
+st_gen.ts:57:37)
+    at generateValidBoard (
+C:\Users\aduca\.gemini\anti
+gravity\scratch\gamified-li
+fe\src\features\conquest\te
+st_gen.ts:206:24)
+    at test (C:\Users\aduca
+\.gemini\antigravity\scratc
+h\gamified-life\src\feature
+s\conquest\test_gen.ts:229:
+23)
+    at <anonymous> (C:\User
+s\aduca\.gemini\antigravity
+\scratch\gamified-life\src\
+features\conquest\test_gen.
+ts:238:1)
+    at ModuleJob.run (node:
+internal/modules/esm/module
+_job:413:25)
+    at async onImport.trace
+Promise.__proto__ (node:int
+ernal/modules/esm/loader:66
+0:26)
+    at async asyncRunEntryP
+ointWithESMLoader (node:int
+ernal/modules/run_main:101:
+5)
+error Error: totalTiles 
+must be divisible by 3
+    at generateTileGroups (
+C:\Users\aduca\.gemini\anti
+gravity\scratch\gamified-li
+fe\src\features\conquest\te
+st_gen.ts:57:37)
+    at generateValidBoard (
+C:\Users\aduca\.gemini\anti
+gravity\scratch\gamified-li
+fe\src\features\conquest\te
+st_gen.ts:206:24)
+    at test (C:\Users\aduca
+\.gemini\antigravity\scratc
+h\gamified-life\src\feature
+s\conquest\test_gen.ts:229:
+23)
+    at <anonymous> (C:\User
+s\aduca\.gemini\antigravity
+\scratch\gamified-life\src\
+features\conquest\test_gen.
+ts:238:1)
+    at ModuleJob.run (node:
+internal/modules/esm/module
+_job:413:25)
+    at async onImport.trace
+Promise.__proto__ (node:int
+ernal/modules/esm/loader:66
+0:26)
+    at async asyncRunEntryP
+ointWithESMLoader (node:int
+ernal/modules/run_main:101:
+5)
+error Error: totalTiles 
+must be divisible by 3
+    at generateTileGroups (
+C:\Users\aduca\.gemini\anti
+gravity\scratch\gamified-li
+fe\src\features\conquest\te
+st_gen.ts:57:37)
+    at generateValidBoard (
+C:\Users\aduca\.gemini\anti
+gravity\scratch\gamified-li
+fe\src\features\conquest\te
+st_gen.ts:206:24)
+    at test (C:\Users\aduca
+\.gemini\antigravity\scratc
+h\gamified-life\src\feature
+s\conquest\test_gen.ts:229:
+23)
+    at <anonymous> (C:\User
+s\aduca\.gemini\antigravity
+\scratch\gamified-life\src\
+features\conquest\test_gen.
+ts:238:1)
+    at ModuleJob.run (node:
+internal/modules/esm/module
+_job:413:25)
+    at async onImport.trace
+Promise.__proto__ (node:int
+ernal/modules/esm/loader:66
+0:26)
+    at async asyncRunEntryP
+ointWithESMLoader (node:int
+ernal/modules/run_main:101:
+5)
+error Error: totalTiles 
+must be divisible by 3
+    at generateTileGroups (
+C:\Users\aduca\.gemini\anti
+gravity\scratch\gamified-li
+fe\src\features\conquest\te
+st_gen.ts:57:37)
+    at generateValidBoard (
+C:\Users\aduca\.gemini\anti
+gravity\scratch\gamified-li
+fe\src\features\conquest\te
+st_gen.ts:206:24)
+    at test (C:\Users\aduca
+\.gemini\antigravity\scratc
+h\gamified-life\src\feature
+s\conquest\test_gen.ts:229:
+23)
+    at <anonymous> (C:\User
+s\aduca\.gemini\antigravity
+\scratch\gamified-life\src\
+features\conquest\test_gen.
+ts:238:1)
+    at ModuleJob.run (node:
+internal/modules/esm/module
+_job:413:25)
+    at async onImport.trace
+Promise.__proto__ (node:int
+ernal/modules/esm/loader:66
+0:26)
+    at async asyncRunEntryP
+ointWithESMLoader (node:int
+ernal/modules/run_main:101:
+5)
+error Error: totalTiles 
+must be divisible by 3
+    at generateTileGroups (
+C:\Users\aduca\.gemini\anti
+gravity\scratch\gamified-li
+fe\src\features\conquest\te
+st_gen.ts:57:37)
+    at generateValidBoard (
+C:\Users\aduca\.gemini\anti
+gravity\scratch\gamified-li
+fe\src\features\conquest\te
+st_gen.ts:206:24)
+    at test (C:\Users\aduca
+\.gemini\antigravity\scratc
+h\gamified-life\src\feature
+s\conquest\test_gen.ts:229:
+23)
+    at <anonymous> (C:\User
+s\aduca\.gemini\antigravity
+\scratch\gamified-life\src\
+features\conquest\test_gen.
+ts:238:1)
+    at ModuleJob.run (node:
+internal/modules/esm/module
+_job:413:25)
+    at async onImport.trace
+Promise.__proto__ (node:int
+ernal/modules/esm/loader:66
+0:26)
+    at async asyncRunEntryP
+ointWithESMLoader (node:int
+ernal/modules/run_main:101:
+5)
+error Error: totalTiles 
+must be divisible by 3
+    at generateTileGroups (
+C:\Users\aduca\.gemini\anti
+gravity\scratch\gamified-li
+fe\src\features\conquest\te
+st_gen.ts:57:37)
+    at generateValidBoard (
+C:\Users\aduca\.gemini\anti
+gravity\scratch\gamified-li
+fe\src\features\conquest\te
+st_gen.ts:206:24)
+    at test (C:\Users\aduca
+\.gemini\antigravity\scratc
+h\gamified-life\src\feature
+s\conquest\test_gen.ts:229:
+23)
+    at <anonymous> (C:\User
+s\aduca\.gemini\antigravity
+\scratch\gamified-life\src\
+features\conquest\test_gen.
+ts:238:1)
+    at ModuleJob.run (node:
+internal/modules/esm/module
+_job:413:25)
+    at async onImport.trace
+Promise.__proto__ (node:int
+ernal/modules/esm/loader:66
+0:26)
+    at async asyncRunEntryP
+ointWithESMLoader (node:int
+ernal/modules/run_main:101:
+5)
+error Error: totalTiles 
+must be divisible by 3
+    at generateTileGroups (
+C:\Users\aduca\.gemini\anti
+gravity\scratch\gamified-li
+fe\src\features\conquest\te
+st_gen.ts:57:37)
+    at generateValidBoard (
+C:\Users\aduca\.gemini\anti
+gravity\scratch\gamified-li
+fe\src\features\conquest\te
+st_gen.ts:206:24)
+    at test (C:\Users\aduca
+\.gemini\antigravity\scratc
+h\gamified-life\src\feature
+s\conquest\test_gen.ts:229:
+23)
+    at <anonymous> (C:\User
+s\aduca\.gemini\antigravity
+\scratch\gamified-life\src\
+features\conquest\test_gen.
+ts:238:1)
+    at ModuleJob.run (node:
+internal/modules/esm/module
+_job:413:25)
+    at async onImport.trace
+Promise.__proto__ (node:int
+ernal/modules/esm/loader:66
+0:26)
+    at async asyncRunEntryP
+ointWithESMLoader (node:int
+ernal/modules/run_main:101:
+5)
+error Error: totalTiles 
+must be divisible by 3
+    at generateTileGroups (
+C:\Users\aduca\.gemini\anti
+gravity\scratch\gamified-li
+fe\src\features\conquest\te
+st_gen.ts:57:37)
+    at generateValidBoard (
+C:\Users\aduca\.gemini\anti
+gravity\scratch\gamified-li
+fe\src\features\conquest\te
+st_gen.ts:206:24)
+    at test (C:\Users\aduca
+\.gemini\antigravity\scratc
+h\gamified-life\src\feature
+s\conquest\test_gen.ts:229:
+23)
+    at <anonymous> (C:\User
+s\aduca\.gemini\antigravity
+\scratch\gamified-life\src\
+features\conquest\test_gen.
+ts:238:1)
+    at ModuleJob.run (node:
+internal/modules/esm/module
+_job:413:25)
+    at async onImport.trace
+Promise.__proto__ (node:int
+ernal/modules/esm/loader:66
+0:26)
+    at async asyncRunEntryP
+ointWithESMLoader (node:int
+ernal/modules/run_main:101:
+5)
+error Error: totalTiles 
+must be divisible by 3
+    at generateTileGroups (
+C:\Users\aduca\.gemini\anti
+gravity\scratch\gamified-li
+fe\src\features\conquest\te
+st_gen.ts:57:37)
+    at generateValidBoard (
+C:\Users\aduca\.gemini\anti
+gravity\scratch\gamified-li
+fe\src\features\conquest\te
+st_gen.ts:206:24)
+    at test (C:\Users\aduca
+\.gemini\antigravity\scratc
+h\gamified-life\src\feature
+s\conquest\test_gen.ts:229:
+23)
+    at <anonymous> (C:\User
+s\aduca\.gemini\antigravity
+\scratch\gamified-life\src\
+features\conquest\test_gen.
+ts:238:1)
+    at ModuleJob.run (node:
+internal/modules/esm/module
+_job:413:25)
+    at async onImport.trace
+Promise.__proto__ (node:int
+ernal/modules/esm/loader:66
+0:26)
+    at async asyncRunEntryP
+ointWithESMLoader (node:int
+ernal/modules/run_main:101:
+5)
+error Error: totalTiles 
+must be divisible by 3
+    at generateTileGroups (
+C:\Users\aduca\.gemini\anti
+gravity\scratch\gamified-li
+fe\src\features\conquest\te
+st_gen.ts:57:37)
+    at generateValidBoard (
+C:\Users\aduca\.gemini\anti
+gravity\scratch\gamified-li
+fe\src\features\conquest\te
+st_gen.ts:206:24)
+    at test (C:\Users\aduca
+\.gemini\antigravity\scratc
+h\gamified-life\src\feature
+s\conquest\test_gen.ts:229:
+23)
+    at <anonymous> (C:\User
+s\aduca\.gemini\antigravity
+\scratch\gamified-life\src\
+features\conquest\test_gen.
+ts:238:1)
+    at ModuleJob.run (node:
+internal/modules/esm/module
+_job:413:25)
+    at async onImport.trace
+Promise.__proto__ (node:int
+ernal/modules/esm/loader:66
+0:26)
+    at async asyncRunEntryP
+ointWithESMLoader (node:int
+ernal/modules/run_main:101:
+5)
+error Error: totalTiles 
+must be divisible by 3
+    at generateTileGroups (
+C:\Users\aduca\.gemini\anti
+gravity\scratch\gamified-li
+fe\src\features\conquest\te
+st_gen.ts:57:37)
+    at generateValidBoard (
+C:\Users\aduca\.gemini\anti
+gravity\scratch\gamified-li
+fe\src\features\conquest\te
+st_gen.ts:206:24)
+    at test (C:\Users\aduca
+\.gemini\antigravity\scratc
+h\gamified-life\src\feature
+s\conquest\test_gen.ts:229:
+23)
+    at <anonymous> (C:\User
+s\aduca\.gemini\antigravity
+\scratch\gamified-life\src\
+features\conquest\test_gen.
+ts:238:1)
+    at ModuleJob.run (node:
+internal/modules/esm/module
+_job:413:25)
+    at async onImport.trace
+Promise.__proto__ (node:int
+ernal/modules/esm/loader:66
+0:26)
+    at async asyncRunEntryP
+ointWithESMLoader (node:int
+ernal/modules/run_main:101:
+5)
+error Error: totalTiles 
+must be divisible by 3
+    at generateTileGroups (
+C:\Users\aduca\.gemini\anti
+gravity\scratch\gamified-li
+fe\src\features\conquest\te
+st_gen.ts:57:37)
+    at generateValidBoard (
+C:\Users\aduca\.gemini\anti
+gravity\scratch\gamified-li
+fe\src\features\conquest\te
+st_gen.ts:206:24)
+    at test (C:\Users\aduca
+\.gemini\antigravity\scratc
+h\gamified-life\src\feature
+s\conquest\test_gen.ts:229:
+23)
+    at <anonymous> (C:\User
+s\aduca\.gemini\antigravity
+\scratch\gamified-life\src\
+features\conquest\test_gen.
+ts:238:1)
+    at ModuleJob.run (node:
+internal/modules/esm/module
+_job:413:25)
+    at async onImport.trace
+Promise.__proto__ (node:int
+ernal/modules/esm/loader:66
+0:26)
+    at async asyncRunEntryP
+ointWithESMLoader (node:int
+ernal/modules/run_main:101:
+5)
+error Error: totalTiles 
+must be divisible by 3
+    at generateTileGroups (
+C:\Users\aduca\.gemini\anti
+gravity\scratch\gamified-li
+fe\src\features\conquest\te
+st_gen.ts:57:37)
+    at generateValidBoard (
+C:\Users\aduca\.gemini\anti
+gravity\scratch\gamified-li
+fe\src\features\conquest\te
+st_gen.ts:206:24)
+    at test (C:\Users\aduca
+\.gemini\antigravity\scratc
+h\gamified-life\src\feature
+s\conquest\test_gen.ts:229:
+23)
+    at <anonymous> (C:\User
+s\aduca\.gemini\antigravity
+\scratch\gamified-life\src\
+features\conquest\test_gen.
+ts:238:1)
+    at ModuleJob.run (node:
+internal/modules/esm/module
+_job:413:25)
+    at async onImport.trace
+Promise.__proto__ (node:int
+ernal/modules/esm/loader:66
+0:26)
+    at async asyncRunEntryP
+ointWithESMLoader (node:int
+ernal/modules/run_main:101:
+5)
+error Error: totalTiles 
+must be divisible by 3
+    at generateTileGroups (
+C:\Users\aduca\.gemini\anti
+gravity\scratch\gamified-li
+fe\src\features\conquest\te
+st_gen.ts:57:37)
+    at generateValidBoard (
+C:\Users\aduca\.gemini\anti
+gravity\scratch\gamified-li
+fe\src\features\conquest\te
+st_gen.ts:206:24)
+    at test (C:\Users\aduca
+\.gemini\antigravity\scratc
+h\gamified-life\src\feature
+s\conquest\test_gen.ts:229:
+23)
+    at <anonymous> (C:\User
+s\aduca\.gemini\antigravity
+\scratch\gamified-life\src\
+features\conquest\test_gen.
+ts:238:1)
+    at ModuleJob.run (node:
+internal/modules/esm/module
+_job:413:25)
+    at async onImport.trace
+Promise.__proto__ (node:int
+ernal/modules/esm/loader:66
+0:26)
+    at async asyncRunEntryP
+ointWithESMLoader (node:int
+ernal/modules/run_main:101:
+5)
+error Error: totalTiles 
+must be divisible by 3
+    at generateTileGroups (
+C:\Users\aduca\.gemini\anti
+gravity\scratch\gamified-li
+fe\src\features\conquest\te
+st_gen.ts:57:37)
+    at generateValidBoard (
+C:\Users\aduca\.gemini\anti
+gravity\scratch\gamified-li
+fe\src\features\conquest\te
+st_gen.ts:206:24)
+    at test (C:\Users\aduca
+\.gemini\antigravity\scratc
+h\gamified-life\src\feature
+s\conquest\test_gen.ts:229:
+23)
+    at <anonymous> (C:\User
+s\aduca\.gemini\antigravity
+\scratch\gamified-life\src\
+features\conquest\test_gen.
+ts:238:1)
+    at ModuleJob.run (node:
+internal/modules/esm/module
+_job:413:25)
+    at async onImport.trace
+Promise.__proto__ (node:int
+ernal/modules/esm/loader:66
+0:26)
+    at async asyncRunEntryP
+ointWithESMLoader (node:int
+ernal/modules/run_main:101:
+5)
+error Error: totalTiles 
+must be divisible by 3
+    at generateTileGroups (
+C:\Users\aduca\.gemini\anti
+gravity\scratch\gamified-li
+fe\src\features\conquest\te
+st_gen.ts:57:37)
+    at generateValidBoard (
+C:\Users\aduca\.gemini\anti
+gravity\scratch\gamified-li
+fe\src\features\conquest\te
+st_gen.ts:206:24)
+    at test (C:\Users\aduca
+\.gemini\antigravity\scratc
+h\gamified-life\src\feature
+s\conquest\test_gen.ts:229:
+23)
+    at <anonymous> (C:\User
+s\aduca\.gemini\antigravity
+\scratch\gamified-life\src\
+features\conquest\test_gen.
+ts:238:1)
+    at ModuleJob.run (node:
+internal/modules/esm/module
+_job:413:25)
+    at async onImport.trace
+Promise.__proto__ (node:int
+ernal/modules/esm/loader:66
+0:26)
+    at async asyncRunEntryP
+ointWithESMLoader (node:int
+ernal/modules/run_main:101:
+5)
+error Error: totalTiles 
+must be divisible by 3
+    at generateTileGroups (
+C:\Users\aduca\.gemini\anti
+gravity\scratch\gamified-li
+fe\src\features\conquest\te
+st_gen.ts:57:37)
+    at generateValidBoard (
+C:\Users\aduca\.gemini\anti
+gravity\scratch\gamified-li
+fe\src\features\conquest\te
+st_gen.ts:206:24)
+    at test (C:\Users\aduca
+\.gemini\antigravity\scratc
+h\gamified-life\src\feature
+s\conquest\test_gen.ts:229:
+23)
+    at <anonymous> (C:\User
+s\aduca\.gemini\antigravity
+\scratch\gamified-life\src\
+features\conquest\test_gen.
+ts:238:1)
+    at ModuleJob.run (node:
+internal/modules/esm/module
+_job:413:25)
+    at async onImport.trace
+Promise.__proto__ (node:int
+ernal/modules/esm/loader:66
+0:26)
+    at async asyncRunEntryP
+ointWithESMLoader (node:int
+ernal/modules/run_main:101:
+5)
+error Error: totalTiles 
+must be divisible by 3
+    at generateTileGroups (
+C:\Users\aduca\.gemini\anti
+gravity\scratch\gamified-li
+fe\src\features\conquest\te
+st_gen.ts:57:37)
+    at generateValidBoard (
+C:\Users\aduca\.gemini\anti
+gravity\scratch\gamified-li
+fe\src\features\conquest\te
+st_gen.ts:206:24)
+    at test (C:\Users\aduca
+\.gemini\antigravity\scratc
+h\gamified-life\src\feature
+s\conquest\test_gen.ts:229:
+23)
+    at <anonymous> (C:\User
+s\aduca\.gemini\antigravity
+\scratch\gamified-life\src\
+features\conquest\test_gen.
+ts:238:1)
+    at ModuleJob.run (node:
+internal/modules/esm/module
+_job:413:25)
+    at async onImport.trace
+Promise.__proto__ (node:int
+ernal/modules/esm/loader:66
+0:26)
+    at async asyncRunEntryP
+ointWithESMLoader (node:int
+ernal/modules/run_main:101:
+5)
+error Error: totalTiles 
+must be divisible by 3
+    at generateTileGroups (
+C:\Users\aduca\.gemini\anti
+gravity\scratch\gamified-li
+fe\src\features\conquest\te
+st_gen.ts:57:37)
+    at generateValidBoard (
+C:\Users\aduca\.gemini\anti
+gravity\scratch\gamified-li
+fe\src\features\conquest\te
+st_gen.ts:206:24)
+    at test (C:\Users\aduca
+\.gemini\antigravity\scratc
+h\gamified-life\src\feature
+s\conquest\test_gen.ts:229:
+23)
+    at <anonymous> (C:\User
+s\aduca\.gemini\antigravity
+\scratch\gamified-life\src\
+features\conquest\test_gen.
+ts:238:1)
+    at ModuleJob.run (node:
+internal/modules/esm/module
+_job:413:25)
+    at async onImport.trace
+Promise.__proto__ (node:int
+ernal/modules/esm/loader:66
+0:26)
+    at async asyncRunEntryP
+ointWithESMLoader (node:int
+ernal/modules/run_main:101:
+5)
+error Error: totalTiles 
+must be divisible by 3
+    at generateTileGroups (
+C:\Users\aduca\.gemini\anti
+gravity\scratch\gamified-li
+fe\src\features\conquest\te
+st_gen.ts:57:37)
+    at generateValidBoard (
+C:\Users\aduca\.gemini\anti
+gravity\scratch\gamified-li
+fe\src\features\conquest\te
+st_gen.ts:206:24)
+    at test (C:\Users\aduca
+\.gemini\antigravity\scratc
+h\gamified-life\src\feature
+s\conquest\test_gen.ts:229:
+23)
+    at <anonymous> (C:\User
+s\aduca\.gemini\antigravity
+\scratch\gamified-life\src\
+features\conquest\test_gen.
+ts:238:1)
+    at ModuleJob.run (node:
+internal/modules/esm/module
+_job:413:25)
+    at async onImport.trace
+Promise.__proto__ (node:int
+ernal/modules/esm/loader:66
+0:26)
+    at async asyncRunEntryP
+ointWithESMLoader (node:int
+ernal/modules/run_main:101:
+5)
+error Error: totalTiles 
+must be divisible by 3
+    at generateTileGroups (
+C:\Users\aduca\.gemini\anti
+gravity\scratch\gamified-li
+fe\src\features\conquest\te
+st_gen.ts:57:37)
+    at generateValidBoard (
+C:\Users\aduca\.gemini\anti
+gravity\scratch\gamified-li
+fe\src\features\conquest\te
+st_gen.ts:206:24)
+    at test (C:\Users\aduca
+\.gemini\antigravity\scratc
+h\gamified-life\src\feature
+s\conquest\test_gen.ts:229:
+23)
+    at <anonymous> (C:\User
+s\aduca\.gemini\antigravity
+\scratch\gamified-life\src\
+features\conquest\test_gen.
+ts:238:1)
+    at ModuleJob.run (node:
+internal/modules/esm/module
+_job:413:25)
+    at async onImport.trace
+Promise.__proto__ (node:int
+ernal/modules/esm/loader:66
+0:26)
+    at async asyncRunEntryP
+ointWithESMLoader (node:int
+ernal/modules/run_main:101:
+5)
+error Error: totalTiles 
+must be divisible by 3
+    at generateTileGroups (
+C:\Users\aduca\.gemini\anti
+gravity\scratch\gamified-li
+fe\src\features\conquest\te
+st_gen.ts:57:37)
+    at generateValidBoard (
+C:\Users\aduca\.gemini\anti
+gravity\scratch\gamified-li
+fe\src\features\conquest\te
+st_gen.ts:206:24)
+    at test (C:\Users\aduca
+\.gemini\antigravity\scratc
+h\gamified-life\src\feature
+s\conquest\test_gen.ts:229:
+23)
+    at <anonymous> (C:\User
+s\aduca\.gemini\antigravity
+\scratch\gamified-life\src\
+features\conquest\test_gen.
+ts:238:1)
+    at ModuleJob.run (node:
+internal/modules/esm/module
+_job:413:25)
+    at async onImport.trace
+Promise.__proto__ (node:int
+ernal/modules/esm/loader:66
+0:26)
+    at async asyncRunEntryP
+ointWithESMLoader (node:int
+ernal/modules/run_main:101:
+5)
+error Error: totalTiles 
+must be divisible by 3
+    at generateTileGroups (
+C:\Users\aduca\.gemini\anti
+gravity\scratch\gamified-li
+fe\src\features\conquest\te
+st_gen.ts:57:37)
+    at generateValidBoard (
+C:\Users\aduca\.gemini\anti
+gravity\scratch\gamified-li
+fe\src\features\conquest\te
+st_gen.ts:206:24)
+    at test (C:\Users\aduca
+\.gemini\antigravity\scratc
+h\gamified-life\src\feature
+s\conquest\test_gen.ts:229:
+23)
+    at <anonymous> (C:\User
+s\aduca\.gemini\antigravity
+\scratch\gamified-life\src\
+features\conquest\test_gen.
+ts:238:1)
+    at ModuleJob.run (node:
+internal/modules/esm/module
+_job:413:25)
+    at async onImport.trace
+Promise.__proto__ (node:int
+ernal/modules/esm/loader:66
+0:26)
+    at async asyncRunEntryP
+ointWithESMLoader (node:int
+ernal/modules/run_main:101:
+5)
+error Error: totalTiles 
+must be divisible by 3
+    at generateTileGroups (
+C:\Users\aduca\.gemini\anti
+gravity\scratch\gamified-li
+fe\src\features\conquest\te
+st_gen.ts:57:37)
+    at generateValidBoard (
+C:\Users\aduca\.gemini\anti
+gravity\scratch\gamified-li
+fe\src\features\conquest\te
+st_gen.ts:206:24)
+    at test (C:\Users\aduca
+\.gemini\antigravity\scratc
+h\gamified-life\src\feature
+s\conquest\test_gen.ts:229:
+23)
+    at <anonymous> (C:\User
+s\aduca\.gemini\antigravity
+\scratch\gamified-life\src\
+features\conquest\test_gen.
+ts:238:1)
+    at ModuleJob.run (node:
+internal/modules/esm/module
+_job:413:25)
+    at async onImport.trace
+Promise.__proto__ (node:int
+ernal/modules/esm/loader:66
+0:26)
+    at async asyncRunEntryP
+ointWithESMLoader (node:int
+ernal/modules/run_main:101:
+5)
+error Error: totalTiles 
+must be divisible by 3
+    at generateTileGroups (
+C:\Users\aduca\.gemini\anti
+gravity\scratch\gamified-li
+fe\src\features\conquest\te
+st_gen.ts:57:37)
+    at generateValidBoard (
+C:\Users\aduca\.gemini\anti
+gravity\scratch\gamified-li
+fe\src\features\conquest\te
+st_gen.ts:206:24)
+    at test (C:\Users\aduca
+\.gemini\antigravity\scratc
+h\gamified-life\src\feature
+s\conquest\test_gen.ts:229:
+23)
+    at <anonymous> (C:\User
+s\aduca\.gemini\antigravity
+\scratch\gamified-life\src\
+features\conquest\test_gen.
+ts:238:1)
+    at ModuleJob.run (node:
+internal/modules/esm/module
+_job:413:25)
+    at async onImport.trace
+Promise.__proto__ (node:int
+ernal/modules/esm/loader:66
+0:26)
+    at async asyncRunEntryP
+ointWithESMLoader (node:int
+ernal/modules/run_main:101:
+5)
+error Error: totalTiles 
+must be divisible by 3
+    at generateTileGroups (
+C:\Users\aduca\.gemini\anti
+gravity\scratch\gamified-li
+fe\src\features\conquest\te
+st_gen.ts:57:37)
+    at generateValidBoard (
+C:\Users\aduca\.gemini\anti
+gravity\scratch\gamified-li
+fe\src\features\conquest\te
+st_gen.ts:206:24)
+    at test (C:\Users\aduca
+\.gemini\antigravity\scratc
+h\gamified-life\src\feature
+s\conquest\test_gen.ts:229:
+23)
+    at <anonymous> (C:\User
+s\aduca\.gemini\antigravity
+\scratch\gamified-life\src\
+features\conquest\test_gen.
+ts:238:1)
+    at ModuleJob.run (node:
+internal/modules/esm/module
+_job:413:25)
+    at async onImport.trace
+Promise.__proto__ (node:int
+ernal/modules/esm/loader:66
+0:26)
+    at async asyncRunEntryP
+ointWithESMLoader (node:int
+ernal/modules/run_main:101:
+5)
+error Error: totalTiles 
+must be divisible by 3
+    at generateTileGroups (
+C:\Users\aduca\.gemini\anti
+gravity\scratch\gamified-li
+fe\src\features\conquest\te
+st_gen.ts:57:37)
+    at generateValidBoard (
+C:\Users\aduca\.gemini\anti
+gravity\scratch\gamified-li
+fe\src\features\conquest\te
+st_gen.ts:206:24)
+    at test (C:\Users\aduca
+\.gemini\antigravity\scratc
+h\gamified-life\src\feature
+s\conquest\test_gen.ts:229:
+23)
+    at <anonymous> (C:\User
+s\aduca\.gemini\antigravity
+\scratch\gamified-life\src\
+features\conquest\test_gen.
+ts:238:1)
+    at ModuleJob.run (node:
+internal/modules/esm/module
+_job:413:25)
+    at async onImport.trace
+Promise.__proto__ (node:int
+ernal/modules/esm/loader:66
+0:26)
+    at async asyncRunEntryP
+ointWithESMLoader (node:int
+ernal/modules/run_main:101:
+5)
+error Error: totalTiles 
+must be divisible by 3
+    at generateTileGroups (
+C:\Users\aduca\.gemini\anti
+gravity\scratch\gamified-li
+fe\src\features\conquest\te
+st_gen.ts:57:37)
+    at generateValidBoard (
+C:\Users\aduca\.gemini\anti
+gravity\scratch\gamified-li
+fe\src\features\conquest\te
+st_gen.ts:206:24)
+    at test (C:\Users\aduca
+\.gemini\antigravity\scratc
+h\gamified-life\src\feature
+s\conquest\test_gen.ts:229:
+23)
+    at <anonymous> (C:\User
+s\aduca\.gemini\antigravity
+\scratch\gamified-life\src\
+features\conquest\test_gen.
+ts:238:1)
+    at ModuleJob.run (node:
+internal/modules/esm/module
+_job:413:25)
+    at async onImport.trace
+Promise.__proto__ (node:int
+ernal/modules/esm/loader:66
+0:26)
+    at async asyncRunEntryP
+ointWithESMLoader (node:int
+ernal/modules/run_main:101:
+5)
+error Error: totalTiles 
+must be divisible by 3
+    at generateTileGroups (
+C:\Users\aduca\.gemini\anti
+gravity\scratch\gamified-li
+fe\src\features\conquest\te
+st_gen.ts:57:37)
+    at generateValidBoard (
+C:\Users\aduca\.gemini\anti
+gravity\scratch\gamified-li
+fe\src\features\conquest\te
+st_gen.ts:206:24)
+    at test (C:\Users\aduca
+\.gemini\antigravity\scratc
+h\gamified-life\src\feature
+s\conquest\test_gen.ts:229:
+23)
+    at <anonymous> (C:\User
+s\aduca\.gemini\antigravity
+\scratch\gamified-life\src\
+features\conquest\test_gen.
+ts:238:1)
+    at ModuleJob.run (node:
+internal/modules/esm/module
+_job:413:25)
+    at async onImport.trace
+Promise.__proto__ (node:int
+ernal/modules/esm/loader:66
+0:26)
+    at async asyncRunEntryP
+ointWithESMLoader (node:int
+ernal/modules/run_main:101:
+5)
+error Error: totalTiles 
+must be divisible by 3
+    at generateTileGroups (
+C:\Users\aduca\.gemini\anti
+gravity\scratch\gamified-li
+fe\src\features\conquest\te
+st_gen.ts:57:37)
+    at generateValidBoard (
+C:\Users\aduca\.gemini\anti
+gravity\scratch\gamified-li
+fe\src\features\conquest\te
+st_gen.ts:206:24)
+    at test (C:\Users\aduca
+\.gemini\antigravity\scratc
+h\gamified-life\src\feature
+s\conquest\test_gen.ts:229:
+23)
+    at <anonymous> (C:\User
+s\aduca\.gemini\antigravity
+\scratch\gamified-life\src\
+features\conquest\test_gen.
+ts:238:1)
+    at ModuleJob.run (node:
+internal/modules/esm/module
+_job:413:25)
+    at async onImport.trace
+Promise.__proto__ (node:int
+ernal/modules/esm/loader:66
+0:26)
+    at async asyncRunEntryP
+ointWithESMLoader (node:int
+ernal/modules/run_main:101:
+5)
+error Error: totalTiles 
+must be divisible by 3
+    at generateTileGroups (
+C:\Users\aduca\.gemini\anti
+gravity\scratch\gamified-li
+fe\src\features\conquest\te
+st_gen.ts:57:37)
+    at generateValidBoard (
+C:\Users\aduca\.gemini\anti
+gravity\scratch\gamified-li
+fe\src\features\conquest\te
+st_gen.ts:206:24)
+    at test (C:\Users\aduca
+\.gemini\antigravity\scratc
+h\gamified-life\src\feature
+s\conquest\test_gen.ts:229:
+23)
+    at <anonymous> (C:\User
+s\aduca\.gemini\antigravity
+\scratch\gamified-life\src\
+features\conquest\test_gen.
+ts:238:1)
+    at ModuleJob.run (node:
+internal/modules/esm/module
+_job:413:25)
+    at async onImport.trace
+Promise.__proto__ (node:int
+ernal/modules/esm/loader:66
+0:26)
+    at async asyncRunEntryP
+ointWithESMLoader (node:int
+ernal/modules/run_main:101:
+5)
+error Error: totalTiles 
+must be divisible by 3
+    at generateTileGroups (
+C:\Users\aduca\.gemini\anti
+gravity\scratch\gamified-li
+fe\src\features\conquest\te
+st_gen.ts:57:37)
+    at generateValidBoard (
+C:\Users\aduca\.gemini\anti
+gravity\scratch\gamified-li
+fe\src\features\conquest\te
+st_gen.ts:206:24)
+    at test (C:\Users\aduca
+\.gemini\antigravity\scratc
+h\gamified-life\src\feature
+s\conquest\test_gen.ts:229:
+23)
+    at <anonymous> (C:\User
+s\aduca\.gemini\antigravity
+\scratch\gamified-life\src\
+features\conquest\test_gen.
+ts:238:1)
+    at ModuleJob.run (node:
+internal/modules/esm/module
+_job:413:25)
+    at async onImport.trace
+Promise.__proto__ (node:int
+ernal/modules/esm/loader:66
+0:26)
+    at async asyncRunEntryP
+ointWithESMLoader (node:int
+ernal/modules/run_main:101:
+5)
+error Error: totalTiles 
+must be divisible by 3
+    at generateTileGroups (
+C:\Users\aduca\.gemini\anti
+gravity\scratch\gamified-li
+fe\src\features\conquest\te
+st_gen.ts:57:37)
+    at generateValidBoard (
+C:\Users\aduca\.gemini\anti
+gravity\scratch\gamified-li
+fe\src\features\conquest\te
+st_gen.ts:206:24)
+    at test (C:\Users\aduca
+\.gemini\antigravity\scratc
+h\gamified-life\src\feature
+s\conquest\test_gen.ts:229:
+23)
+    at <anonymous> (C:\User
+s\aduca\.gemini\antigravity
+\scratch\gamified-life\src\
+features\conquest\test_gen.
+ts:238:1)
+    at ModuleJob.run (node:
+internal/modules/esm/module
+_job:413:25)
+    at async onImport.trace
+Promise.__proto__ (node:int
+ernal/modules/esm/loader:66
+0:26)
+    at async asyncRunEntryP
+ointWithESMLoader (node:int
+ernal/modules/run_main:101:
+5)
+error Error: totalTiles 
+must be divisible by 3
+    at generateTileGroups (
+C:\Users\aduca\.gemini\anti
+gravity\scratch\gamified-li
+fe\src\features\conquest\te
+st_gen.ts:57:37)
+    at generateValidBoard (
+C:\Users\aduca\.gemini\anti
+gravity\scratch\gamified-li
+fe\src\features\conquest\te
+st_gen.ts:206:24)
+    at test (C:\Users\aduca
+\.gemini\antigravity\scratc
+h\gamified-life\src\feature
+s\conquest\test_gen.ts:229:
+23)
+    at <anonymous> (C:\User
+s\aduca\.gemini\antigravity
+\scratch\gamified-life\src\
+features\conquest\test_gen.
+ts:238:1)
+    at ModuleJob.run (node:
+internal/modules/esm/module
+_job:413:25)
+    at async onImport.trace
+Promise.__proto__ (node:int
+ernal/modules/esm/loader:66
+0:26)
+    at async asyncRunEntryP
+ointWithESMLoader (node:int
+ernal/modules/run_main:101:
+5)
+error Error: totalTiles 
+must be divisible by 3
+    at generateTileGroups (
+C:\Users\aduca\.gemini\anti
+gravity\scratch\gamified-li
+fe\src\features\conquest\te
+st_gen.ts:57:37)
+    at generateValidBoard (
+C:\Users\aduca\.gemini\anti
+gravity\scratch\gamified-li
+fe\src\features\conquest\te
+st_gen.ts:206:24)
+    at test (C:\Users\aduca
+\.gemini\antigravity\scratc
+h\gamified-life\src\feature
+s\conquest\test_gen.ts:229:
+23)
+    at <anonymous> (C:\User
+s\aduca\.gemini\antigravity
+\scratch\gamified-life\src\
+features\conquest\test_gen.
+ts:238:1)
+    at ModuleJob.run (node:
+internal/modules/esm/module
+_job:413:25)
+    at async onImport.trace
+Promise.__proto__ (node:int
+ernal/modules/esm/loader:66
+0:26)
+    at async asyncRunEntryP
+ointWithESMLoader (node:int
+ernal/modules/run_main:101:
+5)
+error Error: totalTiles 
+must be divisible by 3
+    at generateTileGroups (
+C:\Users\aduca\.gemini\anti
+gravity\scratch\gamified-li
+fe\src\features\conquest\te
+st_gen.ts:57:37)
+    at generateValidBoard (
+C:\Users\aduca\.gemini\anti
+gravity\scratch\gamified-li
+fe\src\features\conquest\te
+st_gen.ts:206:24)
+    at test (C:\Users\aduca
+\.gemini\antigravity\scratc
+h\gamified-life\src\feature
+s\conquest\test_gen.ts:229:
+23)
+    at <anonymous> (C:\User
+s\aduca\.gemini\antigravity
+\scratch\gamified-life\src\
+features\conquest\test_gen.
+ts:238:1)
+    at ModuleJob.run (node:
+internal/modules/esm/module
+_job:413:25)
+    at async onImport.trace
+Promise.__proto__ (node:int
+ernal/modules/esm/loader:66
+0:26)
+    at async asyncRunEntryP
+ointWithESMLoader (node:int
+ernal/modules/run_main:101:
+5)
+error Error: totalTiles 
+must be divisible by 3
+    at generateTileGroups (
+C:\Users\aduca\.gemini\anti
+gravity\scratch\gamified-li
+fe\src\features\conquest\te
+st_gen.ts:57:37)
+    at generateValidBoard (
+C:\Users\aduca\.gemini\anti
+gravity\scratch\gamified-li
+fe\src\features\conquest\te
+st_gen.ts:206:24)
+    at test (C:\Users\aduca
+\.gemini\antigravity\scratc
+h\gamified-life\src\feature
+s\conquest\test_gen.ts:229:
+23)
+    at <anonymous> (C:\User
+s\aduca\.gemini\antigravity
+\scratch\gamified-life\src\
+features\conquest\test_gen.
+ts:238:1)
+    at ModuleJob.run (node:
+internal/modules/esm/module
+_job:413:25)
+    at async onImport.trace
+Promise.__proto__ (node:int
+ernal/modules/esm/loader:66
+0:26)
+    at async asyncRunEntryP
+ointWithESMLoader (node:int
+ernal/modules/run_main:101:
+5)
+error Error: totalTiles 
+must be divisible by 3
+    at generateTileGroups (
+C:\Users\aduca\.gemini\anti
+gravity\scratch\gamified-li
+fe\src\features\conquest\te
+st_gen.ts:57:37)
+    at generateValidBoard (
+C:\Users\aduca\.gemini\anti
+gravity\scratch\gamified-li
+fe\src\features\conquest\te
+st_gen.ts:206:24)
+    at test (C:\Users\aduca
+\.gemini\antigravity\scratc
+h\gamified-life\src\feature
+s\conquest\test_gen.ts:229:
+23)
+    at <anonymous> (C:\User
+s\aduca\.gemini\antigravity
+\scratch\gamified-life\src\
+features\conquest\test_gen.
+ts:238:1)
+    at ModuleJob.run (node:
+internal/modules/esm/module
+_job:413:25)
+    at async onImport.trace
+Promise.__proto__ (node:int
+ernal/modules/esm/loader:66
+0:26)
+    at async asyncRunEntryP
+ointWithESMLoader (node:int
+ernal/modules/run_main:101:
+5)
+error Error: totalTiles 
+must be divisible by 3
+    at generateTileGroups (
+C:\Users\aduca\.gemini\anti
+gravity\scratch\gamified-li
+fe\src\features\conquest\te
+st_gen.ts:57:37)
+    at generateValidBoard (
+C:\Users\aduca\.gemini\anti
+gravity\scratch\gamified-li
+fe\src\features\conquest\te
+st_gen.ts:206:24)
+    at test (C:\Users\aduca
+\.gemini\antigravity\scratc
+h\gamified-life\src\feature
+s\conquest\test_gen.ts:229:
+23)
+    at <anonymous> (C:\User
+s\aduca\.gemini\antigravity
+\scratch\gamified-life\src\
+features\conquest\test_gen.
+ts:238:1)
+    at ModuleJob.run (node:
+internal/modules/esm/module
+_job:413:25)
+    at async onImport.trace
+Promise.__proto__ (node:int
+ernal/modules/esm/loader:66
+0:26)
+    at async asyncRunEntryP
+ointWithESMLoader (node:int
+ernal/modules/run_main:101:
+5)
+error Error: totalTiles 
+must be divisible by 3
+    at generateTileGroups (
+C:\Users\aduca\.gemini\anti
+gravity\scratch\gamified-li
+fe\src\features\conquest\te
+st_gen.ts:57:37)
+    at generateValidBoard (
+C:\Users\aduca\.gemini\anti
+gravity\scratch\gamified-li
+fe\src\features\conquest\te
+st_gen.ts:206:24)
+    at test (C:\Users\aduca
+\.gemini\antigravity\scratc
+h\gamified-life\src\feature
+s\conquest\test_gen.ts:229:
+23)
+    at <anonymous> (C:\User
+s\aduca\.gemini\antigravity
+\scratch\gamified-life\src\
+features\conquest\test_gen.
+ts:238:1)
+    at ModuleJob.run (node:
+internal/modules/esm/module
+_job:413:25)
+    at async onImport.trace
+Promise.__proto__ (node:int
+ernal/modules/esm/loader:66
+0:26)
+    at async asyncRunEntryP
+ointWithESMLoader (node:int
+ernal/modules/run_main:101:
+5)
+error Error: totalTiles 
+must be divisible by 3
+    at generateTileGroups (
+C:\Users\aduca\.gemini\anti
+gravity\scratch\gamified-li
+fe\src\features\conquest\te
+st_gen.ts:57:37)
+    at generateValidBoard (
+C:\Users\aduca\.gemini\anti
+gravity\scratch\gamified-li
+fe\src\features\conquest\te
+st_gen.ts:206:24)
+    at test (C:\Users\aduca
+\.gemini\antigravity\scratc
+h\gamified-life\src\feature
+s\conquest\test_gen.ts:229:
+23)
+    at <anonymous> (C:\User
+s\aduca\.gemini\antigravity
+\scratch\gamified-life\src\
+features\conquest\test_gen.
+ts:238:1)
+    at ModuleJob.run (node:
+internal/modules/esm/module
+_job:413:25)
+    at async onImport.trace
+Promise.__proto__ (node:int
+ernal/modules/esm/loader:66
+0:26)
+    at async asyncRunEntryP
+ointWithESMLoader (node:int
+ernal/modules/run_main:101:
+5)
+error Error: totalTiles 
+must be divisible by 3
+    at generateTileGroups (
+C:\Users\aduca\.gemini\anti
+gravity\scratch\gamified-li
+fe\src\features\conquest\te
+st_gen.ts:57:37)
+    at generateValidBoard (
+C:\Users\aduca\.gemini\anti
+gravity\scratch\gamified-li
+fe\src\features\conquest\te
+st_gen.ts:206:24)
+    at test (C:\Users\aduca
+\.gemini\antigravity\scratc
+h\gamified-life\src\feature
+s\conquest\test_gen.ts:229:
+23)
+    at <anonymous> (C:\User
+s\aduca\.gemini\antigravity
+\scratch\gamified-life\src\
+features\conquest\test_gen.
+ts:238:1)
+    at ModuleJob.run (node:
+internal/modules/esm/module
+_job:413:25)
+    at async onImport.trace
+Promise.__proto__ (node:int
+ernal/modules/esm/loader:66
+0:26)
+    at async asyncRunEntryP
+ointWithESMLoader (node:int
+ernal/modules/run_main:101:
+5)
+error Error: totalTiles 
+must be divisible by 3
+    at generateTileGroups (
+C:\Users\aduca\.gemini\anti
+gravity\scratch\gamified-li
+fe\src\features\conquest\te
+st_gen.ts:57:37)
+    at generateValidBoard (
+C:\Users\aduca\.gemini\anti
+gravity\scratch\gamified-li
+fe\src\features\conquest\te
+st_gen.ts:206:24)
+    at test (C:\Users\aduca
+\.gemini\antigravity\scratc
+h\gamified-life\src\feature
+s\conquest\test_gen.ts:229:
+23)
+    at <anonymous> (C:\User
+s\aduca\.gemini\antigravity
+\scratch\gamified-life\src\
+features\conquest\test_gen.
+ts:238:1)
+    at ModuleJob.run (node:
+internal/modules/esm/module
+_job:413:25)
+    at async onImport.trace
+Promise.__proto__ (node:int
+ernal/modules/esm/loader:66
+0:26)
+    at async asyncRunEntryP
+ointWithESMLoader (node:int
+ernal/modules/run_main:101:
+5)
+error Error: totalTiles 
+must be divisible by 3
+    at generateTileGroups (
+C:\Users\aduca\.gemini\anti
+gravity\scratch\gamified-li
+fe\src\features\conquest\te
+st_gen.ts:57:37)
+    at generateValidBoard (
+C:\Users\aduca\.gemini\anti
+gravity\scratch\gamified-li
+fe\src\features\conquest\te
+st_gen.ts:206:24)
+    at test (C:\Users\aduca
+\.gemini\antigravity\scratc
+h\gamified-life\src\feature
+s\conquest\test_gen.ts:229:
+23)
+    at <anonymous> (C:\User
+s\aduca\.gemini\antigravity
+\scratch\gamified-life\src\
+features\conquest\test_gen.
+ts:238:1)
+    at ModuleJob.run (node:
+internal/modules/esm/module
+_job:413:25)
+    at async onImport.trace
+Promise.__proto__ (node:int
+ernal/modules/esm/loader:66
+0:26)
+    at async asyncRunEntryP
+ointWithESMLoader (node:int
+ernal/modules/run_main:101:
+5)
+error Error: totalTiles 
+must be divisible by 3
+    at generateTileGroups (
+C:\Users\aduca\.gemini\anti
+gravity\scratch\gamified-li
+fe\src\features\conquest\te
+st_gen.ts:57:37)
+    at generateValidBoard (
+C:\Users\aduca\.gemini\anti
+gravity\scratch\gamified-li
+fe\src\features\conquest\te
+st_gen.ts:206:24)
+    at test (C:\Users\aduca
+\.gemini\antigravity\scratc
+h\gamified-life\src\feature
+s\conquest\test_gen.ts:229:
+23)
+    at <anonymous> (C:\User
+s\aduca\.gemini\antigravity
+\scratch\gamified-life\src\
+features\conquest\test_gen.
+ts:238:1)
+    at ModuleJob.run (node:
+internal/modules/esm/module
+_job:413:25)
+    at async onImport.trace
+Promise.__proto__ (node:int
+ernal/modules/esm/loader:66
+0:26)
+    at async asyncRunEntryP
+ointWithESMLoader (node:int
+ernal/modules/run_main:101:
+5)
+error Error: totalTiles 
+must be divisible by 3
+    at generateTileGroups (
+C:\Users\aduca\.gemini\anti
+gravity\scratch\gamified-li
+fe\src\features\conquest\te
+st_gen.ts:57:37)
+    at generateValidBoard (
+C:\Users\aduca\.gemini\anti
+gravity\scratch\gamified-li
+fe\src\features\conquest\te
+st_gen.ts:206:24)
+    at test (C:\Users\aduca
+\.gemini\antigravity\scratc
+h\gamified-life\src\feature
+s\conquest\test_gen.ts:229:
+23)
+    at <anonymous> (C:\User
+s\aduca\.gemini\antigravity
+\scratch\gamified-life\src\
+features\conquest\test_gen.
+ts:238:1)
+    at ModuleJob.run (node:
+internal/modules/esm/module
+_job:413:25)
+    at async onImport.trace
+Promise.__proto__ (node:int
+ernal/modules/esm/loader:66
+0:26)
+    at async asyncRunEntryP
+ointWithESMLoader (node:int
+ernal/modules/run_main:101:
+5)
+error Error: totalTiles 
+must be divisible by 3
+    at generateTileGroups (
+C:\Users\aduca\.gemini\anti
+gravity\scratch\gamified-li
+fe\src\features\conquest\te
+st_gen.ts:57:37)
+    at generateValidBoard (
+C:\Users\aduca\.gemini\anti
+gravity\scratch\gamified-li
+fe\src\features\conquest\te
+st_gen.ts:206:24)
+    at test (C:\Users\aduca
+\.gemini\antigravity\scratc
+h\gamified-life\src\feature
+s\conquest\test_gen.ts:229:
+23)
+    at <anonymous> (C:\User
+s\aduca\.gemini\antigravity
+\scratch\gamified-life\src\
+features\conquest\test_gen.
+ts:238:1)
+    at ModuleJob.run (node:
+internal/modules/esm/module
+_job:413:25)
+    at async onImport.trace
+Promise.__proto__ (node:int
+ernal/modules/esm/loader:66
+0:26)
+    at async asyncRunEntryP
+ointWithESMLoader (node:int
+ernal/modules/run_main:101:
+5)
+error Error: totalTiles 
+must be divisible by 3
+    at generateTileGroups (
+C:\Users\aduca\.gemini\anti
+gravity\scratch\gamified-li
+fe\src\features\conquest\te
+st_gen.ts:57:37)
+    at generateValidBoard (
+C:\Users\aduca\.gemini\anti
+gravity\scratch\gamified-li
+fe\src\features\conquest\te
+st_gen.ts:206:24)
+    at test (C:\Users\aduca
+\.gemini\antigravity\scratc
+h\gamified-life\src\feature
+s\conquest\test_gen.ts:229:
+23)
+    at <anonymous> (C:\User
+s\aduca\.gemini\antigravity
+\scratch\gamified-life\src\
+features\conquest\test_gen.
+ts:238:1)
+    at ModuleJob.run (node:
+internal/modules/esm/module
+_job:413:25)
+    at async onImport.trace
+Promise.__proto__ (node:int
+ernal/modules/esm/loader:66
+0:26)
+    at async asyncRunEntryP
+ointWithESMLoader (node:int
+ernal/modules/run_main:101:
+5)
+error Error: totalTiles 
+must be divisible by 3
+    at generateTileGroups (
+C:\Users\aduca\.gemini\anti
+gravity\scratch\gamified-li
+fe\src\features\conquest\te
+st_gen.ts:57:37)
+    at generateValidBoard (
+C:\Users\aduca\.gemini\anti
+gravity\scratch\gamified-li
+fe\src\features\conquest\te
+st_gen.ts:206:24)
+    at test (C:\Users\aduca
+\.gemini\antigravity\scratc
+h\gamified-life\src\feature
+s\conquest\test_gen.ts:229:
+23)
+    at <anonymous> (C:\User
+s\aduca\.gemini\antigravity
+\scratch\gamified-life\src\
+features\conquest\test_gen.
+ts:238:1)
+    at ModuleJob.run (node:
+internal/modules/esm/module
+_job:413:25)
+    at async onImport.trace
+Promise.__proto__ (node:int
+ernal/modules/esm/loader:66
+0:26)
+    at async asyncRunEntryP
+ointWithESMLoader (node:int
+ernal/modules/run_main:101:
+5)
+error Error: totalTiles 
+must be divisible by 3
+    at generateTileGroups (
+C:\Users\aduca\.gemini\anti
+gravity\scratch\gamified-li
+fe\src\features\conquest\te
+st_gen.ts:57:37)
+    at generateValidBoard (
+C:\Users\aduca\.gemini\anti
+gravity\scratch\gamified-li
+fe\src\features\conquest\te
+st_gen.ts:206:24)
+    at test (C:\Users\aduca
+\.gemini\antigravity\scratc
+h\gamified-life\src\feature
+s\conquest\test_gen.ts:229:
+23)
+    at <anonymous> (C:\User
+s\aduca\.gemini\antigravity
+\scratch\gamified-life\src\
+features\conquest\test_gen.
+ts:238:1)
+    at ModuleJob.run (node:
+internal/modules/esm/module
+_job:413:25)
+    at async onImport.trace
+Promise.__proto__ (node:int
+ernal/modules/esm/loader:66
+0:26)
+    at async asyncRunEntryP
+ointWithESMLoader (node:int
+ernal/modules/run_main:101:
+5)
+Generated 0/100 boards successfully

@@ -131,7 +131,7 @@ const createBoard = (): BoardSpace[] => {
                 type: 'shmeckles',
                 name: 'Small Shmeckle',
                 icon: '🐌',
-                baseReward: { shmeckles: Math.floor(Math.random() * 5) + 1 },
+                baseReward: { shmeckles: Math.floor(Math.random() * 3) + 1 }, // 1–3 base
             };
         }
 

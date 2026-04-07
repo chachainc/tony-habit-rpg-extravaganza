@@ -142,6 +142,7 @@ export const Blackjack = ({ onClose }: { onClose: () => void }) => {
     const bj = useBlackjackStore();
     const [betAmount, setBetAmount] = useState(10);
     const [showCustomize, setShowCustomize] = useState(false);
+    const [showCashOutAmt, setShowCashOutAmt] = useState<number | null>(null);
 
     // Auto-reset daily on open
     useEffect(() => { bj.resetDaily(); }, []);
@@ -182,14 +183,48 @@ export const Blackjack = ({ onClose }: { onClose: () => void }) => {
                     <div className="bj-header">
                         <h2>Blackjack {bj.currentWinStreak >= 3 && <span className="bj-streak">🔥{bj.currentWinStreak}</span>}</h2>
                         <div className="bj-header-actions">
-                            {bj.phase === 'idle' && (
-                                <button className="bj-vip-btn" onClick={() => setShowCustomize(true)}><Settings size={14} /> VIP</button>
-                            )}
-                            <div className="bj-coins">
-                                <span className="bj-coin-icon">💰</span>
-                                {bj.casinoCoins}
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                {bj.phase === 'idle' && (
+                                    <button className="bj-vip-btn" onClick={() => setShowCustomize(true)}><Settings size={14} /> VIP</button>
+                                )}
+                                <div className="bj-coins">
+                                    <span className="bj-coin-icon">💰</span>
+                                    {bj.casinoCoins}
+                                </div>
                             </div>
                             <button className="bj-close" onClick={onClose}><X size={20} /></button>
+                            
+                            <div className="bj-cashout-wrapper">
+                                <button
+                                    className={`bj-cashout-btn ${bj.phase !== 'playing' ? 'disabled' : ''}`}
+                                    onClick={() => {
+                                        if (bj.phase !== 'playing') return;
+                                        playChipClickSound();
+                                        const refund = Math.floor(bj.currentBet / 2);
+                                        if (refund > 0) {
+                                            setShowCashOutAmt(refund);
+                                            setTimeout(() => setShowCashOutAmt(null), 1500);
+                                        }
+                                        bj.cashOut();
+                                    }}
+                                    disabled={bj.phase !== 'playing'}
+                                >
+                                    CASH OUT
+                                </button>
+                                <AnimatePresence>
+                                    {showCashOutAmt !== null && (
+                                        <motion.div
+                                            className="bj-cashout-floater"
+                                            initial={{ opacity: 0, y: 0, scale: 0.5 }}
+                                            animate={{ opacity: 1, y: -25, scale: 1 }}
+                                            exit={{ opacity: 0, y: -35 }}
+                                            transition={{ duration: 0.6 }}
+                                        >
+                                            +{showCashOutAmt} 💰
+                                        </motion.div>
+                                    )}
+                                </AnimatePresence>
+                            </div>
                         </div>
                     </div>
 

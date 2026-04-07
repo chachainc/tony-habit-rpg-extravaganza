@@ -5,7 +5,7 @@ import { useCurrencyStore } from '../../store/useCurrencyStore';
 import type { PlacedTower } from '../../store/useTowerDefenseStore';
 import { TD_GRID_WIDTH, TD_GRID_HEIGHT, isPath, TD_TOWERS, TD_ENEMIES, TD_MAP_MODIFIERS, TD_WAVE_MODIFIERS, TD_SPECIALIZATIONS, TD_PATH } from '../../data/towerDefense';
 import type { TowerType, TowerDef } from '../../data/towerDefense';
-import { ArrowLeft, Play, RefreshCw, X, Zap, FastForward, Trophy, Skull, Swords } from 'lucide-react';
+import { ArrowLeft, Play, RefreshCw, X, Zap, FastForward, Trophy, Skull, Swords, Coins } from 'lucide-react';
 
 import './TowerDefensePage.css';
 
@@ -419,16 +419,22 @@ export const TowerDefensePage = () => {
                         {td.damagePopups.map(popup => (
                             <div
                                 key={popup.id}
-                                className={`td-damage-popup ${popup.isCrit ? 'crit' : ''}`}
+                                className={`td-damage-popup ${popup.isGold ? 'gold' : popup.isCrit ? 'crit' : ''}`}
                                 style={{
                                     left: `${(popup.x / TD_GRID_WIDTH) * 100}%`,
                                     top: `${(popup.y / TD_GRID_HEIGHT) * 100}%`,
                                     opacity: Math.max(0, 1 - popup.age / 1200),
                                     transform: `translate(-50%, ${-popup.age * 0.04}px)`,
-                                    color: popup.color || undefined
+                                    color: popup.isGold ? undefined : (popup.color || undefined)
                                 }}
                             >
-                                {popup.text ? popup.text : `-${popup.value}`}
+                                {popup.isGold ? (
+                                    <span style={{display: 'flex', alignItems: 'center', gap: '2px'}}>
+                                        +{popup.value} <span className="coin-sparkle-icon"><Coins size={10} color="#fbbf24" style={{verticalAlign: 'middle'}}/></span>
+                                    </span>
+                                ) : (
+                                    popup.text ? popup.text : `-${popup.value}`
+                                )}
                             </div>
                         ))}
 
@@ -592,7 +598,7 @@ export const TowerDefensePage = () => {
                                     <span className="td-stat-label">Towers</span>
                                 </div>
                                 <div className="td-stat-item">
-                                    <span className="td-stat-icon">🪙</span>
+                                    <span className="td-stat-icon"><Coins size={18} color="#fbbf24" /></span>
                                     <span className="td-stat-val">+{td.waveStats.goldEarned}</span>
                                     <span className="td-stat-label">Gold</span>
                                 </div>

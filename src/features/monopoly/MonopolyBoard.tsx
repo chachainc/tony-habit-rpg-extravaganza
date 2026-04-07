@@ -51,15 +51,42 @@ const GoldIcon = ({ size = 16 }: { size?: number }) => (
 );
 
 const MYSTERY_SHUFFLE_ITEMS = [
-    { type: 'gold', icon: <GoldIcon size={48} />, label: 'Small Fortune' },
-    { type: 'shmeckle', icon: <span style={{fontSize: '3rem'}}>🐌</span>, label: 'Schmeckles' },
-    { type: 'sigil', icon: <span style={{fontSize: '3rem'}}>🔱</span>, label: 'Sigils Cache' },
-    { type: 'hat', icon: <span style={{fontSize: '3rem'}}>🌾</span>, label: 'Straw Hat' },
-    { type: 'pet', img: petCowSpin, label: 'Stray Cow' },
-    { type: 'pet', img: petChickenSpin, label: 'Stray Chicken' },
-    { type: 'pet', img: petSheepSpin, label: 'Stray Sheep' },
-    { type: 'pet', img: petPigSpin, label: 'Stray Pig' }
+    { type: 'gold',     icon: <GoldIcon size={48} />, label: 'Small Fortune' },
+    { type: 'shmeckle', icon: <span style={{fontSize: '3rem'}}>🐌</span>,   label: 'Schmeckles' },
+    { type: 'sigil',    icon: <span style={{fontSize: '3rem'}}>🔱</span>,   label: 'Sigils Cache' },
+    { type: 'hat',      icon: <span style={{fontSize: '3rem'}}>🌾</span>,   label: 'Straw Hat' },
+    { type: 'pet_cow',     img: petCowSpin,     label: 'Stray Cow' },
+    { type: 'pet_chicken', img: petChickenSpin, label: 'Stray Chicken' },
+    { type: 'pet_sheep',   img: petSheepSpin,   label: 'Stray Sheep' },
+    { type: 'pet_pig',     img: petPigSpin,     label: 'Stray Pig' },
+    { type: 'pet_dog',     img: petDogSpin,     label: 'Rare Dog' },
+    { type: 'pet_rabbit',  img: petRabbitSpin,  label: 'Rare Rabbit' },
+    { type: 'pet_cat',     img: petCatSpin,     label: 'Rare Cat' },
+    { type: 'pet_goose',   img: petGooseSpin,   label: 'Rare Goose' },
+    { type: 'ethereal_cow', img: etherealCowImg, label: '🌌 Ethereal Cow' },
 ];
+
+/** Map a resolved MysteryRollResult to the correct MYSTERY_SHUFFLE_ITEMS index so the
+ *  carousel always lands on the icon that matches the awarded reward. */
+const resolveWinningIndex = (mystery: import('../../store/useMonopolyStore').MysteryRollResult): number => {
+    const reward = mystery.reward;
+    if (reward.petId) {
+        const idx = MYSTERY_SHUFFLE_ITEMS.findIndex(it => it.type === reward.petId);
+        return idx >= 0 ? idx : 0;
+    }
+    if (reward.cosmeticId) {
+        // cosmetic = straw hat
+        return MYSTERY_SHUFFLE_ITEMS.findIndex(it => it.type === 'hat');
+    }
+    if (reward.titleId) {
+        // title treated as 'hat' slot (same visual bucket)
+        return MYSTERY_SHUFFLE_ITEMS.findIndex(it => it.type === 'hat');
+    }
+    if (reward.gold)     return MYSTERY_SHUFFLE_ITEMS.findIndex(it => it.type === 'gold');
+    if (reward.shmeckles) return MYSTERY_SHUFFLE_ITEMS.findIndex(it => it.type === 'shmeckle');
+    if ((reward as any).sigils) return MYSTERY_SHUFFLE_ITEMS.findIndex(it => it.type === 'sigil');
+    return 0;
+};
 
 // Flow phases
 type Phase = 'idle' | 'dice-spin' | 'dice-reveal' | 'moving' | 'result' | 'go-result' | 'mystery-spin' | 'mystery-result' | 'hazard-result' | 'property-spin';
@@ -102,7 +129,7 @@ const ODDS_ROWS = [
 const BASE_REWARDS = [
     { icon: '🏠', label: 'GO tile', note: '+25 Gold (scales +1 per lap)' },
     { icon: <GoldIcon size={18} />, label: 'Gold tiles', note: '+3–7 Gold' },
-    { icon: '🐌', label: 'Shmeckle tiles', note: '+1–5 Schmeckles' },
+    { icon: '🐌', label: 'Shmeckle tiles', note: '+1–3 Schmeckles (×2 Owned, ×3 Hotel · max 9)' },
     { icon: '🎁', label: 'Mystery Crop tiles', note: 'Opens drop table above' },
     { icon: '🎫', label: 'Lost Ticket', note: '+1 Roll' },
 ];
@@ -230,7 +257,13 @@ export const MonopolyBoard = ({ onClose }: { onClose: () => void }) => {
 
                                 const processFinalRewards = (multiplier: number) => {
                                     if (space.baseReward.gold) addGold(Math.floor(space.baseReward.gold * multiplier));
-                                    if (space.baseReward.shmeckles) addShmeckles(Math.floor(space.baseReward.shmeckles * multiplier));
+                                    if (space.baseReward.shmeckles) {
+                                        // Hard cap: base 1–3, multiplied by ownership (1x/2x/3x).
+                                        // Max possible = 3 base × 3x hotel = 9. Never exceed that.
+                                        const raw = Math.floor(space.baseReward.shmeckles * multiplier);
+                                        const cap = multiplier === 3 ? 9 : 6; // hotel cap 9, else 6
+                                        addShmeckles(Math.min(raw, cap));
+                                    }
                                     if (space.baseReward.tickets) addTickets(space.baseReward.tickets);
                                     if ((space.baseReward as any).sigils) addSigils((space.baseReward as any).sigils);
 
@@ -239,16 +272,21 @@ export const MonopolyBoard = ({ onClose }: { onClose: () => void }) => {
                                         setMysteryEvent(mystery);
                                         setPhase('mystery-spin');
 
+                                        // Determine which carousel slot matches the actual result
+                                        // so the animation always lands on the right icon.
+                                        const winningIdx = resolveWinningIndex(mystery);
+
                                         let animFrame = 0;
-                                        const maxFrames = 30; // 30 frames total
-                                        let currentDelay = 50; // Initial fast speed
+                                        const maxFrames = 30;
+                                        let currentDelay = 50;
                                         
                                         const runShuffle = () => {
                                             animFrame++;
-                                            setDisplayedRng(Math.floor(Math.random() * MYSTERY_SHUFFLE_ITEMS.length));
                                             
                                             if (animFrame >= maxFrames) {
-                                                setFinalRng(0);
+                                                // Lock on the actual winning item
+                                                setDisplayedRng(winningIdx);
+                                                setFinalRng(winningIdx);
                                                 if (mystery.reward.gold) addGold(mystery.reward.gold);
                                                 if (mystery.reward.shmeckles) addShmeckles(mystery.reward.shmeckles);
                                                 if ((mystery.reward as any).sigils) addSigils((mystery.reward as any).sigils);
@@ -258,6 +296,14 @@ export const MonopolyBoard = ({ onClose }: { onClose: () => void }) => {
                                                     rollingRef.current = false;
                                                 }, 400); 
                                                 return;
+                                            }
+
+                                            // During animation: show random items (not the winner yet)
+                                            // In the last 5 frames, start showing the winner to tease it
+                                            if (animFrame >= maxFrames - 5) {
+                                                setDisplayedRng(winningIdx);
+                                            } else {
+                                                setDisplayedRng(Math.floor(Math.random() * MYSTERY_SHUFFLE_ITEMS.length));
                                             }
 
                                             if (animFrame > 20) {
@@ -882,12 +928,25 @@ export const MonopolyBoard = ({ onClose }: { onClose: () => void }) => {
                                                     <span className="reward-val">+{Math.floor(landedSpace.baseReward.gold * propertyMultiplierResult)}</span>
                                                 </div>
                                             )}
-                                            {landedSpace.baseReward.shmeckles && (
-                                                <div className="reward-line shmeckles">
-                                                    <span>🐌 Schmeckles</span>
-                                                    <span className="reward-val">+{Math.floor(landedSpace.baseReward.shmeckles * propertyMultiplierResult)}</span>
-                                                </div>
-                                            )}
+                                            {landedSpace.baseReward.shmeckles && (() => {
+                                                const base = landedSpace.baseReward.shmeckles;
+                                                const mul  = propertyMultiplierResult;
+                                                const cap  = mul === 3 ? 9 : 6;
+                                                const final = Math.min(Math.floor(base * mul), cap);
+                                                return (
+                                                    <div className="reward-line shmeckles">
+                                                        <span>🐌 Schmeckles</span>
+                                                        <div style={{ textAlign: 'right' }}>
+                                                            <span className="reward-val">+{final}</span>
+                                                            {mul > 1 && (
+                                                                <div style={{ fontSize: '0.65rem', color: '#86efac', marginTop: '1px', opacity: 0.85 }}>
+                                                                    {base} base × {mul}x = {final}{final === cap ? ' (capped)' : ''}
+                                                                </div>
+                                                            )}
+                                                        </div>
+                                                    </div>
+                                                );
+                                            })()}
                                             {landedSpace.baseReward.tickets && (
                                                 <div className="reward-line tickets">
                                                     <span>🎫 Rolls</span>
