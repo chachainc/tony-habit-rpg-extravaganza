@@ -10,7 +10,7 @@ import { useCampaignStore } from '../../store/useCampaignStore';
 import { usePetStore, PET_DATABASE } from '../../store/usePetStore';
 import { useMagicStore } from '../../store/useMagicStore';
 import { ArenaBattlefieldLayout } from './ArenaBattlefieldLayout';
-import { getDetailedCombatBreakdown } from '../../store/useCombatFormulas';
+import { getDetailedCombatBreakdown, getSkillSynergyBonus } from '../../store/useCombatFormulas';
 import { getPassiveBonuses } from '../../store/usePassiveEffects';
 import { WeaponEquipWidget } from './WeaponEquipWidget';
 import { useXpWeaponStore } from '../../store/useXpWeaponStore';
