@@ -976,6 +976,34 @@
     text-shadow: 0 1px 4px rgba(0,0,0,0.9), 0 0 10px rgba(251, 191, 36, 0.5);
 }
 
+.td-damage-popup.gold {
+    font-size: 0.6rem;
+    color: #fbbf24;
+    text-shadow: 0 1px 2px rgba(0,0,0,0.9), 0 0 6px rgba(251, 191, 36, 0.4);
+}
+
+.td-damage-popup.gold .coin-sparkle-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    vertical-align: middle;
+}
+
+.td-damage-popup.gold .coin-sparkle-icon::after {
+    content: '✨';
+    position: absolute;
+    top: -5px;
+    right: -5px;
+    font-size: 0.4rem;
+    animation: goldSparkleAnim 0.6s ease-in-out infinite alternate;
+}
+
+@keyframes goldSparkleAnim {
+    0% { transform: scale(0.5); opacity: 0.5; filter: drop-shadow(0 0 2px rgba(255,255,255,0.5)); }
+    100% { transform: scale(1.2); opacity: 1; filter: drop-shadow(0 0 5px rgba(255,255,255,1)); }
+}
+
 @keyframes dmgPopIn {
     from { transform: translate(-50%, 0) scale(0.5); }
     to { transform: translate(-50%, 0) scale(1); }

@@ -67,7 +67,7 @@
 }
 .bj-streak { font-size: 0.8rem; background: rgba(0,0,0,0.4); padding: 0.1rem 0.4rem; border-radius: 6px; color: #f97316; }
 
-.bj-header-actions { display: flex; align-items: center; gap: 0.5rem; }
+.bj-header-actions { display: flex; align-items: center; gap: 0.5rem; position: relative; }
 
 .bj-vip-btn {
     display: flex; align-items: center; gap: 0.3rem;
@@ -87,6 +87,60 @@
     box-shadow: 0 4px 6px rgba(0,0,0,0.3);
 }
 .bj-close { background: none; border: none; color: rgba(255,255,255,0.6); cursor: pointer; padding: 0.5rem; border-radius: 50%; background: rgba(0,0,0,0.3); }
+
+/* ── Cash Out Button ── */
+.bj-cashout-wrapper {
+    position: absolute;
+    top: calc(100% + 10px);
+    right: 0;
+    display: flex;
+    justify-content: flex-end;
+}
+
+.bj-cashout-btn {
+    background: linear-gradient(135deg, #f59e0b, #d97706);
+    color: white;
+    font-weight: 800;
+    font-size: 0.75rem;
+    letter-spacing: 0.5px;
+    padding: 0.4rem 1rem;
+    border-radius: 20px;
+    border: 1px solid #fcd34d;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.4), 0 0 8px rgba(245,158,11,0.3);
+    cursor: pointer;
+    text-transform: uppercase;
+    transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+    z-index: 50;
+    line-height: 1;
+}
+
+.bj-cashout-btn:hover:not(:disabled) {
+    filter: brightness(1.1);
+}
+
+.bj-cashout-btn:active:not(:disabled) {
+    transform: scale(0.96);
+    box-shadow: 0 2px 4px rgba(0,0,0,0.5), 0 0 4px rgba(245,158,11,0.2);
+}
+
+.bj-cashout-btn:disabled, .bj-cashout-btn.disabled {
+    opacity: 0.5;
+    box-shadow: none;
+    cursor: not-allowed;
+}
+
+.bj-cashout-floater {
+    position: absolute;
+    right: 10%;
+    top: -5px;
+    font-size: 0.9rem;
+    font-weight: 900;
+    color: #4ade80;
+    text-shadow: 0 1px 2px rgba(0,0,0,0.8);
+    pointer-events: none;
+    z-index: 60;
+    white-space: nowrap;
+}
 
 /* ── Content Layout ── */
 .bj-table-content {

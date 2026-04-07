@@ -2,8 +2,8 @@
 .budget-page-container {
     display: flex;
     flex-direction: column;
-    gap: 0.85rem;
-    padding: 1rem 1rem 6rem; /* bottom padding clears nav bar */
+    gap: 0.7rem;
+    padding: 0.75rem 0.9rem 6rem;
     max-width: 680px;
     margin: 0 auto;
     width: 100%;
@@ -44,7 +44,7 @@
     background: rgba(255, 255, 255, 0.04);
     border: 1px solid rgba(255, 255, 255, 0.09);
     border-radius: 14px;
-    padding: 1rem 1rem 0.9rem;
+    padding: 0.8rem 0.9rem 0.75rem;
 }
 
 .bp-card-header {
@@ -162,20 +162,25 @@
 .bp-stat-card {
     display: flex;
     flex-direction: column;
+    gap: 0;
+    padding: 0.7rem 0.8rem;
+}
+
+/* Horizontal icon + text layout inside compact stat card */
+.bp-stat-row-inner {
+    display: flex;
     align-items: center;
-    text-align: center;
-    gap: 0.2rem;
-    padding: 1rem 0.75rem;
+    gap: 0.6rem;
 }
 
 .bp-stat-icon-wrap {
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 36px;
-    height: 36px;
-    border-radius: 10px;
-    margin-bottom: 0.35rem;
+    width: 32px;
+    height: 32px;
+    border-radius: 9px;
+    flex-shrink: 0;
 }
 
 .bp-icon-gold {
@@ -199,7 +204,7 @@
 }
 
 .bp-stat-big {
-    font-size: 1.85rem;
+    font-size: 1.45rem;
     font-weight: 900;
     line-height: 1.1;
     letter-spacing: -0.5px;
@@ -385,11 +390,11 @@
 /* Empty State */
 .tx-empty {
     text-align: center;
-    padding: 2rem 0 1.5rem;
+    padding: 0.9rem 0 0.6rem;
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 0.3rem;
+    gap: 0.2rem;
 }
 
 .tx-empty-icon {
@@ -679,8 +684,8 @@
     display: flex;
     gap: 0.5rem;
     align-items: flex-end;
-    height: 100px;
-    padding-top: 0.5rem;
+    height: 64px;
+    padding-top: 0.35rem;
 }
 
 .bp-history-week {
@@ -693,7 +698,7 @@
 
 .bp-history-bars {
     width: 100%;
-    height: 80px;
+    height: 48px;
     display: flex;
     gap: 2px;
     align-items: flex-end;
@@ -802,3 +807,66 @@
     margin: 0.4rem 0 0.8rem;
     width: 100%;
 }
+
+.add-tx-form-inner {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+/* ── LOG SPENDING BUTTON ───────────────────────────── */
+.bp-log-btn {
+    width: 100%;
+    padding: 0.7rem 1rem;
+    border-radius: 10px;
+    border: none;
+    font-size: 0.95rem;
+    font-weight: 800;
+    letter-spacing: 0.3px;
+    cursor: pointer;
+    transition: transform 0.12s ease, opacity 0.15s, box-shadow 0.15s;
+    margin-top: 0.2rem;
+}
+
+.bp-log-btn--active {
+    background: linear-gradient(135deg, #f59e0b, #fbbf24);
+    color: #1c1005;
+    box-shadow: 0 4px 16px rgba(251, 191, 36, 0.35);
+}
+
+.bp-log-btn--active:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 6px 20px rgba(251, 191, 36, 0.45);
+}
+
+.bp-log-btn--active:active {
+    transform: scale(0.97);
+}
+
+.bp-log-btn--disabled {
+    background: rgba(255, 255, 255, 0.07);
+    color: rgba(255, 255, 255, 0.28);
+    cursor: not-allowed;
+    box-shadow: none;
+}
+
+/* ── SET BUDGET BUTTON ─────────────────────────────── */
+.bp-set-budget-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    margin-top: 1rem;
+    background: #3b82f6;
+    color: #fff;
+    border: none;
+    padding: 0.75rem 1.5rem;
+    border-radius: 8px;
+    font-weight: 700;
+    cursor: pointer;
+    font-size: 0.9rem;
+}
+
+.bp-set-budget-btn:hover {
+    background: #2563eb;
+}
+

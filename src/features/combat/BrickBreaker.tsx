@@ -182,10 +182,11 @@ function buildBossEntity(W: number, level: number): BossBrick {
 // ═══════════════════════════════════════════════════════════════
 // SPEED HELPERS
 // ═══════════════════════════════════════════════════════════════
-const BASE_SPEED = 3;
-const SPEED_SCALE = 0.35;
-const MAX_SPEED = 6.5;
+const BASE_SPEED = 4.5;
+const SPEED_SCALE = 0.4;
+const MAX_SPEED = 10;
 const SLOW_FACTOR = 0.55; // slow_ball reduces to 55% of normal
+const SPEED_HIT_INCREMENT = 0.04; // +4% per 5 brick hits, pre-applied scaling
 
 function levelSpeed(level: number, slowActive: boolean): number {
     const base = Math.min(BASE_SPEED + (level - 1) * SPEED_SCALE, MAX_SPEED);
@@ -225,6 +226,7 @@ export const BrickBreaker = ({ onClose }: { onClose: () => void }) => {
     const scoreRef = useRef(0);
     const shakeRef = useRef(0);
     const pickupLabelRef = useRef<{ text: string; alpha: number; y: number } | null>(null);
+    const hitCountRef = useRef(0); // total brick/boss hits — drives progressive speed bump
 
     const changeLevel = (delta: number) => {
         setSelectedLevel(prev => Math.max(1, Math.min(highestBreakerLevel, prev + delta)));
@@ -337,11 +339,13 @@ export const BrickBreaker = ({ onClose }: { onClose: () => void }) => {
             paddle.x = W / 2 - paddle.w / 2;
             paddle.stretch = 0;
 
-            // Initialize primary ball
+            // Initialize primary ball — launched at a slight angle for instant action feel
+            const launchAngle = -Math.PI / 4 + (Math.random() - 0.5) * 0.3; // -45° ± a bit
+            const spd = levelSpeed(selectedLevel, false);
             const primaryBall: Ball = {
-                x: W / 2, y: H - 54, r: 6,
-                vx: levelSpeed(selectedLevel, false), vy: -levelSpeed(selectedLevel, false),
-                launched: false, trailX: W / 2, trailY: H - 54,
+                x: W / 2, y: H - 62, r: 6,
+                vx: Math.cos(launchAngle) * spd, vy: Math.sin(launchAngle) * spd,
+                launched: false, trailX: W / 2, trailY: H - 62,
             };
             ballsRef.current = [primaryBall];
 
@@ -360,6 +364,7 @@ export const BrickBreaker = ({ onClose }: { onClose: () => void }) => {
             livesRef.current = 3;
             scoreRef.current = 0;
             shakeRef.current = 0;
+            hitCountRef.current = 0;
 
             setScore(0); setLives(3); setGameOver(false); setWon(false);
             setActiveEffectLabels([]);
@@ -532,7 +537,7 @@ export const BrickBreaker = ({ onClose }: { onClose: () => void }) => {
         };
 
         const drawPaddle = () => {
-            const py = H - 36;
+            const py = H - 46; // raised above nav bar safe zone
             const sh = paddle.h + paddle.stretch;
             if (paddle.stretch > 0) paddle.stretch -= 0.5;
             // Wide paddle tint
@@ -652,7 +657,7 @@ export const BrickBreaker = ({ onClose }: { onClose: () => void }) => {
             }
 
             // Paddle
-            const py = H - 36;
+            const py = H - 46;
             if (ball.vy > 0 &&
                 ball.y + ball.r >= py && ball.y + ball.r <= py + paddle.h + 4 &&
                 ball.x >= paddle.x && ball.x <= paddle.x + paddle.w) {
@@ -664,8 +669,8 @@ export const BrickBreaker = ({ onClose }: { onClose: () => void }) => {
                 paddle.stretch = 4;
             }
 
-            // Bottom — lose ball
-            if (ball.y + ball.r > H) {
+            // Bottom — lose ball (use H with a small inset so ball is lost before true edge)
+            if (ball.y + ball.r > H - 10) {
                 if (isExtra) return false; // extra ball simply dies
                 // Primary ball: lose life
                 livesRef.current--;
@@ -676,7 +681,7 @@ export const BrickBreaker = ({ onClose }: { onClose: () => void }) => {
                 ballsRef.current = [ball];
                 if (livesRef.current <= 0) return true; // endGame handled outside
                 ball.x = paddle.x + paddle.w / 2;
-                ball.y = H - 54;
+                ball.y = H - 62;
                 ball.vx = levelSpeed(activeLevelRef.current, false);
                 ball.vy = -levelSpeed(activeLevelRef.current, false);
                 ball.launched = false;
@@ -701,6 +706,15 @@ export const BrickBreaker = ({ onClose }: { onClose: () => void }) => {
                     } else {
                         b.flashTimer = 3;
                         scoreRef.current += 2;
+                    }
+                    // Progressive speed bump every 5 hits, capped at MAX_SPEED
+                    hitCountRef.current++;
+                    if (hitCountRef.current % 5 === 0) {
+                        const currentSpeed = Math.sqrt(ball.vx ** 2 + ball.vy ** 2);
+                        const newSpeed = Math.min(currentSpeed * (1 + SPEED_HIT_INCREMENT), MAX_SPEED);
+                        const ratio = newSpeed / currentSpeed;
+                        ball.vx *= ratio;
+                        ball.vy *= ratio;
                     }
                     break;
                 }

@@ -1163,4 +1163,437 @@
     min-width: 2px;
 }
 
+
+/* ═══════════════════════════════════════════════════════
+   COMPACT MOBILE BATTLE LAYOUT (new side-by-side design)
+   ═══════════════════════════════════════════════════════ */
+
+/* ── Side-by-side arena ─────────────────────────────── */
+.cq-arena-compact {
+    position: relative;
+    z-index: 5;
+    display: flex;
+    align-items: stretch;
+    gap: 0.5rem;
+    padding: 0.5rem 0.75rem;
+    flex-shrink: 0;
+}
+
+.cq-vs-divider {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.65rem;
+    font-weight: 900;
+    color: rgba(255,255,255,0.25);
+    letter-spacing: 1px;
+    flex-shrink: 0;
+    padding: 0 0.15rem;
+}
+
+.cq-side {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.3rem;
+    min-width: 0;
+}
+
+.cq-side-portrait {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.cq-portrait-img {
+    width: 72px;
+    height: 72px;
+    object-fit: contain;
+    border-radius: 8px;
+}
+
+.cq-portrait-img.enemy {
+    filter: drop-shadow(0 4px 16px rgba(239,68,68,0.4));
+}
+
+.cq-portrait-img.player {
+    border-radius: 50%;
+    border: 2px solid #a78bfa;
+    object-fit: cover;
+    transition: box-shadow 0.3s ease;
+}
+
+.cq-portrait-img.player.ult-ready-glow {
+    border-color: #fbbf24;
+    box-shadow: 0 0 16px rgba(251,191,36,0.6), 0 0 32px rgba(251,191,36,0.3);
+    animation: ult-portrait-pulse 1.2s ease-in-out infinite alternate;
+}
+
+@keyframes ult-portrait-pulse {
+    from { box-shadow: 0 0 10px rgba(251,191,36,0.4); }
+    to   { box-shadow: 0 0 22px rgba(251,191,36,0.8), 0 0 40px rgba(251,191,36,0.3); }
+}
+
+.cq-portrait-emoji {
+    font-size: 3.5rem;
+    line-height: 1;
+    filter: drop-shadow(0 4px 12px rgba(239,68,68,0.4));
+}
+
+.cq-buff-row {
+    position: absolute;
+    bottom: -6px;
+    right: -6px;
+    display: flex;
+    gap: 2px;
+}
+
+.cq-side-name {
+    font-size: 0.75rem;
+    font-weight: 800;
+    text-align: center;
+    line-height: 1.2;
+    color: #e2e8f0;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    width: 100%;
+}
+
+.cq-hp-bar-wrap {
+    position: relative;
+    width: 100%;
+    height: 14px;
+    background: rgba(0,0,0,0.5);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 99px;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.cq-hp-bar {
+    position: absolute;
+    left: 0; top: 0; bottom: 0;
+    transition: width 0.4s ease, background 0.3s ease;
+    border-radius: 99px;
+}
+
+.cq-hp-label {
+    position: relative;
+    z-index: 2;
+    font-size: 0.6rem;
+    font-weight: 700;
+    color: rgba(255,255,255,0.9);
+    text-shadow: 0 1px 2px black;
+    pointer-events: none;
+}
+
+.cq-energy-bar-wrap {
+    position: relative;
+    width: 100%;
+    height: 10px;
+    background: rgba(0,0,0,0.4);
+    border: 1px solid rgba(251,191,36,0.2);
+    border-radius: 99px;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    transition: border-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+.cq-energy-bar-wrap.ult-ready-energy {
+    border-color: rgba(251,191,36,0.7);
+    box-shadow: 0 0 8px rgba(251,191,36,0.4);
+    animation: energy-shimmer 0.8s ease-in-out infinite alternate;
+}
+
+@keyframes energy-shimmer {
+    from { box-shadow: 0 0 4px rgba(251,191,36,0.3); }
+    to   { box-shadow: 0 0 12px rgba(251,191,36,0.7); }
+}
+
+.cq-energy-label {
+    position: absolute;
+    right: 4px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 0.6rem;
+    font-weight: 700;
+    color: #fbbf24;
+    z-index: 2;
+    pointer-events: none;
+    text-shadow: 0 1px 2px black;
+}
+
+/* Boss/vault tag inline badge */
+.cq-boss-tag {
+    display: inline-block;
+    font-size: 0.58rem;
+    font-weight: 800;
+    padding: 0.1rem 0.3rem;
+    margin-left: 0.3rem;
+    border-radius: 4px;
+    background: rgba(220,38,38,0.2);
+    border: 1px solid rgba(220,38,38,0.5);
+    color: #fca5a5;
+    white-space: nowrap;
+}
+
+/* ── Compact combat log (2 lines) ───────────────────── */
+.cq-combat-log-mini {
+    position: relative;
+    z-index: 5;
+    padding: 0.3rem 0.75rem;
+    border-top: 1px solid rgba(255,255,255,0.05);
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+    min-height: 32px;
+    flex-shrink: 0;
+}
+
+/* ── Ultimate Ready Banner ───────────────────────────  */
+.cq-ult-ready-banner {
+    position: relative;
+    z-index: 20;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    margin: 0 0.75rem;
+    padding: 0.5rem 1rem;
+    border-radius: 10px;
+    background: linear-gradient(135deg, rgba(180,83,9,0.9), rgba(120,53,15,0.95));
+    border: 1px solid #fbbf24;
+    color: #fde68a;
+    font-size: 0.85rem;
+    font-weight: 700;
+    box-shadow: 0 0 20px rgba(251,191,36,0.4);
+    flex-shrink: 0;
+}
+
+.cq-ult-ready-banner strong {
+    color: #fff;
+}
+
+.cq-ult-ready-icon {
+    font-size: 1.2rem;
+    animation: ult-icon-pop 0.6s ease-in-out infinite alternate;
+}
+
+@keyframes ult-icon-pop {
+    from { transform: scale(1); }
+    to   { transform: scale(1.25); filter: brightness(1.3); }
+}
+
+/* ── Action Panel ───────────────────────────────────── */
+.cq-action-panel {
+    position: relative;
+    z-index: 10;
+    padding: 0.5rem 0.75rem 5.5rem; /* bottom clears nav bar */
+    background: rgba(8,11,22,0.92);
+    border-top: 1px solid rgba(139,92,246,0.15);
+    flex-shrink: 0;
+}
+
+/* ── Prep section ───────────────────────────────────── */
+.cq-prep-section {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.cq-info-summary {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.45rem 0.65rem;
+    background: rgba(30,41,59,0.7);
+    border: 1px solid rgba(148,163,184,0.15);
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background 0.15s;
+}
+
+.cq-info-summary:hover { background: rgba(30,41,59,0.9); }
+
+.cq-info-summary-text {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-size: 0.8rem;
+    overflow: hidden;
+}
+
+.cq-info-class { font-weight: 800; color: #a78bfa; }
+.cq-info-sep   { color: rgba(255,255,255,0.25); }
+.cq-info-ult   { color: #fde68a; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+.cq-info-toggle-btn {
+    display: flex;
+    align-items: center;
+    gap: 0.2rem;
+    font-size: 0.7rem;
+    font-weight: 600;
+    color: rgba(255,255,255,0.4);
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+.cq-info-expanded {
+    background: rgba(15,23,42,0.85);
+    border: 1px solid rgba(148,163,184,0.12);
+    border-radius: 8px;
+    padding: 0.6rem 0.75rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+    overflow: hidden;
+}
+
+.cq-info-row {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+}
+
+.cq-info-key {
+    font-size: 0.65rem;
+    font-weight: 700;
+    color: rgba(148,163,184,0.7);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    width: 56px;
+    flex-shrink: 0;
+}
+
+.cq-info-val {
+    font-weight: 700;
+    font-size: 0.82rem;
+    color: #f1f5f9;
+}
+
+.cq-info-val.purple { color: #a78bfa; }
+.cq-info-val.gold   { color: #fde68a; }
+
+.cq-start-btn {
+    width: 100%;
+    grid-column: 1 / -1;
+    min-height: 0;
+    padding: 0.75rem;
+    font-size: 1rem;
+    border-radius: 10px;
+}
+
+/* ── Ultimate button ────────────────────────────────── */
+.cq-ultimate-btn {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    padding: 0.55rem 0.85rem;
+    border-radius: 10px;
+    font-weight: 800;
+    font-size: 0.85rem;
+    cursor: pointer;
+    transition: all 0.25s ease;
+    margin-bottom: 0.5rem;
+    border: 2px solid #475569;
+    background: #1e293b;
+    color: #64748b;
+}
+
+.cq-ultimate-btn.ready {
+    background: linear-gradient(135deg, #b45309, #78350f);
+    border-color: #fbbf24;
+    color: #fff;
+    box-shadow: 0 0 16px rgba(251,191,36,0.35);
+    animation: ult-btn-pulse 1.5s ease-in-out infinite alternate;
+}
+
+@keyframes ult-btn-pulse {
+    from { box-shadow: 0 0 10px rgba(251,191,36,0.25); }
+    to   { box-shadow: 0 0 24px rgba(251,191,36,0.55); }
+}
+
+.cq-ultimate-btn:disabled { opacity: 0.5; cursor: not-allowed; animation: none; }
+
+.cq-ult-icon  { font-size: 1.1rem; }
+.cq-ult-name  { flex: 1; text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.cq-ult-energy { font-size: 0.75rem; color: rgba(255,255,255,0.6); flex-shrink: 0; }
+
+/* ── 2-col action grid ──────────────────────────────── */
+.cq-action-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.5rem;
+}
+
+/* Tighter action buttons */
+.cq-action-btn {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.1rem;
+    padding: 0.5rem 0.4rem;
+    border-radius: 10px;
+    font-weight: 700;
+    cursor: pointer;
+    border: 2px solid transparent;
+    transition: all 0.18s;
+    min-height: 72px;
+}
+
+.cq-action-btn:active:not(:disabled) { transform: scale(0.95); filter: brightness(1.2); }
+.cq-action-btn:disabled { opacity: 0.45; cursor: not-allowed; filter: grayscale(0.8); }
+
+.cq-btn-top  { font-size: 0.82rem; font-weight: 800; text-transform: uppercase; color: #f8fafc; display: flex; align-items: center; gap: 3px; }
+.cq-btn-mid  { font-size: 1rem; font-weight: 900; color: white; text-shadow: 0 2px 4px rgba(0,0,0,0.8); }
+.cq-btn-bot  { font-size: 0.65rem; font-weight: 600; color: rgba(255,255,255,0.55); text-transform: uppercase; }
+
+.cq-action-btn.attack.heavy {
+    background: linear-gradient(135deg, rgba(127,29,29,0.8), rgba(69,10,10,0.9));
+    border-bottom: 3px solid #ef4444;
+}
+.cq-action-btn.attack.heavy:hover:not(:disabled), .cq-action-btn.attack.heavy:active:not(:disabled) {
+    box-shadow: 0 0 16px rgba(239,68,68,0.4);
+}
+
+.cq-action-btn.attack.light {
+    background: linear-gradient(135deg, rgba(30,58,138,0.8), rgba(15,23,42,0.9));
+    border-bottom: 3px solid #3b82f6;
+}
+.cq-action-btn.attack.light:hover:not(:disabled), .cq-action-btn.attack.light:active:not(:disabled) {
+    box-shadow: 0 0 16px rgba(59,130,246,0.4);
+}
+
+.cq-action-btn.defend {
+    background: linear-gradient(135deg, #1e3a5f, #0f2040);
+    border-color: #3b82f6;
+    color: #93c5fd;
+}
+
+.cq-action-btn.spells {
+    background: linear-gradient(135deg, rgba(88,28,135,0.8), rgba(59,7,100,0.9));
+    border-bottom: 3px solid #a855f7;
+}
+
+.cq-action-btn.flee {
+    background: linear-gradient(135deg, #713f12, #451a03);
+    border-color: #f59e0b;
+    color: #fde68a;
+}
+
+.cq-action-btn.primary {
+    background: linear-gradient(135deg, #7c3aed, #4f46e5);
+    border-color: #a78bfa;
+    color: #ede9fe;
+    font-size: 1rem;
+}
 

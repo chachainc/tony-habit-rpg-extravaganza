@@ -511,25 +511,29 @@
     }
 
     .squad-zone.allies {
-        bottom: 25%; /* Push higher */
-        left: 2%; /* Push left */
+        /* Raised so the floating-ui (HUD) sits well above the fixed action bar.
+           The HUD floats ~90-120px above the sprite; at bottom:42% on a
+           ~450px visible stage the HUD top edge is ~330px from screen bottom,
+           which is safely above the ~196px fixed action bar zone. */
+        bottom: 42%;
+        left: 2%;
         z-index: 20;
     }
 
     .squad-zone.enemies {
-        bottom: 35%; /* Push higher */
-        right: 2%; /* Push right */
+        bottom: 48%;
+        right: 2%;
         z-index: 10;
     }
 
     .unit-sprite img {
-        max-width: 100%; /* Better scaling */
-        height: min(100px, 18vh); /* Keep sprite small */
+        max-width: 100%;
+        height: min(80px, 13vh);
         object-fit: contain;
     }
 
     .unit-sprite.player img {
-        height: min(90px, 16vh); /* Keep hero small */
+        height: min(72px, 11vh);
     }
 
     .vs-text {
@@ -541,23 +545,24 @@
     }
 
     .floating-ui {
-        top: -35px;
-        width: 90px;
-        padding: 2px 4px;
+        /* Widen HUD so HP/MP/Energy text is legible */
+        top: -30px;
+        width: 130px;
+        padding: 3px 6px;
     }
 
     .unit-name {
-        font-size: 0.6rem;
+        font-size: 0.62rem;
         margin-bottom: 2px;
     }
 
     .hp-bar-frame {
-        height: 6px;
+        height: 7px;
         margin-bottom: 1px;
     }
 
     .hp-text {
-        font-size: 0.55rem;
+        font-size: 0.58rem;
         margin-top: 1px;
     }
 }

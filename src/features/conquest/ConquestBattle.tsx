@@ -1,7 +1,7 @@
 import { useNavigate } from 'react-router-dom';
 import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Heart, ChevronLeft, Shield, LogOut } from 'lucide-react';
+import { Heart, ChevronLeft, Shield, LogOut, ChevronDown, ChevronUp, Zap } from 'lucide-react';
 import { useBattleStore } from '../../store/useBattleStore';
 import { useConquestStore } from '../../store/useConquestStore';
 import { useMagicStore } from '../../store/useMagicStore';
@@ -34,16 +34,19 @@ export const ConquestBattle = () => {
     const initialPlayerHpRef = useRef<number | null>(null);
     const [enemySpecialText, setEnemySpecialText] = useState<string | null>(null);
 
-    // Get active conquest enemy definition
+    // Collapsible info panel (collapsed by default on mobile)
+    const [showInfoPanel, setShowInfoPanel] = useState(false);
+    // Ultimate ready popup
+    const [showUltReady, setShowUltReady] = useState(false);
+    const prevEnergyRef = useRef(0);
+
     const conquestEnemyDef = conquest.activeConquestEnemyId
         ? CONQUEST_ENEMIES.find(e => e.id === conquest.activeConquestEnemyId) ?? null
         : null;
 
-    // Persistent HP: override the battle player hp to be the conquest runHP
     useEffect(() => {
         if (!battle.enemy || !battle.player) return;
 
-        // Apply Shrine Blessing if active (one-time)
         const hasBlessing = conquest.runBuffs.some(b => b.label.includes('Shrine Blessing: +15% Power'));
         const hasDefBlessing = conquest.runBuffs.some(b => b.label.includes('Shrine Blessing: +15% Block'));
         if (!blessingApplied && (hasBlessing || hasDefBlessing) && battle.player) {
@@ -62,7 +65,6 @@ export const ConquestBattle = () => {
             setBlessingApplied(true);
         }
 
-        // Apply run buff ATK bonuses from meta/relics
         const totalAtkBonus = conquest.runBuffs
             .filter(b => b.type === 'strength')
             .reduce((sum, b) => sum + b.amount, 0);
@@ -73,7 +75,6 @@ export const ConquestBattle = () => {
             });
         }
 
-        // Override player HP with persistent Conquest runHP
         const conquestHP = conquest.runHP;
         useBattleStore.setState(state => {
             if (!state.player) return state;
@@ -87,7 +88,6 @@ export const ConquestBattle = () => {
         });
         initialPlayerHpRef.current = conquestHP;
 
-        // Apply enemy stat modifiers from conquest enemy def
         if (conquestEnemyDef) {
             useBattleStore.setState(state => {
                 if (!state.enemy) return state;
@@ -102,7 +102,6 @@ export const ConquestBattle = () => {
                 };
             });
 
-            // Set enemy special text
             if (conquestEnemyDef.special) {
                 const specialLabels: Record<string, string> = {
                     attacks_twice: '⚡ Attacks Twice',
@@ -117,7 +116,6 @@ export const ConquestBattle = () => {
             }
         }
 
-        // Apply vault-scaled boss multiplier to enemy stats
         if (battle.conquestContext === 'conquest_boss') {
             const mult = conquest.getVaultScaledBossMultiplier();
             if (mult > 1) {
@@ -134,12 +132,11 @@ export const ConquestBattle = () => {
                 });
             }
         }
-    }, []); // Run only on mount
+    }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
     // Watch for battle phase changes
     useEffect(() => {
         if (battle.phase === 'victory') {
-            // Track damage stats
             if (battle.player && initialPlayerHpRef.current !== null) {
                 const hpLost = Math.max(0, initialPlayerHpRef.current - battle.player.hp);
                 if (hpLost > 0) {
@@ -149,7 +146,6 @@ export const ConquestBattle = () => {
             }
             conquest.incrementEnemiesDefeated();
 
-            // Handle enemy specials on defeat
             if (conquestEnemyDef?.special === 'drops_balloons') {
                 const balloonDrop = 2 + Math.floor(Math.random() * 3);
                 conquest.addBalloons(balloonDrop);
@@ -166,7 +162,19 @@ export const ConquestBattle = () => {
             conquest.completeRun(false);
             setShowDefeatModal(true);
         }
-    }, [battle.phase]);
+    }, [battle.phase]); // eslint-disable-line react-hooks/exhaustive-deps
+
+    // Watch for ultimate becoming ready — show popup once
+    useEffect(() => {
+        if (!battle.player) return;
+        const prev = prevEnergyRef.current;
+        const curr = battle.player.energy;
+        if (prev < 100 && curr >= 100 && battle.phase !== 'prep') {
+            setShowUltReady(true);
+            setTimeout(() => setShowUltReady(false), 3500);
+        }
+        prevEnergyRef.current = curr;
+    }, [battle.player?.energy, battle.phase]); // eslint-disable-line react-hooks/exhaustive-deps
 
     const handleFlee = () => {
         const fleeCost = Math.floor(conquest.runMaxHP * 0.15);
@@ -187,7 +195,6 @@ export const ConquestBattle = () => {
     const player = battle.player;
     const enemy = battle.enemy;
 
-    // Element info
     const enemyElement: ConquestElement = conquestEnemyDef?.element ?? 'neutral';
     const elementIcon = CONQUEST_ELEMENT_ICONS[enemyElement];
 
@@ -208,13 +215,14 @@ export const ConquestBattle = () => {
     const energyPct = player.energy;
     const isPlayerTurn = battle.phase === 'select_action';
     const isExecuting = battle.phase === 'executing' || battle.phase === 'enemy_turn';
+    const ultReady = energyPct >= 100;
 
     return (
         <div className="cq-battle-container">
             <div className="cq-bg-layer" style={{ backgroundImage: `url(${battleBg})` }} />
             <div className="bg-overlay" />
 
-            {/* Header */}
+            {/* ── Header ──────────────────────────────────────────────── */}
             <div className="cq-battle-header">
                 <button className="cq-back-btn" onClick={() => navigate('/conquest')}>
                     <ChevronLeft size={18} /> Map
@@ -223,323 +231,336 @@ export const ConquestBattle = () => {
                     {isBossNode ? '💀 FINAL BOSS' : `Floor ${battle.conquestTier ?? 1} Battle`}
                 </div>
                 <div className="cq-run-hp-chip">
-                    <Heart size={12} /> Run HP: {Math.floor(conquest.runHP)}/{conquest.runMaxHP}
+                    <Heart size={12} /> Run {Math.floor(conquest.runHP)}/{conquest.runMaxHP}
                 </div>
             </div>
 
-            <div className="cq-battle-arena">
-                {/* Enemy Section */}
-                <div className="cq-combatant enemy-side">
-                    <div className="cq-combatant-name">
-                        {elementIcon} {enemy.name}
-                        {enemySpecialText && (
-                            <span className="cq-enemy-special-badge">{enemySpecialText}</span>
+            {/* ── Compact Arena: side-by-side combatants ────────────── */}
+            <div className="cq-arena-compact">
+                {/* Enemy side */}
+                <div className="cq-side enemy-side">
+                    <div className="cq-side-portrait">
+                        {(enemy as any).image ? (
+                            <img src={(enemy as any).image} alt={enemy.name} className="cq-portrait-img enemy" />
+                        ) : (
+                            <span className="cq-portrait-emoji">{enemy.icon}</span>
                         )}
                     </div>
-                    <motion.div
-                        className="cq-enemy-large"
-                        animate={{ scale: [1, 1.02, 1] }}
-                        transition={{ duration: 2.5, repeat: Infinity, ease: 'easeInOut' }}
-                    >
-                        {(enemy as any).image ? (
-                            <img src={(enemy as any).image} alt={enemy.name} className="cq-enemy-large-img" />
-                        ) : (
-                            <span className="cq-enemy-emoji">{enemy.icon}</span>
+                    <div className="cq-side-name">
+                        {elementIcon} {enemy.name}
+                        {enemySpecialText && <span className="cq-enemy-special-badge">{enemySpecialText}</span>}
+                        {(isBossNode || isVaultNode) && (
+                            <span className="cq-boss-tag">{isBossNode ? '💀 BOSS' : '🏛️ VAULT'}</span>
                         )}
-                    </motion.div>
-                    {isBossNode && (
-                        <div className="cq-boss-warning">
-                            ⚠️ {enemy.name} — scales with vaults completed ({conquest.treasureVaultsCompleted}×)
-                        </div>
-                    )}
-                    {isVaultNode && (
-                        <div className="cq-boss-warning" style={{ color: '#eab308' }}>🏛️ Vault Guardian — High Difficulty!</div>
-                    )}
+                    </div>
                     <div className="cq-hp-bar-wrap">
                         <div className="cq-hp-bar" style={{ width: `${enemyHpPct}%`, background: '#ef4444' }} />
-                        <span className="cq-hp-label">{Math.max(0, enemy.hp)} / {enemy.maxHp}</span>
+                        <span className="cq-hp-label">{Math.max(0, enemy.hp)}/{enemy.maxHp}</span>
                     </div>
                 </div>
 
-                {/* Player Section */}
-                <div className="cq-combatant player-side">
-                    <div className="cq-player-avatar">
-                        <img src={heroImage} alt="Hero" className="cq-hero-img" />
+                {/* VS divider */}
+                <div className="cq-vs-divider">VS</div>
+
+                {/* Player side */}
+                <div className="cq-side player-side">
+                    <div className="cq-side-portrait">
+                        <img src={heroImage} alt="Hero" className={`cq-portrait-img player ${ultReady ? 'ult-ready-glow' : ''}`} />
+                        {conquest.runBuffs.length > 0 && (
+                            <div className="cq-buff-row">
+                                {conquest.runBuffs.slice(0, 3).map(b => (
+                                    <span key={b.id} className="cq-buff-chip" title={b.label}>
+                                        {b.type === 'strength' ? '⚔️' : b.type === 'defense' ? '🛡️' : b.type === 'curse' ? '☠️' : '✨'}
+                                    </span>
+                                ))}
+                            </div>
+                        )}
                     </div>
-                    <div className="cq-combatant-name" style={{ color: '#a78bfa' }}>Hero</div>
+                    <div className="cq-side-name" style={{ color: '#a78bfa' }}>Hero</div>
                     <div className="cq-hp-bar-wrap">
                         <div className="cq-hp-bar" style={{
                             width: `${playerHpPct}%`,
                             background: playerHpPct < 25 ? '#ef4444' : playerHpPct < 50 ? '#f59e0b' : '#22c55e'
                         }} />
-                        <span className="cq-hp-label">{Math.max(0, player.hp)} / {player.maxHp}</span>
+                        <span className="cq-hp-label">{Math.max(0, player.hp)}/{player.maxHp}</span>
                     </div>
-                    <div className="cq-energy-bar-wrap">
+                    {/* Energy bar */}
+                    <div className={`cq-energy-bar-wrap ${ultReady ? 'ult-ready-energy' : ''}`}>
                         <div className="cq-energy-bar" style={{ width: `${energyPct}%` }} />
-                        <span style={{ fontSize: '0.7rem', color: '#fbbf24', position: 'absolute', right: '4px', top: '50%', transform: 'translateY(-50%)' }}>⚡{Math.floor(energyPct)}</span>
+                        <span className="cq-energy-label">
+                            <Zap size={9} style={{ display: 'inline', verticalAlign: 'middle' }} />
+                            {Math.floor(energyPct)}/100
+                        </span>
                     </div>
-                    {conquest.runBuffs.length > 0 && (
-                        <div className="cq-run-buffs">
-                            {conquest.runBuffs.slice(0, 4).map(b => (
-                                <span key={b.id} className="cq-buff-chip" title={b.label}>
-                                    {b.type === 'strength' ? '⚔️' : b.type === 'defense' ? '🛡️' : b.type === 'curse' ? '☠️' : '✨'}
-                                </span>
-                            ))}
-                        </div>
-                    )}
                 </div>
             </div>
 
-            {/* Combat Log */}
-            <div className="cq-combat-log">
-                {battle.combatLog.slice(-4).reverse().map((entry, i) => (
-                    <div key={i} className={`cq-log-entry cq-log-${entry.type}`}>
-                        {entry.message}
-                    </div>
+            {/* ── Compact combat log (2 lines max) ─────────────────── */}
+            <div className="cq-combat-log-mini">
+                {battle.combatLog.slice(-2).reverse().map((entry, i) => (
+                    <div key={i} className={`cq-log-entry cq-log-${entry.type}`}>{entry.message}</div>
                 ))}
             </div>
 
-            {/* Action Buttons */}
+            {/* ── Ultimate Ready Popup ──────────────────────────────── */}
+            <AnimatePresence>
+                {showUltReady && (
+                    <motion.div
+                        className="cq-ult-ready-banner"
+                        initial={{ opacity: 0, y: -20, scale: 0.92 }}
+                        animate={{ opacity: 1, y: 0, scale: 1 }}
+                        exit={{ opacity: 0, y: -12, scale: 0.95 }}
+                        transition={{ duration: 0.28 }}
+                    >
+                        <span className="cq-ult-ready-icon">💥</span>
+                        <span>Ultimate Ready: <strong>{ultimateName}</strong></span>
+                    </motion.div>
+                )}
+            </AnimatePresence>
+
+            {/* ── Action Panel ──────────────────────────────────────── */}
             <div className="cq-action-panel">
                 {battle.phase === 'prep' ? (
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', width: '100%', gridColumn: '1 / -1', alignItems: 'center' }}>
-                        <div style={{ background: 'rgba(30, 41, 59, 0.8)', padding: '1rem', borderRadius: '8px', width: '100%', maxWidth: '300px', border: '1px solid #334155' }}>
-                            <div style={{ fontSize: '0.85rem', color: '#94a3b8', marginBottom: '0.25rem', textTransform: 'uppercase' }}>Class</div>
-                            <div style={{ fontWeight: 'bold', color: '#a78bfa', marginBottom: '0.75rem' }}>{classType || 'Warrior'}</div>
-                            
-                            <div style={{ fontSize: '0.85rem', color: '#94a3b8', marginBottom: '0.25rem', textTransform: 'uppercase' }}>Ultimate</div>
-                            <div style={{ fontWeight: 'bold', color: '#fde68a', marginBottom: '0.75rem' }}>{ultimateName}</div>
+                    /* ── Prep state: collapsible info + start button ── */
+                    <div className="cq-prep-section">
 
-                            <div style={{ fontSize: '0.85rem', color: '#94a3b8', marginBottom: '0.25rem', textTransform: 'uppercase' }}>Synergy Bonus</div>
-                            <div style={{ fontWeight: 'bold', color: synergy.active ? '#a3e635' : '#475569', marginBottom: '0.75rem', fontSize: '0.85rem' }}>
-                                {synergy.description}
-                            </div>
-
-                            <div style={{ fontSize: '0.85rem', color: '#94a3b8', marginBottom: '0.25rem', textTransform: 'uppercase' }}>Energy (Preview)</div>
-                            <div className="cq-energy-bar-wrap" style={{ position: 'relative', height: '12px', background: '#000', borderRadius: '4px', overflow: 'hidden' }}>
-                                <div style={{ width: '0%', height: '100%', background: 'linear-gradient(90deg, #b45309, #d97706)' }} />
-                                <span style={{ fontSize: '0.65rem', color: '#fbbf24', position: 'absolute', right: '4px', top: '50%', transform: 'translateY(-50%)' }}>0</span>
-                            </div>
+                        {/* Collapsed summary row always visible */}
+                        <div className="cq-info-summary" onClick={() => setShowInfoPanel(p => !p)}>
+                            <span className="cq-info-summary-text">
+                                <span className="cq-info-class">{classType || 'Warrior'}</span>
+                                <span className="cq-info-sep">·</span>
+                                <span className="cq-info-ult">{ultimateName}</span>
+                            </span>
+                            <span className="cq-info-toggle-btn">
+                                {showInfoPanel ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+                                {showInfoPanel ? 'Hide' : 'Details'}
+                            </span>
                         </div>
 
-                        <button className="cq-action-btn primary" style={{ width: '100%', maxWidth: '300px' }} onClick={() => battle.startBattle()}>
+                        {/* Expanded panel */}
+                        <AnimatePresence>
+                            {showInfoPanel && (
+                                <motion.div
+                                    className="cq-info-expanded"
+                                    initial={{ height: 0, opacity: 0 }}
+                                    animate={{ height: 'auto', opacity: 1 }}
+                                    exit={{ height: 0, opacity: 0 }}
+                                    transition={{ duration: 0.22 }}
+                                >
+                                    <div className="cq-info-row">
+                                        <span className="cq-info-key">CLASS</span>
+                                        <span className="cq-info-val purple">{classType || 'Warrior'}</span>
+                                    </div>
+                                    <div className="cq-info-row">
+                                        <span className="cq-info-key">ULTIMATE</span>
+                                        <span className="cq-info-val gold">{ultimateName}</span>
+                                    </div>
+                                    <div className="cq-info-row">
+                                        <span className="cq-info-key">SYNERGY</span>
+                                        <span className="cq-info-val" style={{ color: synergy.active ? '#a3e635' : '#475569', fontSize: '0.78rem' }}>
+                                            {synergy.description}
+                                        </span>
+                                    </div>
+                                    <div className="cq-info-row">
+                                        <span className="cq-info-key">ENERGY</span>
+                                        <div className="cq-energy-bar-wrap" style={{ flex: 1, maxWidth: 140 }}>
+                                            <div style={{ width: '0%', height: '100%', background: 'linear-gradient(90deg, #b45309, #d97706)', borderRadius: '99px' }} />
+                                            <span className="cq-energy-label">0/100</span>
+                                        </div>
+                                    </div>
+                                </motion.div>
+                            )}
+                        </AnimatePresence>
+
+                        <button className="cq-action-btn primary cq-start-btn" onClick={() => battle.startBattle()}>
                             ⚔️ Start Battle
                         </button>
                     </div>
                 ) : (
+                    /* ── Battle state ── */
                     <>
-                        <div style={{ display: 'flex', justifyContent: 'center', width: '100%', marginBottom: '0.5rem', gridColumn: '1 / -1' }}>
-                            <button
-                                className={`cq-action-btn ultimate-btn ${player.energy >= 100 ? 'ready' : 'locked'}`}
-                                disabled={!isPlayerTurn || isExecuting || isRolling || isHeavyRolling || player.energy < 100}
-                                style={{ 
-                                    width: '100%', 
-                                    padding: '0.75rem',
-                                    borderRadius: '8px',
-                                    border: player.energy >= 100 ? '2px solid #fbbf24' : '2px solid #475569',
-                                    background: player.energy >= 100 ? 'linear-gradient(135deg, #b45309 0%, #78350f 100%)' : '#1e293b',
-                                    color: player.energy >= 100 ? '#fff' : '#64748b',
-                                    fontWeight: 'bold',
-                                    textTransform: 'uppercase',
-                                    cursor: player.energy >= 100 ? 'pointer' : 'not-allowed',
-                                    transition: 'all 0.3s ease'
-                                }}
-                                onClick={() => {
-                                    if (isPlayerTurn && player.energy >= 100) {
-                                        useBattleStore.getState().executeUltimate(ultimateName);
-                                    }
-                                }}
-                            >
-                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
-                                    <span style={{ fontSize: '1.2rem' }}>💥</span>
-                                    <span>{ultimateName}</span>
-                                    <span style={{ fontSize: '0.85rem', color: player.energy >= 100 ? '#fde68a' : '#475569' }}>
-                                        {Math.floor(player.energy)}/100
-                                    </span>
-                                </div>
-                            </button>
-                        </div>
-                        {/* 1. Heavy Attack */}
+                        {/* Ultimate button — full width row */}
                         <button
-                            className="cq-action-btn attack heavy"
-                            disabled={!isPlayerTurn || isExecuting || isRolling || isHeavyRolling || battle.heavyAttackCooldown > 0}
+                            className={`cq-ultimate-btn ${ultReady ? 'ready' : 'locked'}`}
+                            disabled={!isPlayerTurn || isExecuting || isRolling || isHeavyRolling || !ultReady}
                             onClick={() => {
-                                if (battle.heavyAttackCooldown > 0) return;
-                                setIsHeavyRolling(true);
-                                const modifiedAtk = Math.max(1, player.atk * battle.playerDamageModifier);
-                                const lowHit = Math.max(1, Math.ceil(modifiedAtk * 0.5));
-                                const bigHit = Math.max(1, Math.floor(modifiedAtk * 1.5));
-                                
-                                let rolls = 0;
-                                const maxRolls = 10;
-                                const interval = setInterval(() => {
-                                    const stepSuccess = Math.random() > 0.5;
-                                    setHeavyRollValue(stepSuccess ? bigHit : lowHit);
-                                    rolls++;
-                                    if (rolls >= maxRolls) {
-                                        clearInterval(interval);
-                                        const isSuccess = Math.random() > 0.5;
-                                        const finalDamage = isSuccess ? bigHit : lowHit;
-                                        setHeavyRollValue(finalDamage);
-                                        
-                                        setTimeout(() => {
-                                            useBattleStore.setState(state => ({
-                                                combatLog: [...state.combatLog, { message: `🎲 Heavy Roll: ${finalDamage}!`, type: 'info' as const }],
-                                                heavyAttackCooldown: 2
-                                            }));
-                                            conquest.trackDamageDealt(finalDamage);
-                                            battle.selectAbility({
-                                                id: 'heavy_strike', name: 'Heavy Strike', type: 'attack',
-                                                description: '', icon: '💥', element: 'neutral',
-                                                damageMultiplier: 1.0, cooldown: 0, energyCost: 0,
-                                                customDamageConfig: { type: 'heavy', rollValue: finalDamage }
-                                            });
-                                            battle.executePlayerAction();
-                                            setIsHeavyRolling(false);
-                                            setHeavyRollValue(null);
-                                        }, 400);
-                                    }
-                                }, 50);
-                            }}
-                        >
-                            <div className="cq-btn-top">💥 Heavy</div>
-                            <div className="cq-btn-mid" style={isHeavyRolling ? { color: '#fbbf24' } : {}}>
-                                {isHeavyRolling && heavyRollValue !== null 
-                                    ? `🎲 ${heavyRollValue}` 
-                                    : `${Math.max(1, Math.ceil(Math.max(1, player.atk * battle.playerDamageModifier) * 0.5))} or ${Math.max(1, Math.floor(Math.max(1, player.atk * battle.playerDamageModifier) * 1.5))}`}
-                            </div>
-                            <div className="cq-btn-bot">
-                                {battle.heavyAttackCooldown > 0
-                                    ? <span style={{ color: '#ef4444' }}>⚠️ Cooldown</span>
-                                    : <span>🎲 50/50 Roll</span>
+                                if (isPlayerTurn && ultReady) {
+                                    useBattleStore.getState().executeUltimate(ultimateName);
+                                    setShowUltReady(false);
                                 }
-                            </div>
-                        </button>
-
-                        {/* 2. Light Attack */}
-                        <button
-                            className="cq-action-btn attack light"
-                            disabled={!isPlayerTurn || isExecuting || isRolling || isHeavyRolling}
-                            onClick={() => {
-                                setIsRolling(true);
-                                const modifiedAtk = Math.max(1, Math.floor(player.atk * battle.playerDamageModifier));
-                                let rolls = 0;
-                                const maxRolls = 10;
-                                const interval = setInterval(() => {
-                                    setRollValue(Math.floor(Math.random() * modifiedAtk) + 1);
-                                    rolls++;
-                                    if (rolls >= maxRolls) {
-                                        clearInterval(interval);
-                                        const finalRoll = Math.floor(Math.random() * modifiedAtk) + 1;
-                                        setRollValue(finalRoll);
-                                        conquest.trackDamageDealt(finalRoll);
-                                        setTimeout(() => {
-                                            useBattleStore.setState(state => ({
-                                                combatLog: [...state.combatLog, { message: `🎲 Rolled ${finalRoll}!`, type: 'info' as const }]
-                                            }));
-                                            battle.selectAbility({
-                                                id: 'light_strike', name: 'Light Strike', type: 'attack',
-                                                description: '', icon: '⚡', element: 'neutral',
-                                                damageMultiplier: 1.0, cooldown: 0, energyCost: 0,
-                                                customDamageConfig: { type: 'light', rollValue: finalRoll }
-                                            });
-                                            battle.executePlayerAction();
-                                            setIsRolling(false);
-                                            setRollValue(null);
-                                        }, 400);
-                                    }
-                                }, 50);
                             }}
                         >
-                            <div className="cq-btn-top">⚡ Light</div>
-                            <div className="cq-btn-mid" style={isRolling ? { color: '#fbbf24' } : {}}>
-                                {isRolling && rollValue !== null ? `🎲 ${rollValue}` : `1–${Math.max(1, Math.floor(player.atk * battle.playerDamageModifier))} Dmg`}
-                            </div>
-                            <div className="cq-btn-bot">Always Hits</div>
+                            <span className="cq-ult-icon">💥</span>
+                            <span className="cq-ult-name">{ultimateName}</span>
+                            <span className="cq-ult-energy">{Math.floor(energyPct)}/100</span>
                         </button>
 
-                        {/* 3. Defend */}
-                        <button
-                            className="cq-action-btn defend"
-                            disabled={!isPlayerTurn || isExecuting}
-                            onClick={() => {
-                                if (!isPlayerTurn) return;
-                                useBattleStore.setState(state => {
-                                    if (!state.player) return state;
-                                    return {
-                                        player: { ...state.player, isDefending: true },
-                                        combatLog: [...state.combatLog, { message: '🛡️ Hero braces for impact! (50% damage reduction)', type: 'buff' as const }],
-                                    };
-                                });
-                                setTimeout(() => battle.endTurn(), 600);
-                            }}
-                        >
-                            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                                <div><Shield size={18} style={{ display: 'inline', verticalAlign: 'middle', marginRight: '4px' }} /> Defend</div>
-                                <div style={{ fontSize: '0.7rem', opacity: 0.8 }}>50% damage reduction</div>
-                            </div>
-                        </button>
-
-                        {/* 4. Flee (not available vs boss) */}
-                        {!isBossNode && (
+                        {/* 2-column action grid */}
+                        <div className="cq-action-grid">
+                            {/* Heavy Attack */}
                             <button
-                                className="cq-action-btn flee"
-                                disabled={!isPlayerTurn || isExecuting}
-                                onClick={handleFlee}
+                                className="cq-action-btn attack heavy"
+                                disabled={!isPlayerTurn || isExecuting || isRolling || isHeavyRolling || battle.heavyAttackCooldown > 0}
+                                onClick={() => {
+                                    if (battle.heavyAttackCooldown > 0) return;
+                                    setIsHeavyRolling(true);
+                                    const modifiedAtk = Math.max(1, player.atk * battle.playerDamageModifier);
+                                    const lowHit = Math.max(1, Math.ceil(modifiedAtk * 0.5));
+                                    const bigHit = Math.max(1, Math.floor(modifiedAtk * 1.5));
+                                    let rolls = 0;
+                                    const interval = setInterval(() => {
+                                        const stepSuccess = Math.random() > 0.5;
+                                        setHeavyRollValue(stepSuccess ? bigHit : lowHit);
+                                        rolls++;
+                                        if (rolls >= 10) {
+                                            clearInterval(interval);
+                                            const isSuccess = Math.random() > 0.5;
+                                            const finalDamage = isSuccess ? bigHit : lowHit;
+                                            setHeavyRollValue(finalDamage);
+                                            setTimeout(() => {
+                                                useBattleStore.setState(state => ({
+                                                    combatLog: [...state.combatLog, { message: `🎲 Heavy Roll: ${finalDamage}!`, type: 'info' as const }],
+                                                    heavyAttackCooldown: 2
+                                                }));
+                                                conquest.trackDamageDealt(finalDamage);
+                                                battle.selectAbility({
+                                                    id: 'heavy_strike', name: 'Heavy Strike', type: 'attack',
+                                                    description: '', icon: '💥', element: 'neutral',
+                                                    damageMultiplier: 1.0, cooldown: 0, energyCost: 0,
+                                                    customDamageConfig: { type: 'heavy', rollValue: finalDamage }
+                                                });
+                                                battle.executePlayerAction();
+                                                setIsHeavyRolling(false);
+                                                setHeavyRollValue(null);
+                                            }, 400);
+                                        }
+                                    }, 50);
+                                }}
                             >
-                                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                                    <div><LogOut size={18} style={{ display: 'inline', verticalAlign: 'middle', marginRight: '4px' }} /> Flee</div>
-                                    <div style={{ fontSize: '0.7rem', opacity: 0.8 }}>Costs 15% max HP</div>
+                                <div className="cq-btn-top">💥 Heavy</div>
+                                <div className="cq-btn-mid" style={isHeavyRolling ? { color: '#fbbf24' } : {}}>
+                                    {isHeavyRolling && heavyRollValue !== null
+                                        ? `🎲 ${heavyRollValue}`
+                                        : `${Math.max(1, Math.ceil(Math.max(1, player.atk * battle.playerDamageModifier) * 0.5))}-${Math.max(1, Math.floor(Math.max(1, player.atk * battle.playerDamageModifier) * 1.5))}`}
+                                </div>
+                                <div className="cq-btn-bot">
+                                    {battle.heavyAttackCooldown > 0
+                                        ? <span style={{ color: '#ef4444' }}>⚠️ Cooldown</span>
+                                        : <span>🎲 50/50</span>
+                                    }
                                 </div>
                             </button>
-                        )}
 
-                        {/* 5. Cast Spell */}
-                        {(() => {
-                            const equippedSpellId = battle.equippedSpells[0];
-                            const spell = equippedSpellId ? getOwnedSpells().find(s => s.id === equippedSpellId) : null;
-                            const spellCooldownTurns = battle.spellCooldownTurns;
-                            const onCooldown = spellCooldownTurns > 0;
-                            const expectedDamage = spell && spell.effect.type === 'damage'
-                                ? (spell.baseDamage !== undefined && spell.tier !== 'old'
-                                    ? Math.round(spell.baseDamage * (1 + (useGameStore.getState().skills['Intelligence']?.level ?? 1) * 0.03) * battle.playerDamageModifier)
-                                    : Math.round(spell.effect.value * getMagicAttack() * battle.playerDamageModifier))
-                                : null;
-                            const canCast = spell && battle.currentMP >= spell.mpCost && !onCooldown;
-
-                            return (
-                                <button
-                                    className={`cq-action-btn spells ${!spell ? 'disabled-spell' : ''}`}
-                                    disabled={!isPlayerTurn || isExecuting || !spell || !canCast}
-                                    style={{
-                                        opacity: (!isPlayerTurn || isExecuting || !spell || !canCast) ? 0.6 : 1,
-                                    }}
-                                    onClick={() => {
-                                        if (canCast && isPlayerTurn && spell) {
-                                            battle.castSpell(spell.id);
+                            {/* Light Attack */}
+                            <button
+                                className="cq-action-btn attack light"
+                                disabled={!isPlayerTurn || isExecuting || isRolling || isHeavyRolling}
+                                onClick={() => {
+                                    setIsRolling(true);
+                                    const modifiedAtk = Math.max(1, Math.floor(player.atk * battle.playerDamageModifier));
+                                    let rolls = 0;
+                                    const interval = setInterval(() => {
+                                        setRollValue(Math.floor(Math.random() * modifiedAtk) + 1);
+                                        rolls++;
+                                        if (rolls >= 10) {
+                                            clearInterval(interval);
+                                            const finalRoll = Math.floor(Math.random() * modifiedAtk) + 1;
+                                            setRollValue(finalRoll);
+                                            conquest.trackDamageDealt(finalRoll);
+                                            setTimeout(() => {
+                                                useBattleStore.setState(state => ({
+                                                    combatLog: [...state.combatLog, { message: `🎲 Rolled ${finalRoll}!`, type: 'info' as const }]
+                                                }));
+                                                battle.selectAbility({
+                                                    id: 'light_strike', name: 'Light Strike', type: 'attack',
+                                                    description: '', icon: '⚡', element: 'neutral',
+                                                    damageMultiplier: 1.0, cooldown: 0, energyCost: 0,
+                                                    customDamageConfig: { type: 'light', rollValue: finalRoll }
+                                                });
+                                                battle.executePlayerAction();
+                                                setIsRolling(false);
+                                                setRollValue(null);
+                                            }, 400);
                                         }
-                                    }}
+                                    }, 50);
+                                }}
+                            >
+                                <div className="cq-btn-top">⚡ Light</div>
+                                <div className="cq-btn-mid" style={isRolling ? { color: '#fbbf24' } : {}}>
+                                    {isRolling && rollValue !== null ? `🎲 ${rollValue}` : `1–${Math.max(1, Math.floor(player.atk * battle.playerDamageModifier))}`}
+                                </div>
+                                <div className="cq-btn-bot">Always Hits</div>
+                            </button>
+
+                            {/* Defend */}
+                            <button
+                                className="cq-action-btn defend"
+                                disabled={!isPlayerTurn || isExecuting}
+                                onClick={() => {
+                                    if (!isPlayerTurn) return;
+                                    useBattleStore.setState(state => {
+                                        if (!state.player) return state;
+                                        return {
+                                            player: { ...state.player, isDefending: true },
+                                            combatLog: [...state.combatLog, { message: '🛡️ Hero braces! (50% reduction)', type: 'buff' as const }],
+                                        };
+                                    });
+                                    setTimeout(() => battle.endTurn(), 600);
+                                }}
+                            >
+                                <div className="cq-btn-top"><Shield size={14} style={{ display: 'inline', verticalAlign: 'middle' }} /> Defend</div>
+                                <div className="cq-btn-bot">50% reduction</div>
+                            </button>
+
+                            {/* Spell */}
+                            {(() => {
+                                const equippedSpellId = battle.equippedSpells[0];
+                                const spell = equippedSpellId ? getOwnedSpells().find(s => s.id === equippedSpellId) : null;
+                                const spellCooldownTurns = battle.spellCooldownTurns;
+                                const onCooldown = spellCooldownTurns > 0;
+                                const expectedDamage = spell && spell.effect.type === 'damage'
+                                    ? (spell.baseDamage !== undefined && spell.tier !== 'old'
+                                        ? Math.round(spell.baseDamage * (1 + (useGameStore.getState().skills['Intelligence']?.level ?? 1) * 0.03) * battle.playerDamageModifier)
+                                        : Math.round(spell.effect.value * getMagicAttack() * battle.playerDamageModifier))
+                                    : null;
+                                const canCast = spell && battle.currentMP >= spell.mpCost && !onCooldown;
+
+                                return (
+                                    <button
+                                        className={`cq-action-btn spells ${!spell ? 'disabled-spell' : ''}`}
+                                        disabled={!isPlayerTurn || isExecuting || !spell || !canCast}
+                                        style={{ opacity: (!isPlayerTurn || isExecuting || !spell || !canCast) ? 0.6 : 1 }}
+                                        onClick={() => { if (canCast && isPlayerTurn && spell) battle.castSpell(spell.id); }}
+                                    >
+                                        <div className="cq-btn-top">✨ {spell ? spell.name : 'Spell'}</div>
+                                        <div className="cq-btn-mid" style={!spell ? { fontSize: '0.78rem' } : {}}>
+                                            {!spell ? 'None' : expectedDamage ? `${expectedDamage} Dmg` : 'Cast'}
+                                        </div>
+                                        <div className="cq-btn-bot">
+                                            {spell && onCooldown ? (
+                                                <span style={{ color: '#ef4444' }}>⚠️ {spellCooldownTurns}t</span>
+                                            ) : spell && !canCast ? (
+                                                <span style={{ color: '#ef4444' }}>{spell.mpCost} MP</span>
+                                            ) : spell ? (
+                                                <span>{spell.mpCost} MP</span>
+                                            ) : 'Not Equipped'}
+                                        </div>
+                                    </button>
+                                );
+                            })()}
+
+                            {/* Flee (not vs boss) */}
+                            {!isBossNode && (
+                                <button
+                                    className="cq-action-btn flee"
+                                    disabled={!isPlayerTurn || isExecuting}
+                                    onClick={handleFlee}
                                 >
-                                    <div className="cq-btn-top">✨ {spell ? spell.name : 'Spell'}</div>
-                                    <div className="cq-btn-mid" style={!spell ? { fontSize: '0.85rem' } : {}}>
-                                        {!spell
-                                            ? 'None'
-                                            : expectedDamage ? `${expectedDamage} Dmg` : 'Cast'}
-                                    </div>
-                                    <div className="cq-btn-bot">
-                                        {spell && onCooldown ? (
-                                            <span style={{ color: '#ef4444' }}>⚠️ {spellCooldownTurns}t CD</span>
-                                        ) : spell && !canCast ? (
-                                            <span style={{ color: '#ef4444' }}>{spell.mpCost} MP</span>
-                                        ) : spell ? (
-                                            <span>{spell.mpCost} MP</span>
-                                        ) : (
-                                            'Not Equipped'
-                                        )}
-                                    </div>
+                                    <div className="cq-btn-top"><LogOut size={14} style={{ display: 'inline', verticalAlign: 'middle' }} /> Flee</div>
+                                    <div className="cq-btn-bot">Costs 15% HP</div>
                                 </button>
-                            );
-                        })()}
+                            )}
+                        </div>
                     </>
                 )}
             </div>
@@ -561,9 +582,9 @@ export const ConquestBattle = () => {
                             </p>
                             <div style={{ fontSize: '0.9rem', color: '#94a3b8', marginBottom: '1.5rem' }}>
                                 <Heart size={14} style={{ display: 'inline', marginRight: 4 }} />
-                                Run HP Remaining: <strong style={{ color: '#22c55e' }}>{Math.floor(conquest.runHP)}</strong>
+                                Run HP: <strong style={{ color: '#22c55e' }}>{Math.floor(conquest.runHP)}</strong>
                                 <br />
-                                <small style={{ color: '#475569', fontSize: '0.75rem' }}>⚠️ HP does not restore between battles — visit a Campfire</small>
+                                <small style={{ color: '#475569', fontSize: '0.75rem' }}>⚠️ HP persists — visit a Campfire to restore</small>
                                 {conquestEnemyDef?.special === 'drops_balloons' && (
                                     <div style={{ color: '#22c55e', marginTop: '0.5rem' }}>🎈 Bonus: Balloons dropped!</div>
                                 )}

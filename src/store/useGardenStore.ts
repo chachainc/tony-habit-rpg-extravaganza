@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
+import { useCurrencyStore } from './useCurrencyStore';
 
 // ── Growth Stages ──
 export type PlotStage = 'empty' | 'planted' | 'sprout' | 'growing' | 'harvestable';
@@ -11,16 +12,22 @@ export interface SeedDef {
     icon: string;
     growTimeMs: number;
     cost: number;
+    unlockCost?: number;
     cropIcon: string;     // icon shown when harvestable
-    yields: { type: 'gold' | 'material'; value: number; materialId?: string }[];
+    reward: { goldReturn: number; boxes: number };
 }
 
 export const SEEDS: SeedDef[] = [
-    { id: 'herb_seed',    name: 'Herb Seed',    icon: '🌿', cropIcon: '🌿', growTimeMs: 6 * 60 * 60 * 1000,  cost: 100, yields: [{ type: 'gold', value: 50 }] },
-    { id: 'flower_seed',  name: 'Flower Seed',  icon: '🌸', cropIcon: '🌺', growTimeMs: 12 * 60 * 60 * 1000, cost: 200, yields: [{ type: 'gold', value: 80 }] },
-    { id: 'crystal_seed', name: 'Crystal Seed', icon: '💎', cropIcon: '💠', growTimeMs: 24 * 60 * 60 * 1000, cost: 500, yields: [{ type: 'material', value: 1, materialId: 'gem_shard' }] },
-    { id: 'mystic_seed',  name: 'Mystic Seed',  icon: '✨', cropIcon: '🔮', growTimeMs: 18 * 60 * 60 * 1000, cost: 400, yields: [{ type: 'material', value: 2, materialId: 'mystic_dust' }] },
-    { id: 'dragon_seed',  name: 'Dragon Seed',  icon: '🐉', cropIcon: '🐲', growTimeMs: 24 * 60 * 60 * 1000, cost: 800, yields: [{ type: 'material', value: 1, materialId: 'dragon_scale' }] },
+    { id: 'herb_seed',    name: 'Herb Seed',    icon: '🌿', cropIcon: '🌿', growTimeMs: 6 * 60 * 60 * 1000,  cost: 100, reward: { goldReturn: 110, boxes: 0 } },
+    { id: 'flower_seed',  name: 'Flower Seed',  icon: '🌸', cropIcon: '🌺', growTimeMs: 12 * 60 * 60 * 1000, cost: 200, reward: { goldReturn: 220, boxes: 0 } },
+    { id: 'crystal_seed', name: 'Crystal Seed', icon: '💎', cropIcon: '💠', growTimeMs: 24 * 60 * 60 * 1000, cost: 500, reward: { goldReturn: 525, boxes: 1 } },
+    { id: 'mystic_seed',  name: 'Mystic Seed',  icon: '✨', cropIcon: '🔮', growTimeMs: 18 * 60 * 60 * 1000, cost: 400, reward: { goldReturn: 400, boxes: 2 } },
+    { id: 'dragon_seed',  name: 'Dragon Seed',  icon: '🐉', cropIcon: '🐲', growTimeMs: 24 * 60 * 60 * 1000, cost: 800, reward: { goldReturn: 830, boxes: 2 } },
+    
+    // Premium Seeds
+    { id: 'golden_herb_seed', name: 'Golden Herb Seed', icon: '✨', cropIcon: '🌾', growTimeMs: 24 * 60 * 60 * 1000, cost: 1000, unlockCost: 10000, reward: { goldReturn: 1050, boxes: 3 } },
+    { id: 'royal_bloom_seed', name: 'Royal Bloom Seed', icon: '👑', cropIcon: '🏵️', growTimeMs: 24 * 60 * 60 * 1000, cost: 2000, unlockCost: 25000, reward: { goldReturn: 2100, boxes: 3 } },
+    { id: 'dragonroot_seed',  name: 'Dragonroot Seed',  icon: '🔥', cropIcon: '🍠', growTimeMs: 48 * 60 * 60 * 1000, cost: 2000, unlockCost: 50000, reward: { goldReturn: 2400, boxes: 5 } },
 ];
 
 export interface PlotState {
@@ -34,15 +41,19 @@ interface GardenState {
     plots: PlotState[];
     maxPlots: number;
     totalHarvests: number;
+    unlockedSeeds: Record<string, true>;
 
     plantSeed: (plotIndex: number, seedId: string) => void;
     waterPlot: (plotIndex: number) => void;
-    harvestPlot: (plotIndex: number) => { yields: SeedDef['yields']; watered: boolean; seed: SeedDef } | null;
+    harvestPlot: (plotIndex: number) => { reward: SeedDef['reward']; watered: boolean; seed: SeedDef } | null;
     getPlotStage: (plotIndex: number) => PlotStage;
     getGrowthPercent: (plotIndex: number) => number;
     isPlotReady: (plotIndex: number) => boolean;
     isPlotThirsty: (plotIndex: number) => boolean;
     upgradePlots: () => number;
+
+    isSeedUnlocked: (seedId: string) => boolean;
+    purchaseSeedUnlock: (seedId: string) => { ok: boolean; reason?: string };
 }
 
 const getDateString = (): string => {
@@ -64,6 +75,7 @@ export const useGardenStore = create<GardenState>()(
             plots: Array.from({ length: INITIAL_PLOTS }, () => ({ ...EMPTY_PLOT })),
             maxPlots: INITIAL_PLOTS,
             totalHarvests: 0,
+            unlockedSeeds: {},
 
             plantSeed: (plotIndex, seedId) => {
                 set(s => {
@@ -101,7 +113,7 @@ export const useGardenStore = create<GardenState>()(
                     plots[plotIndex] = { ...EMPTY_PLOT };
                     return { plots, totalHarvests: s.totalHarvests + 1 };
                 });
-                return { yields: seed.yields, watered, seed };
+                return { reward: seed.reward, watered, seed };
             },
 
             getPlotStage: (plotIndex) => {
@@ -149,7 +161,46 @@ export const useGardenStore = create<GardenState>()(
                 }));
                 return 0;
             },
+
+            isSeedUnlocked: (seedId: string) => {
+                const seed = SEEDS.find(s => s.id === seedId);
+                // If it's not a premium seed, it's inherently unlocked
+                if (!seed?.unlockCost) return true;
+                return !!get().unlockedSeeds[seedId];
+            },
+
+            purchaseSeedUnlock: (seedId: string) => {
+                const seed = SEEDS.find(s => s.id === seedId);
+                if (!seed) return { ok: false, reason: 'Seed not found' };
+                if (!seed.unlockCost) return { ok: false, reason: 'Seed is not premium' };
+                
+                const { unlockedSeeds } = get();
+                if (unlockedSeeds[seedId]) return { ok: false, reason: 'Already unlocked' };
+                
+                const currencyStore = useCurrencyStore.getState();
+                if (currencyStore.gold < seed.unlockCost) {
+                    return { ok: false, reason: 'Not enough gold' };
+                }
+                
+                currencyStore.spendGold(seed.unlockCost);
+                set(s => ({
+                    unlockedSeeds: { ...s.unlockedSeeds, [seedId]: true }
+                }));
+                
+                return { ok: true };
+            },
         }),
-        { name: 'gl-garden-v1', version: 2 }
+        { 
+            name: 'gl-garden-v1', 
+            version: 3,
+            migrate: (persistedState: any, version) => {
+                const state = persistedState as any;
+                if (version < 3) {
+                    state.unlockedSeeds = {};
+                    // Make sure plots empty array length is OK
+                }
+                return state;
+            }
+        }
     )
 );

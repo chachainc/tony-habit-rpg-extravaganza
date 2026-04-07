@@ -149,7 +149,6 @@ export const ENEMY_DB: Record<string, EnemyDef> = {
                 damageMultiplier: 1.2,
                 cooldown: 3,
                 energyCost: 0,
-                effects: { heal: 20 },
             },
             {
                 id: 'nightmare_wave',

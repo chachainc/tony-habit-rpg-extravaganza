@@ -581,7 +581,7 @@
 }
 .seed-modal-card {
     display: grid;
-    grid-template-columns: 2.5rem 1fr auto auto auto;
+    grid-template-columns: 3rem 1fr;
     align-items: center;
     gap: 0.5rem;
     padding: 0.6rem 0.75rem;
@@ -601,11 +601,29 @@
     opacity: 0.4;
     cursor: not-allowed;
 }
-.seed-modal-icon { font-size: 1.5rem; text-align: center; }
-.seed-modal-name { font-weight: 700; font-size: 0.85rem; color: #4a3520; }
-.seed-modal-cost { font-size: 0.75rem; color: #b8860b; font-weight: 700; }
-.seed-modal-time { font-size: 0.7rem; color: #8b7355; }
-.seed-modal-yield { font-size: 0.7rem; color: #22c55e; font-weight: 600; }
+.seed-modal-card.locked {
+    filter: grayscale(1);
+    opacity: 0.6;
+    border: 1px dashed rgba(139,115,85,0.4);
+}
+.seed-modal-card.locked:hover:not(.disabled) {
+    filter: grayscale(0.5);
+    background: rgba(255,255,255,0.8);
+    border-color: #d97706;
+}
+.seed-modal-card.premium-unlocked {
+    border: 2px solid #fbbf24;
+    box-shadow: inset 0 0 10px rgba(251,191,36,0.2), 0 4px 10px rgba(251,191,36,0.15);
+    background: linear-gradient(135deg, rgba(255,255,255,0.9), rgba(251,191,36,0.1));
+}
+.card-lock-icon {
+    color: #92400e;
+    margin-left: 4px;
+    vertical-align: text-bottom;
+}
+.seed-modal-icon { font-size: 1.8rem; text-align: center; }
+.seed-modal-name { font-weight: 800; font-size: 0.95rem; color: #4a3520; display: block; margin-bottom: 2px; }
+.seed-modal-details { font-size: 0.75rem; color: #8b7355; }
 .seed-modal-close {
     display: block;
     width: 100%;
