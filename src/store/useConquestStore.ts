@@ -4,7 +4,19 @@ import { useStrategyStore } from './useStrategyStore';
 import { CONQUEST_MAP_NODES, CONQUEST_ARTIFACTS, CONQUEST_BOSS_POOL, type ConquestNodeData } from '../data/conquest';
 import { generateConquestMap } from '../data/conquestMapGen';
 import { PERSIST_REGISTRY } from '../data/persistRegistry';
+// ─── UTILS ────────────────────────────────────────
 
+const getEasternDateString = (): string => {
+    const now = new Date();
+    const eastern = new Intl.DateTimeFormat('en-US', {
+        timeZone: 'America/New_York',
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+    }).format(now);
+    const [month, day, year] = eastern.split('/');
+    return `${year}-${month}-${day}`;
+};
 
 // ─── TYPES ────────────────────────────────────────
 
@@ -359,7 +371,7 @@ export const useConquestStore = create<ConquestState>()(
 
             initMap: () => {
                 const state = get();
-                const todayISO = new Date().toISOString().split('T')[0];
+                const todayISO = getEasternDateString();
 
                 // ── Daily reset: if the run started on a prior day, force a fresh run ──
                 const hasActiveRun = state.currentNodeId !== null;
@@ -394,7 +406,7 @@ export const useConquestStore = create<ConquestState>()(
             isDailyRunLocked: () => {
                 const state = get();
                 if (!state.lastRunDate) return false;
-                const todayISO = new Date().toISOString().split('T')[0];
+                const todayISO = getEasternDateString();
                 if (state.lastRunDate !== todayISO) return false;
                 // If player has tickets, they can bypass the lock
                 if (state.dailyTickets > 0) return false;
@@ -478,7 +490,7 @@ export const useConquestStore = create<ConquestState>()(
                 const state = get();
                 
                 // If locked, consume a ticket
-                const todayISO = new Date().toISOString().split('T')[0];
+                const todayISO = getEasternDateString();
                 if (state.lastRunDate === todayISO && state.dailyTickets > 0) {
                     set(s => ({ dailyTickets: s.dailyTickets - 1 }));
                 }
@@ -569,7 +581,7 @@ export const useConquestStore = create<ConquestState>()(
 
             completeRun: (victory: boolean) => {
                 const state = get();
-                const today = new Date().toISOString().split('T')[0];
+                const today = getEasternDateString();
                 
                 // Get boss name for history
                 const bossEnemy = CONQUEST_BOSS_POOL.find(b => b.id === state.runBossId);

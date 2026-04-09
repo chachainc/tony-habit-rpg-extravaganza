@@ -202,7 +202,14 @@ export const useBudgetStore = create<BudgetState>()(
                             // Streak multiplier: 1 + streak * 0.5 (capped at 4x)
                             const streakMul = Math.min(4, 1 + newStreak * 0.5);
                             const baseAmount = spent <= (weeklyBudget / 2) ? 20 : 10;
-                            const amount = Math.floor(baseAmount * streakMul);
+                            let amount = Math.floor(baseAmount * streakMul);
+
+                            if (giftType === 'sigils') {
+                                // Scale sigils linearly but much smaller: week 1 = 1, week 2+ = 2 to 3 max
+                                // Apply hard clamp protection
+                                const scaledSigils = newStreak === 1 ? 1 : Math.min(3, newStreak);
+                                amount = Math.min(scaledSigils, 3);
+                            }
 
                             import('./useCurrencyStore').then(({ useCurrencyStore }) => {
                                 const cs = useCurrencyStore.getState();
@@ -218,7 +225,7 @@ export const useBudgetStore = create<BudgetState>()(
                             import('../components/ui/Toast').then(({ useToastStore }) => {
                                 useToastStore.getState().addToast({
                                     type: 'success',
-                                    message: `🔥 Week Complete! Streak x${newStreak}! +${amount} ${giftType}!`,
+                                    message: `🔥 Weekly Streak Complete! Streak x${newStreak}! Reward: +${amount} ${giftType}`,
                                     duration: 5000,
                                 });
                             }).catch(() => {});
@@ -249,7 +256,12 @@ export const useBudgetStore = create<BudgetState>()(
 
                 const tierInfo = get().getDailyGiftTier();
                 if (tierInfo && tierInfo.giftAmount > 0) {
-                    const amount = tierInfo.giftAmount;
+                    let amount = tierInfo.giftAmount;
+                    if (weeklyGiftType === 'sigils') {
+                        // Hard clamp for daily sigil delivery
+                        amount = Math.min(Math.floor(amount / 2) || 1, 3);
+                    }
+
                     if (weeklyGiftType === 'shmeckles') {
                         import('./useCurrencyStore').then(m => m.useCurrencyStore.getState().addShmeckles(amount));
                     } else if (weeklyGiftType === 'balloons') {

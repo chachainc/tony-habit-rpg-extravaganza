@@ -424,8 +424,8 @@ export const Conquest = () => {
                                 <div>Best Floor: {conquest.bestFloor}</div>
                                 <div>Runs Completed: {conquest.runsCompleted}</div>
                             </div>
-                            <button className="continue-btn" onClick={() => { conquest.resetRun(); navigate('/dashboard'); }}>
-                                Return to Dashboard
+                            <button className="continue-btn" onClick={() => { conquest.resetRun(); navigate('/town'); }}>
+                                Return to Town
                             </button>
                         </div>
                     </motion.div>
@@ -459,7 +459,7 @@ export const Conquest = () => {
                             >
                                 🏛️ Open Meta Forge
                             </button>
-                            <button className="continue-btn" onClick={() => navigate('/')}>Return to Dashboard</button>
+                            <button className="continue-btn" onClick={() => navigate('/town')}>Return to Town</button>
                         </div>
                     </motion.div>
                 )}
@@ -563,29 +563,44 @@ export const Conquest = () => {
 
             {/* Event Modal */}
             <AnimatePresence>
-                {activeEvent && CONQUEST_EVENT_TABLE[activeEvent] && (
+                {activeEvent && (
                     <motion.div className="modal-overlay" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-                        <div className="event-modal map-modal">
-                            <h2>{activeEvent}</h2>
-                            <p>{CONQUEST_EVENT_TABLE[activeEvent].text}</p>
-                            <div className="event-options">
-                                {CONQUEST_EVENT_TABLE[activeEvent].options.map((opt, i) => (
-                                    <button key={i} onClick={() => {
-                                        if (opt.effect.type === 'gold') conquest.grantSpireReward(opt.effect.gold || 0, 0);
-                                        if (opt.effect.type === 'hp_and_sigils') {
-                                            conquest.grantSpireReward(0, opt.effect.sigils || 0);
-                                            if (opt.effect.hp < 0) conquest.takeDamage(-opt.effect.hp);
-                                            else conquest.healHP(opt.effect.hp);
-                                        }
-                                        if (opt.effect.type === 'heal') conquest.healHP(opt.effect.hp);
-                                        if (opt.effect.type === 'damage') conquest.takeDamage(opt.effect.hp);
+                        {CONQUEST_EVENT_TABLE[activeEvent] ? (
+                            <div className="event-modal map-modal">
+                                <h2>{activeEvent}</h2>
+                                <p>{CONQUEST_EVENT_TABLE[activeEvent].text}</p>
+                                <div className="event-options">
+                                    {CONQUEST_EVENT_TABLE[activeEvent].options.map((opt, i) => (
+                                        <button key={i} onClick={() => {
+                                            if (opt.effect.type === 'gold') conquest.grantSpireReward(opt.effect.gold || 0, 0);
+                                            if (opt.effect.type === 'hp_and_sigils') {
+                                                conquest.grantSpireReward(0, opt.effect.sigils || 0);
+                                                if (opt.effect.hp < 0) conquest.takeDamage(-opt.effect.hp);
+                                                else conquest.healHP(opt.effect.hp);
+                                            }
+                                            if (opt.effect.type === 'heal') conquest.healHP(opt.effect.hp);
+                                            if (opt.effect.type === 'damage') conquest.takeDamage(opt.effect.hp);
+                                            setActiveEvent(null);
+                                        }}>
+                                            {opt.label}
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+                        ) : (
+                            <div className="event-modal map-modal" style={{ borderColor: '#6b7280' }}>
+                                <h2>{activeEvent}</h2>
+                                <p>The fog parts, but nothing answers your call. The environment is eerily quiet. You move on cautiously.</p>
+                                <div className="event-options">
+                                    <button onClick={() => {
+                                        currency.addGold(5);
                                         setActiveEvent(null);
                                     }}>
-                                        {opt.label}
+                                        Move on (+5 Gold)
                                     </button>
-                                ))}
+                                </div>
                             </div>
-                        </div>
+                        )}
                     </motion.div>
                 )}
             </AnimatePresence>

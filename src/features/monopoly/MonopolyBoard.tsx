@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Info, ChevronDown, ChevronUp, X, RefreshCw, Play, Square, Coins } from 'lucide-react';
-import { useMonopolyStore, getBoard, BOARD_ODDS, OWNERSHIP_TIERS, getPropertyMultiplier, type BoardSpace, type MysteryRollResult } from '../../store/useMonopolyStore';
+import { useMonopolyStore, getBoard, BOARD_ODDS, OWNERSHIP_TIERS, getPropertyMultiplier, getPropertyMultiplierPool, type BoardSpace, type MysteryRollResult } from '../../store/useMonopolyStore';
 import { useCurrencyStore } from '../../store/useCurrencyStore';
 import { useConquestStore } from '../../store/useConquestStore';
 import { usePlayerAvatar } from '../../hooks/usePlayerAvatar';
@@ -324,13 +324,14 @@ export const MonopolyBoard = ({ onClose }: { onClose: () => void }) => {
 
                                 if (ownership) {
                                     const finalMul = getPropertyMultiplier(ownership.level);
+                                    const pool = getPropertyMultiplierPool(ownership.level);
                                     setPropertyMultiplierResult(finalMul);
                                     setPhase('property-spin');
                                     
                                     let animFrame = 0;
                                     const spinInterval = setInterval(() => {
                                         animFrame++;
-                                        setDisplayedMultiplier([1, 2, 3][Math.floor(Math.random() * 3)]);
+                                        setDisplayedMultiplier(pool[Math.floor(Math.random() * pool.length)]);
                                         if (animFrame > 15) {
                                             clearInterval(spinInterval);
                                             setDisplayedMultiplier(finalMul);
@@ -915,7 +916,7 @@ export const MonopolyBoard = ({ onClose }: { onClose: () => void }) => {
                                     </div>
                                     <div>
                                         <div className="reward-card-tile-label">Landed on</div>
-                                        <div className="reward-card-tile-name">{landedSpace.icon} {landedSpace.name}</div>
+                                        <div className="reward-card-tile-name">{landedSpace.type === 'gold' ? <GoldIcon size={24} /> : landedSpace.icon} {landedSpace.name}</div>
                                     </div>
                                 </div>
 

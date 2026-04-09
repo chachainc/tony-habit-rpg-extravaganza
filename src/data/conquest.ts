@@ -273,7 +273,7 @@ export const CONQUEST_EVENT_TABLE: Record<string, EventData> = {
     'Strange Statue': {
         text: 'The statue\'s eyes glow with a dim purple light. It seems to demand a sacrifice.',
         options: [
-            { label: 'Offer blood (-10 HP, +10 Sigils)', effect: { type: 'hp_and_sigils', hp: -10, sigils: 10 } },
+            { label: 'Offer blood (-10 HP, +3 Sigils)', effect: { type: 'hp_and_sigils', hp: -10, sigils: 3 } },
             { label: 'Ignore it',                        effect: { type: 'none' } },
         ]
     }
