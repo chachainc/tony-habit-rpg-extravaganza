@@ -29,12 +29,12 @@ export const RISK_CARDS: Record<RiskCardId, RiskCardDef> = {
     iron_discipline:{ id: 'iron_discipline', icon: '🛡️', name: 'Iron Discipline',  effect: 'Tied dice comparisons count as player wins',           category: 'Defense',  cost: 2000, currency: 'gold'   },
     medic:          { id: 'medic',          icon: '💊', name: 'Medic Corps',      effect: 'Recover 1 soldier after any victory',                  category: 'Survival', cost: 100,  currency: 'sigils' },
     war_banner:     { id: 'war_banner',     icon: '🚩', name: 'War Banner',       effect: '+1 die when attacking a Captain or Boss node',         category: 'Offense',  cost: 250,  currency: 'gold'   },
-    treasurer:      { id: 'treasurer',      icon: '💰', name: 'Treasurer',        effect: '+1 Shmeckle per game mode victory',                    category: 'Economy',  cost: 500,  currency: 'shmeckles' },
-    recruiter:      { id: 'recruiter',      icon: '📜', name: 'Recruiter',        effect: '+1 Sigil per territory captured',                      category: 'Economy',  cost: 500,  currency: 'shmeckles' },
-    warlord_sigil:  { id: 'warlord_sigil',  icon: '🏺', name: "Warlord's Sigil",  effect: '+1 Sigil per wave cleared (Tower/Storm)',              category: 'Economy',  cost: 500,  currency: 'shmeckles' },
+    treasurer:      { id: 'treasurer',      icon: '💰', name: 'Treasurer',        effect: '+1 Shmeckle per game mode victory',                    category: 'Economy',  cost: 500,  currency: 'sigils' },
+    recruiter:      { id: 'recruiter',      icon: '📜', name: 'Recruiter',        effect: '+1 Sigil per territory captured',                      category: 'Economy',  cost: 500,  currency: 'sigils' },
+    warlord_sigil:  { id: 'warlord_sigil',  icon: '🏺', name: "Warlord's Sigil",  effect: '+1 Sigil per wave cleared (Tower/Storm)',              category: 'Economy',  cost: 500,  currency: 'sigils' },
     tank_tactics:   { id: 'tank_tactics',   icon: '🪖', name: 'Tank Tactics',     effect: 'Your army does 15% more effective damage each battle', category: 'Offense',  cost: 100,  currency: 'sigils' },
     iron_will:      { id: 'iron_will',      icon: '🛡️', name: 'Iron Will',         effect: '+10% defense in Risk battles',                         category: 'Defense',  cost: 100,  currency: 'sigils' },
-    treasure_sense: { id: 'treasure_sense', icon: '🗺️', name: 'Treasure Sense',    effect: '+20% gold from treasure nodes',                        category: 'Economy',  cost: 20,   currency: 'sigils' },
+    treasure_sense: { id: 'treasure_sense', icon: '🗺️', name: 'Treasure Sense',    effect: '+20% gold from treasure nodes',                        category: 'Economy',  cost: 200,  currency: 'sigils' },
     arcane_edge:    { id: 'arcane_edge',    icon: '🔮', name: 'Arcane Edge',        effect: '+15% magic damage in Risk battles',                    category: 'Offense',  cost: 100,  currency: 'sigils' },
 };
 
@@ -63,12 +63,24 @@ export interface TerritoryNode {
     mapY?: number;
 }
 
-export interface RiskBattleResult {
-    success: boolean;
+export interface RiskBattleRound {
+    roundNumber: number;
+    attackerCount: number;
+    defenderCount: number;
     playerRolls: number[];
     enemyRolls: number[];
     playerWins: number;
     enemyWins: number;
+}
+
+export interface RiskBattleResult {
+    success: boolean;
+    rounds: RiskBattleRound[];
+    totalSoldiersLost: number;
+    attackerSurvivors: number;
+    defenderSurvivors: number;
+    capturedNodeSoldiers: number;
+    retreatedSoldiers: number;
     triggeredEffects: string[];
     fortifiedEnemyNodes: string[];
     reward?: 'sigil' | 'card';
@@ -314,56 +326,86 @@ export const useRiskStore = create<RiskState>()(
                 }));
 
                 const equipped = state.equippedCards;
-                let playerDice = actualAttacking;
-                const enemyDice = Math.max(1, targetNode.soldierCount);
                 const triggeredEffects: string[] = [];
 
-                // War Banner: +1 die vs Captain (5+) or Boss nodes
-                if (equipped.includes('war_banner') && (targetNode.soldierCount >= 5 || targetNode.nodeType === 'boss')) {
-                    playerDice += 1;
-                    triggeredEffects.push('War Banner: +1 die vs elite');
-                }
-
-                let playerRolls = Array.from({ length: Math.max(1, playerDice) }, () => Math.floor(Math.random() * 6) + 1);
-                const enemyRolls = Array.from({ length: enemyDice }, () => Math.floor(Math.random() * 6) + 1);
-
-                // Blitz: first player die gets +1
-                if (equipped.includes('blitz') && playerRolls.length > 0) {
-                    playerRolls[0] = Math.min(6, playerRolls[0] + 1);
-                    triggeredEffects.push('Blitz: first die +1');
-                }
-
-                const playerSorted = [...playerRolls].sort((a, b) => b - a);
-                const enemySorted  = [...enemyRolls].sort((a, b) => b - a);
-                const comparisons  = Math.min(playerSorted.length, enemySorted.length);
-
-                let playerWins = 0, enemyWins = 0;
-                for (let i = 0; i < comparisons; i++) {
-                    if (playerSorted[i] > enemySorted[i]) {
-                        playerWins++;
-                    } else if (enemySorted[i] > playerSorted[i]) {
-                        enemyWins++;
-                    } else {
-                        if (equipped.includes('iron_discipline')) {
-                            playerWins++;
-                            triggeredEffects.push('Iron Discipline: tie → player wins');
-                        } else {
-                            enemyWins++;
-                        }
-                    }
-                }
-                playerWins += Math.max(0, playerSorted.length - comparisons);
-
-                if (equipped.includes('tank_tactics') && playerWins >= enemyWins) {
-                    playerWins += 1;
-                    triggeredEffects.push('Tank Tactics: +1 effective win');
-                }
-
-                const success = playerWins > enemyWins;
+                let attackerPool = actualAttacking;
+                let defenderPool = Math.max(1, targetNode.soldierCount);
+                const rounds: RiskBattleRound[] = [];
+                let totalSoldiersLost = 0;
                 let extraSigils = 0;
 
+                for (let roundNum = 1; roundNum <= 2; roundNum++) {
+                    if (attackerPool <= 0 || defenderPool <= 0) break;
+
+                    let playerDice = attackerPool;
+                    const enemyDice = defenderPool;
+
+                    if (equipped.includes('war_banner') && (targetNode.soldierCount >= 5 || targetNode.nodeType === 'boss') && roundNum === 1) {
+                        playerDice += 1;
+                        triggeredEffects.push('War Banner: +1 die vs elite');
+                    }
+
+                    let playerRolls = Array.from({ length: Math.max(1, playerDice) }, () => Math.floor(Math.random() * 6) + 1);
+                    const enemyRolls = Array.from({ length: Math.max(1, enemyDice) }, () => Math.floor(Math.random() * 6) + 1);
+
+                    if (equipped.includes('blitz') && playerRolls.length > 0 && roundNum === 1) {
+                        playerRolls[0] = Math.min(6, playerRolls[0] + 1);
+                        triggeredEffects.push('Blitz: first die +1');
+                    }
+
+                    const playerSorted = [...playerRolls].sort((a, b) => b - a);
+                    const enemySorted  = [...enemyRolls].sort((a, b) => b - a);
+                    const comparisons  = Math.min(playerSorted.length, enemySorted.length);
+
+                    let playerWins = 0, enemyWins = 0;
+                    for (let i = 0; i < comparisons; i++) {
+                        if (playerSorted[i] > enemySorted[i]) {
+                            playerWins++;
+                        } else if (enemySorted[i] > playerSorted[i]) {
+                            enemyWins++;
+                        } else {
+                            if (equipped.includes('iron_discipline')) {
+                                playerWins++;
+                                if (roundNum === 1 && !triggeredEffects.includes('Iron Discipline: tie → player wins')) {
+                                    triggeredEffects.push('Iron Discipline: tie → player wins');
+                                }
+                            } else {
+                                enemyWins++;
+                            }
+                        }
+                    }
+                    playerWins += Math.max(0, playerSorted.length - comparisons);
+
+                    if (equipped.includes('tank_tactics') && playerWins >= enemyWins) {
+                        playerWins += 1;
+                        if (roundNum === 1 && !triggeredEffects.includes('Tank Tactics: +1 effective win')) {
+                            triggeredEffects.push('Tank Tactics: +1 effective win');
+                        }
+                    }
+
+                    rounds.push({
+                        roundNumber: roundNum,
+                        attackerCount: attackerPool,
+                        defenderCount: defenderPool,
+                        playerRolls,
+                        enemyRolls,
+                        playerWins,
+                        enemyWins
+                    });
+
+                    const prevAttackerPool = attackerPool;
+                    attackerPool = Math.max(0, attackerPool - enemyWins);
+                    defenderPool = Math.max(0, defenderPool - playerWins);
+                    totalSoldiersLost += (prevAttackerPool - attackerPool);
+                }
+
+                const success = defenderPool <= 0;
+                let capturedNodeSoldiers = 0;
+                let retreatedSoldiers = 0;
+
                 if (success) {
-                    // Medic Corps: recover 1 soldier back to source node on victory
+                    capturedNodeSoldiers = Math.max(1, attackerPool);
+
                     if (equipped.includes('medic')) {
                         set(s => ({
                             mapStates: {
@@ -381,13 +423,12 @@ export const useRiskStore = create<RiskState>()(
                         triggeredEffects.push('Recruiter: +1 Sigil');
                     }
 
-                    // Capture target: set owner to player, soldiers = attacking force
                     set(s => ({
                         mapStates: {
                             ...s.mapStates,
                             [mapId]: {
                                 ...s.mapStates[mapId],
-                                [targetNodeId]: { ...s.mapStates[mapId][targetNodeId], owner: 'player', soldierCount: actualAttacking }
+                                [targetNodeId]: { ...s.mapStates[mapId][targetNodeId], owner: 'player', soldierCount: capturedNodeSoldiers }
                             }
                         }
                     }));
@@ -396,14 +437,14 @@ export const useRiskStore = create<RiskState>()(
                         import('./useConquestStore').then(({ useConquestStore: cs }) => cs.getState().addSigils(extraSigils));
                     }
                 } else {
-                    // Defeat: attacking soldiers are lost (already deducted from source).
-                    // Enemy node takes 1 attrition.
+                    retreatedSoldiers = attackerPool;
                     set(s => ({
                         mapStates: {
                             ...s.mapStates,
                             [mapId]: {
                                 ...s.mapStates[mapId],
-                                [targetNodeId]: { ...s.mapStates[mapId][targetNodeId], soldierCount: Math.max(1, s.mapStates[mapId][targetNodeId].soldierCount - 1) }
+                                [targetNodeId]: { ...s.mapStates[mapId][targetNodeId], soldierCount: Math.max(1, defenderPool) },
+                                [sourceNodeId]: { ...s.mapStates[mapId][sourceNodeId], soldierCount: s.mapStates[mapId][sourceNodeId].soldierCount + retreatedSoldiers }
                             }
                         }
                     }));
@@ -426,7 +467,19 @@ export const useRiskStore = create<RiskState>()(
                     ? (targetNode.trait === 'resource' ? 'sigil' : targetNode.trait === 'mystic' && Math.random() > 0.5 ? 'card' : undefined)
                     : undefined;
 
-                return { success, playerRolls, enemyRolls, playerWins, enemyWins, triggeredEffects, fortifiedEnemyNodes, reward, extraSigils };
+                return {
+                    success,
+                    rounds,
+                    totalSoldiersLost,
+                    attackerSurvivors: attackerPool,
+                    defenderSurvivors: defenderPool,
+                    capturedNodeSoldiers,
+                    retreatedSoldiers,
+                    triggeredEffects,
+                    fortifiedEnemyNodes,
+                    reward,
+                    extraSigils
+                };
             },
 
             getActiveRegionBonuses: () => {

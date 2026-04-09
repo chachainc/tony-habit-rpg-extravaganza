@@ -85,6 +85,7 @@ export const ConquestTiles = ({ onComplete, onClose }: ConquestTilesProps) => {
     const [clearingIds, setClearingIds] = useState<Set<string>>(new Set());
     const [hintTileIds, setHintTileIds] = useState<Set<string>>(new Set());
     const [bumpingId,   setBumpingId]  = useState<string | null>(null);
+    const [isAnimatingRewards, setIsAnimatingRewards] = useState(false);
 
     // Power-up usage counters
     const MAX_POWER_USE = 2;
@@ -93,9 +94,22 @@ export const ConquestTiles = ({ onComplete, onClose }: ConquestTilesProps) => {
     const [usedHint,    setUsedHint]    = useState(0);
 
     const undoStack    = useRef<UndoEntry[]>([]);
+    const rewardsClaimedRef = useRef(false);
     const initialCount = useRef(trueTripleTileMap.length);
     const currency     = useCurrencyStore();
     const addToast     = useToastStore(s => s.addToast);
+    
+    // Local display states for animated increment
+    const [localGold, setLocalGold] = useState(currency.gold);
+    const [localGem, setLocalGem]   = useState(currency.diamonds);
+
+    // Keep synced while not animating
+    useEffect(() => {
+        if (!isAnimatingRewards) {
+            setLocalGold(currency.gold);
+            setLocalGem(currency.diamonds);
+        }
+    }, [currency.gold, currency.diamonds, isAnimatingRewards]);
 
     // ─── INIT ──────────────────────────────────────────
     useEffect(() => {
@@ -106,6 +120,8 @@ export const ConquestTiles = ({ onComplete, onClose }: ConquestTilesProps) => {
         undoStack.current = [];
         setPhase('playing');
         setUsedUndo(0); setUsedShuffle(0); setUsedHint(0);
+        rewardsClaimedRef.current = false;
+        setIsAnimatingRewards(false);
     }, []);
 
     // ─── SELECT TILE ───────────────────────────────────
@@ -167,7 +183,7 @@ export const ConquestTiles = ({ onComplete, onClose }: ConquestTilesProps) => {
         action();
     };
 
-    const handleUndo = useCallback(() => {
+    const handleUndo = () => {
         if (clearingIds.size > 0 || undoStack.current.length === 0) return;
         buyPower('undo', POWER_COSTS.undo, usedUndo, setUsedUndo, () => {
             const entry = undoStack.current.pop();
@@ -181,22 +197,24 @@ export const ConquestTiles = ({ onComplete, onClose }: ConquestTilesProps) => {
             setScore(entry.prevScore);
             setHintTileIds(new Set());
         });
-    }, [usedUndo, clearingIds, currency]); // eslint-disable-line
+    };
 
-    const handleShuffle = useCallback(() => {
+    const handleShuffle = () => {
         if (clearingIds.size > 0 || board.length === 0) return;
         buyPower('shuffle', POWER_COSTS.shuffle, usedShuffle, setUsedShuffle, () => {
-            const types = board.map(b => b.type);
-            for (let i = types.length - 1; i > 0; i--) {
-                const j = Math.floor(Math.random() * (i + 1));
-                [types[i], types[j]] = [types[j], types[i]];
-            }
-            setBoard(prev => prev.map((b, i) => ({ ...b, type: types[i] })));
+            setBoard(prev => {
+                const types = prev.map(b => b.type);
+                for (let i = types.length - 1; i > 0; i--) {
+                    const j = Math.floor(Math.random() * (i + 1));
+                    [types[i], types[j]] = [types[j], types[i]];
+                }
+                return prev.map((b, i) => ({ ...b, type: types[i] }));
+            });
             setHintTileIds(new Set());
         });
-    }, [usedShuffle, board, clearingIds, currency]); // eslint-disable-line
+    };
 
-    const handleHint = useCallback(() => {
+    const handleHint = () => {
         if (clearingIds.size > 0) return;
         buyPower('hint', POWER_COSTS.hint, usedHint, setUsedHint, () => {
             const free = board.filter(t => !isTileLocked(t, board));
@@ -219,9 +237,58 @@ export const ConquestTiles = ({ onComplete, onClose }: ConquestTilesProps) => {
                 }
             }
         });
-    }, [usedHint, board, clearingIds, currency]); // eslint-disable-line
+    };
 
     // ─── RESULT HANDLER ───────────────────────────────
+    const handleCollectRewards = () => {
+        if (rewardsClaimedRef.current) return;
+        rewardsClaimedRef.current = true;
+        setIsAnimatingRewards(true);
+        
+        const finalClearPct = Math.round(((initialCount.current - board.length) / initialCount.current) * 100);
+        let gReward = 0; let gdReward = 0;
+        if (finalClearPct === 100) { gReward = 40; gdReward = 1; }
+        else if (finalClearPct >= 75) { gReward = 20; }
+        else if (finalClearPct >= 50) { gReward = 10; }
+
+        let currentG = localGold;
+        let currentD = localGem;
+
+        const doGold = () => {
+            if (gReward <= 0) return doGem();
+            const target = currentG + gReward;
+            const inc = Math.max(1, Math.floor(gReward / 15));
+            const timer = setInterval(() => {
+                currentG += inc;
+                if (currentG >= target) {
+                    currentG = target;
+                    setLocalGold(currentG);
+                    clearInterval(timer);
+                    currency.addGold(gReward, { exact: true });
+                    setTimeout(doGem, 350);
+                } else {
+                    setLocalGold(currentG);
+                }
+            }, 30);
+        };
+
+        const doGem = () => {
+            if (gdReward <= 0) return finish();
+            currentD += gdReward;
+            setLocalGem(currentD);
+            currency.addDiamonds(gdReward);
+            setTimeout(finish, 600);
+        };
+
+        const finish = () => {
+            setTimeout(() => {
+                onComplete('win', 3, finalClearPct);
+            }, 400);
+        };
+
+        doGold();
+    };
+
     const handleComplete = useCallback(() => {
         const clearPct = Math.round(((initialCount.current - board.length) / initialCount.current) * 100);
         onComplete(result ?? 'loss', 3, clearPct);
@@ -292,6 +359,12 @@ export const ConquestTiles = ({ onComplete, onClose }: ConquestTilesProps) => {
     const isWin    = result === 'win';
     const clearPct = Math.round(((initialCount.current - board.length) / initialCount.current) * 100);
 
+    let goldReward = 0;
+    let gemReward = 0;
+    if (clearPct === 100) { goldReward = 40; gemReward = 1; }
+    else if (clearPct >= 75) { goldReward = 20; }
+    else if (clearPct >= 50) { goldReward = 10; }
+
     const handleTileSelect = useCallback((tile: TripleTileNode) => selectTile(tile), [selectTile]);
     const handleTileBump = useCallback((id: string) => {
         setBumpingId(id);
@@ -306,9 +379,14 @@ export const ConquestTiles = ({ onComplete, onClose }: ConquestTilesProps) => {
             <div className="tiles-topbar">
                 <span className="tiles-topbar-label">🎴 TILE GAME</span>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.8rem' }}>
-                    <span className="tiles-topbar-score" style={{ color: '#fff' }}>🪙 {currency.gold}</span>
+                    <span className={`tiles-topbar-score ${isAnimatingRewards && goldReward > 0 ? 'anim-glow-pulse' : ''}`} style={{ color: '#fbbf24', transition: 'color 0.2s' }}>
+                        🪙 {localGold}
+                    </span>
+                    <span className={`tiles-topbar-score ${isAnimatingRewards && gemReward > 0 ? 'anim-glow-pulse' : ''}`} style={{ color: '#ec4899', transition: 'color 0.2s' }}>
+                        💎 {localGem}
+                    </span>
                     <span className="tiles-topbar-score">⭐ {score}</span>
-                    <button className="tiles-topbar-close" onClick={onClose}>✕</button>
+                    <button className="tiles-topbar-close" onClick={onClose} disabled={isAnimatingRewards} style={{ opacity: isAnimatingRewards ? 0.5 : 1 }}>✕</button>
                 </div>
             </div>
 
@@ -333,8 +411,8 @@ export const ConquestTiles = ({ onComplete, onClose }: ConquestTilesProps) => {
                                     // 1. Unlocked tiles are bright
                                     // 2. Locked tiles are beneath: darker based on absolute z-level
                                     const stackBrightness = locked
-                                        ? Math.max(0.40, 0.95 - ((MAX_Z - tile.z) * 0.10))
-                                        : 1.15; // Playable tile indicator: slightly boosted brightness
+                                        ? Math.max(0.35, 0.85 - ((Math.max(0, MAX_Z - tile.z)) * 0.12))
+                                        : 1.25; // Playable tile indicator: noticeably brighter to stand out
 
                                     return (
                                         <TileNodeComponent
@@ -446,16 +524,25 @@ export const ConquestTiles = ({ onComplete, onClose }: ConquestTilesProps) => {
                             <h2>{isWin ? '🏆 VICTORY!' : '💀 Defeat'}</h2>
                             <div className="tiles-result-rewards">
                                 <div className="tiles-reward-row">⭐ {score} pts</div>
-                                <div className="tiles-reward-row">🗺️ {clearPct}% cleared</div>
-                                {isWin && <div className="tiles-reward-row highlight">🔱 Full Board Clear!</div>}
+                                <div className="tiles-reward-row">🗺️ Run Completion: {clearPct}%</div>
+                                {goldReward > 0 && (
+                                    <div className="tiles-reward-row highlight" style={{ color: '#fbbf24' }}>
+                                        Reward: +{goldReward} Gold
+                                    </div>
+                                )}
+                                {gemReward > 0 && (
+                                    <div className="tiles-reward-row highlight" style={{ color: '#ec4899', fontWeight: 800 }}>
+                                        Bonus: +{gemReward} Gem
+                                    </div>
+                                )}
                             </div>
                             {!isWin && (
                                 <div className="tiles-revive-buttons">
                                     <button className="tiles-revive-giveup" onClick={onClose}>Leave</button>
                                 </div>
                             )}
-                            <button className="tiles-result-btn" onClick={handleComplete}>
-                                {isWin ? 'Collect Rewards' : 'Return'}
+                            <button className="tiles-result-btn" onClick={isWin ? handleCollectRewards : handleComplete} disabled={isAnimatingRewards}>
+                                {isAnimatingRewards ? 'Collecting...' : isWin ? 'Collect Rewards' : 'Return'}
                             </button>
                         </motion.div>
                     </motion.div>

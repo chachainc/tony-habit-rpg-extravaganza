@@ -26,6 +26,7 @@ export const RiskPage = () => {
     const navigate = useNavigate();
     const risk = useRiskStore();
     const conquest = useConquestStore();
+    const currency = useCurrencyStore();
 
     // Pannable map state
     const viewportRef = useRef<HTMLDivElement>(null);
@@ -48,6 +49,7 @@ export const RiskPage = () => {
     const [attackSourceId, setAttackSourceId] = useState<string | null>(null);
     const [isRolling, setIsRolling] = useState(false);
     const [rollAnimDice, setRollAnimDice] = useState<{p: number[], e: number[]}>({ p: [], e: [] });
+    const [phaseLabel, setPhaseLabel] = useState<string | null>(null);
     const [showMapUnlockedToast, setShowMapUnlockedToast] = useState(false);
 
     // Active campaign info
@@ -195,50 +197,71 @@ export const RiskPage = () => {
     };
 
     const handleAttack = (targetNodeId: string) => {
-        if (!attackSourceId) return;
+        if (!attackSourceId || isRolling) return;
         const prev = risk.getActiveRegionBonuses();
-        setIsRolling(true);
         setBattleResult(null);
-        const pCount = committedSoldiers;
-        const eCount = Math.max(1, selectedNode?.soldierCount || 1);
-        let ticks = 0;
-        const sourceIdForBattle = attackSourceId;
-        const rollInterval = setInterval(() => {
-            setRollAnimDice({
-                p: Array.from({length: pCount}, () => Math.floor(Math.random() * 6) + 1),
-                e: Array.from({length: eCount}, () => Math.floor(Math.random() * 6) + 1)
-            });
-            ticks++;
-            if (ticks > 8) {
-                clearInterval(rollInterval);
-                setIsRolling(false);
-                const result = risk.resolveRiskBattle(sourceIdForBattle, targetNodeId, committedSoldiers);
-                if (!result) return;
-                setBattleResult(result);
-                if (result.success) {
-                    const next = useRiskStore.getState().getActiveRegionBonuses();
-                    const newRegion = next.find(r => !prev.includes(r));
-                    if (newRegion) {
-                        setJustConqueredRegion(newRegion);
-                        setTimeout(() => setJustConqueredRegion(null), 4000);
-                    }
-                    // Check if this victory fully conquered the active map
-                    const freshState = useRiskStore.getState();
-                    const freshNodes = freshState.mapStates[freshState.activeMapId];
-                    if (freshNodes && Object.values(freshNodes).every(n => n.owner === 'player')) {
-                        const currentIdx = CAMPAIGN_ORDER.indexOf(freshState.activeMapId);
-                        if (currentIdx >= 0 && currentIdx < CAMPAIGN_ORDER.length - 1) {
-                            setShowMapUnlockedToast(true);
-                            setTimeout(() => setShowMapUnlockedToast(false), 5000);
+        setPhaseLabel(null);
+
+        const result = risk.resolveRiskBattle(attackSourceId, targetNodeId, committedSoldiers);
+        if (!result) return;
+
+        setIsRolling(true);
+        let currentRoundIdx = 0;
+
+        const playRound = () => {
+            const rd = result.rounds[currentRoundIdx];
+            let ticks = 0;
+            const rollInterval = setInterval(() => {
+                setRollAnimDice({
+                    p: Array.from({length: Math.max(1, rd.attackerCount)}, () => Math.floor(Math.random() * 6) + 1),
+                    e: Array.from({length: Math.max(1, rd.defenderCount)}, () => Math.floor(Math.random() * 6) + 1)
+                });
+                ticks++;
+                if (ticks > 8) {
+                    clearInterval(rollInterval);
+                    // Show final dice for the round
+                    setRollAnimDice({ p: rd.playerRolls, e: rd.enemyRolls });
+
+                    setTimeout(() => {
+                        if (currentRoundIdx < result.rounds.length - 1) {
+                            currentRoundIdx++;
+                            setPhaseLabel('Reinforcements clash!');
+                            setTimeout(() => {
+                                setPhaseLabel(null);
+                                playRound();
+                            }, 1200);
+                        } else {
+                            setIsRolling(false);
+                            setBattleResult(result);
+
+                            if (result.success) {
+                                const next = useRiskStore.getState().getActiveRegionBonuses();
+                                const newRegion = next.find(r => !prev.includes(r));
+                                if (newRegion) {
+                                    setJustConqueredRegion(newRegion);
+                                    setTimeout(() => setJustConqueredRegion(null), 4000);
+                                }
+                                const freshState = useRiskStore.getState();
+                                const freshNodes = freshState.mapStates[freshState.activeMapId];
+                                if (freshNodes && Object.values(freshNodes).every(n => n.owner === 'player')) {
+                                    const currentIdx = CAMPAIGN_ORDER.indexOf(freshState.activeMapId);
+                                    if (currentIdx >= 0 && currentIdx < CAMPAIGN_ORDER.length - 1) {
+                                        setShowMapUnlockedToast(true);
+                                        setTimeout(() => setShowMapUnlockedToast(false), 5000);
+                                    }
+                                }
+                                setSelectedNode(freshNodes?.[targetNodeId] || null);
+                            } else {
+                                const freshNodes = useRiskStore.getState().mapStates[risk.activeMapId];
+                                setSelectedNode(freshNodes?.[targetNodeId] || null);
+                            }
                         }
-                    }
-                    setSelectedNode(freshNodes?.[targetNodeId] || null);
-                } else {
-                    const freshNodes = useRiskStore.getState().mapStates[risk.activeMapId];
-                    setSelectedNode(freshNodes?.[targetNodeId] || null);
+                    }, 1400); // Wait on dice results before continuing
                 }
-            }
-        }, 80);
+            }, 80);
+        };
+
+        playRound();
     };
 
     const handleAdvanceToNextMap = () => {
@@ -701,44 +724,69 @@ export const RiskPage = () => {
 
                         {isRolling && (
                             <div className="risk-rolling-anim" style={{ marginTop: '1rem', textAlign: 'center' }}>
-                                <h4 style={{ margin: '0 0 0.5rem', color: '#f59e0b' }}>🎲 ROLLING...</h4>
-                                <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center', flexWrap: 'wrap', fontSize: '1.2rem', marginBottom: '0.5rem' }}>
-                                    <span style={{ color: '#60a5fa' }}>{rollAnimDice.p.join('  ')}</span>
-                                    <span style={{ color: '#94a3b8' }}>vs</span>
-                                    <span style={{ color: '#ef4444' }}>{rollAnimDice.e.join('  ')}</span>
-                                </div>
+                                {phaseLabel ? (
+                                    <h4 style={{ margin: '1rem 0', color: '#10b981', fontStyle: 'italic', fontSize: '1.2rem', textShadow: '0 0 8px rgba(16,185,129,0.5)' }}>
+                                        {phaseLabel}
+                                    </h4>
+                                ) : (
+                                    <>
+                                        <h4 style={{ margin: '0 0 0.5rem', color: '#f59e0b' }}>🎲 ROLLING...</h4>
+                                        <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center', flexWrap: 'wrap', fontSize: '1.2rem', marginBottom: '0.5rem' }}>
+                                            <span style={{ color: '#60a5fa' }}>{rollAnimDice.p.join('  ')}</span>
+                                            <span style={{ color: '#94a3b8' }}>vs</span>
+                                            <span style={{ color: '#ef4444' }}>{rollAnimDice.e.join('  ')}</span>
+                                        </div>
+                                    </>
+                                )}
                             </div>
                         )}
 
-                        {!isRolling && battleResult && (
-                            <div className={`risk-battle-result modal-result ${battleResult.success ? 'victory' : 'defeat'}`} style={{ marginTop: '1rem' }}>
-                                <h4 style={{ margin: '0 0 0.5rem' }}>{battleResult.success ? '⚔️ VICTORY' : '💀 DEFEAT'}</h4>
-                                <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center', flexWrap: 'wrap', fontSize: '0.85rem', marginBottom: '0.5rem' }}>
-                                    <span>You: {battleResult.playerRolls.map((r, i) => <span key={i} className="dice-result">{r}</span>)} → <strong>{battleResult.playerWins} wins</strong></span>
-                                    <span>Enemy: {battleResult.enemyRolls.map((r, i) => <span key={i} className="dice-result enemy-dice">{r}</span>)} → <strong>{battleResult.enemyWins} wins</strong></span>
+                        {!isRolling && battleResult && (() => {
+                            const finalRound = battleResult.rounds[battleResult.rounds.length - 1];
+                            return (
+                                <div className={`risk-battle-result modal-result ${battleResult.success ? 'victory' : 'defeat'}`} style={{ marginTop: '1rem' }}>
+                                    <h4 style={{ margin: '0 0 0.25rem' }}>{battleResult.success ? '⚔️ VICTORY' : '💀 DEFEAT'}</h4>
+                                    
+                                    {battleResult.rounds.length > 1 && (
+                                        <div style={{ fontSize: '0.75rem', color: '#94a3b8', fontStyle: 'italic', marginBottom: '0.6rem' }}>
+                                            Rounds fought: {battleResult.rounds.length}
+                                        </div>
+                                    )}
+
+                                    <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center', flexWrap: 'wrap', fontSize: '0.85rem', marginBottom: '0.5rem' }}>
+                                        <span>You: {finalRound.playerRolls.map((r, i) => <span key={i} className="dice-result">{r}</span>)} → <strong>{finalRound.playerWins} wins</strong></span>
+                                        <span>Enemy: {finalRound.enemyRolls.map((r, i) => <span key={i} className="dice-result enemy-dice">{r}</span>)} → <strong>{finalRound.enemyWins} wins</strong></span>
+                                    </div>
+                                    
+                                    {battleResult.triggeredEffects.length > 0 && (
+                                        <div style={{ fontSize: '0.78rem', color: '#a3e635' }}>
+                                            {battleResult.triggeredEffects.map((t, i) => <div key={i}>✦ {t}</div>)}
+                                        </div>
+                                    )}
+                                    
+                                    {battleResult.success && battleResult.reward && (
+                                        <div className="battle-reward">
+                                            {battleResult.reward === 'sigil' ? '🔱 +1 Sigil from resource node' : '🃏 Mystic reward granted'}
+                                        </div>
+                                    )}
+                                    
+                                    {!battleResult.success && (
+                                        <div style={{ fontSize: '0.8rem', color: '#f87171', marginTop: '0.3rem' }}>
+                                            ⚔️ {battleResult.totalSoldiersLost} soldier{battleResult.totalSoldiersLost !== 1 ? 's' : ''} lost in battle!
+                                        </div>
+                                    )}
+                                    
+                                    {battleResult.success && attackSourceId && (
+                                        <div style={{ fontSize: '0.8rem', color: '#10b981', marginTop: '0.3rem' }}>
+                                            ✅ {mapNodes[attackSourceId]?.name}: {mapNodes[attackSourceId]?.soldierCount} remaining · {selectedNode.name}: {battleResult.capturedNodeSoldiers} deployed
+                                            {battleResult.totalSoldiersLost > 0 && (
+                                                <div style={{ color: '#f87171', marginTop: '0.2rem' }}>⚔️ {battleResult.totalSoldiersLost} soldiers lost</div>
+                                            )}
+                                        </div>
+                                    )}
                                 </div>
-                                {battleResult.triggeredEffects.length > 0 && (
-                                    <div style={{ fontSize: '0.78rem', color: '#a3e635' }}>
-                                        {battleResult.triggeredEffects.map((t, i) => <div key={i}>✦ {t}</div>)}
-                                    </div>
-                                )}
-                                {battleResult.success && battleResult.reward && (
-                                    <div className="battle-reward">
-                                        {battleResult.reward === 'sigil' ? '🔱 +1 Sigil from resource node' : '🃏 Mystic reward granted'}
-                                    </div>
-                                )}
-                                {!battleResult.success && (
-                                    <div style={{ fontSize: '0.8rem', color: '#f87171', marginTop: '0.3rem' }}>
-                                        ⚔️ {committedSoldiers} soldier{committedSoldiers !== 1 ? 's' : ''} lost in battle!
-                                    </div>
-                                )}
-                                {battleResult.success && attackSourceId && (
-                                    <div style={{ fontSize: '0.8rem', color: '#10b981', marginTop: '0.3rem' }}>
-                                        ✅ {mapNodes[attackSourceId]?.name}: {mapNodes[attackSourceId]?.soldierCount} remaining · {selectedNode.name}: {committedSoldiers} deployed
-                                    </div>
-                                )}
-                            </div>
-                        )}
+                            );
+                        })()}
                     </div>
                 </div>
             )}
@@ -760,10 +808,10 @@ export const RiskPage = () => {
                                 let canBuy = !owned;
                                 if (!owned) {
                                     if (def.currency === 'sigils') canBuy = conquest.sigils >= def.cost;
-                                    if (def.currency === 'gold') canBuy = useCurrencyStore.getState().gold >= def.cost;
-                                    if (def.currency === 'shmeckles') canBuy = useCurrencyStore.getState().shmeckles >= def.cost;
+                                    if (def.currency === 'gold') canBuy = currency.gold >= def.cost;
+                                    if (def.currency === 'shmeckles') canBuy = currency.shmeckles >= def.cost;
                                 }
-                                const cIcon = def.currency === 'sigils' ? '🔱' : def.currency === 'gold' ? '💰' : '🐌';
+                                const cIcon = def.currency === 'sigils' ? '🔱' : def.currency === 'gold' ? '🪙' : '🐌';
                                 const cLabel = def.currency === 'sigils' ? 'Sigils' : def.currency === 'gold' ? 'Gold' : 'Shmeckles';
                                 return (
                                     <div key={def.id} className={`card-item-rich rarity-common ${owned ? 'owned-card-row' : ''}`} style={{ borderLeftColor: owned ? '#10b981' : '#60a5fa' }}>

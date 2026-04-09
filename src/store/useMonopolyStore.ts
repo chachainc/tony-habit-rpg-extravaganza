@@ -70,6 +70,26 @@ export const getPropertyMultiplier = (level: number): number => {
     return 3;
 };
 
+export const getPropertyMultiplierPool = (level: number): number[] => {
+    let odds1x = 100, odds2x = 0;
+    if (level === 1) { odds1x = 80; odds2x = 18; }
+    else if (level === 2) { odds1x = 70; odds2x = 25; }
+    else if (level === 3) { odds1x = 55; odds2x = 35; }
+    else if (level === 4) { odds1x = 40; odds2x = 45; }
+    else if (level >= 5) { odds1x = 25; odds2x = 50; }
+
+    const pool: number[] = [];
+    const count1x = Math.round(odds1x / 5);
+    const count2x = Math.round(odds2x / 5);
+    const count3x = 20 - count1x - count2x;
+
+    for (let i = 0; i < count1x; i++) pool.push(1);
+    for (let i = 0; i < count2x; i++) pool.push(2);
+    for (let i = 0; i < count3x; i++) pool.push(3);
+
+    return pool.length > 0 ? pool : [1];
+};
+
 // ── Drop Tables & Odds ─────────────────────────────────────────
 
 export const BOARD_ODDS = {
@@ -119,7 +139,7 @@ const createBoard = (): BoardSpace[] => {
                 id: i,
                 type: 'gold',
                 name: 'Small Coin',
-                icon: '🪙',
+                icon: '', // Handled dynamically in MonopolyBoard
                 baseReward: { gold: Math.floor(Math.random() * 5) + 3 },
             };
         }

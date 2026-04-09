@@ -7,7 +7,7 @@
     background: rgba(0,0,0,0.85);
     backdrop-filter: blur(8px);
     display: flex; align-items: center; justify-content: center;
-    padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+    padding: env(safe-area-inset-top) env(safe-area-inset-right) var(--mobile-bottom-clearance, env(safe-area-inset-bottom)) env(safe-area-inset-left);
 }
 
 /* ── Container constraints for mobile safety ── */

@@ -134,6 +134,13 @@ export const ConquestBattle = () => {
         }
     }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
+    // Guard: auto-redirect if no active battle state
+    useEffect(() => {
+        if (!battle.player || !battle.enemy) {
+            navigate('/conquest', { replace: true });
+        }
+    }, [battle.player, battle.enemy, navigate]);
+
     // Watch for battle phase changes
     useEffect(() => {
         if (battle.phase === 'victory') {
@@ -199,14 +206,7 @@ export const ConquestBattle = () => {
     const elementIcon = CONQUEST_ELEMENT_ICONS[enemyElement];
 
     if (!player || !enemy) {
-        return (
-            <div className="cq-battle-container" style={{ backgroundImage: `url(${bgMap})` }}>
-                <div className="bg-overlay" />
-                <div style={{ position: 'relative', zIndex: 10, padding: '2rem', textAlign: 'center', color: '#94a3b8' }}>
-                    No active battle. <button onClick={() => navigate('/conquest')} style={{ color: '#a78bfa' }}>Return</button>
-                </div>
-            </div>
-        );
+        return null; // Guard useEffect will handle the redirect
     }
 
     const battleBg = (enemy as any).image || bgMap;
@@ -594,8 +594,8 @@ export const ConquestBattle = () => {
                             </div>
                             <button className="continue-btn" onClick={() => {
                                 setShowVictoryModal(false);
-                                setTimeout(() => { battle.resetBattle(); }, 100);
-                                navigate('/conquest');
+                                battle.resetBattle();
+                                navigate('/conquest', { replace: true });
                             }}>
                                 Continue Run
                             </button>
@@ -621,8 +621,9 @@ export const ConquestBattle = () => {
                                 ☠️ Daily run consumed. A new run opens tomorrow.
                             </div>
                             <button className="continue-btn" style={{ background: '#7f1d1d' }} onClick={() => {
-                                setTimeout(() => { battle.resetBattle(); }, 100);
-                                navigate('/conquest');
+                                setShowDefeatModal(false);
+                                battle.resetBattle();
+                                navigate('/conquest', { replace: true });
                             }}>
                                 Return to Map
                             </button>
