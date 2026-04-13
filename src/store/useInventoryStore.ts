@@ -49,6 +49,7 @@ export interface ItemDef {
 
     // Structured stat bonuses (used alongside or instead of effect string)
     statBonuses?: ItemStatBonuses;
+    slot?: EquipmentSlot;
 }
 
 import { mergeExternalItems } from '../data/contentLoader';
@@ -158,7 +159,7 @@ export const getItemById = (id: string | null | undefined): (ItemDef | any) => {
     return ITEM_DATABASE[id] ?? ITEM_DB[id] ?? null;
 };
 
-export type EquipmentSlot = 'weapon' | 'armor' | 'relic' | 'artifact' | 'pet' | 'pet_accessory' | 'book' | 'jewelry';
+export type EquipmentSlot = 'weapon' | 'armor' | 'relic' | 'artifact' | 'pet' | 'pet_accessory' | 'book' | 'jewelry' | 'head' | 'chest' | 'hands' | 'legs' | 'feet' | 'cloak';
 
 /** Returns a summary string of the stat bonuses for display */
 export function formatStatBonuses(bonuses: ItemStatBonuses | undefined): string {
@@ -234,6 +235,12 @@ export const useInventoryStore = create<InventoryState>()(
                 pet_accessory: null,
                 book: null,
                 jewelry: null,
+                head: null,
+                chest: null,
+                hands: null,
+                legs: null,
+                feet: null,
+                cloak: null,
             },
 
             // Marketplace state
@@ -274,6 +281,10 @@ export const useInventoryStore = create<InventoryState>()(
                     if (slot === 'book' && item.type !== 'book') return;
                     if (slot === 'jewelry' && item.type !== 'jewelry') return;
                     if (slot === 'pet_accessory' && (item.type !== 'pet_accessory' && item.type !== 'pet_gear')) return;
+                    // For the new specific armor slots, we allow them if item.type === 'armor' or 'accessory'
+                    const newArmorSlots = ['head', 'chest', 'hands', 'legs', 'feet', 'cloak'];
+                    if (newArmorSlots.includes(slot) && item.type !== 'armor') return;
+                    if (item.slot && item.slot !== slot) return;
                 }
 
                 set((state) => ({
@@ -445,6 +456,12 @@ export const useInventoryStore = create<InventoryState>()(
                         pet_accessory: null,
                         book: null,
                         jewelry: null,
+                        head: null,
+                        chest: null,
+                        hands: null,
+                        legs: null,
+                        feet: null,
+                        cloak: null,
                         ...(p.equipped ?? {}),
                     },
                 };

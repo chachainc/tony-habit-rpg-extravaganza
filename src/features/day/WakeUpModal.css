@@ -73,7 +73,6 @@
     }
 
     .wake-checkin__reward-overlay {
-        position: fixed;
         min-width: unset;
         width: 92vw;
         max-width: 340px;
@@ -458,10 +457,7 @@
 
 /* Reward overlay (inside the modal) */
 .wake-checkin__reward-overlay {
-    position: fixed;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
+    position: relative;
     background: linear-gradient(135deg, rgba(30, 30, 40, 0.98), rgba(20, 20, 30, 0.98));
     border: 2px solid var(--primary);
     border-radius: 14px;

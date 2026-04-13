@@ -81,20 +81,31 @@ export const useCurrencyStore = create<CurrencyState>()(
                             const petStore = usePetStore.getState();
                             const petDef = petStore.getEquippedPetDef();
                             
-                            // Apply flat gold bonus if pet has it
-                            if (petDef?.passive?.effectType === 'bonus_gold') {
-                                const dateStr = new Date().toISOString().split('T')[0];
-                                const dailyCap = petDef.passive.capPerDay || Infinity;
-                                const todayGold = petStore.lastPetGoldDate === dateStr ? petStore.dailyPetGold : 0;
-                                
-                                const petBonus = petDef.passive.value;
-                                if (todayGold < dailyCap) {
-                                    const goldToGive = Math.min(petBonus, dailyCap - todayGold);
-                                    if (goldToGive > 0) {
-                                        petStore.recordPetGoldBonus(goldToGive, dateStr);
-                                        totalAmount += goldToGive;
-                                    }
+                            if (petDef?.passive?.type === 'gold_percent' && typeof petDef.passive.value === 'number') {
+                                const goldBonusPercent = petDef.passive.value / 100;
+                                totalAmount += Math.floor(amount * goldBonusPercent);
+                            }
+                            
+                            // Apply gamble chance to double gold if pet has it
+                            if (petDef?.passive?.type === 'gold_double_chance' && typeof petDef.passive.value === 'number') {
+                                if (Math.random() * 100 < petDef.passive.value) {
+                                    totalAmount *= 2;
                                 }
+                            }
+
+                            // Jackpot Mult
+                            if (petDef?.passive?.type === 'jackpot_multiplier' && typeof petDef.passive.value === 'object') {
+                                const chance = petDef.passive.value.rewardMultiplierChance || 12;
+                                if (Math.random() * 100 < chance) {
+                                    totalAmount *= (petDef.passive.value.rewardMultiplier || 3);
+                                    import('../components/ui/Toast').then(({ useToastStore }) => {
+                                        useToastStore.getState().addToast({ message: '🎰 JACKPOT! Gold MULTIPLIED!', type: 'success' });
+                                    });
+                                }
+                            }
+                            if (petDef?.passive?.type === 'treasure_hoof' && typeof petDef.passive.value === 'object') {
+                                const goldBonusPercent = (petDef.passive.value.goldPct || 0) / 100;
+                                totalAmount += Math.floor(amount * goldBonusPercent) + (petDef.passive.value.flatGold || 0);
                             }
                         }
 
@@ -150,7 +161,33 @@ export const useCurrencyStore = create<CurrencyState>()(
             addTickets: (amount) => set((state) => ({ tickets: state.tickets + amount })),
             addDiamonds: (amount) => set((state) => ({ diamonds: state.diamonds + amount })),
             // addShmeckles: also grants same amount of Balloons (mirrored)
-            addShmeckles: (amount) => set((state) => ({ shmeckles: state.shmeckles + amount, balloons: state.balloons + amount })),
+            addShmeckles: (amount) => {
+                if (amount > 0) {
+                    import('./usePetStore').then(({ usePetStore }) => {
+                        let total = amount;
+                        const petDef = usePetStore.getState().getEquippedPetDef();
+                        if (petDef?.passive?.type === 'jackpot_multiplier' && typeof petDef.passive.value === 'object') {
+                            const chance = petDef.passive.value.rewardMultiplierChance || 12;
+                            if (Math.random() * 100 < chance) {
+                                total *= (petDef.passive.value.rewardMultiplier || 3);
+                                import('../components/ui/Toast').then(({ useToastStore }) => {
+                                    useToastStore.getState().addToast({ message: '🎰 JACKPOT! Shmeckles MULTIPLIED!', type: 'success' });
+                                });
+                            }
+                        }
+                        if (petDef?.passive?.type === 'treasure_hoof' && typeof petDef.passive.value === 'object') {
+                            if (Math.random() < ((petDef.passive.value.chanceExtraCurrency || 0) / 100)) {
+                                total += 1;
+                            }
+                        }
+                        set((state) => ({ shmeckles: state.shmeckles + total, balloons: state.balloons + total }));
+                    }).catch(() => {
+                        set((state) => ({ shmeckles: state.shmeckles + amount, balloons: state.balloons + amount }));
+                    });
+                } else {
+                    set((state) => ({ shmeckles: state.shmeckles + amount, balloons: state.balloons + amount }));
+                }
+            },
             addBalloons: (amount) => set((state) => ({ balloons: state.balloons + amount })),
             addToken: (skill, amount) => set((state) => ({
                 tokens: {

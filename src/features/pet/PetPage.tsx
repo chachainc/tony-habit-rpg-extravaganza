@@ -33,6 +33,15 @@ const OBTAIN_LABELS: Record<string, string> = {
     other: '✨ Special',
 };
 
+const AFFINITY_ICONS: Record<string, string> = {
+    fire: '🔥',
+    ice: '❄️',
+    shadow: '🌑',
+    economy: '💰',
+    luck: '🍀',
+    neutral: '⚪',
+};
+
 const showFloatingFeedback = (text: string, type: 'xp' | 'gold' = 'xp') => {
     const el = document.createElement('div');
     el.className = `floating-feedback floating-feedback--${type}`;
@@ -118,9 +127,11 @@ const AllPetsTab = () => {
                         <div className="all-pets-card__info">
                             <div className="all-pets-card__name">{pet.name}</div>
                             <div className="all-pets-card__rarity" style={{ color: rarityColor }}>
-                                {pet.rarity.toUpperCase()}
+                                {pet.rarity.toUpperCase()} {pet.affinity && `• ${AFFINITY_ICONS[pet.affinity]} ${pet.affinity.toUpperCase()}`}
                             </div>
-                            <div className="all-pets-card__passive">{pet.passive.name}</div>
+                            <div className="all-pets-card__passive">
+                                <strong>{pet.passive.name}:</strong> {pet.passive.description}
+                            </div>
                             <div className="all-pets-card__obtain">
                                 {OBTAIN_LABELS[pet.obtainMethod] ?? pet.obtainMethod}
                             </div>

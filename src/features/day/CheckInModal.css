@@ -1,6 +1,5 @@
 .checkin-modal {
     width: 100%;
-    max-height: calc(100vh - env(safe-area-inset-bottom, 0px));
     max-width: 600px;
     border-radius: var(--radius-md);
     padding: 1rem;

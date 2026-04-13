@@ -14,9 +14,7 @@ export interface PetState {
     ownedPets: string[];
     petQuantities: Record<string, number>;
     
-    // Daily tracking for passives
-    dailyPetGold: number;
-    lastPetGoldDate: string | null;
+
 
     // Actions
     feed: (amount: number) => void;
@@ -27,7 +25,6 @@ export interface PetState {
     equipPet: (petId: string) => void;
     unequipPet: () => void;
     addPet: (petId: string) => void;
-    recordPetGoldBonus: (amount: number, dateStr: string) => void;
     
     // Selectors
     getEquippedPetDef: () => PetDefinition | null;
@@ -45,8 +42,6 @@ export const usePetStore = create<PetState>()(
             energy: 90,
             ownedPets: ['pet_cow'],
             petQuantities: { 'pet_cow': 1 },
-            dailyPetGold: 0,
-            lastPetGoldDate: null,
 
             feed: (amount) => set((state) => ({
                 hunger: Math.min(100, state.hunger + amount),
@@ -99,14 +94,6 @@ export const usePetStore = create<PetState>()(
                 });
             },
 
-            recordPetGoldBonus: (amount, dateStr) => {
-                const state = get();
-                if (state.lastPetGoldDate !== dateStr) {
-                    set({ dailyPetGold: amount, lastPetGoldDate: dateStr });
-                } else {
-                    set({ dailyPetGold: state.dailyPetGold + amount });
-                }
-            },
 
             getEquippedPetDef: () => {
                 const { equippedPetId } = get();

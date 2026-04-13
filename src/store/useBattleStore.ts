@@ -7,6 +7,12 @@ import { useRoomStore } from './useRoomStore';
 import { useCampaignStore } from './useCampaignStore';
 import { getSkillSynergyBonus } from './useCombatFormulas';
 import { getPassiveBonuses } from './usePassiveEffects';
+import { usePetStore } from './usePetStore';
+import { useEquipmentStore, EQUIPMENT_DB } from './useEquipmentStore';
+import { useInventoryStore, getItemById } from './useInventoryStore';
+import { useXpWeaponStore, XP_WEAPON_MAP } from './useXpWeaponStore';
+import { calculateAffinitySynergy } from './useAffinitySystem';
+import { useWeaponProgressionStore } from './useWeaponProgressionStore';
 
 export interface Combatant {
     id: string;
@@ -37,12 +43,19 @@ export interface Combatant {
     manaShieldActive: boolean; // True if mana shield is absorbing damage
     manaShieldTurns: number; // Turns remaining for mana shield
     scalingFactor: number; // Used for dynamic reward scaling
+    frozenTurns: number; // For Glacierhoof freeze mechanic
+    chilledTurns: number; // NEW
 }
 
-export const calculateEffectiveDefense = (defender: Combatant, isMagic: boolean = false): number => {
+export const calculateEffectiveDefense = (defender: Combatant, isMagic: boolean = false, frostboundSetCount: number = 0): number => {
     let effectiveDef = defender.def;
     defender.buffs.forEach(b => { if (b.stat === 'def') effectiveDef += b.amount; });
     defender.debuffs.forEach(d => { if (d.stat === 'def') effectiveDef -= d.amount; });
+
+    // Frostbound Aegis 4PC: Chilled enemies have -15% defense
+    if (defender.chilledTurns > 0 && frostboundSetCount >= 4) {
+        effectiveDef *= 0.85;
+    }
 
     // Temporary bridge: magic defense is half of physical defense.
     if (isMagic) {
@@ -85,6 +98,12 @@ interface BattleState {
     activeFloorModifier: any | null; // Use FloorModifier if imported, or any
     activeRunBuffs: any[]; // Use RunBuff[] if imported, or any
 
+    // Affinity Protocol State
+    majorAffinityBonus: number;
+    armorAffinityBonus: number;
+    activeCrossCombo: 'hellfire' | 'shatter' | 'jackpot' | null;
+    frostboundSetCount: number;
+
     /** Turns remaining before the equipped spell can be cast again (0 = ready) */
     spellCooldownTurns: number;
     /** Turns remaining before Heavy Attack can be used again (0 = ready) */
@@ -110,6 +129,7 @@ interface BattleState {
     conquestTier: number | null;
     conquestContext: 'arena' | 'conquest' | 'conquest_elite' | 'conquest_boss' | 'conquest_vault' | 'risk' | 'tower-defense' | null;
     conquestEnemyPower?: number;
+    pendingBurnSpread: boolean;
 }
 
 // Player abilities - Replaced with the 3 distinct actions
@@ -173,12 +193,17 @@ export const useBattleStore = create<BattleState>()((set, get) => ({
     weaknessActive: false,
     activeFloorModifier: null,
     activeRunBuffs: [],
+    majorAffinityBonus: 0,
+    armorAffinityBonus: 0,
+    activeCrossCombo: null,
+    frostboundSetCount: 0,
     spellCooldownTurns: 0,
     heavyAttackCooldown: 0,
     introGracePeriod: false,
     context: 'arena',
     conquestTier: null,
     conquestContext: null,
+    pendingBurnSpread: false,
 
     initBattle: (enemyId: string, options?: { context?: 'arena' | 'conquest' | 'conquest_elite' | 'conquest_boss' | 'conquest_vault'; conquestTier?: number }) => {
         const enemyDef = ENEMY_DB[enemyId];
@@ -255,6 +280,8 @@ export const useBattleStore = create<BattleState>()((set, get) => ({
             manaShieldActive: false,
             manaShieldTurns: 0,
             scalingFactor: 1.0,
+            frozenTurns: 0,
+            chilledTurns: 0,
         };
 
         const context = options?.context || 'arena';
@@ -323,6 +350,8 @@ export const useBattleStore = create<BattleState>()((set, get) => ({
             manaShieldActive: false,
             manaShieldTurns: 0,
             scalingFactor: Math.max(1, levelScaleStats + (xpScaling * 0.02)),
+            frozenTurns: 0,
+            chilledTurns: 0,
         };
 
         // Psychological Profile Logic
@@ -362,19 +391,71 @@ export const useBattleStore = create<BattleState>()((set, get) => ({
             .sort((a, b) => b.spd - a.spd)
             .map(c => c.id);
 
+        // Apply pending burn spread
+        let initialLogs: CombatLog[] = [
+            { message: `Battle Start! ${enemyDef.name} appears!`, type: 'info' as const },
+            { message: enemyDef.openingLine, type: 'info' as const },
+            { message: `${ELEMENT_ICONS[enemyDef.element]} ${enemyDef.name} is ${enemyDef.element} element`, type: 'element' as const },
+            ...(isGoldenSlime ? [{ message: `✨ RARE ENCOUNTER! Defeat it in 3 turns for 500 gold!`, type: 'info' as const }] : []),
+        ];
+
+        if (get().pendingBurnSpread) {
+            const petDef = usePetStore.getState().getEquippedPetDef();
+            if (petDef?.passive?.type === 'infernohorn_burn') {
+                const burnPct = (petDef.passive.value as any).burnTurnPct || 3;
+                const burnDmg = Math.max(1, Math.floor(enemy.maxHp * (burnPct / 100)));
+                enemy.dots.push({ damage: burnDmg, turnsLeft: 3 });
+                initialLogs.push({ message: `🔥 Burn spreads to ${enemy.name} (${burnDmg} dmg/turn)!`, type: 'debuff' as const });
+            }
+        }
+        const equipState = useEquipmentStore.getState();
+        const invState = useInventoryStore.getState();
+        
+        // Merge gacha equipment and marketplace inventory slots
+        const gachaIds = [equipState.equippedArmor, equipState.equippedAccessory, equipState.equippedWeapon];
+        const inventoryIds = [
+            invState.equipped.armor, invState.equipped.head, invState.equipped.chest, 
+            invState.equipped.hands, invState.equipped.legs, invState.equipped.feet, invState.equipped.cloak
+        ];
+        
+        const gachaAffinities = gachaIds.filter(Boolean).map(id => EQUIPMENT_DB[id!]?.affinity);
+        const invAffinities = inventoryIds.filter(Boolean).map(id => {
+            const item = getItemById(id);
+            return item?.affinity;
+        });
+
+        const armorAffinities = [...gachaAffinities, ...invAffinities].filter(Boolean) as any[];
+
+        const petAffinity = usePetStore.getState().getEquippedPetDef()?.affinity;
+        const xpWeaponAffinity = useXpWeaponStore.getState().getEquippedWeapon()?.affinity;
+        const invWeaponId = invState.equipped.weapon;
+        const invWeaponAffinity = invWeaponId ? getItemById(invWeaponId)?.affinity : undefined;
+        const weaponAffinity = xpWeaponAffinity || invWeaponAffinity;
+        
+        const spellDefMagic = useMagicStore.getState().equippedSpell;
+        const spellAffinity = spellDefMagic ? SPELL_DB[spellDefMagic]?.affinity : undefined;
+
+        const affinitySynergy = calculateAffinitySynergy({
+            petAffinity,
+            weaponAffinity,
+            spellAffinity,
+            armorAffinities,
+            armorItemIds: inventoryIds.filter(Boolean) as string[]
+        }, []);
+
+        if (affinitySynergy.matchCount > 1) {
+            initialLogs.push({ message: `✨ Resonance: ${affinitySynergy.summaryLabel} (+${Math.round(affinitySynergy.majorBonusMultiplier * 100)}% DMG)`, type: 'buff' as const });
+        }
+
         set({
-            phase: 'prep', // Start in prep phase
+            phase: 'prep',
             player,
             enemy,
             turnOrder,
             currentTurn: turnOrder[0],
             turnNumber: 1,
-            combatLog: [
-                { message: `Battle Start! ${enemyDef.name} appears!`, type: 'info' },
-                { message: enemyDef.openingLine, type: 'info' }, // Show opening line
-                { message: `${ELEMENT_ICONS[enemyDef.element]} ${enemyDef.name} is ${enemyDef.element} element`, type: 'element' },
-                ...(isGoldenSlime ? [{ message: `✨ RARE ENCOUNTER! Defeat it in 3 turns for 500 gold!`, type: 'info' as const }] : []),
-            ],
+            combatLog: initialLogs,
+            pendingBurnSpread: false, // Consume it
             selectedAbility: null,
             lastDamage: null,
             isGoldenSlime,
@@ -391,6 +472,11 @@ export const useBattleStore = create<BattleState>()((set, get) => ({
             affinityActive,
             activeFloorModifier,
             activeRunBuffs: campaignStore.activeRunBuffs,
+            majorAffinityBonus: affinitySynergy.majorBonusMultiplier,
+            armorAffinityBonus: affinitySynergy.armorBonus,
+            activeCrossCombo: affinitySynergy.crossCombo,
+            frostboundSetCount: affinitySynergy.frostboundSetCount,
+            spellCooldownTurns: 0,
             context,
             conquestContext: context,
             conquestTier,
@@ -473,18 +559,119 @@ export const useBattleStore = create<BattleState>()((set, get) => ({
             buffs: newBuffs,
         };
 
+        let newEnemyDots = [...enemy.dots];
+        let newLog = [...get().combatLog];
+        
+        let newEnemyDebuffs = [...enemy.debuffs];
+        let newEnemyFrozenTurns = enemy.frozenTurns;
+        
+        try {
+            const petDef = usePetStore.getState().getEquippedPetDef();
+            if (petDef?.passive?.type === 'blazehorn_burn') {
+                const pct = (petDef.passive.value as any).burnTurnPct || 2;
+                const burnDmg = Math.max(1, Math.floor(enemy.maxHp * (pct / 100)));
+                // Don't stack infinitely, just refresh or add 1
+                if (!newEnemyDots.some(d => d.damage === burnDmg)) {
+                    newEnemyDots.push({ damage: burnDmg, turnsLeft: 3 });
+                    newLog.push({ message: `🔥 Blazehorn applies Burn (${burnDmg} dmg/turn)!`, type: 'debuff' });
+                }
+            } else if (petDef?.passive?.type === 'frostgrazer_slow') {
+                const chance = (petDef.passive.value as any).slowChancePct || 20;
+                const turns = (petDef.passive.value as any).slowTurns || 2;
+                if (Math.random() < chance / 100) {
+                    if (!newEnemyDebuffs.some(d => d.stat === 'spd')) {
+                        const spdDecrease = Math.max(1, Math.floor(enemy.spd * 0.5));
+                        newEnemyDebuffs.push({ stat: 'spd', amount: spdDecrease, turnsLeft: turns });
+                        newLog.push({ message: `❄️ Frostgrazer freezes ${enemy.name}! SPD reduced!`, type: 'debuff' });
+                    }
+                }
+            } else if (petDef?.passive?.type === 'infernohorn_burn') {
+                const pct = (petDef.passive.value as any).burnTurnPct || 3;
+                const burnDmg = Math.max(1, Math.floor(enemy.maxHp * (pct / 100)));
+                if (!newEnemyDots.some(d => d.damage === burnDmg)) {
+                    newEnemyDots.push({ damage: burnDmg, turnsLeft: 3 });
+                    newLog.push({ message: `🔥 Infernohorn applies living Inferno (${burnDmg} dmg/turn)!`, type: 'debuff' });
+                }
+            } else if (petDef?.passive?.type === 'glacierhoof_freeze') {
+                const chance = (petDef.passive.value as any).freezeChancePct || 25;
+                const turns = (petDef.passive.value as any).freezeTurns || 1;
+                if (Math.random() < chance / 100) {
+                    newEnemyFrozenTurns = Math.max(newEnemyFrozenTurns, turns);
+                    newLog.push({ message: `❄️ Glacierhoof FREEZES ${enemy.name}! Action skipped!`, type: 'debuff' });
+                } else {
+                    if (!newEnemyDebuffs.some(d => d.stat === 'spd')) {
+                        const spdDecrease = Math.max(1, Math.floor(enemy.spd * 0.5));
+                        newEnemyDebuffs.push({ stat: 'spd', amount: spdDecrease, turnsLeft: 2 });
+                        newLog.push({ message: `❄️ Glacierhoof chills ${enemy.name}! SPD reduced!`, type: 'debuff' });
+                    }
+                }
+            } else if (petDef?.passive?.type === 'shadowhoof_lifesteal') {
+                const pct = (petDef.passive.value as any).lifestealPct || 3;
+                const healAmount = Math.max(1, Math.floor(damage * (pct / 100)));
+                if (healAmount > 0) {
+                    updatedPlayer.hp = Math.min(updatedPlayer.maxHp, updatedPlayer.hp + healAmount);
+                    newLog.push({ message: `🌑 Shadowhoof syphons ${healAmount} HP!`, type: 'heal', value: healAmount });
+                }
+            }
+
+            // Weapon Passive: Flame Blade
+            const invWeaponId = useInventoryStore.getState().equipped.weapon;
+            if (invWeaponId === 'flame_blade') {
+                const pct = 3; // 3% Burn
+                const burnDmg = Math.max(1, Math.floor(enemy.maxHp * (pct / 100)));
+                if (!newEnemyDots.some(d => d.damage === burnDmg)) {
+                    newEnemyDots.push({ damage: burnDmg, turnsLeft: 3 });
+                    newLog.push({ message: `🔥 Flame Blade applies Burn (${burnDmg} dmg/turn)!`, type: 'debuff' });
+                }
+            }
+        } catch(e) {}
+
         const newHp = enemy.hp - damage;
 
-        // Check for victory
+        // Spread burn on kill if infernohorn_burn is active OR Flame Blade + Fire Synergy
         if (newHp <= 0) {
+            try {
+                const petDef = usePetStore.getState().getEquippedPetDef();
+                const hasInfernohorn = petDef?.passive?.type === 'infernohorn_burn' && (petDef.passive.value as any).spreads;
+                
+                let hasFireSynergyBurnSpread = false;
+                const invWeaponId = useInventoryStore.getState().equipped.weapon;
+                const spellDefMagic = useMagicStore.getState().equippedSpell;
+                
+                if (invWeaponId === 'flame_blade' || spellDefMagic === 'firebolt') {
+                    const invState = useInventoryStore.getState();
+                    const equipState = useEquipmentStore.getState();
+                    const armorAffinities = [
+                        equipState.equippedArmor, equipState.equippedAccessory, equipState.equippedWeapon,
+                        invState.equipped.armor, invState.equipped.head, invState.equipped.chest,
+                        invState.equipped.hands, invState.equipped.legs, invState.equipped.feet, invState.equipped.cloak
+                    ].filter(Boolean).map(id => EQUIPMENT_DB[id!]?.affinity || getItemById(id!)?.affinity).filter(Boolean) as any[];
+
+                    const weaponAffinity = useXpWeaponStore.getState().getEquippedWeapon()?.affinity || getItemById(invWeaponId || '')?.affinity;
+                    const spellAffinity = spellDefMagic ? SPELL_DB[spellDefMagic]?.affinity : undefined;
+                    
+                    const synergy = calculateAffinitySynergy({
+                        petAffinity: petDef?.affinity, weaponAffinity, spellAffinity, armorAffinities
+                    }, []);
+
+                    if (synergy.matchCount > 1 && synergy.majorAffinity === 'fire') {
+                        hasFireSynergyBurnSpread = true;
+                    }
+                }
+
+                if (hasInfernohorn || hasFireSynergyBurnSpread) {
+                    set({ pendingBurnSpread: true });
+                }
+            } catch(e) {}
+            
             set({
                 phase: 'victory',
                 player: updatedPlayer,
-                enemy: { ...enemy, hp: 0 },
+                enemy: { ...enemy, dots: newEnemyDots, debuffs: newEnemyDebuffs, hp: 0, frozenTurns: newEnemyFrozenTurns },
                 selectedAbility: null,
                 lastDamage: { target: 'enemy', amount: damage, isCrit: false, energyGain: energyGainAmount > 0 ? energyGainAmount : undefined } as any,
                 combatLog: [
-                    ...get().combatLog,
+                    ...newLog,
                     { message: `🏆 Victory! ${enemy.name} defeated!`, type: 'victory' },
                 ],
             });
@@ -493,9 +680,10 @@ export const useBattleStore = create<BattleState>()((set, get) => ({
 
         set({
             player: updatedPlayer,
-            enemy: { ...enemy, hp: newHp },
+            enemy: { ...enemy, dots: newEnemyDots, debuffs: newEnemyDebuffs, hp: newHp, frozenTurns: newEnemyFrozenTurns },
             selectedAbility: null,
             lastDamage: { target: 'enemy', amount: damage, isCrit: false, energyGain: energyGainAmount > 0 ? energyGainAmount : undefined } as any,
+            combatLog: newLog,
         });
 
         // End player turn
@@ -546,15 +734,45 @@ export const useBattleStore = create<BattleState>()((set, get) => ({
 
             const newHp = enemy.hp - damage;
 
+            let newEnemyDots = [...enemy.dots];
+            let newEnemyDebuffs = [...enemy.debuffs];
+            let newLog = [...get().combatLog, { message: `💥 ${player.name} unleashes ${ultimateName} for ${damage} damage!`, type: 'damage' as const }];
+            
+            try {
+                const petDef = usePetStore.getState().getEquippedPetDef();
+                if (petDef?.passive?.type === 'blazehorn_burn') {
+                    const pct = (petDef.passive.value as any).burnTurnPct || 2;
+                    const burnDmg = Math.max(1, Math.floor(enemy.maxHp * (pct / 100)));
+                    if (!newEnemyDots.some(d => d.damage === burnDmg)) {
+                        newEnemyDots.push({ damage: burnDmg, turnsLeft: 3 });
+                        newLog.push({ message: `🔥 Blazehorn applies Burn (${burnDmg} dmg/turn)!`, type: 'debuff' as const });
+                    }
+                } else if (petDef?.passive?.type === 'frostgrazer_slow') {
+                    const chance = (petDef.passive.value as any).slowChancePct || 20;
+                    const turns = (petDef.passive.value as any).slowTurns || 2;
+                    if (Math.random() < chance / 100) {
+                        if (!newEnemyDebuffs.some(d => d.stat === 'spd')) {
+                            const spdDecrease = Math.max(1, Math.floor(enemy.spd * 0.5));
+                            newEnemyDebuffs.push({ stat: 'spd', amount: spdDecrease, turnsLeft: turns });
+                            newLog.push({ message: `❄️ Frostgrazer freezes ${enemy.name}! SPD reduced!`, type: 'debuff' as const });
+                        }
+                    }
+                } else if (petDef?.passive?.type === 'shadowhoof_lifesteal') {
+                    const pct = (petDef.passive.value as any).lifestealPct || 3;
+                    const healAmount = Math.max(1, Math.floor(damage * (pct / 100)));
+                    if (healAmount > 0) {
+                        updatedPlayer.hp = Math.min(updatedPlayer.maxHp, updatedPlayer.hp + healAmount);
+                        newLog.push({ message: `🌑 Shadowhoof syphons ${healAmount} HP!`, type: 'heal' as const, value: healAmount });
+                    }
+                }
+            } catch(e) {}
+
             set({
                 player: updatedPlayer,
-                enemy: { ...enemy, hp: newHp },
+                enemy: { ...enemy, dots: newEnemyDots, debuffs: newEnemyDebuffs, hp: newHp },
                 selectedAbility: null,
                 lastDamage: { target: 'enemy', amount: damage, isCrit: true, type: 'ultimate' }, // 1.5x popup
-                combatLog: [
-                    ...get().combatLog,
-                    { message: `💥 ${player.name} unleashes ${ultimateName} for ${damage} damage!`, type: 'damage' }
-                ]
+                combatLog: newLog as any,
             });
             
         }, 120);
@@ -588,6 +806,18 @@ export const useBattleStore = create<BattleState>()((set, get) => ({
     executeEnemyAction: () => {
         const { player, enemy } = get();
         if (!player || !enemy) return;
+
+        // Check if frozen!
+        if (enemy.frozenTurns > 0) {
+            set({ phase: 'executing' });
+            setTimeout(() => {
+                set({
+                    combatLog: [...get().combatLog, { message: `🥶 ${enemy.name} is Frozen and skips their turn!`, type: 'info' }]
+                });
+                setTimeout(() => get().endTurn(), 800);
+            }, 400); // Small visual pause before moving on
+            return;
+        }
 
         // Choose ability: prioritize ultimates when full energy, then skills off cooldown
         let chosenAbility = enemy.abilities[0]; // Default to basic attack
@@ -699,6 +929,7 @@ export const useBattleStore = create<BattleState>()((set, get) => ({
             isDefending: false, // Reset defense at start of turn
             mana: Math.min(current.maxMana, current.mana + current.manaRegen), // Mana regen
             hp: Math.max(0, current.hp - dotDamage),
+            frozenTurns: Math.max(0, current.frozenTurns - 1),
         };
 
         // Get next in turn order
@@ -838,8 +1069,88 @@ export const useBattleStore = create<BattleState>()((set, get) => ({
         // Element multiplier
         const elementMult = getElementMultiplier(ability.element, defender.element);
 
+        // Affinity Synergy Bonus (MAJOR + ARMOR)
+        let affinityBonus = 1.0;
+        if (attacker.isPlayer) {
+            const state = get();
+            affinityBonus = 1.0 + state.majorAffinityBonus + state.armorAffinityBonus;
+        }
+
+        // ====== WEAPON & ARMOR OVERRIDES ======
+        let weaponScalar = 1.0;
+        let frostDmgBonus = 1.0;
+        let lifestealPct = 0;
+        let vaultRewardFlag = false;
+
+        if (attacker.isPlayer) {
+            const xpWeapon = useXpWeaponStore.getState().getEquippedWeapon();
+            const invWeaponId = useInventoryStore.getState().equipped.weapon;
+            const activeWeaponId = xpWeapon?.id || invWeaponId;
+            const invEquip = useInventoryStore.getState().equipped;
+
+            if (activeWeaponId === 'moltenblade') weaponScalar = 1.18;
+            else if (activeWeaponId === 'infernal_coreblade') weaponScalar = 1.30;
+            else if (activeWeaponId === 'glacial_hammer') weaponScalar = 1.14;
+            else if (activeWeaponId === 'frost_titan_breaker') weaponScalar = 1.25;
+            else if (activeWeaponId === 'void_dagger') weaponScalar = 1.10;
+            else if (activeWeaponId === 'abyss_render') weaponScalar = 1.20;
+            else if (activeWeaponId === 'golden_ledger') weaponScalar = 1.06;
+            else if (activeWeaponId === 'sovereign_ledger') weaponScalar = 1.12;
+            else if (activeWeaponId === 'diceblade' || activeWeaponId === 'chaos_edge') weaponScalar = 1.12;
+
+            // Chestplate: player attacks vs chilled/frozen
+            if (defender.chilledTurns > 0 || defender.frozenTurns > 0) {
+                 if (activeWeaponId === 'glacial_hammer' || activeWeaponId === 'frost_titan_breaker') {
+                     frostDmgBonus += 0.10;
+                 }
+            }
+            // Gauntlets: +8% bonus, +15% if ice weapon
+            if (invEquip.hands === 'frostbound_gauntlets' && defender.chilledTurns > 0) {
+                 frostDmgBonus += (activeWeaponId === 'glacial_hammer' || activeWeaponId === 'frost_titan_breaker') ? 0.15 : 0.08;
+            }
+
+            // Diceblade Execution
+            if (activeWeaponId === 'diceblade' || activeWeaponId === 'chaos_edge') {
+                const rolls = activeWeaponId === 'chaos_edge' ? 2 : 1;
+                let maxRoll = 1;
+                for (let i = 0; i < rolls; i++) {
+                    let r = Math.floor(Math.random() * 6) + 1;
+                    maxRoll = Math.max(maxRoll, r);
+                }
+                
+                if (activeWeaponId === 'chaos_edge' && maxRoll === 6 && rolls === 2) {
+                    // Quick crude check for double 6
+                    if (Math.random() < (1/6)) {
+                        weaponScalar *= 3.0;
+                    } else {
+                        weaponScalar *= 2.0;
+                    }
+                } else {
+                    if (maxRoll === 1) weaponScalar *= 0;
+                    else if (maxRoll === 2 || maxRoll === 3) weaponScalar *= 1.0;
+                    else if (maxRoll === 4 || maxRoll === 5) weaponScalar *= 1.5;
+                    else if (maxRoll === 6) weaponScalar *= 2.0;
+                }
+                
+                // Track dice progression
+                useWeaponProgressionStore.getState().incrementMetric(activeWeaponId, 'diceRolled', rolls);
+            }
+
+            // Lifesteal calculation
+            const petDef = usePetStore.getState().getEquippedPetDef();
+            if (activeWeaponId === 'void_dagger') {
+                lifestealPct = petDef?.affinity === 'shadow' ? 8 : 5;
+            } else if (activeWeaponId === 'abyss_render') {
+                lifestealPct = petDef?.affinity === 'shadow' ? 15 : 10;
+            } else if ((activeWeaponId === 'moltenblade' || activeWeaponId === 'infernal_coreblade') && defender.dots.length > 0) {
+                lifestealPct = activeWeaponId === 'infernal_coreblade' ? 10 : 5;
+            }
+        }
+
+        // ====== END OVERRIDES ======
+
         // New Mitigation-based Formula
-        const rawDamage = effectiveAtk * ability.damageMultiplier * critMult * elementMult * towerMult;
+        const rawDamage = effectiveAtk * ability.damageMultiplier * critMult * elementMult * towerMult * affinityBonus * weaponScalar * frostDmgBonus;
         let mitigatedDamage = rawDamage * (100 / (100 + effectiveDef));
 
         if (defender.isPlayer) {
@@ -855,6 +1166,21 @@ export const useBattleStore = create<BattleState>()((set, get) => ({
 
         // Incoming damage modifiers
         let incomingModifiers = 1.0;
+
+        if (defender.isPlayer) {
+            const invEquip = useInventoryStore.getState().equipped;
+            const spellDefMagic = useMagicStore.getState().equippedSpell;
+            const activeSpellAffinity = spellDefMagic ? SPELL_DB[spellDefMagic]?.affinity : undefined;
+            
+            // Chestplate: incoming from frozen is reduced by 10%
+            if (invEquip.chest === 'frostbound_chestplate' && (attacker.chilledTurns > 0 || attacker.frozenTurns > 0)) {
+                incomingModifiers *= (activeSpellAffinity === 'ice' ? 0.85 : 0.90);
+            }
+            // Leggings: 12% reduction
+            if (invEquip.legs === 'frostbound_leggings' && (attacker.chilledTurns > 0 || attacker.frozenTurns > 0)) {
+                incomingModifiers *= 0.88;
+            }
+        }
 
         // Defensive Stance (50% reduction)
         if (defender.isDefending) {
@@ -920,6 +1246,8 @@ export const useBattleStore = create<BattleState>()((set, get) => ({
 
         // Log the action
         const logs: CombatLog[] = [];
+        const activeWeaponTrackingId = attacker.isPlayer ? (useXpWeaponStore.getState().equippedWeaponId || useInventoryStore.getState().equipped.weapon) : undefined;
+
         logs.push({
             message: `${attacker.name} uses ${ability.icon} ${ability.name}!`,
             type: 'info',
@@ -933,6 +1261,9 @@ export const useBattleStore = create<BattleState>()((set, get) => ({
 
         if (isCrit) {
             logs.push({ message: `Critical hit!`, type: 'crit' });
+            if (activeWeaponTrackingId) {
+                useWeaponProgressionStore.getState().incrementMetric(activeWeaponTrackingId, 'critsHits', 1);
+            }
         }
 
         logs.push({
@@ -956,14 +1287,25 @@ export const useBattleStore = create<BattleState>()((set, get) => ({
 
         // Apply DOT
         if (ability.effects?.dot) {
+            let dotDmg = ability.effects.dot.damage;
+            
+            // Fire synergy explicitly scales Fire DOTs
+            if (attacker.isPlayer && affinityBonus > 1.0 && ability.element === 'fire') {
+                dotDmg = Math.max(1, Math.floor(dotDmg * affinityBonus));
+            }
+
             defender.dots.push({
-                damage: ability.effects.dot.damage,
+                damage: dotDmg,
                 turnsLeft: ability.effects.dot.turns,
             });
             logs.push({
                 message: `${defender.name} is burning!`,
                 type: 'debuff',
             });
+
+            if (activeWeaponTrackingId && ability.element === 'fire') {
+                useWeaponProgressionStore.getState().incrementMetric(activeWeaponTrackingId, 'burnDamageDealt', dotDmg * ability.effects.dot.turns);
+            }
         }
 
         // Apply heal to attacker
@@ -975,6 +1317,13 @@ export const useBattleStore = create<BattleState>()((set, get) => ({
                 type: 'heal',
                 value: healAmount,
             });
+        }
+
+        // Lifesteal Engine
+        if (attacker.isPlayer && lifestealPct > 0 && finalDamage > 0) {
+            const healAmount = Math.max(1, Math.floor(finalDamage * (lifestealPct / 100)));
+            attacker.hp = Math.min(attacker.maxHp, attacker.hp + healAmount);
+            logs.push({ message: `🩸 Syphoned ${healAmount} HP!`, type: 'heal', value: healAmount });
         }
 
         set({
@@ -1088,6 +1437,57 @@ export const useBattleStore = create<BattleState>()((set, get) => ({
                         type: 'debuff',
                     });
                 }
+                
+                // --- ICE MAGIC LOGIC ---
+                const activeWeaponId = useXpWeaponStore.getState().equippedWeaponId || useInventoryStore.getState().equipped.weapon;
+                const petDef = usePetStore.getState().getEquippedPetDef();
+                
+                if (spell.id === 'frostbolt') {
+                    const isFrostbound2 = get().frostboundSetCount >= 2;
+                    let dur = isFrostbound2 ? 3 : 2;
+                    updatedEnemy.chilledTurns = Math.max(updatedEnemy.chilledTurns || 0, dur);
+                    logs.push({ message: `❄️ Chilled for ${dur} turns!`, type: 'debuff' });
+                    if (activeWeaponId) useWeaponProgressionStore.getState().incrementMetric(activeWeaponId, 'chilledEnemiesApplied', 1);
+                } else if (spell.id === 'glacial_prison') {
+                    let freezeTurns = (updatedEnemy.chilledTurns > 0) ? 2 : 1;
+                    if (petDef?.affinity === 'ice' && Math.random() < 0.20) freezeTurns += 1; // Pet bonus
+                    updatedEnemy.frozenTurns = Math.max(updatedEnemy.frozenTurns, freezeTurns);
+                    logs.push({ message: `🧊 Frozen solid for ${freezeTurns} turn(s)!`, type: 'debuff' });
+                } else if (spell.id === 'absolute_zero') {
+                    const burstDmg = Math.floor(updatedEnemy.maxHp * 0.15); // 15% Max HP
+                    updatedEnemy.hp = Math.max(0, updatedEnemy.hp - burstDmg);
+                    logs.push({ message: `🥶 Absolute Zero! ${burstDmg} massive damage!`, type: 'damage', value: burstDmg });
+                    
+                    let freezeTurns = 1;
+                    if (petDef?.affinity === 'ice') freezeTurns += 1;
+                    updatedEnemy.chilledTurns = Math.max(updatedEnemy.chilledTurns || 0, 2);
+                    updatedEnemy.frozenTurns = Math.max(updatedEnemy.frozenTurns, freezeTurns);
+                    logs.push({ message: `❄️ Flash Frozen!`, type: 'debuff' });
+                }
+                
+                // Ice Burst / Shatter Mechanic (triggered on freeze)
+                if ((spell.id === 'glacial_prison' || spell.id === 'absolute_zero') && updatedEnemy.frozenTurns > 0) {
+                    if (get().frostboundSetCount >= 6 || activeWeaponId === 'frost_titan_breaker') {
+                        let iceBurstDmg = Math.floor(updatedEnemy.maxHp * 0.08);
+                        if (activeWeaponId === 'frost_titan_breaker') iceBurstDmg = Math.floor(updatedEnemy.maxHp * 0.12);
+                        updatedEnemy.hp = Math.max(0, updatedEnemy.hp - iceBurstDmg);
+                        updatedEnemy.chilledTurns = Math.max(updatedEnemy.chilledTurns || 0, 2);
+                        logs.push({ message: `💥 Ice Burst Shatter! ${iceBurstDmg} AoE damage!`, type: 'damage', value: iceBurstDmg });
+                    }
+                }
+                
+                // Add Shadowhoof Lifesteal for new tier spells
+                try {
+                    const petDef = usePetStore.getState().getEquippedPetDef();
+                    if (petDef?.passive?.type === 'shadowhoof_lifesteal') {
+                        const pct = (petDef.passive.value as any).lifestealPct || 3;
+                        const healAmount = Math.max(1, Math.floor(finalDmg * (pct / 100)));
+                        if (healAmount > 0) {
+                            updatedPlayer.hp = Math.min(updatedPlayer.maxHp, updatedPlayer.hp + healAmount);
+                            logs.push({ message: `🌑 Shadowhoof syphons ${healAmount} HP!`, type: 'heal' as const, value: healAmount });
+                        }
+                    }
+                } catch(e) {}
 
                 set({
                     enemy: updatedEnemy,
@@ -1110,11 +1510,41 @@ export const useBattleStore = create<BattleState>()((set, get) => ({
                 };
 
                 // applyDamage mutates updatedEnemy's HP and pushes its own logs
-                get().applyDamage(updatedPlayer, updatedEnemy, tempAbility);
+                const tempDmg = get().applyDamage(updatedPlayer, updatedEnemy, tempAbility);
 
-                // Sync mutated objects to store
-                set({ enemy: updatedEnemy, player: updatedPlayer });
+                // Add Blazehorn passive Burn to all damage spells
+                try {
+                    const petDef = usePetStore.getState().getEquippedPetDef();
+                    if (petDef?.passive?.type === 'blazehorn_burn') {
+                        const pct = (petDef.passive.value as any).burnTurnPct || 2;
+                        const burnDmg = Math.max(1, Math.floor(updatedEnemy.maxHp * (pct / 100)));
+                        if (!updatedEnemy.dots.some(d => d.damage === burnDmg)) {
+                            updatedEnemy.dots.push({ damage: burnDmg, turnsLeft: 3 });
+                            set(state => ({ combatLog: [...state.combatLog, { message: `🔥 Blazehorn applies Burn (${burnDmg} dmg/turn)!`, type: 'debuff' as const }] }));
+                        }
+                    } else if (petDef?.passive?.type === 'frostgrazer_slow') {
+                        const chance = (petDef.passive.value as any).slowChancePct || 20;
+                        const turns = (petDef.passive.value as any).slowTurns || 2;
+                        if (Math.random() < chance / 100) {
+                            if (!updatedEnemy.debuffs.some(d => d.stat === 'spd')) {
+                                const spdDecrease = Math.max(1, Math.floor(updatedEnemy.spd * 0.5));
+                                updatedEnemy.debuffs.push({ stat: 'spd', amount: spdDecrease, turnsLeft: turns });
+                                set(state => ({ combatLog: [...state.combatLog, { message: `❄️ Frostgrazer freezes ${updatedEnemy.name}! SPD reduced!`, type: 'debuff' as const }] }));
+                            }
+                        }
+                    } else if (petDef?.passive?.type === 'shadowhoof_lifesteal') {
+                        const pct = (petDef.passive.value as any).lifestealPct || 3;
+                        const healAmount = Math.max(1, Math.floor(tempDmg * (pct / 100)));
+                        if (healAmount > 0) {
+                            updatedPlayer.hp = Math.min(updatedPlayer.maxHp, updatedPlayer.hp + healAmount);
+                            set(state => ({ combatLog: [...state.combatLog, { message: `🌑 Shadowhoof syphons ${healAmount} HP!`, type: 'heal' as const, value: healAmount }] }));
+                        }
+                    }
+                } catch(e) {}
             }
+
+            // Sync mutated objects to store
+            set({ enemy: updatedEnemy, player: updatedPlayer });
 
         } else if (spell.effect.type === 'shield') {
             updatedPlayer.manaShieldActive = true;

@@ -21,10 +21,16 @@ interface Props {
 const ARMOR_ITEMS = [
     'cloth_tunic',
     'leather_armor',
+    'cinder_crown',
     'studded_leather',
+    'embergrip_gauntlets',
     'chainmail',
+    'coalwake_boots',
     'iron_platebody',
+    'moltenstride_leggings',
+    'flameveil_cloak',
     'steel_plate',
+    'ashforge_plate',
     'mythric_plate',
 ];
 
@@ -42,12 +48,9 @@ export const ArmorStore = ({ onClose }: Props) => {
     // Filter state
     const [searchQuery, setSearchQuery] = useState('');
     const [activeCategory, setActiveCategory] = useState<'all' | 'unowned'>('all');
+    const [activeAffinity, setActiveAffinity] = useState<'all' | 'fire' | 'ice' | 'shadow' | 'economy' | 'luck' | 'neutral'>('all');
     const [showMobileFilters, setShowMobileFilters] = useState(false);
 
-    // Calculate player's base defense stat (ignore buffs by just using the base stat calculation from the store)
-    // Looking at useGameStore, getDefense() calculates the base. But we need to ensure it's exported or we 
-    // can just use the store's getter. The user prompt says: "use only the player's true base defense stat / level".
-    // I will use `useGameStore().getDefense()` to get the true value.
     const getDefense = useGameStore(state => state.getDefense);
     const playerDefense = getDefense();
 
@@ -63,13 +66,11 @@ export const ArmorStore = ({ onClose }: Props) => {
         const success = purchaseMarketplaceItem(confirmItem.id);
 
         if (success) {
-            // Play sounds
             playPurchaseSound();
             if (confirmItem.rarity === 'rare' || confirmItem.rarity === 'epic' || confirmItem.rarity === 'legendary') {
                 playUnlockSound();
             }
 
-            // Show success overlay
             setSuccessItem(confirmItem);
             setShowSuccess(true);
         }
@@ -91,7 +92,13 @@ export const ArmorStore = ({ onClose }: Props) => {
         const item = ITEM_DATABASE[itemId];
         if (!item) return false;
 
-        // Search filter
+        // Affinity filter
+        if (activeAffinity !== 'all') {
+            const itemAffinity = item.affinity || 'neutral';
+            if (itemAffinity !== activeAffinity) return false;
+        }
+
+        // Search filter (within active affinity)
         if (searchQuery && !item.name.toLowerCase().includes(searchQuery.toLowerCase())) {
             return false;
         }
@@ -102,24 +109,54 @@ export const ArmorStore = ({ onClose }: Props) => {
         }
 
         return true;
+    }).sort((a, b) => {
+        const itemA = ITEM_DATABASE[a];
+        const itemB = ITEM_DATABASE[b];
+        return (itemA?.cost.gold || 0) - (itemB?.cost.gold || 0);
     });
 
+    const AFFINITY_TABS = [
+        { id: 'all', label: 'All', icon: '' },
+        { id: 'fire', label: 'Fire', icon: '🔥' },
+        { id: 'ice', label: 'Ice', icon: '❄️' },
+        { id: 'shadow', label: 'Shadow', icon: '🌑' },
+        { id: 'economy', label: 'Economy', icon: '💰' },
+        { id: 'luck', label: 'Luck', icon: '🍀' },
+        { id: 'neutral', label: 'Neutral', icon: '🛡️' },
+    ] as const;
+
     const topBar = (
-        <div className="store-search-bar">
-            <Search size={18} className="search-icon" />
-            <input
-                type="text"
-                placeholder="Search armor..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="store-search-input"
-            />
-            <button
-                className="mobile-filter-toggle mobile-only"
-                onClick={() => setShowMobileFilters(!showMobileFilters)}
-            >
-                <Filter size={18} />
-            </button>
+        <div className="store-search-bar" style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', width: '100%' }}>
+            <div style={{ display: 'flex', width: '100%', gap: '0.5rem' }}>
+                <Search size={18} className="search-icon" />
+                <input
+                    type="text"
+                    placeholder="Search armor..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="store-search-input"
+                />
+                <button
+                    className="mobile-filter-toggle mobile-only"
+                    onClick={() => setShowMobileFilters(!showMobileFilters)}
+                >
+                    <Filter size={18} />
+                </button>
+            </div>
+            {/* Affinity Tabs - Horizontal Scroll */}
+            <div className="affinity-tabs-scroll" style={{ display: 'flex', gap: '0.5rem', overflowX: 'auto', paddingBottom: '0.25rem', scrollbarWidth: 'none' }}>
+                {AFFINITY_TABS.map(tab => (
+                    <button
+                        key={tab.id}
+                        className={`filter-tab ${activeAffinity === tab.id ? 'active' : ''}`}
+                        style={{ whiteSpace: 'nowrap', display: 'flex', alignItems: 'center', gap: '0.25rem' }}
+                        onClick={() => setActiveAffinity(tab.id as any)}
+                    >
+                        {tab.icon && <span>{tab.icon}</span>}
+                        {tab.label}
+                    </button>
+                ))}
+            </div>
         </div>
     );
 

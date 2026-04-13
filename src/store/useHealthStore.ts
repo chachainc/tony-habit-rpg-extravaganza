@@ -36,6 +36,13 @@ export interface ProgressPhoto {
     dataUrl: string; // base64
 }
 
+export interface MealPhoto {
+    id: string;
+    date: string;
+    dataUrl: string;
+    note?: string;
+}
+
 // ── Helpers ────────────────────────────────────────────────────
 
 const getEasternDateString = (d: Date = new Date()): string => {
@@ -72,6 +79,7 @@ interface HealthState {
     weightLogs: WeightEntry[];
     foodLogs: FoodEntry[];
     progressPhotos: ProgressPhoto[];
+    mealPhotos: MealPhoto[];
     photoRewardLastClaimDate: string | null;
 
     // Weight Actions
@@ -94,6 +102,11 @@ interface HealthState {
     getAllPhotos: () => ProgressPhoto[];
     deletePhoto: (id: string) => void;
     setPhotoRewardClaimDate: (date: string) => void;
+
+    // Meal Photo Actions
+    addMealPhoto: (dataUrl: string, note?: string) => void;
+    getAllMealPhotos: () => MealPhoto[];
+    deleteMealPhoto: (id: string) => void;
 }
 
 export const useHealthStore = create<HealthState>()(
@@ -102,6 +115,7 @@ export const useHealthStore = create<HealthState>()(
             weightLogs: [],
             foodLogs: [],
             progressPhotos: [],
+            mealPhotos: [],
             photoRewardLastClaimDate: null,
             // ── Weight ────────────────────────────────────────
 
@@ -289,6 +303,32 @@ export const useHealthStore = create<HealthState>()(
 
             setPhotoRewardClaimDate: (date: string) => {
                 set({ photoRewardLastClaimDate: date });
+            },
+
+            // ── Meal Photos ──────────────────────────────────────────────
+
+            addMealPhoto: (dataUrl: string, note?: string) => {
+                const date = getEasternDateString();
+                const id = `meal-${date}-${Date.now()}`;
+                
+                // Keep only a sane number of meal photos to prevent total storage collapse,
+                // perhaps trimming old ones later if necessary, but for now just add it.
+                set((state) => ({
+                    mealPhotos: [
+                        { id, date, dataUrl, note },
+                        ...state.mealPhotos,
+                    ]
+                }));
+            },
+
+            getAllMealPhotos: () => {
+                return [...get().mealPhotos].sort((a, b) => b.date.localeCompare(a.date));
+            },
+
+            deleteMealPhoto: (id: string) => {
+                set((state) => ({
+                    mealPhotos: state.mealPhotos.filter((p) => p.id !== id),
+                }));
             },
         }),
         {

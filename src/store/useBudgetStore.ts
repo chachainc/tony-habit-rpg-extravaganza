@@ -52,12 +52,11 @@ export interface Transaction {
 }
 
 interface BudgetState {
-    weeklyBudget: number | null;
+    budget: { amount: number, weekId: string } | null;
     weeklyGiftType: GiftCurrency | null;
     transactions: Transaction[];
-    weekStartDate: string | null;
     lastLoginDate: string | null;
-    lastDailyGiftDate: string | null;
+    lastBudgetGiftClaimDate: string | null;
     trackingStreak: number;
 
     // New: Quick presets
@@ -73,8 +72,18 @@ interface BudgetState {
     forceShowSetup: boolean;
     dismissedPromptWeek: string | null;
 
+    // New: Money Tracking Rewards
+    rewardedMoneyLogCountToday: number;
+    moneyTrackingGoldEarnedToday: number;
+    zeroSpendClaimedToday: boolean;
+    lastMoneyTrackingResetDate: string | null;
+
+    // Credit Card Bill Day
+    creditCardResetDay: number | null;
+
     // Actions
     setupWeek: (budget: number, giftType: GiftCurrency) => void;
+    setCreditCardResetDay: (day: number | null) => void;
     addTransaction: (amount: number, label: string, category?: BudgetCategory) => void;
     removeTransaction: (id: string) => void;
     checkAndResetWeek: () => void;
@@ -91,10 +100,12 @@ interface BudgetState {
     getPowerMultiplier: () => number;
     getDailyGiftTier: () => { tier: number, requiredSpent: [number, number], giftAmount: number } | null;
     getStreakMultiplier: () => number;
+    checkMoneyTrackingReset: () => void;
+    getMoneyTrackingRewardEligibility: (amount: number) => { eligible: boolean, reason?: string, rewardAmount: number };
 }
 
 // Helpers
-const getEasternDateString = (): string => {
+export const getEasternDateString = (): string => {
     const now = new Date();
     const eastern = new Intl.DateTimeFormat('en-US', {
         timeZone: 'America/New_York',
@@ -106,50 +117,75 @@ const getEasternDateString = (): string => {
     return `${year}-${month}-${day}`;
 };
 
-const getWeekStart = (): string => {
+export const getCurrentWeekId = (): string => {
     const now = new Date();
-    const eastern = new Date(now.toLocaleString('en-US', { timeZone: 'America/New_York' }));
-    const day = eastern.getDay();
-    const diff = eastern.getDate() - day; // 0 = Sunday
-    const sunday = new Date(eastern.setDate(diff));
-    return sunday.toISOString().split('T')[0];
+    // Force to UTC to avoid timezone jumping daily
+    const d = new Date(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate()));
+    // Week starts on Monday
+    const dayNum = d.getUTCDay() || 7;
+    d.setUTCDate(d.getUTCDate() + 4 - dayNum);
+    const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
+    const weekNo = Math.ceil((((d.getTime() - yearStart.getTime()) / 86400000) + 1) / 7);
+    return `${d.getUTCFullYear()}-W${weekNo}`;
 };
 
 export const useBudgetStore = create<BudgetState>()(
     persist(
         (set, get) => ({
-            weeklyBudget: null,
+            budget: null,
             weeklyGiftType: null,
             transactions: [],
-            weekStartDate: null,
             lastLoginDate: null,
-            lastDailyGiftDate: null,
+            lastBudgetGiftClaimDate: null,
             trackingStreak: 0,
             quickPresets: DEFAULT_PRESETS,
             weeklyStreak: 0,
             weekHistory: [],
             forceShowSetup: false,
             dismissedPromptWeek: null,
+            rewardedMoneyLogCountToday: 0,
+            moneyTrackingGoldEarnedToday: 0,
+            zeroSpendClaimedToday: false,
+            lastMoneyTrackingResetDate: null,
+            creditCardResetDay: null,
 
-            setupWeek: (budget, giftType) => {
+            setCreditCardResetDay: (day) => set({ creditCardResetDay: day }),
+
+            setupWeek: (amount, giftType) => {
                 set({
-                    weeklyBudget: budget,
+                    budget: { amount, weekId: getCurrentWeekId() },
                     weeklyGiftType: giftType,
                     transactions: [],
-                    weekStartDate: getWeekStart(),
                     forceShowSetup: false,
                 });
             },
 
             addTransaction: (amount, label, category = 'other') => {
-                const newTx: Transaction = {
-                    id: safeUUID(),
-                    amount,
-                    label,
-                    date: getEasternDateString(),
-                    category,
-                };
-                set(state => ({ transactions: [newTx, ...state.transactions] }));
+                const { eligible, rewardAmount, reason } = get().getMoneyTrackingRewardEligibility(amount);
+
+                if (eligible) {
+                    import('./useCurrencyStore').then(m => m.useCurrencyStore.getState().addGold(rewardAmount));
+                    import('../components/ui/Toast').then(m => m.useToastStore.getState().addToast({ type: 'success', message: `+${rewardAmount} Gold`, duration: 3000 }));
+                    
+                    set(state => ({
+                        rewardedMoneyLogCountToday: amount > 0 ? state.rewardedMoneyLogCountToday + 1 : state.rewardedMoneyLogCountToday,
+                        moneyTrackingGoldEarnedToday: state.moneyTrackingGoldEarnedToday + rewardAmount,
+                        zeroSpendClaimedToday: amount === 0 ? true : state.zeroSpendClaimedToday,
+                    }));
+                } else if (reason) {
+                    import('../components/ui/Toast').then(m => m.useToastStore.getState().addToast({ type: 'warning', message: reason, duration: 3000 }));
+                }
+
+                if (amount > 0) {
+                    const newTx: Transaction = {
+                        id: safeUUID(),
+                        amount,
+                        label,
+                        date: getEasternDateString(),
+                        category,
+                    };
+                    set(state => ({ transactions: [newTx, ...state.transactions] }));
+                }
             },
 
             removeTransaction: (id) => {
@@ -174,19 +210,19 @@ export const useBudgetStore = create<BudgetState>()(
             },
 
             setForceShowSetup: (show) => set({ forceShowSetup: show }),
-            dismissPrompt: () => set({ dismissedPromptWeek: getWeekStart(), forceShowSetup: false }),
+            dismissPrompt: () => set({ dismissedPromptWeek: getCurrentWeekId(), forceShowSetup: false }),
 
             checkAndResetWeek: () => {
-                const { weekStartDate, weeklyBudget, weeklyStreak, weekHistory } = get();
-                const currentWeek = getWeekStart();
-                if (weeklyBudget !== null && weekStartDate !== currentWeek) {
+                const { budget, weeklyStreak, weekHistory } = get();
+                const currentWeek = getCurrentWeekId();
+                if (budget !== null && budget.weekId !== currentWeek) {
                     const spent = get().getTotalSpent();
-                    const underBudget = spent <= weeklyBudget;
+                    const underBudget = spent <= budget.amount;
 
                     // Record history (keep last 8 weeks)
                     const newRecord: WeekRecord = {
-                        weekStart: weekStartDate || currentWeek,
-                        budget: weeklyBudget,
+                        weekStart: budget.weekId,
+                        budget: budget.amount,
                         spent,
                         underBudget,
                         streakAtTime: weeklyStreak,
@@ -201,7 +237,7 @@ export const useBudgetStore = create<BudgetState>()(
                         if (giftType) {
                             // Streak multiplier: 1 + streak * 0.5 (capped at 4x)
                             const streakMul = Math.min(4, 1 + newStreak * 0.5);
-                            const baseAmount = spent <= (weeklyBudget / 2) ? 20 : 10;
+                            const baseAmount = spent <= (budget.amount / 2) ? 20 : 10;
                             let amount = Math.floor(baseAmount * streakMul);
 
                             if (giftType === 'sigils') {
@@ -234,10 +270,9 @@ export const useBudgetStore = create<BudgetState>()(
 
                     // Reset for the new week
                     set({
-                        weeklyBudget: null,
+                        budget: null,
                         weeklyGiftType: null,
                         transactions: [],
-                        weekStartDate: null,
                         weeklyStreak: newStreak,
                         weekHistory: newHistory,
                     });
@@ -247,12 +282,12 @@ export const useBudgetStore = create<BudgetState>()(
             processDailyLogin: () => {
                 get().checkAndResetWeek();
 
-                const { weeklyBudget, weeklyGiftType, lastDailyGiftDate } = get();
+                const { budget, weeklyGiftType, lastBudgetGiftClaimDate } = get();
                 const today = getEasternDateString();
 
-                if (!weeklyBudget || !weeklyGiftType) return;
+                if (!budget || !weeklyGiftType) return;
 
-                if (lastDailyGiftDate === today) return;
+                if (lastBudgetGiftClaimDate === today) return;
 
                 const tierInfo = get().getDailyGiftTier();
                 if (tierInfo && tierInfo.giftAmount > 0) {
@@ -279,7 +314,7 @@ export const useBudgetStore = create<BudgetState>()(
                     });
                 }
 
-                set({ lastDailyGiftDate: today, lastLoginDate: today });
+                set({ lastBudgetGiftClaimDate: today, lastLoginDate: today });
             },
 
             getTotalSpent: () => {
@@ -299,11 +334,11 @@ export const useBudgetStore = create<BudgetState>()(
             },
 
             getPowerMultiplier: () => {
-                const { weeklyBudget } = get();
-                if (!weeklyBudget) return 1.0;
+                const { budget } = get();
+                if (!budget) return 1.0;
 
                 const spent = get().getTotalSpent();
-                let multiplier = 1.5 - (spent / weeklyBudget);
+                let multiplier = 1.5 - (spent / budget.amount);
                 
                 return Math.max(0.75, Math.min(1.5, multiplier));
             },
@@ -312,20 +347,62 @@ export const useBudgetStore = create<BudgetState>()(
                 return Math.min(4, 1 + get().weeklyStreak * 0.5);
             },
 
+            checkMoneyTrackingReset: () => {
+                const today = getEasternDateString();
+                if (get().lastMoneyTrackingResetDate !== today) {
+                    set({
+                        lastMoneyTrackingResetDate: today,
+                        rewardedMoneyLogCountToday: 0,
+                        moneyTrackingGoldEarnedToday: 0,
+                        zeroSpendClaimedToday: false,
+                    });
+                }
+            },
+
+            getMoneyTrackingRewardEligibility: (amount: number) => {
+                get().checkMoneyTrackingReset();
+                const state = get();
+
+                if (state.zeroSpendClaimedToday) {
+                    return { eligible: false, reason: 'You already claimed the $0 daily bonus.', rewardAmount: 0 };
+                }
+
+                if (state.moneyTrackingGoldEarnedToday >= 100) {
+                    return { eligible: false, reason: 'Daily money tracking reward max reached.', rewardAmount: 0 };
+                }
+
+                if (amount === 0) {
+                    if (state.rewardedMoneyLogCountToday > 0) {
+                        return { eligible: false, reason: 'You already logged spending today, so the $0 daily bonus is unavailable.', rewardAmount: 0 };
+                    }
+                    return { eligible: true, rewardAmount: 100 };
+                }
+
+                if (amount > 0) {
+                    if (state.rewardedMoneyLogCountToday >= 5) {
+                        return { eligible: false, reason: 'Money tracking tasks maxed out for today (5/5).', rewardAmount: 0 };
+                    }
+                    return { eligible: true, rewardAmount: 20 };
+                }
+
+                return { eligible: false, rewardAmount: 0 };
+            },
+
             getDailyGiftTier: () => {
-                const { weeklyBudget } = get();
-                if (!weeklyBudget) return null;
+                const { budget } = get();
+                if (!budget) return null;
 
                 const spent = get().getTotalSpent();
-                const ratio = spent / weeklyBudget;
+                const amt = budget.amount;
+                const ratio = spent / amt;
 
-                if (ratio <= 0.20) return { tier: 5, requiredSpent: [0, weeklyBudget * 0.20], giftAmount: 5 };
-                if (ratio <= 0.40) return { tier: 4, requiredSpent: [weeklyBudget * 0.20, weeklyBudget * 0.40], giftAmount: 4 };
-                if (ratio <= 0.60) return { tier: 3, requiredSpent: [weeklyBudget * 0.40, weeklyBudget * 0.60], giftAmount: 3 };
-                if (ratio <= 0.80) return { tier: 2, requiredSpent: [weeklyBudget * 0.60, weeklyBudget * 0.80], giftAmount: 2 };
-                if (ratio <= 1.00) return { tier: 1, requiredSpent: [weeklyBudget * 0.80, weeklyBudget], giftAmount: 1 };
+                if (ratio <= 0.20) return { tier: 5, requiredSpent: [0, amt * 0.20], giftAmount: 5 };
+                if (ratio <= 0.40) return { tier: 4, requiredSpent: [amt * 0.20, amt * 0.40], giftAmount: 4 };
+                if (ratio <= 0.60) return { tier: 3, requiredSpent: [amt * 0.40, amt * 0.60], giftAmount: 3 };
+                if (ratio <= 0.80) return { tier: 2, requiredSpent: [amt * 0.60, amt * 0.80], giftAmount: 2 };
+                if (ratio <= 1.00) return { tier: 1, requiredSpent: [amt * 0.80, amt], giftAmount: 1 };
                 
-                return { tier: 0, requiredSpent: [weeklyBudget, Infinity], giftAmount: 0 };
+                return { tier: 0, requiredSpent: [amt, Infinity], giftAmount: 0 };
             }
         }),
         {

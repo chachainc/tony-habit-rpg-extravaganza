@@ -51,14 +51,14 @@ export function mergeExternalPets(hardcodedPets: Record<string, PetDefinition>):
                 obtainMethod: item.source || 'unknown',
                 passive: {
                     name: 'Bonus Gold',
-                    description: `+${item.effectValue || 0} bonus`,
-                    effectType: 'bonus_gold',
+                    description: `+${item.effectValue || 0}% bonus`,
+                    type: 'gold_percent',
                     value: item.effectValue || 0,
                 }
             };
 
             if (item.effectType === 'gold_gain') {
-                petInfo.passive.effectType = 'bonus_gold';
+                petInfo.passive.type = 'gold_percent';
                 petInfo.passive.value = item.effectValue || 0;
             }
 

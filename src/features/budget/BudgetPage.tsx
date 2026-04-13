@@ -1,14 +1,14 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { DollarSign, Zap, Gift, History, PlusCircle, Trash2, TrendingDown, Flame, Clock } from 'lucide-react';
 import { Panel } from '../../components/ui/Panel';
-import { useBudgetStore, BUDGET_CATEGORIES, type Transaction, type BudgetCategory } from '../../store/useBudgetStore';
+import { useBudgetStore, BUDGET_CATEGORIES, getEasternDateString, type Transaction, type BudgetCategory } from '../../store/useBudgetStore';
 import { useToastStore } from '../../components/ui/Toast';
 import './BudgetPage.css';
 
 export const BudgetPage: React.FC = () => {
     const {
-        weeklyBudget,
+        budget,
         weeklyGiftType,
         transactions,
         addTransaction,
@@ -24,9 +24,21 @@ export const BudgetPage: React.FC = () => {
         weekHistory,
         getSpentByCategory,
         setForceShowSetup,
+        processDailyLogin,
+        lastBudgetGiftClaimDate,
+        rewardedMoneyLogCountToday,
+        moneyTrackingGoldEarnedToday,
+        zeroSpendClaimedToday,
+        creditCardResetDay,
+        setCreditCardResetDay,
     } = useBudgetStore();
 
     const { addToast } = useToastStore();
+
+    useEffect(() => {
+        // Trigger claim check safely once page is loaded
+        processDailyLogin();
+    }, [processDailyLogin]);
 
     // ── Transaction form state ───────────────────────────────────────────────
     const [txAmount, setTxAmount] = useState('');
@@ -35,7 +47,7 @@ export const BudgetPage: React.FC = () => {
     const [saveAsQuickAdd, setSaveAsQuickAdd] = useState(false);
 
     // ── No budget guard ──────────────────────────────────────────────────────
-    if (!weeklyBudget) {
+    if (!budget) {
         return (
             <div className="budget-page-container">
                 <Panel variant="glass" padding="lg" className="budget-empty-state">
@@ -72,8 +84,8 @@ export const BudgetPage: React.FC = () => {
     }
 
     const totalSpent = getTotalSpent();
-    const remaining = Math.max(0, weeklyBudget - totalSpent);
-    const progressPercent = Math.min(100, (totalSpent / weeklyBudget) * 100);
+    const remaining = Math.max(0, budget.amount - totalSpent);
+    const progressPercent = Math.min(100, (totalSpent / budget.amount) * 100);
     const powerMultiplier = getPowerMultiplier();
     const dailyTier = getDailyGiftTier();
     const streakMul = getStreakMultiplier();
@@ -101,16 +113,16 @@ export const BudgetPage: React.FC = () => {
             addToast({ message: 'Please enter an item name', type: 'error', duration: 2500 });
             return;
         }
-        if (isNaN(amount) || amount <= 0) {
-            addToast({ message: 'Please enter a valid amount greater than $0', type: 'error', duration: 2500 });
+        if (isNaN(amount) || amount < 0) {
+            addToast({ message: 'Please enter a valid amount 0 or greater', type: 'error', duration: 2500 });
             return;
         }
 
         // Save transaction
         addTransaction(amount, trimmed, txCategory);
 
-        // Save as Quick Add if requested and no duplicate label exists
-        if (saveAsQuickAdd) {
+        // Save as Quick Add if requested and no duplicate label exists, but don't save $0
+        if (saveAsQuickAdd && amount > 0) {
             const isDupe = quickPresets.some(p => p.label.toLowerCase() === trimmed.toLowerCase());
             if (!isDupe) {
                 const cat = BUDGET_CATEGORIES[txCategory];
@@ -136,7 +148,7 @@ export const BudgetPage: React.FC = () => {
         }
     };
 
-    const isFormValid = txLabel.trim().length > 0 && parseFloat(txAmount) > 0;
+    const isFormValid = txLabel.trim().length > 0 && !isNaN(parseFloat(txAmount)) && parseFloat(txAmount) >= 0;
 
     return (
         <div className="budget-page-container fade-in">
@@ -145,7 +157,7 @@ export const BudgetPage: React.FC = () => {
             <div className="budget-header">
                 <h1 className="budget-page-title">
                     <DollarSign size={22} className="budget-title-icon" />
-                    Weekly Budget
+                    Weekly Budget (Resets Monday)
                 </h1>
                 <p className="budget-subtitle">Track spending to maintain combat power &amp; earn daily gifts.</p>
                 <div className="bp-header-meta">
@@ -173,7 +185,7 @@ export const BudgetPage: React.FC = () => {
                     <span className="bp-spent-label">
                         <span className="bp-spent-val">${totalSpent.toFixed(2)}</span>
                         <span className="bp-spent-sep"> / </span>
-                        <span className="bp-budget-total">${weeklyBudget.toFixed(2)}</span>
+                        <span className="bp-budget-total">${budget.amount.toFixed(2)}</span>
                     </span>
                 </div>
                 <div className="bp-progress-track">
@@ -216,6 +228,11 @@ export const BudgetPage: React.FC = () => {
                                     ? `+${dailyTier.giftAmount} ${weeklyGiftType}/day`
                                     : 'No daily gift'}
                             </div>
+                            {lastBudgetGiftClaimDate === getEasternDateString() && (
+                                <div style={{ fontSize: '0.7rem', color: '#10b981', marginTop: '4px', fontWeight: 'bold' }}>
+                                    ✨ Today's gift claimed
+                                </div>
+                            )}
                         </div>
                     </div>
                 </div>
@@ -239,10 +256,28 @@ export const BudgetPage: React.FC = () => {
 
             {/* ══ 5. LOG SPENDING FORM ══════════════════════════════ */}
             <div className="bp-card bp-form-card">
-                <div className="bp-card-title" style={{ marginBottom: '0.75rem' }}>
-                    <PlusCircle size={14} className="bp-card-icon" />
-                    Add Custom Spending
+                <div className="bp-card-title" style={{ marginBottom: '0.75rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
+                    <div>
+                        <PlusCircle size={14} className="bp-card-icon" />
+                        Add Custom Spending
+                    </div>
+                    <div style={{ fontSize: '0.75rem', color: '#64748b', display: 'flex', gap: '0.75rem', fontWeight: 'normal' }}>
+                         <span>Logs: {rewardedMoneyLogCountToday} / 5</span>
+                         <span>Gold: {moneyTrackingGoldEarnedToday} / 100</span>
+                    </div>
                 </div>
+
+                {moneyTrackingGoldEarnedToday >= 100 ? (
+                    <div className="bp-reward-maxed-msg" style={{ fontSize: '0.8rem', color: '#10b981', background: 'rgba(16, 185, 129, 0.1)', padding: '0.5rem', borderRadius: '4px', marginBottom: '1rem', border: '1px solid rgba(16, 185, 129, 0.2)' }}>
+                        🏆 Daily money tracking reward max reached.
+                    </div>
+                ) : (
+                    zeroSpendClaimedToday && (
+                        <div className="bp-reward-maxed-msg" style={{ fontSize: '0.8rem', color: '#10b981', background: 'rgba(16, 185, 129, 0.1)', padding: '0.5rem', borderRadius: '4px', marginBottom: '1rem', border: '1px solid rgba(16, 185, 129, 0.2)' }}>
+                            🏆 You claimed the $0 daily bonus! Reward max reached.
+                        </div>
+                    )
+                )}
 
                 <form onSubmit={handleAddTransaction} className="add-tx-form-inner">
                     {/* Name + Amount row */}
@@ -259,7 +294,7 @@ export const BudgetPage: React.FC = () => {
                             <input
                                 type="number"
                                 step="0.01"
-                                min="0.01"
+                                min="0"
                                 placeholder="0.00"
                                 value={txAmount}
                                 onChange={(e) => setTxAmount(e.target.value)}
@@ -400,6 +435,39 @@ export const BudgetPage: React.FC = () => {
                     <HistoryChart history={weekHistory} />
                 </div>
             )}
+
+            {/* ══ 9. SETTINGS / RESET DAY ═══════════════════════════ */}
+            <div className="bp-card bp-settings-card" style={{ marginTop: '1.5rem' }}>
+                <div className="bp-card-header">
+                    <div className="bp-card-title">
+                        <Clock size={16} className="bp-card-icon" />
+                        Settings
+                    </div>
+                </div>
+                <div className="bp-card-divider" />
+                <div style={{ padding: '1rem', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                    <label style={{ fontSize: '0.9rem', color: '#cbd5e1' }}>Credit Card Bill Reset Day</label>
+                    <input 
+                        type="number" 
+                        min="1" max="31" 
+                        value={creditCardResetDay || ''} 
+                        onChange={(e) => {
+                            const val = parseInt(e.target.value);
+                            if (!isNaN(val) && val >= 1 && val <= 31) {
+                                setCreditCardResetDay(val);
+                            } else if (e.target.value === '') {
+                                setCreditCardResetDay(null);
+                            }
+                        }}
+                        placeholder="1-31"
+                        className="tx-input"
+                        style={{ maxWidth: '100px' }}
+                    />
+                    <div style={{ fontSize: '0.8rem', color: '#94a3b8' }}>
+                        {creditCardResetDay ? `Your credit card bill resets on day ${creditCardResetDay} each month.` : 'Set your credit card bill reset day.'}
+                    </div>
+                </div>
+            </div>
         </div>
     );
 };

@@ -163,6 +163,38 @@ export const ConquestBattle = () => {
                 }).catch(() => { });
             }
 
+            // Weapon Progression & Economy Logging
+            const activeWeaponId = import('../../store/useXpWeaponStore').then(m => m.useXpWeaponStore.getState().equippedWeaponId) || import('../../store/useInventoryStore').then(m => m.useInventoryStore.getState().equipped.weapon);
+            import('../../store/useInventoryStore').then(({ useInventoryStore }) => {
+                 const invState = useInventoryStore.getState();
+                 import('../../store/useXpWeaponStore').then(({ useXpWeaponStore }) => {
+                     const xpWeaponId = useXpWeaponStore.getState().equippedWeaponId;
+                     const weaponId = xpWeaponId || invState.equipped.weapon;
+                     if (weaponId) {
+                          import('../../store/useWeaponProgressionStore').then(({ useWeaponProgressionStore }) => {
+                               useWeaponProgressionStore.getState().incrementMetric(weaponId, 'enemiesKilled', 1);
+                               
+                               if (weaponId === 'golden_ledger') {
+                                    import('../../store/useCurrencyStore').then(({ useCurrencyStore }) => useCurrencyStore.getState().addGold(10));
+                               } else if (weaponId === 'sovereign_ledger') {
+                                    import('../../store/useCurrencyStore').then(({ useCurrencyStore }) => useCurrencyStore.getState().addGold(20));
+                                    const kills = useWeaponProgressionStore.getState().getMetric('sovereign_ledger', 'enemiesKilled') || 0;
+                                    if (kills > 0 && kills % 5 === 0) {
+                                         import('../../store/useCurrencyStore').then(({ useCurrencyStore }) => useCurrencyStore.getState().addGold(100));
+                                         import('../../components/ui/Toast').then(({ useToastStore }) => {
+                                               useToastStore.getState().addToast({
+                                                     type: 'success',
+                                                     message: '👑 Sovereign Ledger Payday! +100 Gold!',
+                                                     duration: 5000,
+                                               });
+                                         });
+                                    }
+                               }
+                          });
+                     }
+                 });
+            });
+
             setShowVictoryModal(true);
         }
         if (battle.phase === 'defeat' || battle.phase === 'escaped') {

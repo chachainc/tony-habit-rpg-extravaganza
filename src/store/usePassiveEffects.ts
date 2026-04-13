@@ -116,8 +116,42 @@ export const getPassiveBonuses = (): PassiveBonuses => {
     const equippedPetId = usePetStore.getState().equippedPetId;
     if (equippedPetId) {
         const petDef = PET_DATABASE[equippedPetId];
-        if (petDef?.passive?.effectType === 'bonus_gold') {
-            bonuses.gold_bonus += petDef.passive.value ?? 0;
+        if (petDef?.passive) {
+            const { type, value } = petDef.passive;
+            if (type === 'flat_atk' && typeof value === 'number') bonuses.attack_bonus += value;
+            if (type === 'flat_def' && typeof value === 'number') bonuses.defense_bonus += value;
+            if (type === 'flat_hp' && typeof value === 'number') bonuses.max_hp_bonus += value;
+            if (type === 'store_discount' && typeof value === 'number') bonuses.gold_multiplier += value;
+            if (type === 'hybrid_defense' && typeof value === 'object') {
+                if (value.defense) bonuses.defense_bonus += Math.floor(bonuses.defense_bonus * (value.defense / 100)) || value.defense;
+                if (value.hp) bonuses.max_hp_bonus += Math.floor(bonuses.max_hp_bonus * (value.hp / 100)) || value.hp;
+            }
+            if (type === 'tank_storm' && typeof value === 'object' && value.defense) {
+                bonuses.defense_bonus += Math.floor(bonuses.defense_bonus * (value.defense / 100)) || value.defense;
+            }
+            if (type === 'combat_all' && typeof value === 'number') {
+                bonuses.attack_bonus += Math.floor(bonuses.attack_bonus * (value / 100)) || value;
+                bonuses.defense_bonus += Math.floor(bonuses.defense_bonus * (value / 100)) || value;
+                bonuses.max_hp_bonus += value;
+            }
+            if (type === 'blazehorn_burn' && typeof value === 'object' && value.atkPct) {
+                bonuses.attack_bonus += Math.floor(bonuses.attack_bonus * (value.atkPct / 100)) || value.atkPct;
+            }
+            if (type === 'frostgrazer_slow' && typeof value === 'object' && value.defPct) {
+                bonuses.defense_bonus += Math.floor(bonuses.defense_bonus * (value.defPct / 100)) || value.defPct;
+            }
+            if (type === 'shadowhoof_lifesteal' && typeof value === 'object' && value.critPct) {
+                bonuses.crit_bonus += value.critPct;
+            }
+            if (type === 'infernohorn_burn' && typeof value === 'object' && value.atkPct) {
+                bonuses.attack_bonus += Math.floor(bonuses.attack_bonus * (value.atkPct / 100)) || value.atkPct;
+            }
+            if (type === 'glacierhoof_freeze' && typeof value === 'object' && value.defPct) {
+                bonuses.defense_bonus += Math.floor(bonuses.defense_bonus * (value.defPct / 100)) || value.defPct;
+            }
+            if (type === 'jackpot_multiplier' && typeof value === 'object' && value.critPct) {
+                bonuses.crit_bonus += value.critPct;
+            }
         }
     }
 

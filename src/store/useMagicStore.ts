@@ -4,12 +4,18 @@ import { useGameStore } from './useGameStore';
 import { useCurrencyStore } from './useCurrencyStore';
 import { useBookTrophyStore } from './useBookTrophyStore';
 import { PERSIST_REGISTRY } from '../data/persistRegistry';
+import type { AffinityType } from './useAffinitySystem';
+
+import frostboltImg from '../assets/magic/ice/frostbolt.jpg';
+import glacialPrisonImg from '../assets/magic/ice/glacial_prison.jpg';
+import absoluteZeroImg from '../assets/magic/ice/absolute_zero.jpg';
 
 // Spell definitions
 export interface Spell {
     id: string;
     name: string;
     icon: string;
+    image?: string; // New image support for spells
     description: string;
     goldCost: number;
     mpCost: number;
@@ -23,11 +29,12 @@ export interface Spell {
     /** Turns this spell is on cooldown after being cast (0 = no cooldown) */
     cooldownTurns?: number;
     effect: {
-        type: 'heal' | 'damage' | 'shield';
+        type: 'heal' | 'damage' | 'shield' | 'buff';
         value: number; // % for heal, multiplier for damage (old spells), baseDamage for new spells, turns for shield
         element?: 'fire' | 'ice' | 'lightning' | 'cosmic' | 'neutral';
         dot?: { damage: number; turns: number };
     };
+    affinity?: AffinityType;
 }
 
 export const SPELL_DB: Record<string, Spell> = {
@@ -73,6 +80,49 @@ export const SPELL_DB: Record<string, Spell> = {
         cooldownTurns: 1,
         effect: { type: 'damage', value: 4, element: 'neutral', dot: { damage: 2, turns: 2 } },
     },
+    'coin_toss': {
+        id: 'coin_toss',
+        name: 'Coin Toss',
+        icon: '🪙',
+        description: 'Flick a coin. Low damage, but a small chance to grant bonus gold post-battle.',
+        goldCost: 200,
+        mpCost: 3,
+        flexibilityTier: 1,
+        tier: 'novice',
+        baseDamage: 2,
+        cooldownTurns: 1,
+        effect: { type: 'damage', value: 2, element: 'neutral' },
+        affinity: 'economy'
+    },
+    'lucky_charm': {
+        id: 'lucky_charm',
+        name: 'Lucky Charm',
+        icon: '🍀',
+        description: 'A temporary blessing increasing crit and jackpot chances slightly.',
+        goldCost: 300,
+        mpCost: 5,
+        flexibilityTier: 1,
+        tier: 'novice',
+        baseDamage: 0,
+        cooldownTurns: 2,
+        effect: { type: 'buff', value: 3, element: 'neutral' },
+        affinity: 'luck'
+    },
+    'ember_spark': {
+        id: 'ember_spark',
+        name: 'Ember Spark',
+        icon: '🔥',
+        description: 'A tiny ember that sparks small flames and applies a light burn.',
+        goldCost: 400,
+        mpCost: 5,
+        flexibilityTier: 1,
+        tier: 'novice',
+        baseDamage: 6,
+        cooldownTurns: 0,
+        effect: { type: 'damage', value: 6, element: 'fire', dot: { damage: 2, turns: 2 } },
+        affinity: 'fire'
+    },
+
 
     // ══════════════════════════════════════════════
     // APPRENTICE SPELLS
@@ -81,7 +131,7 @@ export const SPELL_DB: Record<string, Spell> = {
         id: 'firebolt',
         name: 'Firebolt',
         icon: '🔥',
-        description: 'A bolt of roaring flame.',
+        description: 'A bolt of roaring flame that applies a medium burn. Spreads burn on kill if Fire Synergy is active.',
         goldCost: 600,
         mpCost: 6,
         flexibilityTier: 1,
@@ -89,7 +139,8 @@ export const SPELL_DB: Record<string, Spell> = {
         tier: 'apprentice',
         baseDamage: 10,
         cooldownTurns: 2,
-        effect: { type: 'damage', value: 10, element: 'fire' },
+        effect: { type: 'damage', value: 10, element: 'fire', dot: { damage: 4, turns: 2 } },
+        affinity: 'fire'
     },
     'ice_shard': {
         id: 'ice_shard',
@@ -104,6 +155,7 @@ export const SPELL_DB: Record<string, Spell> = {
         baseDamage: 8,
         cooldownTurns: 2,
         effect: { type: 'damage', value: 8, element: 'ice' },
+        affinity: 'ice'
     },
     'shadow_dart': {
         id: 'shadow_dart',
@@ -118,6 +170,37 @@ export const SPELL_DB: Record<string, Spell> = {
         baseDamage: 9,
         cooldownTurns: 2,
         effect: { type: 'damage', value: 9, element: 'neutral' },
+        affinity: 'shadow'
+    },
+    'firebolt': {
+        id: 'firebolt',
+        name: 'Firebolt',
+        icon: '☄️',
+        description: 'A bolt of concentrated fire magic.',
+        goldCost: 1500,
+        mpCost: 8,
+        flexibilityTier: 1,
+        intelligenceRequired: 4,
+        tier: 'apprentice',
+        baseDamage: 14,
+        cooldownTurns: 1,
+        effect: { type: 'damage', value: 14, element: 'fire' },
+        affinity: 'fire'
+    },
+    'soul_drain': {
+        id: 'soul_drain',
+        name: 'Soul Drain',
+        icon: '👻',
+        description: 'Steals life from the enemy. Bonus heal when under 30% HP.',
+        goldCost: 1200,
+        mpCost: 8,
+        flexibilityTier: 1,
+        intelligenceRequired: 5,
+        tier: 'apprentice',
+        baseDamage: 8,
+        cooldownTurns: 3,
+        effect: { type: 'heal', value: 8, element: 'neutral' },
+        affinity: 'shadow'
     },
 
     // ══════════════════════════════════════════════
@@ -150,6 +233,21 @@ export const SPELL_DB: Record<string, Spell> = {
         baseDamage: 16,
         cooldownTurns: 3,
         effect: { type: 'damage', value: 16, element: 'neutral' },
+    },
+    'inferno_surge': {
+        id: 'inferno_surge',
+        name: 'Inferno Surge',
+        icon: '🌋',
+        description: 'A surge of explosive volcanic energy that applies a devastating burn.',
+        goldCost: 3500,
+        mpCost: 15,
+        flexibilityTier: 3,
+        intelligenceRequired: 8,
+        tier: 'adept',
+        baseDamage: 28,
+        cooldownTurns: 3,
+        effect: { type: 'damage', value: 28, element: 'fire', dot: { damage: 8, turns: 2 } },
+        affinity: 'fire'
     },
     'arcane_spear': {
         id: 'arcane_spear',
@@ -210,6 +308,54 @@ export const SPELL_DB: Record<string, Spell> = {
         baseDamage: 65,
         cooldownTurns: 6,
         effect: { type: 'damage', value: 65, element: 'lightning' },
+    },
+    'frostbolt': {
+        id: 'frostbolt',
+        name: 'Frostbolt',
+        icon: '❄️',
+        image: frostboltImg,
+        description: 'Deal light damage and apply Chill (2 turns).',
+        goldCost: 800,
+        mpCost: 5,
+        flexibilityTier: 1,
+        intelligenceRequired: 3,
+        tier: 'apprentice',
+        baseDamage: 12,
+        cooldownTurns: 1,
+        effect: { type: 'damage', value: 12, element: 'ice' },
+        affinity: 'ice'
+    },
+    'glacial_prison': {
+        id: 'glacial_prison',
+        name: 'Glacial Prison',
+        icon: '🧊',
+        image: glacialPrisonImg,
+        description: 'Deal moderate damage and Freeze target for 1 turn. Freezes for 2 turns if already Chilled.',
+        goldCost: 2500,
+        mpCost: 15,
+        flexibilityTier: 2,
+        intelligenceRequired: 7,
+        tier: 'adept',
+        baseDamage: 22,
+        cooldownTurns: 3,
+        effect: { type: 'damage', value: 22, element: 'ice' },
+        affinity: 'ice'
+    },
+    'absolute_zero': {
+        id: 'absolute_zero',
+        name: 'Absolute Zero',
+        icon: '🥶',
+        image: absoluteZeroImg,
+        description: 'Freeze ALL enemies for 1 turn and deal 15% max HP damage. Triggers shatter logic.',
+        goldCost: 10000,
+        mpCost: 40,
+        flexibilityTier: 5,
+        intelligenceRequired: 15,
+        tier: 'master',
+        baseDamage: 10,
+        cooldownTurns: 6,
+        effect: { type: 'damage', value: 10, element: 'ice' },
+        affinity: 'ice'
     },
 
     // ══════════════════════════════════════════════

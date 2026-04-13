@@ -13,13 +13,20 @@ export interface TaskReward {
 
 export type TaskCategory = 'health' | 'hygiene' | 'fitness' | 'work' | 'lifestyle';
 
+export type RecurrenceType = 'one-time' | 'daily' | 'weekly' | 'custom';
+
 export interface RecurringTask {
     id: string;
     title: string;
     bundle?: BundleType;
-    type: 'daily' | 'weekly';
+    recurrenceType: RecurrenceType;
+    activeDays?: number[]; // 0=Sun ... 6=Sat
+    createdAt?: number;
     completed: boolean;
     category?: TaskCategory;
+
+    // Legacy support to be deprecated
+    type?: 'daily' | 'weekly';
 
     // Rewards (for standard tasks)
     rewards: TaskReward[];
@@ -34,6 +41,7 @@ export interface RecurringTask {
 
     // Completion Logic
     requiresInput?: 'weight' | 'training';
+    /** @deprecated Use activeDays instead */
     conditional?: {
         days?: number[]; // 0=Sun, 1=Mon...
     };
@@ -81,7 +89,13 @@ interface RecurringTasksState {
     isWeeklyComplete: () => boolean;
     claimWeeklyBonus: () => void;
 
-    addCustomRecurringTask: (title: string, bundle: BundleType, rewards: TaskReward[]) => void;
+    addCustomRecurringTask: (taskInput: {
+        title: string;
+        bundle: BundleType;
+        rewards: TaskReward[];
+        recurrenceType: RecurrenceType;
+        activeDays?: number[];
+    }) => void;
     removeDailyTask: (id: string) => void;
     editDailyTask: (id: string, newTitle: string) => void;
     moveDailyTask: (taskId: string, targetBundle: BundleType, toIndex: number) => void;
@@ -110,6 +124,17 @@ const getEasternDayOfWeek = (): number => {
     return eastern.getDay();
 };
 
+const upgradeLegacyTask = (task: RecurringTask): RecurringTask => {
+    const updated = { ...task };
+    if (!updated.activeDays && updated.conditional?.days) {
+        updated.activeDays = updated.conditional.days;
+    }
+    if (!updated.recurrenceType && updated.type) {
+        updated.recurrenceType = updated.type;
+    }
+    return updated;
+};
+
 // Get start of week (Sunday) in Eastern Time
 const getWeekStart = (): string => {
     const now = new Date();
@@ -131,6 +156,7 @@ export const DAILY_TASKS_TEMPLATE: Omit<RecurringTask, 'completed'>[] = [
         id: 'brush_and_floss',
         title: 'Brush / Floss / Face Wash',
         bundle: 'morning',
+        recurrenceType: 'daily',
         type: 'daily',
         category: 'hygiene',
         rewards: [{ skillId: 'Hygiene', xp: 3 }],
@@ -139,6 +165,7 @@ export const DAILY_TASKS_TEMPLATE: Omit<RecurringTask, 'completed'>[] = [
         id: 'weigh_self',
         title: 'Weigh Self',
         bundle: 'morning',
+        recurrenceType: 'daily',
         type: 'daily',
         category: 'health',
         requiresInput: 'weight',
@@ -148,6 +175,7 @@ export const DAILY_TASKS_TEMPLATE: Omit<RecurringTask, 'completed'>[] = [
         id: 'water_morning',
         title: 'Drink 30oz Water',
         bundle: 'morning',
+        recurrenceType: 'daily',
         type: 'daily',
         category: 'health',
         rewards: [{ skillId: 'Health', xp: 1 }],
@@ -160,6 +188,7 @@ export const DAILY_TASKS_TEMPLATE: Omit<RecurringTask, 'completed'>[] = [
         id: 'take_supplements',
         title: 'Take Supplements',
         bundle: 'midday',
+        recurrenceType: 'daily',
         type: 'daily',
         category: 'health',
         rewards: [{ skillId: 'Health', xp: 1 }],
@@ -168,6 +197,7 @@ export const DAILY_TASKS_TEMPLATE: Omit<RecurringTask, 'completed'>[] = [
         id: 'inbox_zero',
         title: 'Inbox Zero (Emails + Texts)',
         bundle: 'midday',
+        recurrenceType: 'daily',
         type: 'daily',
         category: 'work',
         rewards: [{ skillId: 'Work', xp: 2 }],
@@ -176,6 +206,7 @@ export const DAILY_TASKS_TEMPLATE: Omit<RecurringTask, 'completed'>[] = [
         id: 'charge_devices',
         title: 'Charge Phone / Oura / Headphones',
         bundle: 'midday',
+        recurrenceType: 'daily',
         type: 'daily',
         category: 'lifestyle',
         rewards: [{ skillId: 'Habit', xp: 1 }],
@@ -184,6 +215,7 @@ export const DAILY_TASKS_TEMPLATE: Omit<RecurringTask, 'completed'>[] = [
         id: 'creatine_fiber',
         title: 'Creatine + 30oz Water + Fiber',
         bundle: 'midday',
+        recurrenceType: 'daily',
         type: 'daily',
         category: 'health',
         rewards: [{ skillId: 'Health', xp: 1 }],
@@ -192,6 +224,7 @@ export const DAILY_TASKS_TEMPLATE: Omit<RecurringTask, 'completed'>[] = [
         id: 'allergy_shots',
         title: 'Allergy Shots (if needed)',
         bundle: 'midday',
+        recurrenceType: 'daily',
         type: 'daily',
         category: 'health',
         rewards: [{ skillId: 'Health', xp: 1 }],
@@ -200,6 +233,7 @@ export const DAILY_TASKS_TEMPLATE: Omit<RecurringTask, 'completed'>[] = [
         id: 'no_coffee',
         title: 'No Coffee After 12pm',
         bundle: 'midday',
+        recurrenceType: 'daily',
         type: 'daily',
         category: 'lifestyle',
         rewards: [{ skillId: 'Habit', xp: 1 }],
@@ -208,6 +242,7 @@ export const DAILY_TASKS_TEMPLATE: Omit<RecurringTask, 'completed'>[] = [
         id: 'complete_work',
         title: 'Complete Work',
         bundle: 'midday',
+        recurrenceType: 'daily',
         type: 'daily',
         category: 'work',
         rewards: [{ skillId: 'Work', xp: 2 }],
@@ -219,6 +254,7 @@ export const DAILY_TASKS_TEMPLATE: Omit<RecurringTask, 'completed'>[] = [
         id: 'tidy_desk',
         title: 'Tidy Desk',
         bundle: 'afternoon',
+        recurrenceType: 'daily',
         type: 'daily',
         category: 'lifestyle',
         rewards: [{ skillId: 'Housemaid', xp: 2 }],
@@ -227,6 +263,7 @@ export const DAILY_TASKS_TEMPLATE: Omit<RecurringTask, 'completed'>[] = [
         id: 'training_session',
         title: 'Training Session',
         bundle: 'afternoon',
+        recurrenceType: 'daily',
         type: 'daily',
         category: 'fitness',
         requiresInput: 'training',
@@ -236,6 +273,7 @@ export const DAILY_TASKS_TEMPLATE: Omit<RecurringTask, 'completed'>[] = [
         id: 'audiobook_30_min',
         title: 'Listen to 30 minutes of audiobook minimum today',
         bundle: 'afternoon',
+        recurrenceType: 'daily',
         type: 'daily',
         category: 'lifestyle',
         rewards: [{ skillId: 'Intelligence', xp: 1 }],
@@ -244,6 +282,7 @@ export const DAILY_TASKS_TEMPLATE: Omit<RecurringTask, 'completed'>[] = [
         id: 'after_work_calls',
         title: 'After-Work Calls or Appointments (if any)',
         bundle: 'afternoon',
+        recurrenceType: 'daily',
         type: 'daily',
         category: 'work',
         rewards: [{ skillId: 'Work', xp: 2 }],
@@ -257,6 +296,7 @@ export const DAILY_TASKS_TEMPLATE: Omit<RecurringTask, 'completed'>[] = [
         id: 'daily_steps',
         title: 'Daily Steps',
         bundle: 'night',
+        recurrenceType: 'daily',
         type: 'daily',
         category: 'fitness',
         rewards: [], // Rewards derived from tiers
@@ -270,6 +310,7 @@ export const DAILY_TASKS_TEMPLATE: Omit<RecurringTask, 'completed'>[] = [
         id: 'water_night',
         title: 'Drink 30oz Water',
         bundle: 'night',
+        recurrenceType: 'daily',
         type: 'daily',
         category: 'health',
         rewards: [{ skillId: 'Health', xp: 1 }],
@@ -278,6 +319,7 @@ export const DAILY_TASKS_TEMPLATE: Omit<RecurringTask, 'completed'>[] = [
         id: 'reach_out_social',
         title: 'Reach out to friends and family and spread positivity',
         bundle: 'night',
+        recurrenceType: 'daily',
         type: 'daily',
         category: 'lifestyle',
         rewards: [{ skillId: 'Social', xp: 5 }],
@@ -286,6 +328,7 @@ export const DAILY_TASKS_TEMPLATE: Omit<RecurringTask, 'completed'>[] = [
         id: 'hip_stretches',
         title: 'Hip Stretches',
         bundle: 'night',
+        recurrenceType: 'daily',
         type: 'daily',
         category: 'fitness',
         rewards: [{ skillId: 'Flexibility', xp: 2 }],
@@ -294,6 +337,7 @@ export const DAILY_TASKS_TEMPLATE: Omit<RecurringTask, 'completed'>[] = [
         id: 'clean_bottles',
         title: 'Clean Water Bottles',
         bundle: 'night',
+        recurrenceType: 'daily',
         type: 'daily',
         category: 'lifestyle',
         rewards: [{ skillId: 'Housemaid', xp: 2 }],
@@ -302,6 +346,7 @@ export const DAILY_TASKS_TEMPLATE: Omit<RecurringTask, 'completed'>[] = [
         id: 'make_bed',
         title: 'Make your bed',
         bundle: 'night',
+        recurrenceType: 'daily',
         type: 'daily',
         category: 'lifestyle',
         rewards: [
@@ -313,6 +358,7 @@ export const DAILY_TASKS_TEMPLATE: Omit<RecurringTask, 'completed'>[] = [
         id: 'laundry_organize',
         title: 'Laundry / Put Away / Organize',
         bundle: 'night',
+        recurrenceType: 'daily',
         type: 'daily',
         category: 'lifestyle',
         rewards: [{ skillId: 'Housemaid', xp: 2 }],
@@ -321,6 +367,7 @@ export const DAILY_TASKS_TEMPLATE: Omit<RecurringTask, 'completed'>[] = [
         id: 'ate_protein_160g',
         title: 'Ate 160+ Grams of Protein',
         bundle: 'night',
+        recurrenceType: 'daily',
         type: 'daily',
         category: 'health',
         rewards: [{ skillId: 'Strength', xp: 2 }],
@@ -329,6 +376,7 @@ export const DAILY_TASKS_TEMPLATE: Omit<RecurringTask, 'completed'>[] = [
         id: 'ate_under_2200_cal',
         title: 'Ate Less Than 2200 Calories',
         bundle: 'night',
+        recurrenceType: 'daily',
         type: 'daily',
         category: 'health',
         rewards: [
@@ -341,6 +389,7 @@ export const DAILY_TASKS_TEMPLATE: Omit<RecurringTask, 'completed'>[] = [
         id: 'check_finances',
         title: 'Check finances + track daily money spent',
         bundle: 'night',
+        recurrenceType: 'daily',
         type: 'daily',
         category: 'work',
         rewards: [{ skillId: 'Habit', xp: 1 }],
@@ -349,6 +398,7 @@ export const DAILY_TASKS_TEMPLATE: Omit<RecurringTask, 'completed'>[] = [
         id: 'night_routine_hygiene',
         title: 'Brush / Floss / Face Wash',
         bundle: 'night',
+        recurrenceType: 'daily',
         type: 'daily',
         category: 'hygiene',
         rewards: [{ skillId: 'Hygiene', xp: 2 }],
@@ -357,6 +407,7 @@ export const DAILY_TASKS_TEMPLATE: Omit<RecurringTask, 'completed'>[] = [
         id: 'take_magnesium',
         title: 'Take Magnesium',
         bundle: 'night',
+        recurrenceType: 'daily',
         type: 'daily',
         category: 'health',
         rewards: [{ skillId: 'Sleep', xp: 1 }],
@@ -365,6 +416,7 @@ export const DAILY_TASKS_TEMPLATE: Omit<RecurringTask, 'completed'>[] = [
         id: 'tongue_exercises',
         title: 'Tongue Exercises',
         bundle: 'night',
+        recurrenceType: 'daily',
         type: 'daily',
         category: 'fitness',
         rewards: [
@@ -377,6 +429,7 @@ export const DAILY_TASKS_TEMPLATE: Omit<RecurringTask, 'completed'>[] = [
         id: 'read_10_min',
         title: 'Read 10 Minutes',
         bundle: 'night',
+        recurrenceType: 'daily',
         type: 'daily',
         category: 'lifestyle',
         rewards: [{ skillId: 'Intelligence', xp: 4 }],
@@ -385,6 +438,7 @@ export const DAILY_TASKS_TEMPLATE: Omit<RecurringTask, 'completed'>[] = [
         id: 'charge_wear_oura',
         title: 'Charge Phone + Wear Oura Ring',
         bundle: 'night',
+        recurrenceType: 'daily',
         type: 'daily',
         category: 'lifestyle',
         rewards: [{ skillId: 'Habit', xp: 1 }],
@@ -393,6 +447,7 @@ export const DAILY_TASKS_TEMPLATE: Omit<RecurringTask, 'completed'>[] = [
         id: 'clean_pillow_cpap',
         title: 'Use CPAP',
         bundle: 'night',
+        recurrenceType: 'daily',
         type: 'daily',
         category: 'health',
         rewards: [{ skillId: 'Sleep', xp: 3 }],
@@ -405,30 +460,35 @@ const WEEKLY_TASKS_TEMPLATE: Omit<RecurringTask, 'completed'>[] = [
     {
         id: 'weekly-bathroom',
         title: 'Deep Clean Bathroom',
+        recurrenceType: 'weekly',
         type: 'weekly',
         rewards: [{ skillId: 'Housemaid', xp: 4 }],
     },
     {
         id: 'weekly-car',
         title: 'Clean Out Car',
+        recurrenceType: 'weekly',
         type: 'weekly',
         rewards: [{ skillId: 'Housemaid', xp: 4 }],
     },
     {
         id: 'weekly-cpap',
         title: 'Deep Clean CPAP Machine',
+        recurrenceType: 'weekly',
         type: 'weekly',
         rewards: [{ skillId: 'Health', xp: 7 }],
     },
     {
         id: 'weekly-pills',
         title: 'Fill Pill Planner',
+        recurrenceType: 'weekly',
         type: 'weekly',
         rewards: [{ skillId: 'Housemaid', xp: 1 }],
     },
     {
         id: 'weekly-vacuum',
         title: 'Vacuum',
+        recurrenceType: 'weekly',
         type: 'weekly',
         rewards: [
             { skillId: 'Hygiene', xp: 1 },
@@ -664,9 +724,10 @@ export const useRecurringTasksStore = create<RecurringTasksState>()(
                 const baseTasks = DAILY_TASKS_TEMPLATE.filter(t => !removedTaskIds.includes(t.id));
 
                 let todaysTasks = [...baseTasks, ...customRecurringTasks]
+                    .map(upgradeLegacyTask)
                     .filter(t => {
-                        if (!t.conditional) return true;
-                        return t.conditional.days?.includes(todayDow);
+                        if (!t.activeDays) return true;
+                        return t.activeDays.includes(todayDow);
                     })
                     .map(t => ({ ...t, completed: false, selectedTier: null }));
 
@@ -711,19 +772,51 @@ export const useRecurringTasksStore = create<RecurringTasksState>()(
                 });
             },
 
-            addCustomRecurringTask: (title, bundle, rewards) => {
+            addCustomRecurringTask: (taskInput) => {
+                const today = getEasternDayOfWeek();
+                let activeDays: number[] | undefined;
+
+                switch (taskInput.recurrenceType) {
+                    case 'daily':
+                        activeDays = [0, 1, 2, 3, 4, 5, 6];
+                        break;
+                    case 'weekly':
+                        activeDays = taskInput.activeDays || [today]; // if single day picked, should be in activeDays
+                        break;
+                    case 'custom':
+                        activeDays = taskInput.activeDays;
+                        break;
+                    case 'one-time':
+                        activeDays = [today];
+                        break;
+                }
+
                 const newTask: RecurringTask = {
                     id: `custom-${safeUUID()}`,
-                    title,
-                    bundle,
+                    title: taskInput.title,
+                    bundle: taskInput.bundle,
                     type: 'daily',
+                    recurrenceType: taskInput.recurrenceType,
+                    activeDays,
                     completed: false,
-                    rewards,
+                    rewards: taskInput.rewards,
+                    createdAt: Date.now()
                 };
-                set(state => ({
-                    customRecurringTasks: [...state.customRecurringTasks, newTask],
-                    dailyTasks: [...state.dailyTasks, newTask]
-                }));
+
+                set(state => {
+                    const newCustomTasks = [...state.customRecurringTasks, newTask];
+                    
+                    // Conditionally inject into UI today if it belongs here
+                    let newDailyTasks = [...state.dailyTasks];
+                    if (!activeDays || activeDays.includes(today)) {
+                        newDailyTasks.push(newTask);
+                    }
+
+                    return {
+                        customRecurringTasks: newCustomTasks,
+                        dailyTasks: newDailyTasks
+                    };
+                });
             },
 
             removeDailyTask: (id) => {

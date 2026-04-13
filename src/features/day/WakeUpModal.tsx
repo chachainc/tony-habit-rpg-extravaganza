@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Sun, Moon, Zap, Calendar, Gift, Flame, Trophy, Scale } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
@@ -364,15 +365,17 @@ export const WakeUpModal = ({ onComplete }: { onComplete: () => void }) => {
             </motion.div>
 
             {/* Check-in reward popup overlay */}
-            <AnimatePresence>
-                {showCheckInReward && checkInReward && (
-                    <motion.div
-                        className="wake-checkin__reward-overlay"
-                        initial={{ scale: 0, opacity: 0 }}
-                        animate={{ scale: 1, opacity: 1 }}
-                        exit={{ scale: 0, opacity: 0 }}
-                    >
-                        <div className="wake-checkin__reward-glow" />
+            {createPortal(
+                <AnimatePresence>
+                    {showCheckInReward && checkInReward && (
+                        <div className="board-reward-overlay">
+                            <motion.div
+                                className="wake-checkin__reward-overlay"
+                                initial={{ scale: 0, opacity: 0 }}
+                                animate={{ scale: 1, opacity: 1 }}
+                                exit={{ scale: 0, opacity: 0 }}
+                            >
+                                <div className="wake-checkin__reward-glow" />
                         <h3>🎉 Reward Claimed!</h3>
                         <div className="wake-checkin__reward-list">
                             <div className="wake-checkin__reward-item">
@@ -402,12 +405,15 @@ export const WakeUpModal = ({ onComplete }: { onComplete: () => void }) => {
                                 </div>
                             )}
                         </div>
-                        <button className="wake-checkin__reward-continue" onClick={handleCheckInRewardContinue}>
-                            Continue
-                        </button>
-                    </motion.div>
-                )}
-            </AnimatePresence>
+                                <button className="wake-checkin__skip" onClick={handleCheckInRewardContinue}>
+                                    Continue →
+                                </button>
+                            </motion.div>
+                        </div>
+                    )}
+                </AnimatePresence>,
+                document.body
+            )}
         </div>
     );
 };

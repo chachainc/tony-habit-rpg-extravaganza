@@ -400,11 +400,51 @@ export const Arena = ({ onClose }: { onClose: () => void }) => {
                     const streakCount = useCampaignStore.getState().currentStreak;
                     const streakMultiplier = 1.0 + (Math.min(streakCount, 10) * 0.05);
 
-                    const totalGold = Math.floor((Math.round(enemyDef.goldReward * scaling) + passives.gold_bonus) * streakMultiplier);
-                    const totalXp = Math.floor(Math.round(enemyDef.xpReward * scaling) * streakMultiplier);
+                    let totalGold = Math.floor((Math.round(enemyDef.goldReward * scaling) + passives.gold_bonus) * streakMultiplier);
+
+                    // ECONOMY WEAPON LOGIC
+                    const activeWeaponId = import('../../store/useXpWeaponStore').then(m => m.useXpWeaponStore.getState().equippedWeaponId) || import('../../store/useInventoryStore').then(m => m.useInventoryStore.getState().equipped.weapon);
+                    // Safe synchronous version:
+                    // Wait, we are in a component so we can just use the stores synchronously.
+                    const invState = useInventoryStore.getState();
+                    const xpWeaponId = useXpWeaponStore.getState().equippedWeaponId;
+                    const weaponId = xpWeaponId || invState.equipped.weapon;
+                    const petDef = usePetStore.getState().getEquippedPetDef();
+                    const isEconomyPet = petDef?.affinity === 'economy';
+                    
+                    if (weaponId === 'golden_ledger') {
+                        totalGold = Math.floor(totalGold * 1.15) + 10;
+                        if (Math.random() < (isEconomyPet ? 0.20 : 0.10)) totalGold *= 2;
+                    } else if (weaponId === 'sovereign_ledger') {
+                        totalGold = Math.floor(totalGold * 1.15) + 20;
+                        if (Math.random() < (isEconomyPet ? 0.35 : 0.25)) totalGold *= 2;
+                    }
+
+                    // XP blocked natively from combat systems per Phase 8 design
+                    console.warn("Blocked XP reward from combat system.");
 
                     addGold(totalGold);
-                    useGameStore.getState().addGlobalXp(totalXp);
+
+                    // Weapon Progression Tracking
+                    if (weaponId) {
+                         import('../../store/useWeaponProgressionStore').then(({ useWeaponProgressionStore }) => {
+                              useWeaponProgressionStore.getState().incrementMetric(weaponId, 'enemiesKilled', 1);
+                              
+                              if (weaponId === 'sovereign_ledger') {
+                                   const kills = useWeaponProgressionStore.getState().getMetric('sovereign_ledger', 'enemiesKilled') || 0;
+                                   if (kills > 0 && kills % 5 === 0) {
+                                        addGold(100);
+                                        import('../../components/ui/Toast').then(({ useToastStore }) => {
+                                              useToastStore.getState().addToast({
+                                                    type: 'success',
+                                                    message: '👑 Sovereign Ledger Payday! +100 Gold!',
+                                                    duration: 5000,
+                                              });
+                                        });
+                                   }
+                              }
+                         });
+                    }
 
                     // Mark this specific enemy as cleared (sequential progression)
                     markEnemyCleared(enemy.id);

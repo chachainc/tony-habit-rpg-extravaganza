@@ -41,11 +41,11 @@ const REWARD_OPTIONS: RewardOption[] = [
 ];
 
 export const BudgetSetupModal: React.FC = () => {
-    const { setupWeek, weeklyBudget, forceShowSetup, dismissedPromptWeek, dismissPrompt } = useBudgetStore();
+    const { setupWeek, budget, forceShowSetup, dismissedPromptWeek, dismissPrompt } = useBudgetStore();
     const [budgetAmount, setBudgetAmount] = useState<string>('');
     const [rewardType, setRewardType] = useState<GiftCurrency | null>(null);
 
-    if (weeklyBudget !== null && !forceShowSetup) return null;
+    if (budget !== null && !forceShowSetup) return null;
 
     // Determine current day and week
     const now = new Date();

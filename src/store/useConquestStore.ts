@@ -360,7 +360,35 @@ export const useConquestStore = create<ConquestState>()(
             runHistory: [],
             dailyTickets: 0,
 
-            addSigils: (amount) => set(s => ({ sigils: s.sigils + amount })),
+            addSigils: (amount) => {
+                if (amount > 0) {
+                    import('./usePetStore').then(({ usePetStore }) => {
+                        let total = amount;
+                        const petDef = usePetStore.getState().getEquippedPetDef();
+                        
+                        if (petDef?.passive?.type === 'jackpot_multiplier' && typeof petDef.passive.value === 'object') {
+                            const chance = petDef.passive.value.rewardMultiplierChance || 12;
+                            if (Math.random() * 100 < chance) {
+                                total *= (petDef.passive.value.rewardMultiplier || 3);
+                                import('../components/ui/Toast').then(({ useToastStore }) => {
+                                    useToastStore.getState().addToast({ message: '🎰 JACKPOT! Sigils MULTIPLIED!', type: 'success' });
+                                });
+                            }
+                        }
+
+                        if (petDef?.passive?.type === 'treasure_hoof' && typeof petDef.passive.value === 'object') {
+                            if (Math.random() < ((petDef.passive.value.chanceExtraCurrency || 0) / 100)) {
+                                total += 1;
+                            }
+                        }
+                        set(s => ({ sigils: s.sigils + total }));
+                    }).catch(() => {
+                        set(s => ({ sigils: s.sigils + amount }));
+                    });
+                } else {
+                    set(s => ({ sigils: s.sigils + amount }));
+                }
+            },
 
             spendSigils: (amount) => {
                 const { sigils } = get();

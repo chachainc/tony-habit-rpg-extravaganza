@@ -1,5 +1,5 @@
 import { NavLink } from 'react-router-dom';
-import { House, CheckSquare, BarChart2, Settings, Gamepad2, User, Store } from 'lucide-react';
+import { House, CheckSquare, BarChart2, Settings, Gamepad2, User, Store, HeartPulse } from 'lucide-react';
 import './Sidebar.css';
 
 const NAV_ITEMS = [
@@ -9,6 +9,7 @@ const NAV_ITEMS = [
     { icon: Gamepad2, label: 'Games', path: '/combat' },
     { icon: User, label: 'Character', path: '/character' },
     { icon: BarChart2, label: 'Stats', path: '/stats' },
+    { icon: HeartPulse, label: 'Health', path: '/health' },
     { icon: Settings, label: 'Settings', path: '/settings' },
 ];
 
