@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ArrowLeft, Dumbbell, Plus, RotateCcw, ClipboardList } from 'lucide-react';
+import { ArrowLeft, Dumbbell, Plus, RotateCcw, ClipboardList, Activity } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import {
     type MuscleGroup,
@@ -14,9 +14,11 @@ import {
 import { DailyLog } from './DailyLog';
 import { DateNavigator } from './DateNavigator';
 import { WorkoutLog } from './WorkoutLog';
+import { TemplateWorkoutLog } from './TemplateWorkoutLog';
+import { CardioWorkoutLog } from './CardioWorkoutLog';
 import './GymTracker.css';
 
-type View = 'hub' | 'track' | 'track-muscle' | 'load-preview' | 'log';
+type View = 'hub' | 'track' | 'track-muscle' | 'load-preview' | 'log' | 'template' | 'cardio';
 
 // Muscle group gradient colors — shared across views
 export const MUSCLE_COLORS: Record<MuscleGroup, string> = {
@@ -39,7 +41,7 @@ export const MUSCLE_ICONS: Record<MuscleGroup, string> = {
 
 export const GymTracker = () => {
     const navigate = useNavigate();
-    const exercises = useGymStore(s => s.exercises);
+    const { exercises, activeTemplateId, initializeTemplateWorkout } = useGymStore();
 
     const [view, setView] = useState<View>('hub');
     const [selectedMuscle, setSelectedMuscle] = useState<MuscleGroup | null>(null);
@@ -82,6 +84,15 @@ export const GymTracker = () => {
         setSelectedDate(getLocalDateString());
         setView('hub'); // triggers DailyLog render below
     };
+
+    // ── If there is an active template session, render TemplateLog ────────────────
+    if (view === 'template' && activeTemplateId) {
+        return <TemplateWorkoutLog templateId={activeTemplateId} onClose={() => setView('hub')} />;
+    }
+
+    if (view === 'cardio') {
+        return <CardioWorkoutLog onClose={() => setView('hub')} />;
+    }
 
     // ── If a muscle is selected → show DailyLog ───────────────────────────
     if (selectedMuscle) {
@@ -334,6 +345,15 @@ export const GymTracker = () => {
             shadow: 'rgba(16,185,129,0.35)',
             onClick: () => setView('log'),
         },
+        {
+            id: 'cardio',
+            label: 'Cardio Workout',
+            sub: 'Timed session & XP',
+            icon: <Activity size={36} />,
+            gradient: 'linear-gradient(135deg, #ec4899, #db2777)',
+            shadow: 'rgba(236,72,153,0.35)',
+            onClick: () => setView('cardio'),
+        },
     ];
 
     return (
@@ -369,6 +389,53 @@ export const GymTracker = () => {
                         </div>
                     </motion.button>
                 ))}
+            </div>
+
+            <div className="gym-templates-section" style={{ marginTop: '2rem' }}>
+                <h3 style={{ marginBottom: '1rem', color: 'var(--text-strong)' }}>Active Templates</h3>
+                <div className="gym-hub-cards">
+                    <motion.button
+                        className="gym-hub-card"
+                        style={{ background: 'linear-gradient(135deg, #ef4444, #b91c1c)', boxShadow: `0 6px 28px rgba(239,68,68,0.35)` }}
+                        onClick={() => initializeTemplateWorkout('day1')}
+                        whileHover={{ scale: 1.025, y: -2 }}
+                        whileTap={{ scale: 0.97 }}
+                    >
+                        <div className="gym-hub-card__icon">🟥</div>
+                        <div className="gym-hub-card__text">
+                            <span className="gym-hub-card__label">Workout Template Day 1</span>
+                            <span className="gym-hub-card__sub">Push Focus (Chest/Shoulders/Triceps)</span>
+                        </div>
+                    </motion.button>
+
+                    <motion.button
+                        className="gym-hub-card"
+                        style={{ background: 'linear-gradient(135deg, #3b82f6, #1d4ed8)', boxShadow: `0 6px 28px rgba(59,130,246,0.35)` }}
+                        onClick={() => initializeTemplateWorkout('day2')}
+                        whileHover={{ scale: 1.025, y: -2 }}
+                        whileTap={{ scale: 0.97 }}
+                    >
+                        <div className="gym-hub-card__icon">🟦</div>
+                        <div className="gym-hub-card__text">
+                            <span className="gym-hub-card__label">Workout Template Day 2</span>
+                            <span className="gym-hub-card__sub">Pull Focus (Back/Biceps)</span>
+                        </div>
+                    </motion.button>
+
+                    <motion.button
+                        className="gym-hub-card"
+                        style={{ background: 'linear-gradient(135deg, #22c55e, #15803d)', boxShadow: `0 6px 28px rgba(34,197,94,0.35)` }}
+                        onClick={() => initializeTemplateWorkout('day3')}
+                        whileHover={{ scale: 1.025, y: -2 }}
+                        whileTap={{ scale: 0.97 }}
+                    >
+                        <div className="gym-hub-card__icon">🟩</div>
+                        <div className="gym-hub-card__text">
+                            <span className="gym-hub-card__label">Workout Template Day 3</span>
+                            <span className="gym-hub-card__sub">Lower + Core</span>
+                        </div>
+                    </motion.button>
+                </div>
             </div>
         </div>
     );

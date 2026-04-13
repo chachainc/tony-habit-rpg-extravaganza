@@ -3,12 +3,18 @@ import { useInventoryStore, ITEM_DB, type EquipmentSlot, type ItemDef, formatSta
 import { PET_DATABASE } from '../../data/pets';
 import { usePetStore } from '../../store/usePetStore';
 import { usePlayerAvatar } from '../../hooks/usePlayerAvatar';
-import { Sword, Shield, Gem, Sparkles, Dog, X, BookOpen, Gem as JewelIcon, Badge } from 'lucide-react';
+import { Sword, Shield, Gem, Sparkles, Dog, X, BookOpen, Gem as JewelIcon, Badge, Shirt, HardHat, Grab, Footprints, Flame, Navigation } from 'lucide-react';
 import './EquipmentPanel.css';
 
 const SLOT_CONFIG: Record<EquipmentSlot, { label: string; icon: React.ReactNode; emptyText: string }> = {
     weapon:   { label: 'Weapon',    icon: <Sword size={16} />,    emptyText: 'No Weapon' },
     armor:    { label: 'Armor',     icon: <Shield size={16} />,   emptyText: 'No Armor' },
+    head:     { label: 'Head',      icon: <HardHat size={16} />,  emptyText: 'No Headgear' },
+    chest:    { label: 'Chest',     icon: <Shirt size={16} />,    emptyText: 'No Chest Armor' },
+    hands:    { label: 'Hands',     icon: <Grab size={16} />,     emptyText: 'No Gloves' },
+    legs:     { label: 'Legs',      icon: <Flame size={16} />,    emptyText: 'No Pants' },
+    feet:     { label: 'Feet',      icon: <Footprints size={16} />, emptyText: 'No Boots' },
+    cloak:    { label: 'Cloak',     icon: <Navigation size={16} />, emptyText: 'No Cloak' },
     relic:    { label: 'Relic',     icon: <Gem size={16} />,      emptyText: 'No Relic' },
     artifact: { label: 'Artifact',  icon: <Sparkles size={16} />, emptyText: 'No Artifact' },
     pet:      { label: 'Companion', icon: <Dog size={16} />,      emptyText: 'No Pet' },
@@ -18,7 +24,7 @@ const SLOT_CONFIG: Record<EquipmentSlot, { label: string; icon: React.ReactNode;
 };
 
 // Ordered slot display — logical pairing
-const SLOT_ORDER: EquipmentSlot[] = ['weapon', 'armor', 'jewelry', 'relic', 'artifact', 'book', 'pet', 'pet_accessory'];
+const SLOT_ORDER: EquipmentSlot[] = ['weapon', 'head', 'chest', 'hands', 'legs', 'feet', 'cloak', 'armor', 'jewelry', 'relic', 'artifact', 'book', 'pet', 'pet_accessory'];
 
 interface DisplayItem {
     id: string;

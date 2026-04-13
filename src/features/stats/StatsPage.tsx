@@ -9,6 +9,7 @@ import { TrophyPanel } from '../room/TrophyPanel';
 import { DonationShrine } from '../shrine/DonationShrine';
 import { useEconomyBalanceStore, PRESTIGE_REQUIRED_LEVEL, PRESTIGE_COST } from '../../store/useEconomyBalanceStore';
 import { useCurrencyStore } from '../../store/useCurrencyStore';
+import { YourAffinitiesPanel } from './YourAffinitiesPanel';
 import './StatsPage.css';
 
 const SKILL_ICONS: Record<SkillName, string> = {
@@ -187,6 +188,8 @@ export const StatsPage = () => {
                             </div>
                         </div>
                     </div>
+
+                    <YourAffinitiesPanel />
 
                     {/* Skills Grid */}
                     <div className="skills-section">

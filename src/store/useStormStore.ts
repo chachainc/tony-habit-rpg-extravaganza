@@ -3,6 +3,7 @@ import { persist } from 'zustand/middleware';
 import { PERSIST_REGISTRY } from '../data/persistRegistry';
 import { useCurrencyStore } from './useCurrencyStore';
 import { useArenaStatsStore } from './useArenaStatsStore';
+import { usePetStore } from './usePetStore';
 
 // ── Castle / Base Health Tuning ───────────────────────────────────────────
 export const BASE_MAX_HP = 100;              // starting max HP (upgrades add to this)
@@ -248,6 +249,17 @@ const DEFENDER_STATS: Record<DefenderType, { hp: number; dmg: number; range: num
     medic:     { hp: 35, dmg: 0,  range: 25, cd: 2000 },
 };
 
+const getPetFortStats = () => {
+    const petDef = usePetStore.getState().getEquippedPetDef();
+    if (petDef?.passive?.type === 'tank_storm' && typeof petDef.passive.value === 'object') {
+        return {
+            hpPercent: petDef.passive.value.fortHpPercent || 0,
+            costDiscount: petDef.passive.value.fortCostDiscount || 0
+        };
+    }
+    return { hpPercent: 0, costDiscount: 0 };
+};
+
 export const useStormStore = create<StormState>()(
     persist(
         (set, get) => ({
@@ -293,32 +305,48 @@ export const useStormStore = create<StormState>()(
     rallyUntil: 0,
 
     startGame: () => {
-        set({ 
-            gameState: 'idle',  // idle, not playing — prevents instant false victory on empty battlefield
-            enemies: [],
-            projectiles: [],
-            comboCount: 0,
-            comboTimer: 0,
-            comboPopups: [],
-            bossWarningActive: false,
-            rallyUntil: 0,
-            lastWaveRewards: null,
-            enemiesToSpawn: [],
+        set(state => {
+            const petStats = getPetFortStats();
+            const baseHp = BASE_MAX_HP + (state.upgrades.fortHealthLevel * 50);
+            const maxFortHp = Math.floor(baseHp * (1 + (petStats.hpPercent / 100)));
+            
+            return { 
+                gameState: 'idle',  // idle, not playing — prevents instant false victory on empty battlefield
+                enemies: [],
+                projectiles: [],
+                comboCount: 0,
+                comboTimer: 0,
+                comboPopups: [],
+                bossWarningActive: false,
+                rallyUntil: 0,
+                lastWaveRewards: null,
+                enemiesToSpawn: [],
+                maxFortHp,
+                fortHp: maxFortHp,
+            };
         });
     },
 
     resetToIdle: () => {
-        set({
-            gameState: 'idle',
-            enemies: [],
-            projectiles: [],
-            comboCount: 0,
-            comboTimer: 0,
-            comboPopups: [],
-            bossWarningActive: false,
-            rallyUntil: 0,
-            lastWaveRewards: null,
-            enemiesToSpawn: [],
+        set(state => {
+            const petStats = getPetFortStats();
+            const baseHp = BASE_MAX_HP + (state.upgrades.fortHealthLevel * 50);
+            const maxFortHp = Math.floor(baseHp * (1 + (petStats.hpPercent / 100)));
+
+            return {
+                gameState: 'idle',
+                enemies: [],
+                projectiles: [],
+                comboCount: 0,
+                comboTimer: 0,
+                comboPopups: [],
+                bossWarningActive: false,
+                rallyUntil: 0,
+                lastWaveRewards: null,
+                enemiesToSpawn: [],
+                maxFortHp,
+                fortHp: maxFortHp,
+            };
         });
     },
 
@@ -587,7 +615,11 @@ export const useStormStore = create<StormState>()(
 
     buyUpgrade: (upgradeKey) => {
         const currentLevel = get().upgrades[upgradeKey];
-        const cost = 50 + (currentLevel * 50);
+        const petStats = getPetFortStats();
+        let cost = 50 + (currentLevel * 50);
+        
+        cost = Math.floor(cost * (1 - (petStats.costDiscount / 100)));
+
         const store = useCurrencyStore.getState();
 
         if (store.shmeckles >= cost) {
@@ -597,13 +629,16 @@ export const useStormStore = create<StormState>()(
                 
                 let newMaxHp = state.maxFortHp;
                 if (upgradeKey === 'fortHealthLevel') {
-                    newMaxHp = 100 + (newUpgrades.fortHealthLevel * 50);
+                    const baseHp = BASE_MAX_HP + (newUpgrades.fortHealthLevel * 50);
+                    newMaxHp = Math.floor(baseHp * (1 + (petStats.hpPercent / 100)));
                 }
+
+                const hpGain = upgradeKey === 'fortHealthLevel' ? Math.floor(50 * (1 + (petStats.hpPercent / 100))) : 0;
 
                 return { 
                     upgrades: newUpgrades,
                     maxFortHp: newMaxHp,
-                    fortHp: upgradeKey === 'fortHealthLevel' ? state.fortHp + 50 : state.fortHp
+                    fortHp: state.fortHp + hpGain
                 };
             });
             return true;
@@ -613,10 +648,15 @@ export const useStormStore = create<StormState>()(
 
     endGame: (victory) => {
         set(state => {
+            const petStats = getPetFortStats();
+            const baseHp = BASE_MAX_HP + (state.upgrades.fortHealthLevel * 50);
+            const calcMaxHp = Math.floor(baseHp * (1 + (petStats.hpPercent / 100)));
+
             const newState: Partial<StormState> = {
                 gameState: victory ? 'victory' : 'defeat',
                 wave: victory ? state.wave + 1 : state.wave,
-                fortHp: state.maxFortHp,
+                maxFortHp: calcMaxHp,
+                fortHp: calcMaxHp,
                 projectiles: [],
                 bossWarningActive: false,
             };

@@ -108,9 +108,11 @@ export const WorkoutLog = ({ onBack, onLoadWorkout }: Props) => {
                                             {MUSCLE_ICONS[m]}
                                         </span>
                                     ))}
-                                    <span className="wl-day-card__vol">
-                                        {totalVol.toLocaleString()} lb
-                                    </span>
+                                    {totalVol > 0 && (
+                                        <span className="wl-day-card__vol">
+                                            {totalVol.toLocaleString()} lb
+                                        </span>
+                                    )}
                                     {isExpanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
                                 </div>
                             </button>
@@ -139,14 +141,22 @@ export const WorkoutLog = ({ onBack, onLoadWorkout }: Props) => {
                                                     return (
                                                         <div key={ex.id} className="wl-exercise-row">
                                                             <span className="wl-exercise-row__name">{ex.exerciseName}</span>
-                                                            <div className="wl-exercise-row__sets">
-                                                                {ex.sets.map(s => (
-                                                                    <span key={s.setNumber} className="wl-set-chip">
-                                                                        {s.weight}×{s.reps}
-                                                                    </span>
-                                                                ))}
-                                                            </div>
-                                                            {best && (
+                                                                {ex.workoutType === 'cardio' ? (
+                                                                    <div className="wl-exercise-row__cardio">
+                                                                        <span className="wl-set-chip" style={{ background: 'rgba(16, 185, 129, 0.2)', border: '1px solid rgba(16, 185, 129, 0.4)', color: '#a7f3d0' }}>
+                                                                            ⏱ {Math.floor((ex.durationSeconds || 0) / 60)} min {(ex.durationSeconds || 0) % 60} sec
+                                                                        </span>
+                                                                    </div>
+                                                                ) : (
+                                                                    <div className="wl-exercise-row__sets">
+                                                                        {ex.sets.map(s => (
+                                                                            <span key={s.setNumber} className="wl-set-chip">
+                                                                                {s.weight}×{s.reps}
+                                                                            </span>
+                                                                        ))}
+                                                                    </div>
+                                                                )}
+                                                            {best && ex.workoutType !== 'cardio' && (
                                                                 <span className="chip chip--neutral wl-best-chip">
                                                                     Top: {best.weight}lb × {best.reps}
                                                                 </span>

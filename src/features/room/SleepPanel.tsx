@@ -39,6 +39,21 @@ export const SleepPanel = ({ onClose }: { onClose: () => void }) => {
         return count;
     }, [sleepLogs]);
 
+    const dreamshadeStreak = useMemo(() => {
+        if (sleepLogs.length === 0) return 0;
+        const sorted = [...sleepLogs]
+            .filter(l => !l.skipped)
+            .sort((a, b) => b.date.localeCompare(a.date));
+        let count = 0;
+        const today = dayjs();
+        for (let i = 0; i < sorted.length; i++) {
+            const expected = today.subtract(i, 'day').format('YYYY-MM-DD');
+            if (sorted[i]?.date === expected && sorted[i].score >= 80) count++;
+            else break;
+        }
+        return count;
+    }, [sleepLogs]);
+
     // ── Weekly average ──
     const weeklyAvg = useMemo(() => {
         const weekAgo = dayjs().subtract(7, 'day').format('YYYY-MM-DD');
@@ -56,8 +71,37 @@ export const SleepPanel = ({ onClose }: { onClose: () => void }) => {
             addSkillXp('Sleep', xp, { capExempt: true });
             addGlobalXp(Math.floor(xp * 0.2));
         }
-        // Don't auto-switch tabs so they can see the 'Logged' verification
-        // setActiveTab('history');
+        
+        // Wait for state updates then check unlock condition
+        setTimeout(() => {
+            import('../../store/usePetStore').then(({ usePetStore }) => {
+                const petStore = usePetStore.getState();
+                // Avoid granting it twice
+                if (!petStore.ownedPets.includes('dreamshade_cow')) {
+                    const updatedLogs = useDayStore.getState().sleepLogs;
+                    const sorted = [...updatedLogs]
+                        .filter(l => !l.skipped)
+                        .sort((a, b) => b.date.localeCompare(a.date));
+                    let count = 0;
+                    const today = dayjs();
+                    for (let i = 0; i < sorted.length; i++) {
+                        const expected = today.subtract(i, 'day').format('YYYY-MM-DD');
+                        if (sorted[i]?.date === expected && sorted[i].score >= 80) count++;
+                        else break;
+                    }
+                    if (count >= 20) {
+                        petStore.addPet('dreamshade_cow');
+                        import('../../components/ui/Toast').then(({ useToastStore }) => {
+                            useToastStore.getState().addToast({
+                                message: "🌙 You have mastered rest. Dreamshade Cow has awakened.",
+                                type: 'success',
+                                duration: 5000
+                            });
+                        });
+                    }
+                }
+            });
+        }, 100);
     };
 
     const handleLogReadiness = (e: React.FormEvent) => {
@@ -99,6 +143,12 @@ export const SleepPanel = ({ onClose }: { onClose: () => void }) => {
                     <Flame size={14} className="streak-icon" />
                     <span>{streak} day streak</span>
                 </div>
+                {dreamshadeStreak > 0 && dreamshadeStreak < 20 && (
+                    <div className="sleep-stat-chip" style={{ color: '#c084fc', borderColor: '#c084fc' }}>
+                        <Moon size={14} />
+                        <span>Dreamshade: {dreamshadeStreak}/20</span>
+                    </div>
+                )}
                 <div className="sleep-stat-chip">
                     <Award size={14} />
                     <span>Weekly Avg: {weeklyAvg}</span>

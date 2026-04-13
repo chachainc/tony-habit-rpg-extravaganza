@@ -1,10 +1,10 @@
 import { useEffect, useRef, useState } from 'react';
 
 import { motion, AnimatePresence } from 'framer-motion';
-import { X } from 'lucide-react';
+
 import { useMarketplaceStore } from '../../store/useMarketplaceStore';
 import { useMarketLoyaltyStore } from '../../store/useMarketLoyaltyStore';
-import { useGameStore } from '../../store/useGameStore';
+
 import { MARKETPLACE_LAYOUT, isWalkable, canInteractWithStore } from '../../data/marketplace-layout';
 import { HospitalStore } from './stores/HospitalStore';
 import { ArmorStore } from './stores/ArmorStore';
@@ -39,16 +39,9 @@ export const MarketplaceTown = () => {
     const heroImage = usePlayerAvatar();
     const { playerPosition, setPlayerPosition, activeStore, openStore, closeStore } = useMarketplaceStore();
     const loyalty = useMarketLoyaltyStore();
-    const currency = useGameStore(s => s.currency);
-    const addCurrency = useGameStore(s => s.addCurrency);
     const [nearbyStore, setNearbyStore] = useState<string | null>(null);
-    const [showMerchant, setShowMerchant] = useState(false);
-    const isMerchantDay = loyalty.isMerchantDay();
 
-    // Restock merchant on mount
-    useEffect(() => {
-        if (isMerchantDay) loyalty.restockMerchant();
-    }, []);
+
 
     // Movement keys state
     const keysPressed = useRef<Set<string>>(new Set());
@@ -180,24 +173,6 @@ export const MarketplaceTown = () => {
 
                     {/* Mobile Store Grid — visible only on small screens via CSS */}
                     <div className="marketplace-mobile-grid">
-
-
-                        {isMerchantDay && (
-                            <motion.div
-                                className="marketplace-store-card mp-merchant-card"
-                                whileTap={{ scale: 0.95 }}
-                                onClick={() => setShowMerchant(true)}
-                            >
-                                <div className="store-card-image">
-                                    <span className="store-card-emoji">🧙</span>
-                                </div>
-                                <div className="store-card-info">
-                                    <h3>Wandering Merchant <span className="mp-merchant-badge">TODAY</span></h3>
-                                    <p>Rare & exclusive items not found anywhere else!</p>
-                                </div>
-                                <div className="store-card-glow" style={{ backgroundColor: '#fbbf24' }} />
-                            </motion.div>
-                        )}
 
                         <div className="marketplace-store-cards">
                             {MARKETPLACE_LAYOUT.stores.map((store) => {
@@ -390,58 +365,6 @@ export const MarketplaceTown = () => {
                 )}
                 {activeStore === 'jewelry-store' && (
                     <JewelryStore onClose={closeStore} />
-                )}
-
-                {/* Wandering Merchant Modal */}
-                {showMerchant && (
-                    <motion.div
-                        className="mp-merchant-overlay"
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        exit={{ opacity: 0 }}
-                        onClick={() => setShowMerchant(false)}
-                    >
-                        <motion.div
-                            className="mp-merchant-modal"
-                            initial={{ scale: 0.9, opacity: 0 }}
-                            animate={{ scale: 1, opacity: 1 }}
-                            onClick={e => e.stopPropagation()}
-                        >
-                            <div className="mp-merchant-header">
-                                <h2>🧙 Wandering Merchant</h2>
-                                <p>Exclusive wares — available today only!</p>
-                                <button className="mp-merchant-close" onClick={() => setShowMerchant(false)}><X size={18} /></button>
-                            </div>
-                            <div className="mp-merchant-balance">🪙 {currency} Gold</div>
-                            <div className="mp-merchant-items">
-                                {loyalty.merchantStock.map(item => {
-                                    const purchased = loyalty.merchantPurchased.includes(item.id);
-                                    const canAfford = currency >= item.price;
-                                    return (
-                                        <div key={item.id} className={`mp-merchant-item rarity-${item.rarity} ${purchased ? 'mp-merchant-sold' : ''}`}>
-                                            <div className="mp-mi-icon">{item.icon}</div>
-                                            <div className="mp-mi-info">
-                                                <div className="mp-mi-name">{item.name}</div>
-                                                <div className="mp-mi-desc">{item.description}</div>
-                                                <div className="mp-mi-effect">{item.effect}</div>
-                                            </div>
-                                            <button
-                                                className="mp-mi-buy"
-                                                disabled={purchased || !canAfford}
-                                                onClick={() => {
-                                                    if (canAfford && loyalty.purchaseMerchantItem(item.id)) {
-                                                        addCurrency(-item.price);
-                                                    }
-                                                }}
-                                            >
-                                                {purchased ? '✓ Sold' : `${item.price} 🪙`}
-                                            </button>
-                                        </div>
-                                    );
-                                })}
-                            </div>
-                        </motion.div>
-                    </motion.div>
                 )}
             </AnimatePresence>
         </>

@@ -13,8 +13,42 @@ import petRavenImg from '../assets/pets/pet_raven.jpg';
 import petElephantImg from '../assets/pets/pet_elephant.jpg';
 import petRhinoImg from '../assets/pets/pet_rhino.jpg';
 import petBearImg from '../assets/pets/pet_bear.jpg';
+import tankCowImg from '../assets/pets/tank_cow.jpg';
+import treasureCowImg from '../assets/pets/treasure_cow.jpg';
+import blazehornCowImg from '../assets/pets/blazehorn_cow.jpg';
+import frostgrazerCowImg from '../assets/pets/frostgrazer_cow.jpg';
+import shadowhoofCowImg from '../assets/pets/shadowhoof_cow.jpg';
+import infernohornCowImg from '../assets/pets/infernohorn_cow.jpg';
+import glacierhoofCowImg from '../assets/pets/glacierhoof_cow.jpg';
+import jackpotCowImg from '../assets/pets/jackpot_cow.jpg';
+import flameBladeImg from '../assets/weapons/flame_blade.jpg';
+import cinderCrownImg from '../assets/armor/cinder_crown.jpg';
+import ashforgePlateImg from '../assets/armor/ashforge_plate.jpg';
+import embergripGauntletsImg from '../assets/armor/embergrip_gauntlets.jpg';
+import moltenstrideLeggingsImg from '../assets/armor/moltenstride_leggings.jpg';
+import coalwakeBootsImg from '../assets/armor/coalwake_boots.jpg';
+import flameveilCloakImg from '../assets/armor/flameveil_cloak.jpg';
 
-export type ItemType = 'armor' | 'weapon' | 'pet' | 'furniture' | 'consumable' | 'cosmetic' | 'pet_accessory' | 'jewelry';
+// ICE ARMOR
+import frostboundHelmImg from '../assets/armor/ice/frostbound_helm.jpg';
+import frostboundChestplateImg from '../assets/armor/ice/frostbound_chestplate.jpg';
+import frostboundGauntletsImg from '../assets/armor/ice/frostbound_gauntlets.jpg';
+import frostboundBootsImg from '../assets/armor/ice/frostbound_boots.jpg';
+import frostboundLeggingsImg from '../assets/armor/ice/frostbound_leggings.jpg';
+import frostboundCloakImg from '../assets/armor/ice/frostbound_cloak.jpg';
+
+// NEW WEAPONS
+import infernalCorebladeImg from '../assets/weapons/infernal_coreblade.jpg';
+import glacialHammerImg from '../assets/weapons/glacial_hammer.jpg';
+import frostTitanBreakerImg from '../assets/weapons/frost_titan_breaker.jpg';
+import voidDaggerImg from '../assets/weapons/void_dagger.jpg';
+import abyssRenderImg from '../assets/weapons/abyss_render.jpg';
+import goldenLedgerImg from '../assets/weapons/golden_ledger.jpg';
+import sovereignLedgerImg from '../assets/weapons/sovereign_ledger.jpg';
+import dicebladeImg from '../assets/weapons/diceblade.jpg';
+import chaosEdgeImg from '../assets/weapons/chaos_edge.jpg';
+
+export type ItemType = 'armor' | 'weapon' | 'pet' | 'furniture' | 'consumable' | 'cosmetic' | 'pet_accessory' | 'jewelry' | 'material';
 export type ItemCategory = 'hygiene' | 'sleep' | 'general' | 'combat' | 'social';
 
 export interface UnlockRequirement {
@@ -49,10 +83,192 @@ export interface Item {
 
     // Display
     rarity?: 'common' | 'uncommon' | 'rare' | 'epic' | 'legendary';
+    affinity?: 'fire' | 'ice' | 'shadow' | 'economy' | 'luck' | 'neutral';
+    slot?: 'weapon' | 'armor' | 'head' | 'chest' | 'hands' | 'legs' | 'feet' | 'cloak' | 'jewelry' | 'relic' | 'artifact' | 'pet' | 'pet_accessory' | 'book';
 }
 
 // ==================== ARMOR ITEMS ====================
 const ARMOR_ITEMS: Item[] = [
+    {
+        id: 'cinder_crown',
+        name: 'Cinder Crown',
+        description: 'A searing crown emitting faint sparks.',
+        icon: '👑',
+        image: cinderCrownImg,
+        type: 'armor',
+        slot: 'head',
+        category: 'combat',
+        unlockRequirement: {},
+        cost: { gold: 2000 },
+        stats: { defense: 3, magicAttack: 3 },
+        affinity: 'fire',
+        rarity: 'rare' 
+    },
+    {
+        id: 'ashforge_plate',
+        name: 'Ashforge Plate',
+        description: 'Heavy chestpiece forged in volcanic ash.',
+        icon: '🦺',
+        image: ashforgePlateImg,
+        type: 'armor',
+        slot: 'chest',
+        category: 'combat',
+        unlockRequirement: {},
+        cost: { gold: 900 },
+        stats: { defense: 10, attack: 2 },
+        affinity: 'fire',
+        rarity: 'rare' 
+    },
+    {
+        id: 'embergrip_gauntlets',
+        name: 'Embergrip Gauntlets',
+        description: 'Warm iron gauntlets that heat weapons.',
+        icon: '🧤',
+        image: embergripGauntletsImg,
+        type: 'armor',
+        slot: 'hands',
+        category: 'combat',
+        unlockRequirement: {},
+        cost: { gold: 425 },
+        stats: { defense: 2, attack: 4 },
+        affinity: 'fire',
+        rarity: 'rare' 
+    },
+    {
+        id: 'moltenstride_leggings',
+        name: 'Moltenstride Leggings',
+        description: 'Agile greaves that leave scorching footprints.',
+        icon: '👖',
+        image: moltenstrideLeggingsImg,
+        type: 'armor',
+        slot: 'legs',
+        category: 'combat',
+        unlockRequirement: {},
+        cost: { gold: 650 },
+        stats: { defense: 6, attack: 2 },
+        affinity: 'fire',
+        rarity: 'rare' 
+    },
+    {
+        id: 'coalwake_boots',
+        name: 'Coalwake Boots',
+        description: 'Heavy boots, constantly smoldering.',
+        icon: '👢',
+        image: coalwakeBootsImg,
+        type: 'armor',
+        slot: 'feet',
+        category: 'combat',
+        unlockRequirement: {},
+        cost: { gold: 500 },
+        stats: { defense: 2, attack: 2 },
+        affinity: 'fire',
+        rarity: 'rare' 
+    },
+    {
+        id: 'flameveil_cloak',
+        name: 'Flameveil Cloak',
+        description: 'A cape seemingly made of weaving fire.',
+        icon: '🧥',
+        image: flameveilCloakImg,
+        type: 'armor',
+        slot: 'cloak',
+        category: 'combat',
+        unlockRequirement: {},
+        cost: { gold: 1200 },
+        stats: { defense: 2, magicAttack: 5 },
+        affinity: 'fire',
+        rarity: 'rare' 
+    },
+    {
+        id: 'frostbound_helm',
+        name: 'Frostbound Helm',
+        description: 'A freezing helm of absolute zero.',
+        icon: '🧊',
+        image: frostboundHelmImg,
+        type: 'armor',
+        slot: 'head',
+        category: 'combat',
+        unlockRequirement: {},
+        cost: { gold: 300 },
+        stats: { defense: 6 },
+        affinity: 'ice',
+        rarity: 'uncommon' 
+    },
+    {
+        id: 'frostbound_chestplate',
+        name: 'Frostbound Chestplate',
+        description: 'Heavy chest armor forged in a blizzard.',
+        icon: '🦺',
+        image: frostboundChestplateImg,
+        type: 'armor',
+        slot: 'chest',
+        category: 'combat',
+        unlockRequirement: {},
+        cost: { gold: 400 },
+        stats: { defense: 10, hp: 50 },
+        affinity: 'ice',
+        rarity: 'rare' 
+    },
+    {
+        id: 'frostbound_gauntlets',
+        name: 'Frostbound Gauntlets',
+        description: 'Chilling gauntlets that numb enemies.',
+        icon: '🧤',
+        image: frostboundGauntletsImg,
+        type: 'armor',
+        slot: 'hands',
+        category: 'combat',
+        unlockRequirement: {},
+        cost: { gold: 300 },
+        stats: { defense: 2, attack: 4 },
+        affinity: 'ice',
+        rarity: 'uncommon' 
+    },
+    {
+        id: 'frostbound_leggings',
+        name: 'Frostbound Leggings',
+        description: 'Hardened ice greaves.',
+        icon: '👖',
+        image: frostboundLeggingsImg,
+        type: 'armor',
+        slot: 'legs',
+        category: 'combat',
+        unlockRequirement: {},
+        cost: { gold: 325 },
+        stats: { defense: 8, hp: 20 },
+        affinity: 'ice',
+        rarity: 'rare' 
+    },
+    {
+        id: 'frostbound_boots',
+        name: 'Frostbound Boots',
+        description: 'Boots that glide effortlessly over snow.',
+        icon: '👢',
+        image: frostboundBootsImg,
+        type: 'armor',
+        slot: 'feet',
+        category: 'combat',
+        unlockRequirement: {},
+        cost: { gold: 250 },
+        stats: { defense: 5 },
+        affinity: 'ice',
+        rarity: 'uncommon' 
+    },
+    {
+        id: 'frostbound_cloak',
+        name: 'Frostbound Cloak',
+        description: 'A magical cloak perpetually dropping snow.',
+        icon: '🧥',
+        image: frostboundCloakImg,
+        type: 'armor',
+        slot: 'cloak',
+        category: 'combat',
+        unlockRequirement: {},
+        cost: { gold: 350 },
+        stats: { defense: 5 },
+        affinity: 'ice',
+        rarity: 'rare' 
+    },
     {
         id: 'cloth_tunic',
         name: 'Cloth Tunic',
@@ -63,6 +279,7 @@ const ARMOR_ITEMS: Item[] = [
         unlockRequirement: {}, // was defense,
         cost: { gold: 500 },
         stats: { defense: 2 },
+        affinity: 'economy',
         rarity: 'common' },
     {
         id: 'leather_armor',
@@ -74,6 +291,7 @@ const ARMOR_ITEMS: Item[] = [
         unlockRequirement: {}, // was defense,
         cost: { gold: 2500 },
         stats: { defense: 5 },
+        affinity: 'economy',
         rarity: 'common' },
     {
         id: 'studded_leather',
@@ -85,6 +303,7 @@ const ARMOR_ITEMS: Item[] = [
         unlockRequirement: {}, // was defense,
         cost: { gold: 6000 },
         stats: { defense: 8 },
+        affinity: 'luck',
         rarity: 'uncommon' },
     {
         id: 'chainmail',
@@ -96,6 +315,7 @@ const ARMOR_ITEMS: Item[] = [
         unlockRequirement: {}, // was defense,
         cost: { gold: 12000, diamonds: 10 },
         stats: { defense: 12 },
+        affinity: 'neutral',
         rarity: 'uncommon' },
     {
         id: 'iron_platebody',
@@ -107,6 +327,7 @@ const ARMOR_ITEMS: Item[] = [
         unlockRequirement: {}, // was defense,
         cost: { gold: 25000, diamonds: 25 },
         stats: { defense: 18 },
+        affinity: 'neutral',
         rarity: 'rare' },
     {
         id: 'steel_plate',
@@ -118,6 +339,7 @@ const ARMOR_ITEMS: Item[] = [
         unlockRequirement: { defense: 12 },
         cost: { gold: 45000, diamonds: 40 },
         stats: { defense: 25, attack: 3 },
+        affinity: 'shadow',
         rarity: 'epic' },
     {
         id: 'mythric_plate',
@@ -129,6 +351,7 @@ const ARMOR_ITEMS: Item[] = [
         unlockRequirement: { defense: 15 },
         cost: { gold: 75000, diamonds: 75 },
         stats: { defense: 35 },
+        affinity: 'fire',
         rarity: 'legendary' },
     {
         id: 'bronze_platebody',
@@ -140,6 +363,7 @@ const ARMOR_ITEMS: Item[] = [
         unlockRequirement: { defense: 18 },
         cost: { gold: 8000 },
         stats: { defense: 10 },
+        affinity: 'economy',
         rarity: 'uncommon' },
     {
         id: 'mithril_armor',
@@ -151,6 +375,7 @@ const ARMOR_ITEMS: Item[] = [
         unlockRequirement: { defense: 35 },
         cost: { gold: 35000, diamonds: 30 },
         stats: { defense: 22 },
+        affinity: 'luck',
         rarity: 'rare' },
     {
         id: 'dragonhide_vest',
@@ -162,6 +387,7 @@ const ARMOR_ITEMS: Item[] = [
         unlockRequirement: { defense: 45 },
         cost: { gold: 60000, diamonds: 50 },
         stats: { defense: 30, attack: 5 },
+        affinity: 'fire',
         rarity: 'epic' },
     {
         id: 'arcane_robe',
@@ -173,11 +399,178 @@ const ARMOR_ITEMS: Item[] = [
         unlockRequirement: { defense: 50, skills: [{ skill: 'Intelligence', level: 15 }] },
         cost: { gold: 75000, diamonds: 60 },
         stats: { defense: 20 },
+        affinity: 'ice',
         rarity: 'epic' },
 ];
 
 // ==================== WEAPON ITEMS ====================
 const WEAPON_ITEMS: Item[] = [
+    {
+        id: 'flame_blade',
+        name: 'Flame Blade',
+        description: 'A legendary sword of pure fire.',
+        icon: '🔥',
+        image: flameBladeImg,
+        type: 'weapon',
+        slot: 'weapon',
+        category: 'combat',
+        unlockRequirement: {},
+        cost: { gold: 15000, diamonds: 20 },
+        stats: { attack: 12 },
+        affinity: 'fire',
+        rarity: 'legendary' 
+    },
+    // ========== NEW ARSENAL ==========
+    {
+        id: 'moltenblade',
+        name: 'Moltenblade',
+        description: 'A searing sword that burns targets on hit.',
+        icon: '🗡️',
+        type: 'weapon',
+        slot: 'weapon',
+        category: 'combat',
+        unlockRequirement: {},
+        cost: { gold: 1000 },
+        stats: { attack: 15 },
+        affinity: 'fire',
+        rarity: 'rare' 
+    },
+    {
+        id: 'infernal_coreblade',
+        name: 'Infernal Coreblade',
+        description: 'The evolved Moltenblade. Melts armor natively.',
+        icon: '🌋',
+        image: infernalCorebladeImg,
+        type: 'weapon',
+        slot: 'weapon',
+        category: 'combat',
+        unlockRequirement: {},
+        cost: { gold: 0 },
+        stats: { attack: 28 },
+        affinity: 'fire',
+        rarity: 'legendary' 
+    },
+    {
+        id: 'glacial_hammer',
+        name: 'Glacial Hammer',
+        description: 'A heavy hammer that chills targets to the bone.',
+        icon: '🔨',
+        image: glacialHammerImg,
+        type: 'weapon',
+        slot: 'weapon',
+        category: 'combat',
+        unlockRequirement: {},
+        cost: { gold: 1200 },
+        stats: { attack: 18 },
+        affinity: 'ice',
+        rarity: 'rare' 
+    },
+    {
+        id: 'frost_titan_breaker',
+        name: 'Frost Titan Breaker',
+        description: 'Evolved from Glacial Hammer. Shivers the very earth.',
+        icon: '❄️',
+        image: frostTitanBreakerImg,
+        type: 'weapon',
+        slot: 'weapon',
+        category: 'combat',
+        unlockRequirement: {},
+        cost: { gold: 0 },
+        stats: { attack: 35 },
+        affinity: 'ice',
+        rarity: 'legendary' 
+    },
+    {
+        id: 'void_dagger',
+        name: 'Void Dagger',
+        description: 'A fast dagger that steals life on strike.',
+        icon: '🔪',
+        image: voidDaggerImg,
+        type: 'weapon',
+        slot: 'weapon',
+        category: 'combat',
+        unlockRequirement: {},
+        cost: { gold: 850 },
+        stats: { attack: 10 },
+        affinity: 'shadow',
+        rarity: 'rare' 
+    },
+    {
+        id: 'abyss_render',
+        name: 'Abyss Render',
+        description: 'Evolved Void Dagger. Consumes shadow marks for burst damage.',
+        icon: '🌑',
+        image: abyssRenderImg,
+        type: 'weapon',
+        slot: 'weapon',
+        category: 'combat',
+        unlockRequirement: {},
+        cost: { gold: 0 },
+        stats: { attack: 22 },
+        affinity: 'shadow',
+        rarity: 'legendary' 
+    },
+    {
+        id: 'golden_ledger',
+        name: 'Golden Ledger',
+        description: 'A heavy merchant book. Attacks yield extra gold.',
+        icon: '📒',
+        image: goldenLedgerImg,
+        type: 'weapon',
+        slot: 'weapon',
+        category: 'combat',
+        unlockRequirement: {},
+        cost: { gold: 1000 },
+        stats: { attack: 6 },
+        affinity: 'economy',
+        rarity: 'rare' 
+    },
+    {
+        id: 'sovereign_ledger',
+        name: 'Sovereign Ledger',
+        description: 'Evolved Golden Ledger. Prints money passively.',
+        icon: '👑',
+        image: sovereignLedgerImg,
+        type: 'weapon',
+        slot: 'weapon',
+        category: 'combat',
+        unlockRequirement: {},
+        cost: { gold: 0 },
+        stats: { attack: 14 },
+        affinity: 'economy',
+        rarity: 'legendary' 
+    },
+    {
+        id: 'diceblade',
+        name: 'Diceblade',
+        description: 'A chaotic weapon that rolls dice on every hit.',
+        icon: '🎲',
+        image: dicebladeImg,
+        type: 'weapon',
+        slot: 'weapon',
+        category: 'combat',
+        unlockRequirement: {},
+        cost: { gold: 1200 },
+        stats: { attack: 12 },
+        affinity: 'luck',
+        rarity: 'rare' 
+    },
+    {
+        id: 'chaos_edge',
+        name: 'Chaos Edge',
+        description: 'Evolved Diceblade. Rolls double dice, triggering massive jackpots.',
+        icon: '🎰',
+        image: chaosEdgeImg,
+        type: 'weapon',
+        slot: 'weapon',
+        category: 'combat',
+        unlockRequirement: {},
+        cost: { gold: 0 },
+        stats: { attack: 25 },
+        affinity: 'luck',
+        rarity: 'legendary' 
+    },
+    // ========== OLD WEAPONS ==========
     {
         id: 'wooden_stick',
         name: 'Wooden Stick',
@@ -188,6 +581,7 @@ const WEAPON_ITEMS: Item[] = [
         unlockRequirement: {},
         cost: {},
         stats: { attack: 1 },
+        affinity: 'neutral',
         rarity: 'common' },
     {
         id: 'iron_sword',
@@ -199,6 +593,7 @@ const WEAPON_ITEMS: Item[] = [
         unlockRequirement: { attack: 5 },
         cost: { gold: 2500, tokens: { Strength: 5 } },
         stats: { attack: 5 },
+        affinity: 'neutral',
         rarity: 'common' },
     {
         id: 'steel_blade',
@@ -210,6 +605,7 @@ const WEAPON_ITEMS: Item[] = [
         unlockRequirement: { attack: 15 },
         cost: { gold: 15000, tokens: { Strength: 20 } },
         stats: { attack: 12 },
+        affinity: 'neutral',
         rarity: 'uncommon' },
     {
         id: 'enchanted_axe',
@@ -221,6 +617,7 @@ const WEAPON_ITEMS: Item[] = [
         unlockRequirement: { attack: 30 },
         cost: { gold: 40000, diamonds: 50, tokens: { Strength: 40 } },
         stats: { attack: 25 },
+        affinity: 'shadow',
         rarity: 'rare' },
     {
         id: 'legendary_hammer',
@@ -232,6 +629,7 @@ const WEAPON_ITEMS: Item[] = [
         unlockRequirement: { attack: 50 },
         cost: { gold: 150000, diamonds: 200, tokens: { Strength: 100 } },
         stats: { attack: 50 },
+        affinity: 'luck',
         rarity: 'legendary' },
     {
         id: 'battle_axe',
@@ -243,6 +641,7 @@ const WEAPON_ITEMS: Item[] = [
         unlockRequirement: { attack: 10 },
         cost: { gold: 7500, tokens: { Strength: 15 } },
         stats: { attack: 8 },
+        affinity: 'fire',
         rarity: 'uncommon' },
     {
         id: 'war_mace',
@@ -254,6 +653,7 @@ const WEAPON_ITEMS: Item[] = [
         unlockRequirement: { attack: 20 },
         cost: { gold: 20000, tokens: { Strength: 30 } },
         stats: { attack: 16 },
+        affinity: 'neutral',
         rarity: 'uncommon' },
     {
         id: 'shadow_dagger',
@@ -265,6 +665,7 @@ const WEAPON_ITEMS: Item[] = [
         unlockRequirement: { attack: 25, skills: [{ skill: 'Flexibility', level: 10 }] },
         cost: { gold: 30000, diamonds: 30, tokens: { Strength: 40 } },
         stats: { attack: 20 },
+        affinity: 'shadow',
         rarity: 'rare' },
     {
         id: 'runic_staff',
@@ -276,6 +677,7 @@ const WEAPON_ITEMS: Item[] = [
         unlockRequirement: { attack: 35, skills: [{ skill: 'Intelligence', level: 10 }] },
         cost: { gold: 60000, diamonds: 75, tokens: { Strength: 80 } },
         stats: { attack: 30 },
+        affinity: 'ice',
         rarity: 'epic' },
     {
         id: 'dragonslayer_sword',
@@ -287,6 +689,7 @@ const WEAPON_ITEMS: Item[] = [
         unlockRequirement: { attack: 60 },
         cost: { gold: 200000, diamonds: 500, tokens: { Strength: 200 } },
         stats: { attack: 65 },
+        affinity: 'fire',
         rarity: 'legendary' },
 ];
 
@@ -302,6 +705,144 @@ const PET_ITEMS: Item[] = [
         unlockRequirement: {},
         cost: {},
         rarity: 'common' },
+    {
+        id: 'penny_hoof_cow',
+        name: 'Penny Hoof Cow',
+        description: 'A cow carrying an odd number of shiny pennies on its hooves.',
+        icon: '🐮💲',
+        type: 'pet',
+        category: 'social',
+        unlockRequirement: {},
+        cost: { gold: 1000 },
+        rarity: 'common' },
+    {
+        id: 'ironhide_cow',
+        name: 'Ironhide Cow',
+        description: 'A sturdy cow wearing a full suit of armor.',
+        icon: '🐮🛡️',
+        type: 'pet',
+        category: 'social',
+        unlockRequirement: {},
+        cost: { gold: 5000 },
+        rarity: 'rare' },
+    {
+        id: 'gambler_cow',
+        name: 'Gambler Cow',
+        description: 'A risk-taking cow wearing a small green visor.',
+        icon: '🐮🎲',
+        type: 'pet',
+        category: 'social',
+        unlockRequirement: {},
+        cost: { gold: 12000 },
+        rarity: 'epic' },
+    {
+        id: 'tank_cow',
+        name: 'Tank Cow',
+        description: 'A heavily fortified cow with a wooden and stone wall.',
+        icon: '🐮🧱',
+        image: tankCowImg,
+        type: 'pet',
+        category: 'social',
+        unlockRequirement: {},
+        cost: { gold: 450, diamonds: 120 },
+        rarity: 'rare' },
+    {
+        id: 'treasure_cow',
+        name: 'Treasure Hoof Cow',
+        description: 'A pirate cow guarding its precious chest.',
+        icon: '🐮🏴‍☠️',
+        image: treasureCowImg,
+        type: 'pet',
+        category: 'social',
+        unlockRequirement: {},
+        cost: { gold: 500, diamonds: 140 },
+        rarity: 'rare' },
+    {
+        id: 'blazehorn_cow',
+        name: 'Blazehorn Cow',
+        description: 'A fiery companion that burns enemies. Role: Core damage starter.',
+        icon: '🐮🔥',
+        image: blazehornCowImg,
+        type: 'pet',
+        category: 'social',
+        unlockRequirement: {},
+        cost: { gold: 500 },
+        rarity: 'uncommon' },
+    {
+        id: 'frostgrazer_cow',
+        name: 'Frostgrazer Cow',
+        description: 'A chilly companion that freezes enemies. Role: Beginner control/tank.',
+        icon: '🐮❄️',
+        image: frostgrazerCowImg,
+        type: 'pet',
+        category: 'social',
+        unlockRequirement: {},
+        cost: { gold: 500 },
+        rarity: 'uncommon' },
+    {
+        id: 'shadowhoof_cow',
+        name: 'Shadowhoof Cow',
+        description: 'A dark companion that grants lifesteal. Role: Sustain DPS.',
+        icon: '🐮🌑',
+        image: shadowhoofCowImg,
+        type: 'pet',
+        category: 'social',
+        unlockRequirement: {},
+        cost: { gold: 700 },
+        rarity: 'uncommon' },
+    {
+        id: 'infernohorn_cow',
+        name: 'Infernohorn Cow',
+        description: 'A fiery beast that burns everything in its sight.',
+        icon: '🐮🔥',
+        image: infernohornCowImg,
+        type: 'pet',
+        category: 'social',
+        unlockRequirement: {},
+        cost: { gold: 1200 },
+        rarity: 'rare' },
+    {
+        id: 'glacierhoof_cow',
+        name: 'Glacierhoof Cow',
+        description: 'An icy companion that freezes enemies solid.',
+        icon: '🐮❄️',
+        image: glacierhoofCowImg,
+        type: 'pet',
+        category: 'social',
+        unlockRequirement: {},
+        cost: { gold: 1100 },
+        rarity: 'rare' },
+    {
+        id: 'jackpot_cow',
+        name: 'Jackpot Cow',
+        description: 'A lucky cow that might triple your rewards!',
+        icon: '🐮🎰',
+        image: jackpotCowImg,
+        type: 'pet',
+        category: 'social',
+        unlockRequirement: {},
+        cost: { gold: 1500 },
+        rarity: 'epic' },
+    {
+        id: 'commander_cow',
+        name: 'Commander Cow',
+        description: 'A brilliant tactician that buffs your army.',
+        icon: '🐮🎖️',
+        type: 'pet',
+        category: 'social',
+        unlockRequirement: {},
+        cost: { gold: 2000 },
+        rarity: 'rare' },
+    {
+        id: 'rock_cow',
+        name: 'Rock Cow',
+        description: 'A sturdy cow that reduces incoming damage.',
+        icon: '🐮🪨',
+        type: 'pet',
+        category: 'social',
+        unlockRequirement: {},
+        cost: { gold: 900 },
+        rarity: 'epic' },
     {
         id: 'pet_porcupine',
         name: 'Elephant',
@@ -963,6 +1504,65 @@ const CONSUMABLE_ITEMS: Item[] = [
         rarity: 'rare' },
 ];
 
+// ==================== MATERIAL ITEMS ====================
+const MATERIAL_ITEMS: Item[] = [
+    {
+        id: 'fire_core',
+        name: 'Fire Core',
+        description: 'A pulsating core of endless flame. Used to evolve fire weapons.',
+        icon: '🔥',
+        type: 'material',
+        category: 'general',
+        unlockRequirement: {},
+        cost: { gold: 1000 },
+        rarity: 'epic'
+    },
+    {
+        id: 'ice_core',
+        name: 'Ice Core',
+        description: 'A freezing gem of absolute zero. Used to evolve ice weapons.',
+        icon: '❄️',
+        type: 'material',
+        category: 'general',
+        unlockRequirement: {},
+        cost: { gold: 1000 },
+        rarity: 'epic'
+    },
+    {
+        id: 'shadow_core',
+        name: 'Shadow Core',
+        description: 'A concentrated mass of dark energy. Used to evolve shadow weapons.',
+        icon: '🌑',
+        type: 'material',
+        category: 'general',
+        unlockRequirement: {},
+        cost: { gold: 1000 },
+        rarity: 'epic'
+    },
+    {
+        id: 'economy_core',
+        name: 'Economy Core',
+        description: 'A highly valuable ledger stone. Used to evolve economy weapons.',
+        icon: '💰',
+        type: 'material',
+        category: 'general',
+        unlockRequirement: {},
+        cost: { gold: 1000 },
+        rarity: 'epic'
+    },
+    {
+        id: 'luck_core',
+        name: 'Luck Core',
+        description: 'A four-leaf clover crystallized in amber. Used to evolve luck weapons.',
+        icon: '🍀',
+        type: 'material',
+        category: 'general',
+        unlockRequirement: {},
+        cost: { gold: 1000 },
+        rarity: 'epic'
+    }
+];
+
 // ==================== JEWELRY ITEMS ====================
 const JEWELRY_ITEMS: Item[] = [
     {
@@ -1061,6 +1661,7 @@ export const ITEM_DATABASE: Record<string, Item> = [
     ...PET_ACCESSORY_ITEMS,
     ...FURNITURE_ITEMS,
     ...CONSUMABLE_ITEMS,
+    ...MATERIAL_ITEMS,
     ...JEWELRY_ITEMS,
 ].reduce((acc, item) => {
     acc[item.id] = item;

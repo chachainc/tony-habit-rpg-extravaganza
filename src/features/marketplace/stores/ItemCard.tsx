@@ -4,6 +4,7 @@ import { useState } from 'react';
 import type { Item } from '../../../data/items';
 import { useGameStore } from '../../../store/useGameStore';
 import { getPassiveBonuses } from '../../../store/usePassiveEffects';
+import { PET_DATABASE } from '../../../data/pets';
 import './ItemCard.css';
 
 interface Props {
@@ -14,6 +15,7 @@ interface Props {
     missingRequirements: string[];
     missingCurrency: string[];
     onPurchase: () => void;
+    evolveNode?: React.ReactNode;
 }
 
 export const ItemCard = ({
@@ -23,7 +25,8 @@ export const ItemCard = ({
     canAfford,
     missingRequirements,
     missingCurrency,
-    onPurchase
+    onPurchase,
+    evolveNode,
 }: Props) => {
     // Work / Gold discount
     const rawDiscount = useGameStore.getState().getWorkDiscount();
@@ -64,7 +67,25 @@ export const ItemCard = ({
 
             {/* Item Info */}
             <div className="item-card-info">
-                <h3 className="item-name">{item.name}</h3>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <h3 className="item-name">{item.name}</h3>
+                    {(item.affinity || item.type === 'armor' || item.type === 'weapon') && (() => {
+                        const AFFINITY_ICONS: Record<string, { icon: string, color: string, label: string }> = {
+                            fire: { icon: '🔥', color: '#ef4444', label: 'Fire' },
+                            ice: { icon: '❄️', color: '#3b82f6', label: 'Ice' },
+                            shadow: { icon: '🌑', color: '#8b5cf6', label: 'Shadow' },
+                            economy: { icon: '💰', color: '#10b981', label: 'Economy' },
+                            luck: { icon: '🍀', color: '#fbbf24', label: 'Luck' },
+                            neutral: { icon: '🛡️', color: '#94a3b8', label: 'Neutral' },
+                        };
+                        const config = AFFINITY_ICONS[item.affinity || 'neutral'];
+                        return config ? (
+                            <span style={{ fontSize: '0.75rem', background: 'rgba(0,0,0,0.2)', color: config.color, padding: '0.1rem 0.4rem', borderRadius: '4px', display: 'flex', alignItems: 'center', gap: '0.2rem' }}>
+                                {config.icon} {config.label}
+                            </span>
+                        ) : null;
+                    })()}
+                </div>
                 <p className="item-description">{item.description}</p>
 
                 {/* Stats */}
@@ -78,6 +99,14 @@ export const ItemCard = ({
                         {item.stats.bonusXp && Object.entries(item.stats.bonusXp).map(([skill, bonus]) => (
                             <span key={skill} className="stat stat--xp">✨ +{bonus}% {skill} XP</span>
                         ))}
+                    </div>
+                )}
+
+                {/* Pet Passives */}
+                {item.type === 'pet' && PET_DATABASE[item.id]?.passive && (
+                    <div className="item-passive" style={{ marginTop: '8px', color: '#8b5cf6', fontSize: '0.85em', textAlign: 'center' }}>
+                        <strong style={{ display: 'block', marginBottom: '2px' }}>{PET_DATABASE[item.id].passive.name}</strong>
+                        ✨ {PET_DATABASE[item.id].passive.description}
                     </div>
                 )}
 
@@ -107,10 +136,12 @@ export const ItemCard = ({
             {/* Action Button */}
             <div className="item-card-action">
                 {isOwned ? (
-                    <button className="item-btn item-btn--owned" disabled>
-                        <Check size={18} />
-                        Owned
-                    </button>
+                    evolveNode ? evolveNode : (
+                        <button className="item-btn item-btn--owned" disabled>
+                            <Check size={18} />
+                            Owned
+                        </button>
+                    )
                 ) : !isUnlocked ? (
                     <button className="item-btn item-btn--locked" disabled>
                         <Lock size={18} />

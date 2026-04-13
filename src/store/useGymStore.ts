@@ -28,6 +28,8 @@ export interface Exercise {
     date: string; // YYYY-MM-DD
     sets: ExerciseSet[];
     notes?: string;
+    workoutType?: 'strength' | 'cardio';
+    durationSeconds?: number;
 }
 
 // ── Helpers ────────────────────────────────────────────────────
@@ -79,6 +81,8 @@ export const getBestSet = (ex: Exercise): ExerciseSet | null => {
 // ── Store ──────────────────────────────────────────────────────
 interface GymState {
     exercises: Exercise[];
+    isTemplateSession?: boolean;
+    activeTemplateId?: 'day1' | 'day2' | 'day3' | null;
 
     // CRUD
     addExercise: (ex: Omit<Exercise, 'id'>) => string;
@@ -92,12 +96,18 @@ interface GymState {
     getExerciseHistory: (exerciseName: string, muscle: MuscleGroup) => Exercise[];
     getAutocompleteSuggestions: (muscle: MuscleGroup) => string[];
     getAllExerciseNames: () => string[];
+
+    // Templates
+    initializeTemplateWorkout: (dayId: 'day1' | 'day2' | 'day3') => void;
+    completeWorkout: () => void;
 }
 
 export const useGymStore = create<GymState>()(
     persist(
         (set, get) => ({
             exercises: [],
+            isTemplateSession: false,
+            activeTemplateId: null,
 
             addExercise: (ex) => {
                 const id = generateId();
@@ -150,6 +160,21 @@ export const useGymStore = create<GymState>()(
             },
 
             updateSets: (exerciseId, sets) => {
+                const existingEx = get().exercises.find(e => e.id === exerciseId);
+                const oldSetsLength = existingEx ? existingEx.sets.filter(s => s.weight > 0 || s.reps > 0).length : 0;
+                const newSetsLength = sets.filter(s => s.weight > 0 || s.reps > 0).length;
+
+                if (get().isTemplateSession && newSetsLength > oldSetsLength) {
+                    const diff = newSetsLength - oldSetsLength;
+                    // Trigger set completion XP
+                    import('./useGameStore').then(({ useGameStore }) => {
+                        useGameStore.getState().addSkillXp('Strength', diff * 0.1);
+                        // We will dispatch a custom event for the UI to catch.
+                        const event = new CustomEvent('gym-set-completed', { detail: { xp: diff * 0.1 } });
+                        window.dispatchEvent(event);
+                    });
+                }
+
                 set(state => ({
                     exercises: state.exercises.map(e =>
                         e.id === exerciseId ? { ...e, sets } : e
@@ -200,6 +225,46 @@ export const useGymStore = create<GymState>()(
                 const names = new Set<string>();
                 get().exercises.forEach(e => names.add(e.exerciseName));
                 return Array.from(names).sort();
+            },
+
+            initializeTemplateWorkout: async (dayId) => {
+                const { WORKOUT_TEMPLATES } = await import('../data/workoutTemplates');
+                const template = WORKOUT_TEMPLATES[dayId];
+                if (!template) return;
+
+                const today = getLocalDateString();
+
+                // Create an empty exercise record for each template exercise if it doesn't already exist today
+                template.exercises.forEach(tEx => {
+                    const existing = get().exercises.find(
+                        e => e.exerciseName.toLowerCase() === tEx.exerciseName.toLowerCase()
+                            && e.muscleGroup === tEx.muscleGroup
+                            && e.date === today
+                    );
+
+                    if (!existing) {
+                        get().addExercise({
+                            exerciseName: tEx.exerciseName,
+                            muscleGroup: tEx.muscleGroup,
+                            date: today,
+                            sets: [],
+                            notes: `Target: ${tEx.sets}x ${tEx.repsTarget}`
+                        });
+                    }
+                });
+
+                const { useWorkoutTimer } = await import('./useWorkoutTimer');
+                useWorkoutTimer.getState().startTimer();
+
+                set({ isTemplateSession: true, activeTemplateId: dayId });
+            },
+
+            completeWorkout: async () => {
+                const { useWorkoutTimer } = await import('./useWorkoutTimer');
+                useWorkoutTimer.getState().stopTimer();
+                useWorkoutTimer.getState().resetTimer();
+                
+                set({ isTemplateSession: false, activeTemplateId: null });
             },
         }),
         {

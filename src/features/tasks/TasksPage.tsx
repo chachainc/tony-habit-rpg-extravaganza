@@ -4,7 +4,6 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Plus, Gift, CheckCircle, Circle, Sun, Sunset, Moon, Star, MinusCircle, Trash2, Pencil, Dices, CalendarDays, ChevronDown, ChevronUp, GripVertical, ClipboardList, X } from 'lucide-react';
 import { Card } from '../../components/ui';
 import { useGameStore, type SkillName } from '../../store/useGameStore';
-import { safeUUID } from '../../utils/safeUUID';
 
 import { useRecurringTasksStore, type BundleType, type TaskCategory, DAILY_TASKS_TEMPLATE } from '../../store/useRecurringTasksStore';
 import { useCalendarStore } from '../../store/useCalendarStore';
@@ -13,6 +12,8 @@ import { WeightInput } from '../../components/WeightInput/WeightInput';
 import { TrainingInput } from './TrainingInput';
 import { DailyChest } from './DailyChest';
 import { useNavigate } from 'react-router-dom';
+import { getTodayIndex, getDayName, formatDaysInfo } from '../../utils/dayHelpers';
+import { type RecurrenceType } from '../../store/useRecurringTasksStore';
 import './TasksPage.css';
 
 
@@ -158,8 +159,9 @@ export const TasksPage = () => {
     // Form State
     const [taskTitle, setTaskTitle] = useState('');
     const [customSkills, setCustomSkills] = useState<{skill: SkillName, xp: number}[]>([{ skill: 'Sleep', xp: 1 }]);
-    const [taskType, setTaskType] = useState<'today' | 'calendar' | 'recurring'>('today');
+    const [taskType, setTaskType] = useState<RecurrenceType>('one-time');
     const [selectedBundle, setSelectedBundle] = useState<BundleType>('morning');
+    const [activeDays, setActiveDays] = useState<number[]>([]);
 
     // Input Modals
     const [showWeightInput, setShowWeightInput] = useState(false);
@@ -201,8 +203,7 @@ export const TasksPage = () => {
     }, []);
 
     // Calendar Store
-    const { addTask: addCalendarTask, tasks: calendarTasks, toggleTask: toggleCalendarTask, deleteTask: deleteCalendarTask } = useCalendarStore();
-    const [selectedDate, setSelectedDate] = useState(dayjs().format('YYYY-MM-DD'));
+    const { tasks: calendarTasks, toggleTask: toggleCalendarTask, deleteTask: deleteCalendarTask } = useCalendarStore();
 
     // ── To-Do Store ────────────────────────────────────────
     const { getTodayTodos, addTodo, completeTodo, uncompleteTodo, deleteTodo } = useTodoStore();
@@ -242,36 +243,39 @@ export const TasksPage = () => {
         );
     };
 
+    const toggleTaskActiveDay = (day: number) => {
+        setActiveDays(prev =>
+            prev.includes(day) ? prev.filter(d => d !== day) : [...prev, day]
+        );
+    };
+
     const handleAdd = (e: React.FormEvent) => {
         e.preventDefault();
         if (!taskTitle.trim()) return;
 
-        if (taskType === 'recurring') {
-            addCustomRecurringTask(taskTitle, selectedBundle, customSkills.map(cs => ({
+        addCustomRecurringTask({
+            title: taskTitle,
+            bundle: selectedBundle,
+            recurrenceType: taskType,
+            activeDays: taskType === 'custom' ? activeDays : taskType === 'weekly' ? [getTodayIndex()] : undefined,
+            rewards: customSkills.map(cs => ({
                 skillId: cs.skill,
                 xp: cs.xp
-            })));
-        } else if (taskType === 'today') {
-            const newTask = {
-                id: safeUUID(),
-                text: taskTitle,
-                completed: false,
-                skillId: customSkills[0].skill,
-                difficulty: 'medium' as 'easy' | 'medium' | 'hard'
-            };
-            addCalendarTask(dayjs().format('YYYY-MM-DD'), newTask);
-        } else {
-            const newTask = {
-                id: safeUUID(),
-                text: taskTitle,
-                completed: false,
-                skillId: customSkills[0].skill,
-                difficulty: 'medium' as 'easy' | 'medium' | 'hard'
-            };
-            addCalendarTask(selectedDate, newTask);
-        }
+            }))
+        });
 
         setTaskTitle('');
+        setCustomSkills([{ skill: 'Sleep', xp: 1 }]);
+        setTaskType('one-time');
+        setActiveDays([]);
+        
+        import('../../components/ui/Toast').then(({ useToastStore }) => {
+            useToastStore.getState().addToast({
+                type: 'success',
+                message: 'Task successfully added!',
+                duration: 2000,
+            });
+        }).catch(() => {});
     };
 
     // Filter Luck out
@@ -581,6 +585,11 @@ export const TasksPage = () => {
                                         {task.requiresInput === 'weight' && task.completed && todayWeight != null && (
                                             <span className="weight-logged-badge">⚖️ {todayWeight} lbs</span>
                                         )}
+                                        {task.id.startsWith('custom-') && (
+                                            <div className="task-days-label" style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
+                                                {formatDaysInfo(task.activeDays)}
+                                            </div>
+                                        )}
                                         <div className="recurring-task__meta">
                                             {task.rewards.map((reward, ridx) => (
                                                 <span
@@ -657,8 +666,7 @@ export const TasksPage = () => {
                         Daily Spin
                     </button>
                     <div className="tasks-header-center">
-                        <h1>Daily Routine</h1>
-                        <p className="tasks-subtitle">Build consistency with daily bundles</p>
+                        <h1 style={{ fontWeight: 800 }}>{getDayName(getTodayIndex())}</h1>
                     </div>
                     <button onClick={() => navigate('/calendar')} className="tasks-header-nav-btn tasks-header-nav-btn--calendar">
                         <CalendarDays size={16} />
@@ -1156,13 +1164,33 @@ export const TasksPage = () => {
                                         onChange={(e) => setTaskType(e.target.value as any)}
                                         className="form-select"
                                     >
-                                        <option value="today">Today Only</option>
-                                        <option value="recurring">Daily Recurring</option>
-                                        <option value="calendar">Future Calendar</option>
+                                        <option value="one-time">Today Only</option>
+                                        <option value="daily">Recurring Daily</option>
+                                        <option value="weekly">Recurring Weekly</option>
+                                        <option value="custom">Certain Days Only</option>
                                     </select>
                                 </div>
 
-                                {taskType === 'recurring' && (
+                                {taskType === 'custom' && (
+                                    <div className="form-group">
+                                        <label>Show on which days?</label>
+                                        <div className="todo-day-chips" style={{ display: 'flex', gap: '4px', flexWrap: 'wrap' }}>
+                                            {['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'].map((label, i) => (
+                                                <button
+                                                    key={i}
+                                                    type="button"
+                                                    className={`todo-day-chip ${activeDays.includes(i) ? 'todo-day-chip--active' : ''}`}
+                                                    onClick={() => toggleTaskActiveDay(i)}
+                                                    style={{ flex: 1, minWidth: '40px', padding: '0.75rem 0' }}
+                                                >
+                                                    {label}
+                                                </button>
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
+
+                                {taskType !== 'one-time' && (
                                     <div className="form-group">
                                         <label>Bundle</label>
                                         <select
@@ -1174,26 +1202,6 @@ export const TasksPage = () => {
                                                 <option key={b} value={b}>{BUNDLE_CONFIG[b].title}</option>
                                             ))}
                                         </select>
-                                    </div>
-                                )}
-
-                                {taskType === 'calendar' && (
-                                    <div className="form-group">
-                                        <label>Date</label>
-                                        <input
-                                            type="date"
-                                            value={selectedDate}
-                                            onChange={(e) => setSelectedDate(e.target.value)}
-                                            className="form-input"
-                                            style={{
-                                                background: 'rgba(255,255,255,0.1)',
-                                                color: 'white',
-                                                border: '1px solid rgba(255,255,255,0.2)',
-                                                padding: '0.5rem',
-                                                borderRadius: '4px',
-                                                cursor: 'pointer'
-                                            }}
-                                        />
                                     </div>
                                 )}
 

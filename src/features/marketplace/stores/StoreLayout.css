@@ -262,7 +262,7 @@
 
     .store-header {
         padding: 0.6rem 0.75rem;
-        padding-top: max(env(safe-area-inset-top, 0.6rem), 1.2rem);
+        padding-top: calc(max(env(safe-area-inset-top, 0.6rem), 1.2rem) + 40px);
     }
 
     .store-header h2 {
@@ -272,7 +272,7 @@
     .store-content {
         padding: var(--space-3);
         /* Bottom padding: enough room for the Leave Store button + nav bar + browser chrome */
-        padding-bottom: calc(var(--space-3) + env(safe-area-inset-bottom, 16px));
+        padding-bottom: calc(var(--space-3) + 70px + env(safe-area-inset-bottom, 16px));
         /* Enable momentum scrolling on iOS */
         -webkit-overflow-scrolling: touch;
     }

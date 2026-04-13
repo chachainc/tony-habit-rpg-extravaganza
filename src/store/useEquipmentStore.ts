@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { PERSIST_REGISTRY } from '../data/persistRegistry';
+import type { AffinityType } from './useAffinitySystem';
 
 export type EquipmentRarity = 'common' | 'rare' | 'epic' | 'legendary';
 export type EquipmentSlot = 'weapon' | 'armor' | 'accessory';
@@ -15,6 +16,7 @@ export interface Equipment {
     defBonus: number;
     hpBonus: number;
     description: string;
+    affinity?: AffinityType;
 }
 
 // Equipment Database
@@ -24,7 +26,8 @@ export const EQUIPMENT_DB: Record<string, Equipment> = {
         id: 'wooden_sword', name: 'Wooden Sword', icon: '🗡️',
         rarity: 'common', slot: 'weapon',
         atkBonus: 2, defBonus: 0, hpBonus: 0,
-        description: 'A simple training sword.'
+        description: 'A simple training sword.',
+        affinity: 'neutral'
     },
     'iron_dagger': {
         id: 'iron_dagger', name: 'Iron Dagger', icon: '🔪',
@@ -81,6 +84,41 @@ export const EQUIPMENT_DB: Record<string, Equipment> = {
         rarity: 'rare', slot: 'accessory',
         atkBonus: 4, defBonus: 0, hpBonus: 0,
         description: 'Enhances your strength.'
+    },
+    'flame_blade': {
+        id: 'flame_blade', name: 'Flame Blade', icon: '🔥🗡️',
+        rarity: 'rare', slot: 'weapon',
+        atkBonus: 12, defBonus: 0, hpBonus: 0,
+        description: 'Passive: +12% damage. Effect: Burn for 2-4% HP per turn.',
+        affinity: 'fire'
+    },
+    'glacial_hammer': {
+        id: 'glacial_hammer', name: 'Glacial Hammer', icon: '❄️🔨',
+        rarity: 'rare', slot: 'weapon',
+        atkBonus: 8, defBonus: 10, hpBonus: 0,
+        description: 'Passive: +10% defense. Effect: Slow on hit.',
+        affinity: 'ice'
+    },
+    'void_dagger': {
+        id: 'void_dagger', name: 'Void Dagger', icon: '🌑🔪',
+        rarity: 'rare', slot: 'weapon',
+        atkBonus: 10, defBonus: 0, hpBonus: 0,
+        description: 'Passive: +8% crit. Effect: 5% lifesteal.',
+        affinity: 'shadow'
+    },
+    'golden_ledger': {
+        id: 'golden_ledger', name: 'Golden Ledger', icon: '💰📖',
+        rarity: 'rare', slot: 'weapon',
+        atkBonus: 5, defBonus: 5, hpBonus: 0,
+        description: 'Passive: +15% gold gain capped. Effect: Bonus gold on kill.',
+        affinity: 'economy'
+    },
+    'diceblade': {
+        id: 'diceblade', name: 'Diceblade', icon: '🎲⚔️',
+        rarity: 'rare', slot: 'weapon',
+        atkBonus: 15, defBonus: -5, hpBonus: 0,
+        description: 'Passive: +10% crit. Effect: Random bonus effect per hit.',
+        affinity: 'luck'
     },
 
     // EPIC EQUIPMENT (5% drop rate pool)

@@ -23,6 +23,7 @@ export interface XpWeaponDef {
     tier: WeaponTier;
     costs: XpWeaponCost[];
     effect: string;          // Display label
+    affinity?: 'fire' | 'ice' | 'shadow' | 'economy' | 'luck' | 'neutral';
     // Passive modifiers (applied in combat calculations)
     modifiers: {
         staminaRegenPct?: number;      // +% stamina regen
