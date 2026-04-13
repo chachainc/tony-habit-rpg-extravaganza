@@ -1,4 +1,4 @@
-import { MuscleGroup } from '../store/useGymStore';
+import type { MuscleGroup } from '../store/useGymStore';
 
 export interface TemplateExerciseData {
     exerciseName: string;

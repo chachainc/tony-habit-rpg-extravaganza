@@ -4,7 +4,6 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Plus, Gift, CheckCircle, Circle, Sun, Sunset, Moon, Star, MinusCircle, Trash2, Pencil, Dices, CalendarDays, ChevronDown, ChevronUp, GripVertical, ClipboardList, X } from 'lucide-react';
 import { Card } from '../../components/ui';
 import { useGameStore, type SkillName } from '../../store/useGameStore';
-import { safeUUID } from '../../utils/safeUUID';
 
 import { useRecurringTasksStore, type BundleType, type TaskCategory, DAILY_TASKS_TEMPLATE } from '../../store/useRecurringTasksStore';
 import { useCalendarStore } from '../../store/useCalendarStore';
@@ -204,8 +203,7 @@ export const TasksPage = () => {
     }, []);
 
     // Calendar Store
-    const { addTask: addCalendarTask, tasks: calendarTasks, toggleTask: toggleCalendarTask, deleteTask: deleteCalendarTask } = useCalendarStore();
-    const [selectedDate, setSelectedDate] = useState(dayjs().format('YYYY-MM-DD'));
+    const { tasks: calendarTasks, toggleTask: toggleCalendarTask, deleteTask: deleteCalendarTask } = useCalendarStore();
 
     // ── To-Do Store ────────────────────────────────────────
     const { getTodayTodos, addTodo, completeTodo, uncompleteTodo, deleteTodo } = useTodoStore();

@@ -164,7 +164,6 @@ export const ConquestBattle = () => {
             }
 
             // Weapon Progression & Economy Logging
-            const activeWeaponId = import('../../store/useXpWeaponStore').then(m => m.useXpWeaponStore.getState().equippedWeaponId) || import('../../store/useInventoryStore').then(m => m.useInventoryStore.getState().equipped.weapon);
             import('../../store/useInventoryStore').then(({ useInventoryStore }) => {
                  const invState = useInventoryStore.getState();
                  import('../../store/useXpWeaponStore').then(({ useXpWeaponStore }) => {

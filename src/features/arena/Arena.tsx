@@ -14,6 +14,7 @@ import { getDetailedCombatBreakdown, getSkillSynergyBonus } from '../../store/us
 import { getPassiveBonuses } from '../../store/usePassiveEffects';
 import { WeaponEquipWidget } from './WeaponEquipWidget';
 import { useXpWeaponStore } from '../../store/useXpWeaponStore';
+import { useInventoryStore } from '../../store/useInventoryStore';
 import { Panel } from '../../components/ui/Panel';
 
 import { GachaButton } from '../../components/ui/GachaButton';
@@ -403,9 +404,6 @@ export const Arena = ({ onClose }: { onClose: () => void }) => {
                     let totalGold = Math.floor((Math.round(enemyDef.goldReward * scaling) + passives.gold_bonus) * streakMultiplier);
 
                     // ECONOMY WEAPON LOGIC
-                    const activeWeaponId = import('../../store/useXpWeaponStore').then(m => m.useXpWeaponStore.getState().equippedWeaponId) || import('../../store/useInventoryStore').then(m => m.useInventoryStore.getState().equipped.weapon);
-                    // Safe synchronous version:
-                    // Wait, we are in a component so we can just use the stores synchronously.
                     const invState = useInventoryStore.getState();
                     const xpWeaponId = useXpWeaponStore.getState().equippedWeaponId;
                     const weaponId = xpWeaponId || invState.equipped.weapon;

@@ -269,16 +269,6 @@ export const WeaponStore = ({ onClose }: Props) => {
                                     let evolveNode: React.ReactNode = undefined;
 
                                     if (isOwned && evolution) {
-                                        // Dynamically check progression
-                                        import('../../../store/useWeaponProgressionStore').then(({ useWeaponProgressionStore }) => {
-                                            const val = useWeaponProgressionStore.getState().getMetric(itemId, evolution.metric) || 0;
-                                            const hasCore = useInventoryStore.getState().items[evolution.legendaryCoreId] > 0;
-                                            const hasGold = currencyStore.gold >= 500;
-                                            const canEvolve = val >= evolution.threshold && hasCore && hasGold;
-
-                                            // Render an action element but wait, we need it synchronously to render
-                                        });
-
                                         // We will do a safe sync read here because we are in React render context!
                                         const { useWeaponProgressionStore } = require('../../../store/useWeaponProgressionStore');
                                         const val = useWeaponProgressionStore.getState().getMetric(itemId, evolution.metric) || 0;
@@ -295,7 +285,7 @@ export const WeaponStore = ({ onClose }: Props) => {
                                                 onClick={() => {
                                                     if (canEvolve) {
                                                         // Consume gold + core
-                                                        currencyStore.removeGold(500);
+                                                        currencyStore.spendGold(500);
                                                         useInventoryStore.getState().removeItem(evolution.legendaryCoreId, 1);
                                                         // Evolve!
                                                         useInventoryStore.getState().removeItem(itemId, 1);

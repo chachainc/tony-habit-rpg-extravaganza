@@ -1,12 +1,13 @@
-import React, { useMemo } from 'react';
+import { useMemo } from 'react';
 import { useGymStore, getLocalDateString } from '../../store/useGymStore';
 import { LineChart } from './components/LineChart';
 
 export const WorkoutTrends = () => {
-    const { getExerciseHistory } = useGymStore();
+    const { exercises } = useGymStore();
 
     const chartData = useMemo(() => {
-        const history30 = getExerciseHistory(30);
+        const cutoffDate = getLocalDateString(new Date(Date.now() - 29 * 86400000));
+        const history30 = exercises.filter(ex => ex.date >= cutoffDate);
         // We need data points per day for the last 30 days
         const daysMap: Record<string, { cardioCount: number; strengthCount: number; cardioDuration: number }> = {};
         
@@ -43,7 +44,7 @@ export const WorkoutTrends = () => {
         });
 
         return { totalSessionsData, cardioDurationData };
-    }, [getExerciseHistory]);
+    }, [exercises]);
 
     return (
         <section className="health-section">

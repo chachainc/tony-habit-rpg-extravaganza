@@ -1,14 +1,15 @@
 import { useMemo } from 'react';
 import { useGymStore, getLocalDateString } from '../../store/useGymStore';
-import { useDayStore, SleepLogEntry, ReadinessLogEntry } from '../../store/useDayStore';
+import { useDayStore } from '../../store/useDayStore';
 
 export const HealthOverview = () => {
-    const { getExerciseHistory } = useGymStore();
+    const { exercises } = useGymStore();
     const { sleepLogs, readinessLogs } = useDayStore();
 
     // Workouts this week (last 7 days including today)
     const workoutsThisWeek = useMemo(() => {
-        const history = getExerciseHistory(7);
+        const cutoffDate = getLocalDateString(new Date(Date.now() - 7 * 86400000));
+        const history = exercises.filter(ex => ex.date >= cutoffDate);
         // group by date to count unique sessions, or just count logic:
         // Actually, history gives all exercises. We can group properties by Date to find unique sessions.
         const sessions = new Set<string>();
@@ -28,7 +29,7 @@ export const HealthOverview = () => {
         // However, "Cardio sessions this week" might be exact rows if they did multiple separate.
         // Let's just use the raw count or just number of unique combinations.
         return { total: totalCount, cardio: cardioCount };
-    }, [getExerciseHistory]);
+    }, [exercises]);
 
     // Average sleep/readiness (7d)
     const averages = useMemo(() => {

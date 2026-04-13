@@ -6,8 +6,7 @@ import { useGameStore } from '../../store/useGameStore';
 import { compressImage } from './utils/imageCompression';
 
 export const ProgressPhotosSection = () => {
-    const { addProgressPhoto, getAllPhotos, deletePhoto, setPhotoRewardClaimDate, photoRewardLastClaimDate, getPhotosForDate } = useHealthStore();
-    const { addSkillXp } = useGameStore();
+    const { addProgressPhoto, getAllPhotos, deletePhoto } = useHealthStore();
     const fileInputRef = useRef<HTMLInputElement>(null);
     const [uploadType, setUploadType] = useState<'front' | 'side' | 'back'>('front');
     const [viewingPhoto, setViewingPhoto] = useState<string | null>(null);

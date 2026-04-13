@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Play, Square, Activity, ArrowLeft } from 'lucide-react';
+import { Square, Activity, ArrowLeft } from 'lucide-react';
 import { useWorkoutTimer } from '../../store/useWorkoutTimer';
 import { useGymStore, getLocalDateString } from '../../store/useGymStore';
 import { useGameStore } from '../../store/useGameStore';
-import './WorkoutLog.css'; // Let's try to reuse matching styles or generic ones
+import './GymTracker.css';
 
 interface CardioLogProps {
     onClose: () => void;
@@ -19,7 +19,7 @@ const CARDIO_OPTIONS: { id: CardioOption; label: string; icon: string; bg: strin
 ];
 
 export const CardioWorkoutLog: React.FC<CardioLogProps> = ({ onClose }) => {
-    const { isRunning, startTimer, stopTimer, resetTimer, getElapsedSeconds } = useWorkoutTimer();
+    const { startTimer, stopTimer, resetTimer, getElapsedSeconds } = useWorkoutTimer();
     const { addExercise } = useGymStore();
     const { addSkillXp } = useGameStore();
 

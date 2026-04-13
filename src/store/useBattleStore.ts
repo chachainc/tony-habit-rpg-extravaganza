@@ -10,7 +10,7 @@ import { getPassiveBonuses } from './usePassiveEffects';
 import { usePetStore } from './usePetStore';
 import { useEquipmentStore, EQUIPMENT_DB } from './useEquipmentStore';
 import { useInventoryStore, getItemById } from './useInventoryStore';
-import { useXpWeaponStore, XP_WEAPON_MAP } from './useXpWeaponStore';
+import { useXpWeaponStore } from './useXpWeaponStore';
 import { calculateAffinitySynergy } from './useAffinitySystem';
 import { useWeaponProgressionStore } from './useWeaponProgressionStore';
 
@@ -1080,8 +1080,6 @@ export const useBattleStore = create<BattleState>()((set, get) => ({
         let weaponScalar = 1.0;
         let frostDmgBonus = 1.0;
         let lifestealPct = 0;
-        let vaultRewardFlag = false;
-
         if (attacker.isPlayer) {
             const xpWeapon = useXpWeaponStore.getState().getEquippedWeapon();
             const invWeaponId = useInventoryStore.getState().equipped.weapon;
