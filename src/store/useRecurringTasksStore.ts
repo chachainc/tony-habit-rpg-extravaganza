@@ -724,7 +724,7 @@ export const useRecurringTasksStore = create<RecurringTasksState>()(
                 const baseTasks = DAILY_TASKS_TEMPLATE.filter(t => !removedTaskIds.includes(t.id));
 
                 let todaysTasks = [...baseTasks, ...customRecurringTasks]
-                    .map(upgradeLegacyTask)
+                    .map(t => upgradeLegacyTask({ ...t, completed: (t as RecurringTask).completed ?? false }))
                     .filter(t => {
                         if (!t.activeDays) return true;
                         return t.activeDays.includes(todayDow);

@@ -172,21 +172,6 @@ export const SPELL_DB: Record<string, Spell> = {
         effect: { type: 'damage', value: 9, element: 'neutral' },
         affinity: 'shadow'
     },
-    'firebolt': {
-        id: 'firebolt',
-        name: 'Firebolt',
-        icon: '☄️',
-        description: 'A bolt of concentrated fire magic.',
-        goldCost: 1500,
-        mpCost: 8,
-        flexibilityTier: 1,
-        intelligenceRequired: 4,
-        tier: 'apprentice',
-        baseDamage: 14,
-        cooldownTurns: 1,
-        effect: { type: 'damage', value: 14, element: 'fire' },
-        affinity: 'fire'
-    },
     'soul_drain': {
         id: 'soul_drain',
         name: 'Soul Drain',

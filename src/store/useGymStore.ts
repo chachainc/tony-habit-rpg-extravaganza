@@ -167,8 +167,8 @@ export const useGymStore = create<GymState>()(
                 if (get().isTemplateSession && newSetsLength > oldSetsLength) {
                     const diff = newSetsLength - oldSetsLength;
                     // Trigger set completion XP
-                    import('./useCharacterStore').then(({ useCharacterStore }) => {
-                        useCharacterStore.getState().addXp('Strength', diff * 0.1);
+                    import('./useGameStore').then(({ useGameStore }) => {
+                        useGameStore.getState().addSkillXp('Strength', diff * 0.1);
                         // We will dispatch a custom event for the UI to catch.
                         const event = new CustomEvent('gym-set-completed', { detail: { xp: diff * 0.1 } });
                         window.dispatchEvent(event);

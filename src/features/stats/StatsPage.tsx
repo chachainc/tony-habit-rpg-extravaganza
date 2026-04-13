@@ -9,12 +9,6 @@ import { TrophyPanel } from '../room/TrophyPanel';
 import { DonationShrine } from '../shrine/DonationShrine';
 import { useEconomyBalanceStore, PRESTIGE_REQUIRED_LEVEL, PRESTIGE_COST } from '../../store/useEconomyBalanceStore';
 import { useCurrencyStore } from '../../store/useCurrencyStore';
-import { useEquipmentStore, EQUIPMENT_DB } from '../../store/useEquipmentStore';
-import { usePetStore } from '../../store/usePetStore';
-import { useMagicStore, SPELL_DB } from '../../store/useMagicStore';
-import { useXpWeaponStore } from '../../store/useXpWeaponStore';
-import { calculateAffinitySynergy } from '../../store/useAffinitySystem';
-import { Flame } from 'lucide-react';
 import { YourAffinitiesPanel } from './YourAffinitiesPanel';
 import './StatsPage.css';
 
@@ -64,15 +58,6 @@ export const StatsPage = () => {
         getDefense,
         getDailyXpEarned,
     } = useGameStore();
-
-    // Affinity Loadout
-    const petDef = usePetStore(s => s.getEquippedPetDef());
-    const weaponDef = useXpWeaponStore(s => s.getEquippedWeapon());
-    const spellDefMagic = useMagicStore(s => s.equippedSpell);
-    const equipState = useEquipmentStore();
-
-    const armorIds = [equipState.equippedArmor, equipState.equippedAccessory, equipState.equippedWeapon].filter(Boolean) as string[];
-    const armorAffinities = armorIds.map(id => EQUIPMENT_DB[id]?.affinity).filter(Boolean) as any[];
 
     const globalLevel = getGlobalLevel();
     const attack = getAttack();

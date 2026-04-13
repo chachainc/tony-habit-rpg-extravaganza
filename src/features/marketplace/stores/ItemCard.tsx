@@ -25,7 +25,8 @@ export const ItemCard = ({
     canAfford,
     missingRequirements,
     missingCurrency,
-    onPurchase
+    onPurchase,
+    evolveNode,
 }: Props) => {
     // Work / Gold discount
     const rawDiscount = useGameStore.getState().getWorkDiscount();

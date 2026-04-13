@@ -15,7 +15,6 @@ import petRhinoImg from '../assets/pets/pet_rhino.jpg';
 import petBearImg from '../assets/pets/pet_bear.jpg';
 import tankCowImg from '../assets/pets/tank_cow.jpg';
 import treasureCowImg from '../assets/pets/treasure_cow.jpg';
-import commanderCowImg from '../assets/pets/commander_cow.jpg';
 import blazehornCowImg from '../assets/pets/blazehorn_cow.jpg';
 import frostgrazerCowImg from '../assets/pets/frostgrazer_cow.jpg';
 import shadowhoofCowImg from '../assets/pets/shadowhoof_cow.jpg';

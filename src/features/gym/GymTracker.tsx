@@ -41,7 +41,7 @@ export const MUSCLE_ICONS: Record<MuscleGroup, string> = {
 
 export const GymTracker = () => {
     const navigate = useNavigate();
-    const { exercises, isTemplateSession, activeTemplateId, initializeTemplateWorkout } = useGymStore();
+    const { exercises, activeTemplateId, initializeTemplateWorkout } = useGymStore();
 
     const [view, setView] = useState<View>('hub');
     const [selectedMuscle, setSelectedMuscle] = useState<MuscleGroup | null>(null);
@@ -86,8 +86,8 @@ export const GymTracker = () => {
     };
 
     // ── If there is an active template session, render TemplateLog ────────────────
-    if (view === 'template') {
-        return <TemplateWorkoutLog templateId={activeTemplateId || ''} onClose={() => setView('hub')} />;
+    if (view === 'template' && activeTemplateId) {
+        return <TemplateWorkoutLog templateId={activeTemplateId} onClose={() => setView('hub')} />;
     }
 
     if (view === 'cardio') {

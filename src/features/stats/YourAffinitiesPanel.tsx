@@ -29,7 +29,6 @@ export const YourAffinitiesPanel: React.FC = () => {
     const invWeaponId = useInventoryStore(s => s.equipped.weapon);
     const invWeaponDef = invWeaponId ? getItemById(invWeaponId) : null;
     const weaponAffinity = xpWeaponDef?.affinity || invWeaponDef?.affinity;
-    const hasWeaponEquipped = !!weaponAffinity;
 
     const spellDefMagic = useMagicStore(s => s.equippedSpell);
     const equipState = useEquipmentStore();

@@ -1,12 +1,11 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ArrowLeft, Clock, Play, Dumbbell, History, Minus } from 'lucide-react';
+import { ArrowLeft, Clock, Dumbbell, History, Minus } from 'lucide-react';
 import {
     type MuscleGroup,
     MUSCLE_GROUPS,
     useGymStore,
     getLocalDateString,
-    getDateLabel,
     getExerciseVolume,
     getBestSet,
 } from '../../store/useGymStore';
@@ -38,7 +37,7 @@ export const TemplateWorkoutLog = ({ templateId, onClose }: Props) => {
         return () => window.removeEventListener('gym-set-completed', handler);
     }, []);
 
-    const { getByDateAndMuscle, deleteExercise, completeWorkout, exercises } = useGymStore();
+    const { deleteExercise, completeWorkout, exercises } = useGymStore();
     const timerStore = useWorkoutTimer();
     
     // Timer polling
