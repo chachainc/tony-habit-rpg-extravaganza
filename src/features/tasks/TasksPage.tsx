@@ -177,8 +177,9 @@ export const TasksPage = () => {
     const [highlightAddTask, setHighlightAddTask] = useState(false);
 
     // Drag state — pointer-based for mobile touch support
-    const [dragState, setDragState] = useState<{ taskId: string; bundle: BundleType; index: number; startY: number; isDragging: boolean } | null>(null);
+    const [dragState, setDragState] = useState<{ taskId: string; bundle: BundleType; index: number; startY: number; mode: 'waiting' | 'ready' | 'dragging' } | null>(null);
     const dragOverItem = useRef<{ bundle: BundleType; index: number } | null>(null);
+    const holdTimerRef = useRef<NodeJS.Timeout | null>(null);
     const DRAG_THRESHOLD = 8;
 
     const scrollToAdd = () => {
@@ -355,48 +356,86 @@ export const TasksPage = () => {
 
     // ── Drag handlers (pointer-based for mobile touch) ──
     const handleDragPointerDown = (e: React.PointerEvent, bundle: BundleType, index: number, taskId: string) => {
-        e.preventDefault();
         e.stopPropagation();
-        (e.target as HTMLElement).setPointerCapture(e.pointerId);
-        setDragState({ taskId, bundle, index, startY: e.clientY, isDragging: false });
+        setDragState({ taskId, bundle, index, startY: e.clientY, mode: 'waiting' });
+        
+        holdTimerRef.current = setTimeout(() => {
+            if (navigator.vibrate) {
+                try { navigator.vibrate(50); } catch (err) {}
+            }
+            setDragState(prev => prev ? { ...prev, mode: 'ready' } : null);
+            document.body.style.overflow = 'hidden';
+            document.body.style.touchAction = 'none';
+        }, 250);
     };
 
-    const handleDragPointerMove = (e: React.PointerEvent) => {
-        if (!dragState) return;
-        if (!dragState.isDragging) {
-            if (Math.abs(e.clientY - dragState.startY) > DRAG_THRESHOLD) {
-                setDragState(prev => prev ? { ...prev, isDragging: true } : null);
-            }
-            return;
-        }
-        // Find which task element we're hovering over
-        const el = document.elementFromPoint(e.clientX, e.clientY);
-        const taskEl = el?.closest('.recurring-task') as HTMLElement | null;
-        if (taskEl) {
-            const idx = parseInt(taskEl.dataset.dragIndex || '0', 10);
-            const bundle = (taskEl.dataset.dragBundle || dragState.bundle) as BundleType;
-            dragOverItem.current = { bundle, index: idx };
-        } else {
-            // Check for empty bundle placeholder or list container
-            const placeholderEl = el?.closest('.bundle-empty-placeholder') as HTMLElement | null;
-            const listEl = el?.closest('.recurring-tasks-list') as HTMLElement | null;
-            const target = placeholderEl || listEl;
-            if (target) {
-                const bundle = (target.dataset.dragBundle) as BundleType | undefined;
-                if (bundle) {
-                    dragOverItem.current = { bundle, index: 0 };
+    useEffect(() => {
+        const handleMove = (e: PointerEvent) => {
+            if (!dragState) return;
+
+            if (dragState.mode === 'waiting') {
+                if (Math.abs(e.clientY - dragState.startY) > DRAG_THRESHOLD) {
+                    if (holdTimerRef.current) clearTimeout(holdTimerRef.current);
+                    setDragState(null);
+                }
+            } else if (dragState.mode === 'ready' || dragState.mode === 'dragging') {
+                e.preventDefault();
+                
+                if (dragState.mode === 'ready') {
+                    if (Math.abs(e.clientY - dragState.startY) > DRAG_THRESHOLD) {
+                        setDragState(prev => prev ? { ...prev, mode: 'dragging' } : null);
+                    }
+                }
+
+                if (dragState.mode === 'dragging' || dragState.mode === 'ready') {
+                    const el = document.elementFromPoint(e.clientX, e.clientY);
+                    const taskEl = el?.closest('.recurring-task') as HTMLElement | null;
+                    if (taskEl) {
+                        const idx = parseInt(taskEl.dataset.dragIndex || '0', 10);
+                        const bundle = (taskEl.dataset.dragBundle || dragState.bundle) as BundleType;
+                        dragOverItem.current = { bundle, index: idx };
+                    } else {
+                        const placeholderEl = el?.closest('.bundle-empty-placeholder') as HTMLElement | null;
+                        const listEl = el?.closest('.recurring-tasks-list') as HTMLElement | null;
+                        const target = placeholderEl || listEl;
+                        if (target) {
+                            const bundle = (target.dataset.dragBundle) as BundleType | undefined;
+                            if (bundle) {
+                                dragOverItem.current = { bundle, index: 0 };
+                            }
+                        }
+                    }
                 }
             }
-        }
-    };
+        };
 
-    const handleDragPointerUp = () => {
-        if (dragState?.isDragging && dragOverItem.current) {
-            moveDailyTask(dragState.taskId, dragOverItem.current.bundle, dragOverItem.current.index);
+        const handleUp = () => {
+            if (holdTimerRef.current) clearTimeout(holdTimerRef.current);
+            document.body.style.overflow = '';
+            document.body.style.touchAction = '';
+
+            if (dragState?.mode === 'dragging' && dragOverItem.current) {
+                moveDailyTask(dragState.taskId, dragOverItem.current.bundle, dragOverItem.current.index);
+            }
+            setDragState(null);
+            dragOverItem.current = null;
+        };
+
+        if (dragState) {
+            document.addEventListener('pointermove', handleMove, { passive: false });
+            document.addEventListener('pointerup', handleUp);
+            document.addEventListener('pointercancel', handleUp);
         }
-        setDragState(null);
-        dragOverItem.current = null;
-    };
+
+        return () => {
+            document.removeEventListener('pointermove', handleMove);
+            document.removeEventListener('pointerup', handleUp);
+            document.removeEventListener('pointercancel', handleUp);
+            if (holdTimerRef.current) clearTimeout(holdTimerRef.current);
+            document.body.style.overflow = '';
+            document.body.style.touchAction = '';
+        };
+    }, [dragState, moveDailyTask]);
 
     const renderBundle = (bundleType: BundleType) => {
         const templateIds = new Set(DAILY_TASKS_TEMPLATE.map(t => t.id));
@@ -445,7 +484,7 @@ export const TasksPage = () => {
                         )}
                     </div>
 
-                    <div className="recurring-tasks-list" data-drag-bundle={bundleType} onPointerMove={handleDragPointerMove} onPointerUp={handleDragPointerUp}>
+                    <div className="recurring-tasks-list" data-drag-bundle={bundleType}>
                         {isEmpty && (
                             <div
                                 className="bundle-empty-placeholder"
@@ -467,14 +506,15 @@ export const TasksPage = () => {
                         )}
                         {bundleTasks.map((task, idx) => {
                             const catConfig = task.category ? CATEGORY_CONFIG[task.category] : null;
-                            const isBeingDragged = dragState?.isDragging && dragState.taskId === task.id;
+                            const isDragReady = dragState?.mode === 'ready' && dragState.taskId === task.id;
+                            const isBeingDragged = dragState?.mode === 'dragging' && dragState.taskId === task.id;
 
                             // ─── GROUPED / TIERED TASK UI ───
                             if (task.tiers && task.tiers.length > 0) {
                                 return (
                                     <div
                                         key={task.id}
-                                        className={`recurring-task grouped-task ${task.completed ? 'completed' : ''} ${isBeingDragged ? 'dragging' : ''}`}
+                                        className={`recurring-task grouped-task ${task.completed ? 'completed' : ''} ${isDragReady ? 'drag-ready' : ''} ${isBeingDragged ? 'dragging' : ''}`}
                                         data-drag-index={idx}
                                         data-drag-bundle={bundleType}
                                     >
@@ -490,7 +530,7 @@ export const TasksPage = () => {
                                                         key={tier.id}
                                                         className={`tier-row ${isSelected ? 'tier-selected' : ''} ${isLocked ? 'tier-locked' : ''}`}
                                                         onClick={() => {
-                                                            if (dragState?.isDragging) return;
+                                                            if (dragState?.mode === 'dragging' || dragState?.mode === 'ready') return;
                                                             if (task.completed) {
                                                                 if (isSelected) uncompleteTask(task.id);
                                                                 return;
@@ -544,11 +584,11 @@ export const TasksPage = () => {
                             return (
                                 <div
                                     key={task.id}
-                                    className={`recurring-task ${task.completed ? 'completed' : ''} ${isBeingDragged ? 'dragging' : ''}`}
+                                    className={`recurring-task ${task.completed ? 'completed' : ''} ${isDragReady ? 'drag-ready' : ''} ${isBeingDragged ? 'dragging' : ''}`}
                                     data-drag-index={idx}
                                     data-drag-bundle={bundleType}
                                     onClick={() => {
-                                        if (dragState?.isDragging) return; // prevent tap during drag
+                                        if (dragState?.mode === 'dragging' || dragState?.mode === 'ready') return; // prevent tap during drag
                                         if (task.completed) {
                                             uncompleteTask(task.id);
                                         } else {

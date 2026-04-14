@@ -4,6 +4,7 @@ import { X, Save, Box } from 'lucide-react';
 import { useCharacterStore, COSMETICS_DB } from '../../store/useCharacterStore';
 import { useEquipmentStore } from '../../store/useEquipmentStore';
 import { useInventoryStore, getItemById } from '../../store/useInventoryStore';
+import { ITEM_DATABASE } from '../../data/items';
 import { useAuraStore, AURAS } from '../../store/useAuraStore';
 import { usePetStore, PET_DATABASE } from '../../store/usePetStore';
 import { useGameStore } from '../../store/useGameStore';
@@ -53,58 +54,109 @@ export const LoadoutPanel = ({ onClose }: { onClose: () => void }) => {
 
     // ── Computed Current Equipment Data ──
     // Maps each slot ID to its actual display data from the unified DB stores
+    // Helper: get owned marketplace armor items for a specific slot
+    const getOwnedArmorForSlot = (slotName: string) =>
+        Object.values(ITEM_DATABASE)
+            .filter(i => i?.type === 'armor' && i?.slot === slotName && invStore.marketplaceOwned.includes(i.id))
+            .map(i => ({
+                id: i.id,
+                name: i.name,
+                icon: i.icon,
+                desc: [
+                    i.stats?.defense ? `DEF +${i.stats.defense}` : '',
+                    i.stats?.attack ? `ATK +${i.stats.attack}` : '',
+                ].filter(Boolean).join(' · ') || i.description || '',
+                isLocked: false,
+            }));
+
+    // Helper: check if an item id is a marketplace armor item (routes to invStore)
+    const isMarketplaceArmor = (itemId: string) => ITEM_DATABASE[itemId]?.type === 'armor';
+
     const getSlotData = (slot: RadialSlotId): { icon: string; name: string; emptyIcon: string } => {
         switch (slot) {
-            case 'helm':
-                const helm = charStore.equipped.head ? COSMETICS_DB[charStore.equipped.head] : null;
-                return { icon: helm ? '🪖' : '', name: helm?.name || '', emptyIcon: '⛑️' };
-            case 'amulet':
+            case 'helm': {
+                // Priority: stat armor from invStore.head > cosmetic from charStore.head
+                const armorHelm = invStore.equipped.head ? getItemById(invStore.equipped.head) : null;
+                if (armorHelm) return { icon: armorHelm.icon || '⛑️', name: armorHelm.name, emptyIcon: '⛑️' };
+                const cosHelm = charStore.equipped.head ? COSMETICS_DB[charStore.equipped.head] : null;
+                return { icon: cosHelm ? '🪖' : '', name: cosHelm?.name || '', emptyIcon: '⛑️' };
+            }
+            case 'amulet': {
                 const amulet = charStore.equipped.accessory ? COSMETICS_DB[charStore.equipped.accessory] : null;
                 return { icon: amulet ? '📿' : '', name: amulet?.name || '', emptyIcon: '💍' };
-            case 'cape':
+            }
+            case 'cape': {
+                // Priority: cloak armor > aura
+                const armorCloak = invStore.equipped.cloak ? getItemById(invStore.equipped.cloak) : null;
+                if (armorCloak) return { icon: armorCloak.icon || '🧥', name: armorCloak.name, emptyIcon: '✨' };
                 const aura = activeAuraId !== 'none' ? AURAS.find(a => a.id === auraStore.activeAuraId) : null;
                 return { icon: aura ? aura.icon : '', name: aura?.name || '', emptyIcon: '✨' };
-            case 'weapon':
+            }
+            case 'weapon': {
                 const wep = invStore.equipped.weapon ? getItemById(invStore.equipped.weapon) : null;
                 return { icon: wep?.icon || '', name: wep?.name || '', emptyIcon: '⚔️' };
-            case 'body':
-                const body = charStore.equipped.body ? COSMETICS_DB[charStore.equipped.body] : null;
-                return { icon: body ? '👕' : '', name: body?.name || '', emptyIcon: '🦺' };
-            case 'shield':
+            }
+            case 'body': {
+                // Priority: armor chest > cosmetic body
+                const armorChest = invStore.equipped.chest ? getItemById(invStore.equipped.chest) : null;
+                if (armorChest) return { icon: armorChest.icon || '🦺', name: armorChest.name, emptyIcon: '🦺' };
+                const cosBody = charStore.equipped.body ? COSMETICS_DB[charStore.equipped.body] : null;
+                return { icon: cosBody ? '👕' : '', name: cosBody?.name || '', emptyIcon: '🦺' };
+            }
+            case 'shield': {
                 const shield = invStore.equipped.armor ? getItemById(invStore.equipped.armor) : null;
                 return { icon: shield?.icon || '', name: shield?.name || '', emptyIcon: '🛡️' };
-            case 'legs':
-                const legs = charStore.equipped.legs ? COSMETICS_DB[charStore.equipped.legs] : null;
-                return { icon: legs ? '👖' : '', name: legs?.name || '', emptyIcon: '🩳' };
-            case 'gloves':
-                return { icon: '', name: '', emptyIcon: '🧤' }; // Not implemented yet
-            case 'boots':
-                const boots = charStore.equipped.feet ? COSMETICS_DB[charStore.equipped.feet] : null;
-                return { icon: boots ? '👟' : '', name: boots?.name || '', emptyIcon: '👢' };
-            case 'ring':
+            }
+            case 'legs': {
+                // Priority: armor legs > cosmetic legs
+                const armorLegs = invStore.equipped.legs ? getItemById(invStore.equipped.legs) : null;
+                if (armorLegs) return { icon: armorLegs.icon || '👖', name: armorLegs.name, emptyIcon: '🩳' };
+                const cosLegs = charStore.equipped.legs ? COSMETICS_DB[charStore.equipped.legs] : null;
+                return { icon: cosLegs ? '👖' : '', name: cosLegs?.name || '', emptyIcon: '🩳' };
+            }
+            case 'gloves': {
+                const armorHands = invStore.equipped.hands ? getItemById(invStore.equipped.hands) : null;
+                return { icon: armorHands?.icon || '', name: armorHands?.name || '', emptyIcon: '🧤' };
+            }
+            case 'boots': {
+                // Priority: armor feet > cosmetic feet
+                const armorFeet = invStore.equipped.feet ? getItemById(invStore.equipped.feet) : null;
+                if (armorFeet) return { icon: armorFeet.icon || '👢', name: armorFeet.name, emptyIcon: '👢' };
+                const cosBoots = charStore.equipped.feet ? COSMETICS_DB[charStore.equipped.feet] : null;
+                return { icon: cosBoots ? '👟' : '', name: cosBoots?.name || '', emptyIcon: '👢' };
+            }
+            case 'ring': {
                 const ring = invStore.equipped.jewelry ? getItemById(invStore.equipped.jewelry) : null;
                 return { icon: ring?.icon || '', name: ring?.name || '', emptyIcon: '💍' };
-            case 'pet':
+            }
+            case 'pet': {
                 const petDef = petStore.equippedPetId ? PET_DATABASE[petStore.equippedPetId] : null;
                 return { icon: petDef?.icon || '', name: petDef?.name || '', emptyIcon: '🐾' };
-            case 'book':
+            }
+            case 'book': {
                 const book = invStore.equipped.book ? getItemById(invStore.equipped.book) : null;
                 return { icon: book?.icon || '', name: book?.name || '', emptyIcon: '📚' };
-            case 'artifact':
+            }
+            case 'artifact': {
                 const artifact = invStore.equipped.artifact ? getItemById(invStore.equipped.artifact) : null;
                 return { icon: artifact?.icon || '', name: artifact?.name || '', emptyIcon: '🔮' };
-            case 'relic':
+            }
+            case 'relic': {
                 const relic = invStore.equipped.relic ? getItemById(invStore.equipped.relic) : null;
                 return { icon: relic?.icon || '', name: relic?.name || '', emptyIcon: '🏺' };
-            case 'pet_accessory':
+            }
+            case 'pet_accessory': {
                 const pAcc = invStore.equipped.pet_accessory ? getItemById(invStore.equipped.pet_accessory) : null;
                 return { icon: pAcc?.icon || '', name: pAcc?.name || '', emptyIcon: '🎀' };
-            case 'spell':
+            }
+            case 'spell': {
                 const spelling = magicStore.equippedSpell ? SPELL_DB[magicStore.equippedSpell] : null;
                 return { icon: spelling?.icon || '', name: spelling?.name || '', emptyIcon: '🪄' };
-            case 'title':
+            }
+            case 'title': {
                 const activeTitle = titleStore.activeTitle ? TITLES.find(t => t.id === titleStore.activeTitle) : null;
                 return { icon: activeTitle?.icon || '', name: activeTitle?.name || '', emptyIcon: '👑' };
+            }
         }
     };
     const activeAuraId = auraStore.activeAuraId;
@@ -224,27 +276,45 @@ export const LoadoutPanel = ({ onClose }: { onClose: () => void }) => {
         
         switch (slot) {
             case 'helm':
-                list = Object.values(COSMETICS_DB).filter(c => c && c.slot === 'head')
-                    .map(c => ({ id: c.id, name: c.name, icon: '🪖', desc: 'Cosmetic', isLocked: !charStore.ownedCosmetics.includes(c.id) }));
+                list = [
+                    ...getOwnedArmorForSlot('head'),
+                    ...Object.values(COSMETICS_DB).filter(c => c?.slot === 'head')
+                        .map(c => ({ id: c.id, name: c.name, icon: '🪖', desc: 'Cosmetic', isLocked: !charStore.ownedCosmetics.includes(c.id) }))
+                ];
                 break;
             case 'body':
-                list = Object.values(COSMETICS_DB).filter(c => c && c.slot === 'body')
-                    .map(c => ({ id: c.id, name: c.name, icon: '👕', desc: 'Cosmetic', isLocked: !charStore.ownedCosmetics.includes(c.id) }));
+                list = [
+                    ...getOwnedArmorForSlot('chest'),
+                    ...Object.values(COSMETICS_DB).filter(c => c?.slot === 'body')
+                        .map(c => ({ id: c.id, name: c.name, icon: '👕', desc: 'Cosmetic', isLocked: !charStore.ownedCosmetics.includes(c.id) }))
+                ];
                 break;
             case 'legs':
-                list = Object.values(COSMETICS_DB).filter(c => c && c.slot === 'legs')
-                    .map(c => ({ id: c.id, name: c.name, icon: '👖', desc: 'Cosmetic', isLocked: !charStore.ownedCosmetics.includes(c.id) }));
+                list = [
+                    ...getOwnedArmorForSlot('legs'),
+                    ...Object.values(COSMETICS_DB).filter(c => c?.slot === 'legs')
+                        .map(c => ({ id: c.id, name: c.name, icon: '👖', desc: 'Cosmetic', isLocked: !charStore.ownedCosmetics.includes(c.id) }))
+                ];
                 break;
             case 'boots':
-                list = Object.values(COSMETICS_DB).filter(c => c && c.slot === 'feet')
-                    .map(c => ({ id: c.id, name: c.name, icon: '👟', desc: 'Cosmetic', isLocked: !charStore.ownedCosmetics.includes(c.id) }));
+                list = [
+                    ...getOwnedArmorForSlot('feet'),
+                    ...Object.values(COSMETICS_DB).filter(c => c?.slot === 'feet')
+                        .map(c => ({ id: c.id, name: c.name, icon: '👟', desc: 'Cosmetic', isLocked: !charStore.ownedCosmetics.includes(c.id) }))
+                ];
                 break;
             case 'amulet':
-                list = Object.values(COSMETICS_DB).filter(c => c && c.slot === 'accessory')
+                list = Object.values(COSMETICS_DB).filter(c => c?.slot === 'accessory')
                     .map(c => ({ id: c.id, name: c.name, icon: '📿', desc: 'Cosmetic', isLocked: !charStore.ownedCosmetics.includes(c.id) }));
                 break;
+            case 'gloves':
+                list = getOwnedArmorForSlot('hands');
+                break;
             case 'cape':
-                list = AURAS.map(a => ({ id: a.id, name: a.name, icon: a.icon, desc: 'Aura boost', isLocked: !auraStore.unlockedAuras.includes(a.id) }));
+                list = [
+                    ...getOwnedArmorForSlot('cloak'),
+                    ...AURAS.map(a => ({ id: a.id, name: a.name, icon: a.icon, desc: 'Aura boost', isLocked: !auraStore.unlockedAuras.includes(a.id) }))
+                ];
                 break;
             case 'weapon':
                 list = Object.keys(invStore.items)
@@ -319,14 +389,15 @@ export const LoadoutPanel = ({ onClose }: { onClose: () => void }) => {
         if (!activeSlot) return;
 
         if (itemId === null) {
-            // Unequip logic
+            // Unequip logic — clear both stores where applicable
             switch (activeSlot) {
-                case 'helm': charStore.unequipItem('head'); break;
-                case 'body': charStore.unequipItem('body'); break;
-                case 'legs': charStore.unequipItem('legs'); break;
-                case 'boots': charStore.unequipItem('feet'); break;
+                case 'helm': invStore.unequipItem('head'); charStore.unequipItem('head'); break;
+                case 'body': invStore.unequipItem('chest'); charStore.unequipItem('body'); break;
+                case 'legs': invStore.unequipItem('legs'); charStore.unequipItem('legs'); break;
+                case 'boots': invStore.unequipItem('feet'); charStore.unequipItem('feet'); break;
+                case 'gloves': invStore.unequipItem('hands'); break;
                 case 'amulet': charStore.unequipItem('accessory'); break;
-                case 'cape': auraStore.setActiveAura('none'); break;
+                case 'cape': invStore.unequipItem('cloak'); auraStore.setActiveAura('none'); break;
                 case 'weapon': equipStore.unequipSlot('weapon'); break;
                 case 'shield': invStore.unequipItem('armor'); break;
                 case 'ring': equipStore.unequipSlot('accessory'); break;
@@ -340,14 +411,30 @@ export const LoadoutPanel = ({ onClose }: { onClose: () => void }) => {
                 case 'gloves': break;
             }
         } else {
-            // Equip logic
+            // Equip logic — route armor items to invStore, cosmetics to charStore
             switch (activeSlot) {
-                case 'helm': charStore.equipItem('head', itemId); break;
-                case 'body': charStore.equipItem('body', itemId); break;
-                case 'legs': charStore.equipItem('legs', itemId); break;
-                case 'boots': charStore.equipItem('feet', itemId); break;
+                case 'helm':
+                    if (isMarketplaceArmor(itemId)) invStore.equipItem(itemId, 'head');
+                    else charStore.equipItem('head', itemId);
+                    break;
+                case 'body':
+                    if (isMarketplaceArmor(itemId)) invStore.equipItem(itemId, 'chest');
+                    else charStore.equipItem('body', itemId);
+                    break;
+                case 'legs':
+                    if (isMarketplaceArmor(itemId)) invStore.equipItem(itemId, 'legs');
+                    else charStore.equipItem('legs', itemId);
+                    break;
+                case 'boots':
+                    if (isMarketplaceArmor(itemId)) invStore.equipItem(itemId, 'feet');
+                    else charStore.equipItem('feet', itemId);
+                    break;
+                case 'gloves': invStore.equipItem(itemId, 'hands'); break;
                 case 'amulet': charStore.equipItem('accessory', itemId); break;
-                case 'cape': auraStore.setActiveAura(itemId); break;
+                case 'cape':
+                    if (isMarketplaceArmor(itemId)) invStore.equipItem(itemId, 'cloak');
+                    else auraStore.setActiveAura(itemId);
+                    break;
                 case 'weapon': equipStore.equipItem(itemId); break;
                 case 'shield': invStore.equipItem(itemId, 'armor'); break;
                 case 'ring': equipStore.equipItem(itemId); break;
