@@ -43,6 +43,8 @@ export const ItemCard = ({
     const canPurchase = isUnlocked && canAfford && !isOwned;
     const [imageError, setImageError] = useState(false);
 
+    const resolvedImage = item.type === 'pet' && PET_DATABASE[item.id]?.image ? PET_DATABASE[item.id].image : item.image;
+
     return (
         <motion.div
             className={`item-card ${!isUnlocked ? 'item-card--locked' : ''} ${isOwned ? 'item-card--owned' : ''}`}
@@ -50,13 +52,13 @@ export const ItemCard = ({
         >
             {/* Item Icon */}
             <div className="item-card-icon">
-                {item.image && !imageError ? (
+                {resolvedImage && !imageError ? (
                     <img 
-                        src={item.image} 
+                        src={resolvedImage} 
                         alt={item.name}
                         className={`item-card-image${item.type === 'pet' ? ' pet-img' : ''}`}
                         onError={() => {
-                            console.error(`Failed to load image for ${item.name}: ${item.image}`);
+                            console.error(`Failed to load image for ${item.name}: ${resolvedImage}`);
                             setImageError(true);
                         }}
                     />

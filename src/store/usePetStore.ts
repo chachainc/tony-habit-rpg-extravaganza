@@ -150,7 +150,34 @@ export const usePetStore = create<PetState>()(
                     }, 2000);
                 }
                 return state;
-            }
+            },
+            onRehydrateStorage: () => (state) => {
+                if (!state) return;
+                // ── One-time forward migration: sync pets bought via the marketplace
+                // that were never registered in ownedPets (bug present before the fix).
+                // Runs once on every boot; addPet is idempotent so duplicates are safe.
+                setTimeout(() => {
+                    Promise.all([
+                        import('./useInventoryStore'),
+                        import('../data/items'),
+                    ]).then(([{ useInventoryStore }, { ITEM_DATABASE }]) => {
+                        const { marketplaceOwned } = useInventoryStore.getState();
+                        const petStore = usePetStore.getState();
+                        let changed = false;
+                        for (const id of marketplaceOwned) {
+                            const item = ITEM_DATABASE[id];
+                            if (item?.type === 'pet' && !petStore.ownedPets.includes(id)) {
+                                petStore.addPet(id);
+                                changed = true;
+                                console.log(`[usePetStore] Retroactively added purchased pet: ${id}`);
+                            }
+                        }
+                        if (changed) {
+                            console.log('[usePetStore] Sync complete — loadout pet list is now up to date.');
+                        }
+                    }).catch(console.error);
+                }, 500);
+            },
         }
     )
 );

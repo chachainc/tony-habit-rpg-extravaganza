@@ -387,13 +387,22 @@ export const useInventoryStore = create<InventoryState>()(
 
                 // Auto-equip if slot is empty, or unconditionally to help user notice newly bought gear.
                 if (item.type === 'armor') {
-                    get().equipItem(itemId, 'armor');
+                    // Use the item's specific slot (feet, chest, head, hands, legs, cloak) if defined;
+                    // fall back to the generic 'armor' slot for unslotted items.
+                    const targetSlot = (item.slot as EquipmentSlot) ?? 'armor';
+                    get().equipItem(itemId, targetSlot);
                 } else if (item.type === 'weapon') {
                     get().equipItem(itemId, 'weapon');
                 } else if (item.type === 'jewelry') {
                     if (!get().equipped.jewelry) get().equipItem(itemId, 'jewelry');
                 } else if (item.type === 'pet_accessory') {
                     if (!get().equipped.pet_accessory) get().equipItem(itemId, 'pet_accessory');
+                } else if (item.type === 'pet') {
+                    // ── CRITICAL: register in usePetStore so the loadout selector sees it ──
+                    // Both EquipmentPanel and LoadoutPanel gate on petStore.ownedPets.
+                    import('./usePetStore').then(({ usePetStore }) => {
+                        usePetStore.getState().addPet(itemId);
+                    }).catch(console.error);
                 }
 
                 return true;

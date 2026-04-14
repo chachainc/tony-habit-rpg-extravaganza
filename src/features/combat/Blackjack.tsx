@@ -140,9 +140,10 @@ const BlackjackCustomizeModal = ({ onClose }: { onClose: () => void }) => {
 
 export const Blackjack = ({ onClose }: { onClose: () => void }) => {
     const bj = useBlackjackStore();
-    const [betAmount, setBetAmount] = useState(10);
     const [showCustomize, setShowCustomize] = useState(false);
     const [showCashOutAmt, setShowCashOutAmt] = useState<number | null>(null);
+    const [pops, setPops] = useState<{ id: number; amt: number }[]>([]);
+    const [shakeChip, setShakeChip] = useState<number | null>(null);
 
     // Auto-reset daily on open
     useEffect(() => { bj.resetDaily(); }, []);
@@ -162,8 +163,15 @@ export const Blackjack = ({ onClose }: { onClose: () => void }) => {
     const themeDef = TABLE_THEMES[bj.selectedTheme] || TABLE_THEMES['classic_felt'];
 
     const handleBetClick = (amt: number) => {
+        if (!bj.addToBet(amt)) {
+            setShakeChip(amt);
+            setTimeout(() => setShakeChip(null), 300);
+            return;
+        }
         playChipClickSound();
-        setBetAmount(amt);
+        const id = Date.now();
+        setPops(prev => [...prev, { id, amt }]);
+        setTimeout(() => setPops(prev => prev.filter(p => p.id !== id)), 800);
     };
 
     return (
@@ -196,18 +204,18 @@ export const Blackjack = ({ onClose }: { onClose: () => void }) => {
                             
                             <div className="bj-cashout-wrapper">
                                 <button
-                                    className={`bj-cashout-btn ${bj.phase !== 'playing' ? 'disabled' : ''}`}
+                                    className={`bj-cashout-btn ${(bj.phase === 'result' || (bj.phase === 'idle' && bj.currentBet === 0)) ? 'disabled' : ''}`}
                                     onClick={() => {
-                                        if (bj.phase !== 'playing') return;
+                                        if (bj.phase === 'result' || (bj.phase === 'idle' && bj.currentBet === 0)) return;
                                         playChipClickSound();
-                                        const refund = Math.floor(bj.currentBet / 2);
+                                        const refund = bj.phase === 'idle' ? 0 : bj.currentBet;
                                         if (refund > 0) {
                                             setShowCashOutAmt(refund);
                                             setTimeout(() => setShowCashOutAmt(null), 1500);
                                         }
                                         bj.cashOut();
                                     }}
-                                    disabled={bj.phase !== 'playing'}
+                                    disabled={bj.phase === 'result' || (bj.phase === 'idle' && bj.currentBet === 0)}
                                 >
                                     CASH OUT
                                 </button>
@@ -312,25 +320,57 @@ export const Blackjack = ({ onClose }: { onClose: () => void }) => {
                             {/* Controls */}
                             {bj.phase === 'idle' && (
                                 <div className="bj-bet-controls">
+                                    <div className="bj-live-bet-display" style={{ textAlign: 'center', marginBottom: '0.8rem', fontSize: '1rem', color: 'rgba(255,255,255,0.8)', fontWeight: 600 }}>
+                                        Current Bet: <span style={{ color: '#fbbf24', fontSize: '1.25rem', fontWeight: 800, marginLeft: '0.3rem' }}>{bj.currentBet}</span>
+                                    </div>
                                     <div className="bj-chip-rack">
                                         {[5, 10, 25].map(amt => (
-                                            <button
-                                                key={amt}
-                                                className={`bj-chip ${betAmount === amt ? 'selected' : ''} ${amt > bj.casinoCoins ? 'disabled' : ''}`}
-                                                onClick={() => handleBetClick(amt)}
-                                                disabled={amt > bj.casinoCoins}
-                                            >
-                                                <div className="bj-chip-inner">{amt}</div>
-                                            </button>
+                                            <div key={amt} className="bj-chip-wrapper" style={{ position: 'relative' }}>
+                                                <button
+                                                    className={`bj-chip ${amt + bj.currentBet > bj.casinoCoins ? 'disabled' : ''} ${shakeChip === amt ? 'shake' : ''}`}
+                                                    onClick={() => handleBetClick(amt)}
+                                                    disabled={amt + bj.currentBet > bj.casinoCoins}
+                                                >
+                                                    <div className="bj-chip-inner">{amt}</div>
+                                                </button>
+                                                <AnimatePresence>
+                                                    {pops.filter(p => p.amt === amt).map(pop => (
+                                                        <motion.div
+                                                            key={pop.id}
+                                                            className="bj-chip-pop"
+                                                            initial={{ opacity: 1, y: 0, scale: 0.8 }}
+                                                            animate={{ opacity: 0, y: -30, scale: 1.2 }}
+                                                            transition={{ duration: 0.6 }}
+                                                            style={{
+                                                                position: 'absolute', top: -10, left: 0, right: 0,
+                                                                textAlign: 'center', color: '#fbbf24', fontWeight: 'bold', textShadow: '0 1px 4px rgba(0,0,0,0.8)', pointerEvents: 'none', zIndex: 10
+                                                            }}
+                                                        >
+                                                            +{amt}
+                                                        </motion.div>
+                                                    ))}
+                                                </AnimatePresence>
+                                            </div>
                                         ))}
                                     </div>
-                                    <button
-                                        className="bj-premium-btn bj-deal-btn"
-                                        onClick={() => { playChipClickSound(); bj.placeBet(betAmount); }}
-                                        disabled={!bj.canPlay() || betAmount > bj.casinoCoins}
-                                    >
-                                        DEAL
-                                    </button>
+                                    <div className="bj-bet-actions" style={{ display: 'flex', gap: '0.5rem', width: '100%', marginTop: '0.5rem' }}>
+                                        <button 
+                                            className="bj-action-btn action-stand" 
+                                            onClick={() => { playChipClickSound(); bj.clearBet(); }} 
+                                            disabled={bj.currentBet === 0}
+                                            style={{ padding: '0.75rem', width: 'auto' }}
+                                        >
+                                            <X size={16} /> CLEAR
+                                        </button>
+                                        <button
+                                            className="bj-premium-btn bj-deal-btn"
+                                            onClick={() => { playChipClickSound(); bj.deal(); }}
+                                            disabled={!bj.canPlay() || bj.currentBet === 0 || bj.currentBet > bj.casinoCoins}
+                                            style={{ flex: 1, margin: 0 }}
+                                        >
+                                            DEAL
+                                        </button>
+                                    </div>
                                     {!bj.canPlay() && (
                                         <div className="bj-limit-msg">Daily limit reached or out of coins!</div>
                                     )}

@@ -82,7 +82,9 @@ interface BlackjackState {
     // Actions
     resetDaily: () => void;
     canPlay: () => boolean;
-    placeBet: (amount: number) => void;
+    addToBet: (amount: number) => boolean;
+    clearBet: () => void;
+    deal: () => void;
     hit: () => void;
     stand: () => void;
     doubleDown: () => void;
@@ -140,16 +142,32 @@ export const useBlackjackStore = create<BlackjackState>()(
                 return s.casinoCoins >= 5 && s.dailyWinnings < MAX_DAILY_WINNINGS;
             },
 
-            placeBet: (amount) => {
+            addToBet: (amount) => {
+                const s = get();
+                const today = getEasternDateString();
+                if (s.lastPlayDate !== today) {
+                    set({ casinoCoins: DAILY_COINS, dailyWinnings: 0, lastPlayDate: today, currentBet: 0 });
+                }
+                const currentState = get();
+                if (currentState.currentBet + amount > currentState.casinoCoins) return false;
+                set({ currentBet: currentState.currentBet + amount });
+                return true;
+            },
+
+            clearBet: () => set({ currentBet: 0 }),
+
+            deal: () => {
                 const s = get();
                 const today = getEasternDateString();
                 // Auto-reset on new day
                 if (s.lastPlayDate !== today) {
-                    set({ casinoCoins: DAILY_COINS, dailyWinnings: 0, lastPlayDate: today });
+                    set({ casinoCoins: DAILY_COINS, dailyWinnings: 0, lastPlayDate: today, currentBet: 0 });
                 }
                 const state = get();
-                if (amount > state.casinoCoins) return;
+                if (state.currentBet === 0 || state.currentBet > state.casinoCoins) return;
                 if (state.dailyWinnings >= MAX_DAILY_WINNINGS) return;
+
+                const amount = state.currentBet;
 
                 const deck = createDeck();
                 const playerHand = [deck.pop()!, deck.pop()!];
@@ -293,12 +311,19 @@ export const useBlackjackStore = create<BlackjackState>()(
 
             cashOut: () => {
                 const s = get();
-                if (s.phase !== 'playing') return;
-                // Treat as "surrender" (forfeit half bet) if mid-hand, "awards current winnings" will just be half back.
-                const returned = Math.floor(s.currentBet / 2);
+                if (s.phase === 'result') {
+                    set({ phase: 'idle', playerHand: [], dealerHand: [], deck: [], currentBet: 0, result: null, message: '' });
+                    return;
+                }
+                if (s.phase === 'idle') {
+                    set({ currentBet: 0 });
+                    return;
+                }
+                
+                // If phase is 'playing': return the player's bet (since they haven't busted)
                 set({
                     phase: 'idle',
-                    casinoCoins: s.casinoCoins + returned,
+                    casinoCoins: s.casinoCoins + s.currentBet,
                     playerHand: [], dealerHand: [], deck: [],
                     currentBet: 0, result: null, message: 'Cashed out'
                 });
