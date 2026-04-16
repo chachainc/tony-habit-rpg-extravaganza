@@ -327,7 +327,7 @@ export const Blackjack = ({ onClose }: { onClose: () => void }) => {
                                         {[5, 10, 25].map(amt => (
                                             <div key={amt} className="bj-chip-wrapper" style={{ position: 'relative' }}>
                                                 <button
-                                                    className={`bj-chip ${amt + bj.currentBet > bj.casinoCoins ? 'disabled' : ''} ${shakeChip === amt ? 'shake' : ''}`}
+                                                    className={`bj-chip bj-chip-${amt} ${amt + bj.currentBet > bj.casinoCoins ? 'disabled' : ''} ${shakeChip === amt ? 'shake' : ''}`}
                                                     onClick={() => handleBetClick(amt)}
                                                     disabled={amt + bj.currentBet > bj.casinoCoins}
                                                 >

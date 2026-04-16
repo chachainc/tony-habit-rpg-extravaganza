@@ -4,6 +4,7 @@ import { AnimatePresence } from 'framer-motion';
 import { Layout } from './components/layout/Layout';
 import { TownHub } from './features/town/TownHub';
 import { TasksPage } from './features/tasks/TasksPage';
+import { AllTasksPage } from './features/tasks/AllTasksPage';
 import { PetPage } from './features/pet/PetPage';
 import { StatsPage } from './features/stats/StatsPage';
 import { Room2D } from './features/room/Room2D';
@@ -22,6 +23,7 @@ import { HealthTracker } from './features/health/HealthTracker';
 import { Conquest } from './features/conquest/Conquest';
 import { ConquestBattle } from './features/conquest/ConquestBattle';
 import { CombatPage } from './features/combat/CombatPage';
+import { ChessDashboard } from './features/chess/ChessDashboard';
 import { RiskPage } from './features/risk/RiskPage';
 import { TowerDefensePage } from './features/tower-defense/TowerDefensePage';
 import { StormTheFort } from './features/storm/StormTheFort';
@@ -40,12 +42,18 @@ import { CharacterPage } from './features/character/CharacterPage';
 import { CurrencyPopVFX } from './components/vfx/CurrencyPopVFX';
 import { PlayerRoom } from './features/room/PlayerRoom';
 import { RoomLobby } from './features/room/RoomLobby';
+import { FocusRoom } from './features/focus/FocusRoom';
+import { JournalHub } from './features/room/JournalHub';
+import { JournalEditor } from './features/room/JournalEditor';
+import { JournalHistory } from './features/room/JournalHistory';
 import { useDayStore } from './store/useDayStore';
 import { useGameStore } from './store/useGameStore';
 import { useProfileStore, triggerAutoSync } from './store/useProfileStore';
 import { useBudgetStore } from './store/useBudgetStore';
 import { WelcomeTutorialModal } from './features/onboarding/WelcomeTutorialModal';
 import { UltimateVideoOverlay } from './components/ui/UltimateVideoOverlay';
+import { usePetStore } from './store/usePetStore';
+import { useToast } from './components/ui/Toast';
 
 // Town Hub wrapper to handle navigation
 const TownHubPage = () => {
@@ -102,6 +110,47 @@ function App() {
   const { pendingLevelUp, clearLevelUp } = useGameStore();
   const { isLoggedIn, classType } = useProfileStore();
   const [showWakeUp, setShowWakeUp] = useState(false);
+
+  // Focus on Cosmic Mythic Global Regeneration
+  useEffect(() => {
+    const PULSE_INTERVAL = 60000; // 60s
+    let intervalId: any;
+
+    const runPulse = () => {
+      // Must read exact fresh state per cycle
+      const petStore = usePetStore.getState();
+      const gameStore = useGameStore.getState();
+      
+      if (petStore.equippedPetId === 'cosmic_tortoise') {
+          const currentHp = gameStore.health;
+          const maxHp = gameStore.getMaxHealth();
+          const currentMp = gameStore.mp;
+          const maxMp = gameStore.getMaxMP();
+
+          const hpNeedsRegen = currentHp < maxHp;
+          const mpNeedsRegen = currentMp < maxMp;
+
+          if (hpNeedsRegen || mpNeedsRegen) {
+             // fixed value, not % max (very small increment)
+             const hpAmount = 5;
+             const mpAmount = 5;
+
+             if (hpNeedsRegen) gameStore.addHealth(hpAmount);
+             if (mpNeedsRegen) gameStore.addMP(mpAmount);
+
+             // Optional logic: we don't spam toast every 60 seconds. It works silently in background.
+             // We'll keep it totally silent so it doesn't annoy the user.
+          }
+      }
+    };
+
+    intervalId = setInterval(runPulse, PULSE_INTERVAL);
+    
+    return () => {
+      if (intervalId) clearInterval(intervalId);
+    };
+  }, []); // single mount interval
+
   useEffect(() => {
     console.log('[BOOT] App mounted');
     useBudgetStore.getState().processDailyLogin();
@@ -196,6 +245,7 @@ function App() {
       <Routes>
         <Route path="/" element={<Layout />}>
           <Route index element={<TasksPage />} />
+          <Route path="tasks/all" element={<AllTasksPage />} />
           <Route path="character" element={<CharacterPage />} />
           <Route path="town" element={<TownHubPage />} />
           <Route path="tasks" element={<TasksPage />} />
@@ -207,8 +257,12 @@ function App() {
           <Route path="gym" element={<GymTracker />} />
           <Route path="health" element={<HealthTracker />} />
           <Route path="conquest" element={<Conquest />} />
-          <Route path="conquest/battle" element={<ConquestBattle />} />
+          <Route path="focus" element={<FocusRoom />} />
+          <Route path="journal" element={<JournalHub />} />
+          <Route path="journal/:category" element={<JournalEditor />} />
+          <Route path="journal/:category/history" element={<JournalHistory />} />
           <Route path="combat" element={<CombatPage />} />
+          <Route path="combat/chess" element={<ChessDashboard />} />
           <Route path="risk" element={<RiskPage />} />
           <Route path="tower-defense" element={<TowerDefensePage />} />
           <Route path="budget" element={<BudgetPage />} />

@@ -559,63 +559,24 @@ const COSMETIC_ENTRIES: CodexEntry[] = [
 // ── BOOK ITEMS (from Library) ────────────────────────────────────────────
 // Each book type has levels 1-3 in the codex; owned based on useInventoryStore
 
-const BOOK_CODEX_ENTRIES: CodexEntry[] = [
-    // Fantasy Book
-    ...([1, 2, 3].map(lv => ({
-        id: `codex_book_fantasy_lv${lv}`,
-        name: `Fantasy Tome ${lv === 1 ? 'I' : lv === 2 ? 'II' : 'III'}`,
-        icon: '📘',
-        section: 'books' as CodexSection,
-        rarity: (['common', 'rare', 'epic'] as CodexRarity[])[lv - 1],
-        description: `A Fantasy Tome at Level ${lv}. Grants +${lv === 1 ? 2 : lv === 2 ? 5 : 10} Intelligence.`,
-        sources: ['library'] as CodexSource[],
-        obtainHint: lv === 1 ? 'Complete any Fantasy book in the Library.' : `Fuse 3 Fantasy Tomes of the previous level.`,
-    }))),
-    // History Book
-    ...([1, 2, 3].map(lv => ({
-        id: `codex_book_history_lv${lv}`,
-        name: `History Tome ${lv === 1 ? 'I' : lv === 2 ? 'II' : 'III'}`,
-        icon: '📖',
-        section: 'books' as CodexSection,
-        rarity: (['common', 'rare', 'epic'] as CodexRarity[])[lv - 1],
-        description: `A History Tome at Level ${lv}. Grants +${lv === 1 ? 2 : lv === 2 ? 5 : 10} Intelligence.`,
-        sources: ['library'] as CodexSource[],
-        obtainHint: lv === 1 ? 'Complete any History book in the Library.' : `Fuse 3 History Tomes of the previous level.`,
-    }))),
-    // Business Book
-    ...([1, 2, 3].map(lv => ({
-        id: `codex_book_business_lv${lv}`,
-        name: `Business Tome ${lv === 1 ? 'I' : lv === 2 ? 'II' : 'III'}`,
-        icon: '📓',
-        section: 'books' as CodexSection,
-        rarity: (['common', 'rare', 'epic'] as CodexRarity[])[lv - 1],
-        description: `A Business Tome at Level ${lv}. Grants +${lv === 1 ? 2 : lv === 2 ? 5 : 10} Intelligence and Strategy XP.`,
-        sources: ['library'] as CodexSource[],
-        obtainHint: lv === 1 ? 'Complete any Business book in the Library.' : `Fuse 3 Business Tomes of the previous level.`,
-    }))),
-    // Self-Improvement Book
-    ...([1, 2, 3].map(lv => ({
-        id: `codex_book_self-improvement_lv${lv}`,
-        name: `Self-Improvement Tome ${lv === 1 ? 'I' : lv === 2 ? 'II' : 'III'}`,
-        icon: '📒',
-        section: 'books' as CodexSection,
-        rarity: (['common', 'rare', 'epic'] as CodexRarity[])[lv - 1],
-        description: `A Self-Improvement Tome at Level ${lv}. Grants +${lv === 1 ? 2 : lv === 2 ? 5 : 10} Intelligence.`,
-        sources: ['library'] as CodexSource[],
-        obtainHint: lv === 1 ? 'Complete any Self-Improvement book in the Library.' : `Fuse 3 Self-Improvement Tomes of the previous level.`,
-    }))),
-    // Philosophy Book
-    ...([1, 2, 3].map(lv => ({
-        id: `codex_book_philosophy_lv${lv}`,
-        name: `Philosophy Tome ${lv === 1 ? 'I' : lv === 2 ? 'II' : 'III'}`,
-        icon: '📚',
-        section: 'books' as CodexSection,
-        rarity: (['common', 'rare', 'epic'] as CodexRarity[])[lv - 1],
-        description: `A Philosophy Tome at Level ${lv}. Grants +${lv === 1 ? 2 : lv === 2 ? 5 : 10} Intelligence.`,
-        sources: ['library'] as CodexSource[],
-        obtainHint: lv === 1 ? 'Complete any Philosophy book in the Library.' : `Fuse 3 Philosophy Tomes of the previous level.`,
-    }))),
-];
+const BOOK_CODEX_ENTRIES: CodexEntry[] = Object.values(ITEM_DB)
+    .filter(i => i.type === 'book' && i.category)
+    .map(b => {
+        const catLabel = b.category === 'self-improvement' ? 'Self-Improvement' :
+            b.category!.charAt(0).toUpperCase() + b.category!.slice(1);
+        return {
+            id: `codex_item_${b.id}`,
+            name: b.name,
+            icon: b.icon || '📚',
+            section: 'books' as CodexSection,
+            rarity: (b.rarity as CodexRarity) || 'common',
+            description: `A ${catLabel} Tome at Level ${b.level}. Grants ${b.effect}.`,
+            sources: ['library'] as CodexSource[],
+            obtainHint: b.level === 1
+                ? `Complete any ${catLabel} book in the Library.`
+                : `Fuse 3 ${catLabel} Tomes of the previous level.`,
+        };
+    });
 
 // ── EQUIPMENT (Weapons, Armor, Jewelry) ───────────────────────────────────────
 const ITEM_WEAPONS: CodexEntry[] = Object.values(ITEM_DB).filter(i => i.type === 'weapon').map(w => ({

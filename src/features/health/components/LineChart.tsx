@@ -36,9 +36,9 @@ export const LineChart: React.FC<LineChartProps> = ({ data, color, label }) => {
 
     const W = 300;
     const H = 140;
-    const padX = 14;
+    const padX = 20;
     const padYTop = 8;
-    const padYBottom = 22;
+    const padYBottom = 26;
     const plotW = W - padX * 2;
     const plotH = H - padYTop - padYBottom;
 
@@ -112,7 +112,7 @@ export const LineChart: React.FC<LineChartProps> = ({ data, color, label }) => {
                     return (
                         <g key={frac}>
                             <line x1={padX} y1={y} x2={W - padX} y2={y} stroke="rgba(148,163,184,0.06)" strokeWidth="0.5" />
-                            <text x={padX - 2} y={y + 1.5} fill="rgba(148,163,184,0.35)" fontSize="4" fontWeight="500" textAnchor="end">{Math.round(val)}</text>
+                            <text x={padX - 5} y={y + 2.5} fill="#cbd5e1" opacity="0.85" fontSize="6.5" fontWeight="600" textAnchor="end">{Math.round(val)}</text>
                         </g>
                     );
                 })}
@@ -129,7 +129,7 @@ export const LineChart: React.FC<LineChartProps> = ({ data, color, label }) => {
                     if (!showLabel && !isFirst) return null;
 
                     return (
-                        <text key={`x-${i}`} x={p.x} y={H - 4} fill="rgba(148,163,184,0.5)" fontSize="4.5" fontWeight="500" textAnchor="middle">
+                        <text key={`x-${i}`} x={p.x} y={H - 6} fill="#cbd5e1" opacity="0.85" fontSize="6" fontWeight="600" textAnchor="middle">
                             {formatShortDate(p.entry.date)}
                         </text>
                     );

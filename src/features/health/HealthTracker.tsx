@@ -15,6 +15,12 @@ export const HealthTracker = () => {
 
     return (
         <div className="health-tracker" style={{ paddingBottom: '120px' }}>
+            {/* Background Layers */}
+            <div className="health-bg">
+                <div className="health-bg__image" />
+                <div className="health-bg__overlay" />
+            </div>
+
             <div className="health-header" style={{ position: 'sticky', top: 0, zIndex: 10, background: 'var(--bg-dark)', padding: '1rem', borderBottom: '1px solid rgba(255,255,255,0.05)', display: 'flex', alignItems: 'center', gap: '1rem' }}>
                 <button className="health-back-btn" onClick={() => navigate(-1)} style={{ background: 'transparent', border: 'none', color: 'white', cursor: 'pointer' }}>
                     <ArrowLeft size={20} />

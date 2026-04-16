@@ -426,6 +426,50 @@ export const ConquestBattle = () => {
                             <span className="cq-ult-energy">{Math.floor(energyPct)}/100</span>
                         </button>
 
+                        <AnimatePresence>
+                            {(isRolling || isHeavyRolling) && (
+                                <motion.div
+                                    className="cq-dice-overlay"
+                                    initial={{ scale: 0.5, opacity: 0, y: 50, rotate: -15 }}
+                                    animate={{ scale: 1, opacity: 1, y: 0, rotate: 0 }}
+                                    exit={{ scale: 1.2, opacity: 0, y: -20 }}
+                                    transition={{ type: 'spring', stiffness: 300, damping: 20 }}
+                                    style={{
+                                        position: 'absolute',
+                                        top: '40%',
+                                        left: '50%',
+                                        transform: 'translate(-50%, -50%)',
+                                        zIndex: 60,
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        gap: '12px',
+                                        background: 'rgba(0,0,0,0.85)',
+                                        padding: '1.5rem 2.5rem',
+                                        border: isHeavyRolling ? '3px solid #ef4444' : '3px solid #3b82f6',
+                                        borderRadius: '24px',
+                                        boxShadow: isHeavyRolling ? '0 10px 40px rgba(239, 68, 68, 0.4)' : '0 10px 40px rgba(59, 130, 246, 0.4)',
+                                        backdropFilter: 'blur(10px)',
+                                        color: '#fff',
+                                        fontSize: '3rem',
+                                        fontWeight: 900,
+                                        textShadow: '0 4px 10px rgba(0,0,0,0.8)'
+                                    }}
+                                >
+                                    <motion.span 
+                                        animate={{ rotate: [0, -10, 10, -10, 10, 0] }} 
+                                        transition={{ duration: 0.3, repeat: Infinity }} 
+                                        style={{ fontSize: '4rem', filter: 'drop-shadow(0 4px 6px rgba(0,0,0,0.5))', display: 'inline-block' }}
+                                    >
+                                        🎲
+                                    </motion.span>
+                                    <span style={{ minWidth: '3ch', textAlign: 'center', color: '#fbbf24' }}>
+                                        {isHeavyRolling ? heavyRollValue : rollValue}
+                                    </span>
+                                </motion.div>
+                            )}
+                        </AnimatePresence>
+
                         {/* 2-column action grid */}
                         <div className="cq-action-grid">
                             {/* Heavy Attack */}
@@ -463,16 +507,14 @@ export const ConquestBattle = () => {
                                                 battle.executePlayerAction();
                                                 setIsHeavyRolling(false);
                                                 setHeavyRollValue(null);
-                                            }, 400);
+                                            }, 800);
                                         }
                                     }, 50);
                                 }}
                             >
                                 <div className="cq-btn-top">💥 Heavy</div>
-                                <div className="cq-btn-mid" style={isHeavyRolling ? { color: '#fbbf24' } : {}}>
-                                    {isHeavyRolling && heavyRollValue !== null
-                                        ? `🎲 ${heavyRollValue}`
-                                        : `${Math.max(1, Math.ceil(Math.max(1, player.atk * battle.playerDamageModifier) * 0.5))}-${Math.max(1, Math.floor(Math.max(1, player.atk * battle.playerDamageModifier) * 1.5))}`}
+                                <div className="cq-btn-mid">
+                                    {`${Math.max(1, Math.ceil(Math.max(1, player.atk * battle.playerDamageModifier) * 0.5))}-${Math.max(1, Math.floor(Math.max(1, player.atk * battle.playerDamageModifier) * 1.5))}`}
                                 </div>
                                 <div className="cq-btn-bot">
                                     {battle.heavyAttackCooldown > 0
@@ -511,14 +553,14 @@ export const ConquestBattle = () => {
                                                 battle.executePlayerAction();
                                                 setIsRolling(false);
                                                 setRollValue(null);
-                                            }, 400);
+                                            }, 800);
                                         }
                                     }, 50);
                                 }}
                             >
                                 <div className="cq-btn-top">⚡ Light</div>
-                                <div className="cq-btn-mid" style={isRolling ? { color: '#fbbf24' } : {}}>
-                                    {isRolling && rollValue !== null ? `🎲 ${rollValue}` : `1–${Math.max(1, Math.floor(player.atk * battle.playerDamageModifier))}`}
+                                <div className="cq-btn-mid">
+                                    {`1–${Math.max(1, Math.floor(player.atk * battle.playerDamageModifier))}`}
                                 </div>
                                 <div className="cq-btn-bot">Always Hits</div>
                             </button>

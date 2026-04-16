@@ -66,9 +66,8 @@ function useOwnedChecker() {
             return boardStore.ownedCosmetics.includes(cosId);
         }
         if (entry.section === 'books') {
-            const match = entry.id.match(/^codex_book_(.+)_lv(\d+)$/);
-            if (match) {
-                const itemId = `${match[1]}_book_${match[2]}`;
+            if (entry.id.startsWith('codex_item_')) {
+                const itemId = entry.id.replace('codex_item_', '');
                 return inventoryStore.discoveredItems?.includes(itemId) || false;
             }
         }
@@ -246,13 +245,15 @@ export const CollectionCodex = () => {
         // Sort: owned → locked, then by rarity desc
         result.sort((a, b) => {
             if (activeSection === 'books') {
-                const cats = ['fantasy', 'business', 'self-improvement', 'history', 'philosophy'];
-                const matchA = a.entry.id.match(/^codex_book_(.+)_lv(\d+)$/);
-                const matchB = b.entry.id.match(/^codex_book_(.+)_lv(\d+)$/);
+                const cats = ['fantasy', 'business', 'self-improvement', 'philosophy'];
+                const matchA = a.entry.id.replace('codex_item_', '').match(/^([a-z-]+)_tome_(\d+)$/);
+                const matchB = b.entry.id.replace('codex_item_', '').match(/^([a-z-]+)_tome_(\d+)$/);
                 if (matchA && matchB) {
-                    const catAIdx = cats.indexOf(matchA[1]);
-                    const catBIdx = cats.indexOf(matchB[1]);
-                    if (catAIdx !== catBIdx) return catAIdx - catBIdx;
+                    const mappedCatA = matchA[1] === 'discipline' ? 'self-improvement' : matchA[1] === 'commerce' ? 'business' : matchA[1];
+                    const mappedCatB = matchB[1] === 'discipline' ? 'self-improvement' : matchB[1] === 'commerce' ? 'business' : matchB[1];
+                    const catAIdx = cats.indexOf(mappedCatA);
+                    const catBIdx = cats.indexOf(mappedCatB);
+                    if (catAIdx !== catBIdx) return (catAIdx === -1 ? 99 : catAIdx) - (catBIdx === -1 ? 99 : catBIdx);
                     return parseInt(matchA[2], 10) - parseInt(matchB[2], 10);
                 }
             }

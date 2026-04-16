@@ -1,0 +1,232 @@
+/* Layout Container */
+.chess-system-container {
+    padding: 1rem;
+    height: 100vh;
+    overflow-y: auto;
+    position: relative;
+    background: #0f172a;
+    display: flex;
+    flex-direction: column;
+}
+
+/* Base safe-zone backgrounds */
+.chess-bg-dashboard {
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    z-index: 0;
+    background: url('/assets/chess_dashboard_bg.png') center/cover no-repeat;
+    opacity: 0.8;
+}
+.chess-bg-lesson {
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    z-index: 0;
+    background: url('/assets/chess_lesson_bg.png') center/cover no-repeat;
+    opacity: 0.8;
+}
+.chess-bg-puzzle {
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    z-index: 0;
+    background: url('/assets/chess_puzzle_bg.png') center/cover no-repeat;
+    opacity: 0.8;
+}
+.chess-bg-ladder {
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    z-index: 0;
+    background: url('/assets/chess_ladder_bg.png') center/cover no-repeat;
+    opacity: 0.8;
+}
+
+.chess-system-content {
+    position: relative;
+    z-index: 10;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+/* Header */
+.chess-sys-header {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid rgba(255,255,255,0.1);
+    margin-bottom: 1.5rem;
+}
+
+.chess-sys-header h1 {
+    margin: 0;
+    color: #f8fafc;
+    flex: 1;
+}
+
+.chess-energy-badge {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    background: rgba(15, 23, 42, 0.6);
+    backdrop-filter: blur(8px);
+    border: 1px solid #3b82f6;
+    padding: 0.5rem 1rem;
+    border-radius: 99px;
+    color: #60a5fa;
+    font-weight: bold;
+}
+
+/* Dashboard Cards */
+.chess-dash-grid {
+    display: grid;
+    gap: 1rem;
+    grid-template-columns: 1fr;
+}
+
+.chess-dash-card {
+    background: rgba(30, 41, 59, 0.8);
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 16px;
+    padding: 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.chess-dash-card:active {
+    transform: scale(0.98);
+}
+
+.chess-dash-card-icon {
+    width: 60px;
+    height: 60px;
+    border-radius: 12px;
+    background: linear-gradient(135deg, #1e293b, #0f172a);
+    border: 1px solid rgba(255,255,255,0.05);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2rem;
+    box-shadow: inset 0 2px 4px rgba(255,255,255,0.1);
+}
+
+.chess-dash-card-info {
+    flex: 1;
+}
+
+.chess-dash-card-info h2 {
+    margin: 0 0 0.5rem 0;
+    color: #f8fafc;
+    font-size: 1.25rem;
+}
+
+.chess-progress-track {
+    height: 6px;
+    background: #334155;
+    border-radius: 3px;
+    overflow: hidden;
+    margin-top: 0.75rem;
+}
+
+.chess-progress-fill {
+    height: 100%;
+    background: #a855f7;
+    border-radius: 3px;
+}
+
+/* Playstyles Panel */
+.playstyle-hub {
+    background: rgba(30, 41, 59, 0.9);
+    border: 1px solid #475569;
+    border-radius: 16px;
+    padding: 1.5rem;
+}
+
+.playstyle-identity {
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+    margin-top: 1.5rem;
+}
+
+.playstyle-avatar {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    background: linear-gradient(180deg, #3b82f6, #1e3a8a);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 3rem;
+    border: 3px solid #60a5fa;
+}
+
+.playstyle-stats p {
+    margin: 0.25rem 0;
+    color: #cbd5e1;
+}
+
+/* Ladder Boss Card */
+.boss-card {
+    background: rgba(15, 23, 42, 0.8);
+    border: 1px solid #334155;
+    border-radius: 16px;
+    padding: 1.5rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1rem;
+    text-align: center;
+}
+
+.boss-avatar {
+    font-size: 4rem;
+    text-shadow: 0 0 20px rgba(255,255,255,0.2);
+}
+
+.boss-card h3 { margin: 0; color: #f8fafc; }
+.boss-difficulty { color: #ef4444; font-weight: bold; font-size: 0.9rem; }
+
+/* In-game / Lesson specific */
+.lesson-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.lesson-top-ui {
+    width: 100%;
+    max-width: 400px;
+    text-align: center;
+    margin-bottom: 2rem;
+}
+
+.lesson-bottom-ui {
+    width: 100%;
+    max-width: 400px;
+    margin-top: 2rem;
+    padding: 1.5rem;
+    background: rgba(15, 23, 42, 0.7);
+    backdrop-filter: blur(10px);
+    border-radius: 16px;
+    border: 1px solid rgba(255,255,255,0.1);
+}
+
+.trap-flash-overlay {
+    position: absolute;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    background: rgba(239, 68, 68, 0.9);
+    padding: 2rem;
+    border-radius: 16px;
+    border: 2px solid #fca5a5;
+    text-align: center;
+    z-index: 100;
+    pointer-events: none;
+}
+
+.trap-flash-overlay h2 { margin: 0 0 0.5rem 0; color: white; font-size: 2rem; font-style: italic; }
+.trap-flash-overlay p { margin: 0; color: #fecaca; font-weight: bold; }

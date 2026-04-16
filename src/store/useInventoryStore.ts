@@ -5,7 +5,8 @@ import { safeStorage } from '../utils/safeStorage';
 console.log('[BOOT] useInventoryStore module load started');
 import { ITEM_DATABASE } from '../data/items';
 import { useCurrencyStore } from './useCurrencyStore';
-import type { SkillName } from './useGameStore';
+import { useGameStore, type SkillName } from './useGameStore';
+import { getPassiveBonuses } from './usePassiveEffects';
 
 export type ItemType = 'food' | 'toy' | 'potion' | 'weapon' | 'armor' | 'pet_gear' | 'ticket' | 'furniture' | 'book' | 'relic' | 'artifact' | 'jewelry' | 'pet_accessory';
 export type Rarity = 'common' | 'rare' | 'epic' | 'legendary';
@@ -24,6 +25,8 @@ export interface ItemStatBonuses {
     strategy?: number;       // Strategy XP bonus
     maxMana?: number;        // Max mana/MP bonus (from Fantasy tomes)
     habitBonus?: number;     // Flat Habit skill bonus (from Discipline tomes)
+    magicDefense?: number;   // Magic Defense bonus (from Philosophy tomes)
+    maxEnergy?: number;      // Max Energy bonus (from Philosophy tomes)
 }
 
 export interface ItemDef {
@@ -152,6 +155,13 @@ export const ITEM_DB: Record<string, ItemDef> = mergeExternalItems({
     'commerce_tome_3': { id: 'commerce_tome_3', name: 'Commerce Tome III', type: 'book', category: 'business', level: 3, fusionRequired: 3, effect: '+10% Gold', rarity: 'epic',      shopCategory: 'library', value: 0, price: 0, icon: '📓', statBonuses: { goldMultiplier: 10 } },
     'commerce_tome_4': { id: 'commerce_tome_4', name: 'Commerce Tome IV',  type: 'book', category: 'business', level: 4, fusionRequired: 3, effect: '+18% Gold', rarity: 'legendary', shopCategory: 'library', value: 0, price: 0, icon: '📓', statBonuses: { goldMultiplier: 18 } },
     'commerce_tome_5': { id: 'commerce_tome_5', name: 'Commerce Tome V',   type: 'book', category: 'business', level: 5, fusionRequired: 0, effect: '+30% Gold', rarity: 'legendary', shopCategory: 'library', value: 0, price: 0, icon: '📓', statBonuses: { goldMultiplier: 30 } },
+
+    // --- Philosophy Tomes (Magic Defense & Max Energy, Violet) ---
+    'philosophy_tome_1': { id: 'philosophy_tome_1', name: 'Philosophy Tome I',   type: 'book', category: 'philosophy', level: 1, fusionRequired: 3, effect: '+2 Magic Defense, +5 Max Energy',  rarity: 'common',    shopCategory: 'library', value: 0, price: 0, icon: '📚', statBonuses: { magicDefense: 2, maxEnergy: 5 } },
+    'philosophy_tome_2': { id: 'philosophy_tome_2', name: 'Philosophy Tome II',  type: 'book', category: 'philosophy', level: 2, fusionRequired: 3, effect: '+4 Magic Defense, +10 Max Energy', rarity: 'rare',      shopCategory: 'library', value: 0, price: 0, icon: '📚', statBonuses: { magicDefense: 4, maxEnergy: 10 } },
+    'philosophy_tome_3': { id: 'philosophy_tome_3', name: 'Philosophy Tome III', type: 'book', category: 'philosophy', level: 3, fusionRequired: 3, effect: '+6 Magic Defense, +15 Max Energy', rarity: 'epic',      shopCategory: 'library', value: 0, price: 0, icon: '📚', statBonuses: { magicDefense: 6, maxEnergy: 15 } },
+    'philosophy_tome_4': { id: 'philosophy_tome_4', name: 'Philosophy Tome IV',  type: 'book', category: 'philosophy', level: 4, fusionRequired: 3, effect: '+8 Magic Defense, +20 Max Energy', rarity: 'legendary', shopCategory: 'library', value: 0, price: 0, icon: '📚', statBonuses: { magicDefense: 8, maxEnergy: 20 } },
+    'philosophy_tome_5': { id: 'philosophy_tome_5', name: 'Philosophy Tome V',   type: 'book', category: 'philosophy', level: 5, fusionRequired: 0, effect: '+10 Magic Defense, +25 Max Energy', rarity: 'legendary', shopCategory: 'library', value: 0, price: 0, icon: '📚', statBonuses: { magicDefense: 10, maxEnergy: 25 } },
 });
 
 export const getItemById = (id: string | null | undefined): (ItemDef | any) => {
@@ -173,6 +183,8 @@ export function formatStatBonuses(bonuses: ItemStatBonuses | undefined): string 
     if (bonuses.goldMultiplier) parts.push(`+${bonuses.goldMultiplier}% Gold`);
     if (bonuses.intelligence) parts.push(`+${bonuses.intelligence} INT`);
     if (bonuses.strategy) parts.push(`+${bonuses.strategy} STR XP`);
+    if (bonuses.magicDefense) parts.push(`+${bonuses.magicDefense} M.DEF`);
+    if (bonuses.maxEnergy) parts.push(`+${bonuses.maxEnergy} M.ENG`);
     return parts.join(' · ');
 }
 
@@ -189,6 +201,8 @@ export function getStatDelta(newItem: ItemDef | null, currentItem: ItemDef | nul
         goldMultiplier: (nB.goldMultiplier ?? 0) - (cB.goldMultiplier ?? 0),
         intelligence: (nB.intelligence ?? 0) - (cB.intelligence ?? 0),
         strategy: (nB.strategy ?? 0) - (cB.strategy ?? 0),
+        magicDefense: (nB.magicDefense ?? 0) - (cB.magicDefense ?? 0),
+        maxEnergy: (nB.maxEnergy ?? 0) - (cB.maxEnergy ?? 0),
     };
 }
 
@@ -376,7 +390,17 @@ export const useInventoryStore = create<InventoryState>()(
                 }
 
                 const currencyStore = useCurrencyStore.getState();
-                if (!currencyStore.spendCurrency(item.cost)) {
+                let finalCost = { ...item.cost };
+
+                if (finalCost.gold) {
+                    const rawDiscount = useGameStore.getState().getWorkDiscount();
+                    const equipDiscount = getPassiveBonuses().gold_multiplier ?? 0;
+                    const discountPercent = Math.min(50, rawDiscount + equipDiscount);
+                    const discountMult = 1 - (discountPercent / 100);
+                    finalCost.gold = Math.max(1, Math.floor(finalCost.gold * discountMult));
+                }
+
+                if (!currencyStore.spendCurrency(finalCost)) {
                     return false;
                 }
 

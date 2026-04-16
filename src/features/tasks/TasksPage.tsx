@@ -11,6 +11,7 @@ import { useTodoStore, type TimeOfDay, type Recurrence, TIME_OF_DAY_LABELS } fro
 import { WeightInput } from '../../components/WeightInput/WeightInput';
 import { TrainingInput } from './TrainingInput';
 import { DailyChest } from './DailyChest';
+import { EditTaskModal } from './EditTaskModal';
 import { useNavigate } from 'react-router-dom';
 import { getTodayIndex, getDayName, formatDaysInfo } from '../../utils/dayHelpers';
 import { type RecurrenceType } from '../../store/useRecurringTasksStore';
@@ -169,6 +170,8 @@ export const TasksPage = () => {
 
     // Category filter
     const [activeCategoryFilter, setActiveCategoryFilter] = useState<TaskCategory | 'all'>('all');
+
+    const [editingTask, setEditingTask] = useState<any>(null);
 
     // Stats dashboard
     const [showStats, setShowStats] = useState(false);
@@ -365,7 +368,6 @@ export const TasksPage = () => {
             }
             setDragState(prev => prev ? { ...prev, mode: 'ready' } : null);
             document.body.style.overflow = 'hidden';
-            document.body.style.touchAction = 'none';
         }, 250);
     };
 
@@ -412,7 +414,6 @@ export const TasksPage = () => {
         const handleUp = () => {
             if (holdTimerRef.current) clearTimeout(holdTimerRef.current);
             document.body.style.overflow = '';
-            document.body.style.touchAction = '';
 
             if (dragState?.mode === 'dragging' && dragOverItem.current) {
                 moveDailyTask(dragState.taskId, dragOverItem.current.bundle, dragOverItem.current.index);
@@ -421,19 +422,27 @@ export const TasksPage = () => {
             dragOverItem.current = null;
         };
 
+        const handleTouchMove = (e: TouchEvent) => {
+            // Required for iOS Safari to lock scroll during active drag
+            if (dragState?.mode === 'ready' || dragState?.mode === 'dragging') {
+                e.preventDefault();
+            }
+        };
+
         if (dragState) {
             document.addEventListener('pointermove', handleMove, { passive: false });
             document.addEventListener('pointerup', handleUp);
             document.addEventListener('pointercancel', handleUp);
+            document.addEventListener('touchmove', handleTouchMove, { passive: false });
         }
 
         return () => {
             document.removeEventListener('pointermove', handleMove);
             document.removeEventListener('pointerup', handleUp);
             document.removeEventListener('pointercancel', handleUp);
+            document.removeEventListener('touchmove', handleTouchMove);
             if (holdTimerRef.current) clearTimeout(holdTimerRef.current);
             document.body.style.overflow = '';
-            document.body.style.touchAction = '';
         };
     }, [dragState, moveDailyTask]);
 
@@ -647,10 +656,7 @@ export const TasksPage = () => {
                                             className="task-edit-btn"
                                             onClick={(e) => {
                                                 e.stopPropagation();
-                                                const newTitle = prompt('Edit task title:', task.title);
-                                                if (newTitle && newTitle.trim()) {
-                                                    editDailyTask(task.id, newTitle.trim());
-                                                }
+                                                setEditingTask(task);
                                             }}
                                         >
                                             <Pencil size={16} />
@@ -1366,6 +1372,42 @@ export const TasksPage = () => {
                     </motion.div>
                 )}
             </AnimatePresence>
+
+            <AnimatePresence>
+                {editingTask && (
+                    <EditTaskModal
+                        task={editingTask}
+                        currentOverride={useRecurringTasksStore.getState().taskOverrides[editingTask.id]}
+                        onSave={(id, updates) => editDailyTask(id, updates)}
+                        onClose={() => setEditingTask(null)}
+                    />
+                )}
+            </AnimatePresence>
+
+            <div style={{ padding: '2rem 1rem 4rem', textAlign: 'center' }}>
+                <button 
+                    onClick={() => navigate('/tasks/all')}
+                    style={{
+                        background: 'transparent',
+                        border: '1px solid rgba(255,255,255,0.2)',
+                        color: 'var(--text-muted)',
+                        padding: '12px 24px',
+                        borderRadius: '12px',
+                        fontSize: '0.9rem',
+                        fontWeight: 600,
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '8px',
+                        margin: '0 auto',
+                        transition: 'all 0.2s'
+                    }}
+                    onMouseEnter={(e) => e.currentTarget.style.color = 'white'}
+                    onMouseLeave={(e) => e.currentTarget.style.color = 'var(--text-muted)'}
+                >
+                    <ClipboardList size={16} /> Show All Tasks
+                </button>
+            </div>
         </div>
     );
 };

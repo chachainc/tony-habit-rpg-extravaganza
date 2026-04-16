@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react';
+import { useEffect } from 'react';
 import { X } from 'lucide-react';
 import { motion } from 'framer-motion';
 import './StoreLayout.css';
@@ -30,6 +31,16 @@ export const StoreLayout = ({
     topBar,
     bottomSheet,
 }: Props) => {
+    useEffect(() => {
+        // Lock background scroll when the modal is open
+        const originalOverflow = document.body.style.overflow;
+        document.body.style.overflow = 'hidden';
+        
+        return () => {
+            document.body.style.overflow = originalOverflow;
+        };
+    }, []);
+
     return (
         <div className="store-overlay" onClick={onClose}>
             <motion.div
@@ -104,7 +115,11 @@ export const StoreLayout = ({
                 )}
 
                 {/* Content — single scroll container */}
-                <div className="store-content">
+                <div 
+                    className="store-content"
+                    style={{ overscrollBehavior: 'contain' }}
+                    onClick={(e) => e.stopPropagation()}
+                >
                     {children}
 
                     {/* Leave Store button: at the natural bottom of the content scroll */}

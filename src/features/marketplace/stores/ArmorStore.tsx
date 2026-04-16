@@ -48,7 +48,7 @@ export const ArmorStore = ({ onClose }: Props) => {
     // Filter state
     const [searchQuery, setSearchQuery] = useState('');
     const [activeCategory, setActiveCategory] = useState<'all' | 'unowned'>('all');
-    const [activeAffinity, setActiveAffinity] = useState<'all' | 'fire' | 'ice' | 'shadow' | 'economy' | 'luck' | 'neutral'>('all');
+    const [activeAffinity, setActiveAffinity] = useState<'all' | 'fire' | 'ice' | 'shadow'>('all');
     const [showMobileFilters, setShowMobileFilters] = useState(false);
 
     const getDefense = useGameStore(state => state.getDefense);
@@ -120,9 +120,6 @@ export const ArmorStore = ({ onClose }: Props) => {
         { id: 'fire', label: 'Fire', icon: '🔥' },
         { id: 'ice', label: 'Ice', icon: '❄️' },
         { id: 'shadow', label: 'Shadow', icon: '🌑' },
-        { id: 'economy', label: 'Economy', icon: '💰' },
-        { id: 'luck', label: 'Luck', icon: '🍀' },
-        { id: 'neutral', label: 'Neutral', icon: '🛡️' },
     ] as const;
 
     const topBar = (
@@ -144,12 +141,11 @@ export const ArmorStore = ({ onClose }: Props) => {
                 </button>
             </div>
             {/* Affinity Tabs - Horizontal Scroll */}
-            <div className="affinity-tabs-scroll" style={{ display: 'flex', gap: '0.5rem', overflowX: 'auto', paddingBottom: '0.25rem', scrollbarWidth: 'none' }}>
+            <div className="affinity-tabs-scroll">
                 {AFFINITY_TABS.map(tab => (
                     <button
                         key={tab.id}
                         className={`filter-tab ${activeAffinity === tab.id ? 'active' : ''}`}
-                        style={{ whiteSpace: 'nowrap', display: 'flex', alignItems: 'center', gap: '0.25rem' }}
                         onClick={() => setActiveAffinity(tab.id as any)}
                     >
                         {tab.icon && <span>{tab.icon}</span>}
@@ -226,7 +222,11 @@ export const ArmorStore = ({ onClose }: Props) => {
                         </div>
 
                         {filteredItems.length === 0 ? (
-                            <div className="empty-state">No items found matching your criteria.</div>
+                            <div className="empty-state">
+                                {activeAffinity !== 'all' && !searchQuery
+                                    ? `No ${AFFINITY_TABS.find(t => t.id === activeAffinity)?.label || ''} armor available yet.`
+                                    : "No items found matching your criteria."}
+                            </div>
                         ) : (
                             <div className="items-grid">
                                 {filteredItems.map((itemId) => {

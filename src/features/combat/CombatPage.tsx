@@ -217,6 +217,25 @@ export const CombatPage = () => {
                         <div className="combat-option__arrow">→</div>
                     </motion.button>
 
+                    <motion.button
+                        className="combat-option combat-option--academy"
+                        onClick={() => navigate('/combat/chess')}
+                        initial={{ opacity: 0, x: 30 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ delay: 0.48 }}
+                        whileHover={{ scale: 1.02 }}
+                        whileTap={{ scale: 0.98 }}
+                    >
+                        <div className="combat-option__icon">
+                            <div className="combat-option__image-icon" style={{ background: '#3b0764', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '2rem' }}>🎓</div>
+                        </div>
+                        <div className="combat-option__info">
+                            <h2>Chess Academy</h2>
+                            <p>Learn openings, track mastery, and practice guided drills.</p>
+                        </div>
+                        <div className="combat-option__arrow">→</div>
+                    </motion.button>
+
                     {/* ═══════════ ARMY SECTION ═══════════ */}
                     <div className="combat-section-label">🏰 ARMY</div>
 

@@ -72,7 +72,8 @@ export function canPurchaseItem(
         tickets: number;
         diamonds: number;
         tokens: Record<SkillName, number>;
-    }
+    },
+    discountMult: number = 1
 ): {
     canPurchase: boolean;
     canUnlock: boolean;
@@ -84,8 +85,11 @@ export function canPurchaseItem(
     const missingCurrency: string[] = [];
 
     // Check currency requirements
-    if (item.cost.gold && currencyState.gold < item.cost.gold) {
-        missingCurrency.push(`${item.cost.gold - currencyState.gold} Gold`);
+    if (item.cost.gold) {
+        const discountedGold = Math.max(1, Math.floor(item.cost.gold * discountMult));
+        if (currencyState.gold < discountedGold) {
+            missingCurrency.push(`${discountedGold - currencyState.gold} Gold`);
+        }
     }
     if (item.cost.tickets && currencyState.tickets < item.cost.tickets) {
         missingCurrency.push(`${item.cost.tickets - currencyState.tickets} Tickets`);

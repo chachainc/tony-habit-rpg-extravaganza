@@ -49,6 +49,19 @@ const TOME_TREES = [
             { id: 'commerce_tome_5', tier: 'V',   effect: '+30% Gold' },
         ],
     },
+    {
+        category: 'philosophy' as const,
+        label: 'Philosophy',
+        icon: '📚',
+        glow: '#8b5cf6',
+        tomes: [
+            { id: 'philosophy_tome_1', tier: 'I',   effect: '+2 Magic Defense, +5 Max Energy' },
+            { id: 'philosophy_tome_2', tier: 'II',  effect: '+4 Magic Defense, +10 Max Energy' },
+            { id: 'philosophy_tome_3', tier: 'III', effect: '+6 Magic Defense, +15 Max Energy' },
+            { id: 'philosophy_tome_4', tier: 'IV',  effect: '+8 Magic Defense, +20 Max Energy' },
+            { id: 'philosophy_tome_5', tier: 'V',   effect: '+10 Magic Defense, +25 Max Energy' },
+        ],
+    },
 ];
 
 type Tab = 'library' | 'codex' | 'reading' | 'completed';
@@ -68,6 +81,11 @@ const getXpPreview = (bookType: BookType, format: 'physical' | 'audiobook') => {
         return format === 'audiobook'
             ? [{ skill: 'Work', xp: 15 }]
             : [{ skill: 'Work', xp: 25 }, { skill: 'Habit', xp: 5 }];
+    }
+    if (bookType === 'philosophy') {
+        return format === 'audiobook'
+            ? [{ skill: 'Intelligence', xp: 15 }]
+            : [{ skill: 'Intelligence', xp: 25 }, { skill: 'Habit', xp: 5 }];
     }
     return [];
 };
@@ -131,6 +149,7 @@ export const LibraryCodex = ({ onClose }: { onClose: () => void }) => {
             // Determine next tome id based on category prefix
             const prefix = category === 'fantasy' ? 'fantasy_tome'
                 : category === 'self-improvement' ? 'discipline_tome'
+                : category === 'philosophy' ? 'philosophy_tome'
                 : 'commerce_tome';
             const nextId = `${prefix}_${nextLevel}`;
             return { id, count, def, nextId, nextDef: ITEM_DB[nextId] };

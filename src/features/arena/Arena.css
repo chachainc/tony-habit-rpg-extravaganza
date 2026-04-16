@@ -459,7 +459,7 @@
     height: 100%;
     position: relative;
     /* Bottom padding reserves space for the fixed action bar */
-    padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 196px);
+    padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 120px);
     overflow: hidden;
 }
 
@@ -505,8 +505,7 @@
     /* stays above everything including nav bar backdrop */
     background: linear-gradient(180deg, rgba(8, 11, 22, 0.97), rgba(4, 6, 12, 1));
     border-top: 1px solid rgba(139, 92, 246, 0.25);
-    padding: 0.6rem 0.75rem calc(env(safe-area-inset-bottom, 0px) + 5.5rem);
-    /* 5.5rem clears the bottom nav bar */
+    padding: 0.6rem 0.5rem calc(env(safe-area-inset-bottom, 0px) + var(--bottom-nav-height) + 0.75rem);
     display: flex;
     flex-direction: column;
     gap: 0.45rem;
@@ -1071,11 +1070,10 @@
 .action-buttons {
     display: flex;
     justify-content: center;
-    gap: 1rem;
-    /* tighter spacing for unified bar */
+    gap: 0.5rem;
     height: 100%;
     align-items: center;
-    flex-wrap: wrap;
+    flex-wrap: nowrap;
 }
 
 .command-btn {
@@ -1157,27 +1155,28 @@
 }
 
 .btn-top {
-    font-size: 0.95rem; /* +25% from 0.75 base roughly, maybe 1rem */
+    font-size: 0.7rem; /* Scale down for 4-in-a-row */
     font-weight: 800;
     text-transform: uppercase;
     color: #f8fafc;
     display: flex;
     align-items: center;
-    gap: 4px;
-    letter-spacing: 0.5px;
+    gap: 2px;
+    letter-spacing: 0px;
     text-shadow: 0 1px 2px rgba(0,0,0,0.8);
+    white-space: nowrap;
 }
 
 .btn-mid {
-    font-size: 1.15rem; /* Largest text */
+    font-size: 0.95rem; /* Shrink primary reading font */
     font-weight: 900;
     color: white;
-    margin: 4px 0;
+    margin: 2px 0;
     text-shadow: 0 2px 4px rgba(0,0,0,0.8);
 }
 
 .btn-bot {
-    font-size: 0.7rem;
+    font-size: 0.55rem;
     font-weight: 600;
     color: rgba(255, 255, 255, 0.6);
     text-transform: uppercase;
@@ -1217,11 +1216,12 @@
 }
 
 .command-btn {
-    padding: 0.5rem;
+    padding: 0.35rem;
     cursor: pointer;
-    border-radius: 12px;
-    width: 105px !important;
-    height: 95px !important;
+    border-radius: 10px;
+    width: 25% !important;
+    max-width: 85px;
+    height: 75px !important;
 }
 
 .rage-cost {

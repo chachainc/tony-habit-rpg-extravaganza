@@ -102,6 +102,31 @@
     justify-content: center;
 }
 
+/* Affinity Scrolling Tabs */
+.affinity-tabs-scroll {
+    display: flex;
+    gap: 0.5rem;
+    overflow-x: auto;
+    overflow-y: hidden;
+    -webkit-overflow-scrolling: touch;
+    touch-action: pan-x;
+    padding-bottom: 0.25rem;
+    scrollbar-width: none; /* Firefox */
+}
+
+.affinity-tabs-scroll::-webkit-scrollbar {
+    display: none; /* Safari/Chrome */
+}
+
+.affinity-tabs-scroll .filter-tab {
+    white-space: nowrap;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    padding: 0.5rem 0.75rem;
+}
+
 /* Desktop Tabs */
 .filter-tabs {
     display: flex;

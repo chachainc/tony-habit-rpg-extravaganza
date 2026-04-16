@@ -1067,16 +1067,16 @@ export const Arena = ({ onClose }: { onClose: () => void }) => {
                             {player && (
                                 <div className="action-buttons">
                                     {/* Auto-Attack Toggle */}
-                                    <GachaButton
-                                        className={`auto ${autoAttack ? 'active' : ''}`}
+                                    <button
+                                        className={`command-btn auto ${autoAttack ? 'active' : ''}`}
                                         onClick={() => setAutoAttack(!autoAttack)}
-                                        variant={autoAttack ? "primary" : "secondary"}
-                                        size="sm"
                                     >
-                                        <div className="btn-icon">⚡</div>
-                                        <div className="btn-label">AUTO</div>
-                                        <div className="auto-status">{autoAttack ? 'ON' : 'OFF'}</div>
-                                    </GachaButton>
+                                        <div className="btn-top" style={{ color: '#22c55e' }}>⚡ AUTO</div>
+                                        <div className="btn-mid" style={{ color: autoAttack ? '#22c55e' : 'white' }}>
+                                            {autoAttack ? 'ON' : 'OFF'}
+                                        </div>
+                                        <div className="btn-bot">Toggle</div>
+                                    </button>
 
                                     {/* 1. Heavy Attack */}
                                     <button

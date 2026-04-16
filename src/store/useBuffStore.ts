@@ -19,6 +19,7 @@ export interface Buff {
     name: string;
     icon: string;
     stat?: string;          // For stat_boost: which stat (Strength, etc.)
+    extendedByCosmic?: boolean; // True if duration was extended by Mythic passives
 }
 
 interface BuffState {
@@ -65,21 +66,39 @@ export const useBuffStore = create<BuffState>()(
 
             addBuff: (type, value, durationHours, name, stat) => {
                 const id = safeUUID();
-                const expiresAt = Date.now() + (durationHours * 60 * 60 * 1000);
+                
+                // Cosmic Tortoise Integration: Extend duration by 15% uniquely on creation
+                // Note: We only extend positive buffs (all current buffs are positive), 
+                // and we mark it extendedByCosmic so subsequent logic doesn't recursive loop it if you had a refresh function.
+                let finalDurationHours = durationHours;
+                let extended = false;
+                
+                // Safe check against pet store without circular imports:
+                // We'll require it inline or assume it is available globally, actually we just import usePetStore at top.
+                import('./usePetStore').then(({ usePetStore }) => {
+                    const equippedPet = usePetStore.getState().equippedPetId;
+                    if (equippedPet === 'cosmic_tortoise') {
+                        finalDurationHours = durationHours * 1.15;
+                        extended = true;
+                    }
+                    
+                    const expiresAt = Date.now() + (finalDurationHours * 60 * 60 * 1000);
 
-                const newBuff: Buff = {
-                    id,
-                    type,
-                    value,
-                    expiresAt,
-                    name: name || BUFF_NAMES[type],
-                    icon: BUFF_ICONS[type],
-                    stat,
-                };
+                    const newBuff: Buff = {
+                        id,
+                        type,
+                        value,
+                        expiresAt,
+                        name: name || BUFF_NAMES[type],
+                        icon: BUFF_ICONS[type],
+                        stat,
+                        extendedByCosmic: extended,
+                    };
 
-                set((state) => ({
-                    activeBuffs: [...state.activeBuffs, newBuff],
-                }));
+                    set((state) => ({
+                        activeBuffs: [...state.activeBuffs, newBuff],
+                    }));
+                });
             },
 
             removeBuff: (id) => {
