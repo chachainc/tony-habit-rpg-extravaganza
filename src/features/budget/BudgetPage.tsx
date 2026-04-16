@@ -14,14 +14,10 @@ export const BudgetPage: React.FC = () => {
         removeTransaction,
         getTotalSpent,
         weeklyStreak,
-        getStreakMultiplier,
         weekHistory,
         getSpentByCategory,
         setForceShowSetup,
         processDailyLogin,
-        rewardedMoneyLogCountToday,
-        moneyTrackingGoldEarnedToday,
-        zeroSpendClaimedToday,
         creditCardResetDay,
         setCreditCardResetDay,
     } = useBudgetStore();
@@ -77,15 +73,7 @@ export const BudgetPage: React.FC = () => {
     const totalSpent = getTotalSpent();
     const remaining = Math.max(0, budget.amount - totalSpent);
     const progressPercent = Math.min(100, (totalSpent / budget.amount) * 100);
-    const streakMul = getStreakMultiplier();
     const categorySpend = getSpentByCategory();
-
-    const getDaysUntilReset = () => {
-        const now = new Date(new Date().toLocaleString('en-US', { timeZone: 'America/New_York' }));
-        const daysUntilSun = (7 - now.getDay()) % 7;
-        return daysUntilSun === 0 ? 7 : daysUntilSun;
-    };
-    const daysUntilReset = getDaysUntilReset();
     const progressClass = progressPercent >= 100 ? 'danger' : progressPercent >= 80 ? 'warning' : 'safe';
 
     // ── Handlers ─────────────────────────────────────────────────────────────

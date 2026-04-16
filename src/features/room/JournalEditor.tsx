@@ -1,8 +1,9 @@
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useState, useRef } from 'react';
 import { motion } from 'framer-motion';
 import { useParams, useNavigate } from 'react-router-dom';
 import { History, X } from 'lucide-react';
-import { useJournalStore, JournalCategory } from '../../store/useJournalStore';
+import { useJournalStore } from '../../store/useJournalStore';
+import type { JournalCategory } from '../../store/useJournalStore';
 import { safeUUID } from '../../utils/safeUUID';
 import './Journal.css';
 

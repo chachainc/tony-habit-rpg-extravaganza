@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { useFocusStore, TARGET_FOCUS_SECONDS, TARGET_ADVANCED_FOCUS_SECONDS, TARGET_MYTHIC_FOCUS_SECONDS } from '../../store/useFocusStore';
 import { usePetStore } from '../../store/usePetStore';
-import { useToast } from '../../components/ui/Toast';
+import { useToastStore } from '../../components/ui/Toast';
 import './FocusRoom.css';
 
 const ZEN_DIALOGUE = [
@@ -28,7 +28,7 @@ export const FocusRoom: React.FC = () => {
     const navigate = useNavigate();
     const store = useFocusStore();
     const { equippedPetId } = usePetStore();
-    const addToast = useToast(state => state.addToast);
+    const addToast = useToastStore((state) => state.addToast);
 
     // Determine current Phase
     let tier: 'basic' | 'advanced' | 'mythic' = 'basic';
@@ -41,7 +41,7 @@ export const FocusRoom: React.FC = () => {
     const [dialogue, setDialogue] = useState<string | null>(null);
 
     const startTimestampRef = useRef<number | null>(null);
-    const frameRef = useRef<number>();
+    const frameRef = useRef<number | undefined>(undefined);
     const lastProgressRef = useRef<number>(-1);
     const lastDialogueIndexRef = useRef<number>(-1);
 
@@ -130,7 +130,7 @@ export const FocusRoom: React.FC = () => {
 
                 if (finalElapsed > 0) {
                     store.addFocusTime(finalElapsed, tier);
-                    addToast(`Focus Interrupted! +${formatTime(finalElapsed)} added (No bonuses across exits).`, 'warning');
+                    addToast({ message: `Focus Interrupted! +${formatTime(finalElapsed)} added (No bonuses across exits).`, type: 'warning' });
                 }
             }
         };
@@ -178,10 +178,10 @@ export const FocusRoom: React.FC = () => {
 
         if (elapsed > 0) {
             store.addFocusTime(totalAdded, tier);
-            if (bonusSeconds > 0) {
-                addToast(`Focus Complete! +${formatTime(elapsed)} + ${formatTime(bonusSeconds)} Bonus!`, 'success');
+                if (bonusSeconds > 0) {
+                addToast({ message: `Focus Complete! +${formatTime(elapsed)} + ${formatTime(bonusSeconds)} Bonus!`, type: 'success' });
             } else {
-                addToast(`Focus Complete! +${formatTime(elapsed)} added.`, 'info');
+                addToast({ message: `Focus Complete! +${formatTime(elapsed)} added.`, type: 'info' });
             }
             triggerDialogue(getPool());
         }

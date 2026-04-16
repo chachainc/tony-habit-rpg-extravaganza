@@ -1,11 +1,14 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { ChevronLeft, BookOpen, Zap, Target, Crown, Award, Bolt } from 'lucide-react';
 import { useChessStore } from '../../store/useChessStore';
-import { CHESS_OPENINGS, ChessOpening } from '../../data/chessOpenings';
-import { CHESS_TRAPS, ChessTrap } from '../../data/chessTraps';
-import { Board, PIECE_UNICODE, createInitialBoard, applyMove } from '../conquest/chessUtils';
+import { CHESS_OPENINGS } from '../../data/chessOpenings';
+import type { ChessOpening } from '../../data/chessOpenings';
+import { CHESS_TRAPS } from '../../data/chessTraps';
+import type { ChessTrap } from '../../data/chessTraps';
+import { PIECE_UNICODE, createInitialBoard, applyMove } from '../conquest/chessUtils';
+import type { Board } from '../conquest/chessUtils';
 import { useCurrencyStore } from '../../store/useCurrencyStore';
 import { useGameStore } from '../../store/useGameStore';
 import { useTitleStore } from '../../store/useTitleStore';

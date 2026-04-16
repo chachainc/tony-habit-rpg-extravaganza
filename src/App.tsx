@@ -21,7 +21,6 @@ import { Library } from './features/library/Library';
 import { GymTracker } from './features/gym/GymTracker';
 import { HealthTracker } from './features/health/HealthTracker';
 import { Conquest } from './features/conquest/Conquest';
-import { ConquestBattle } from './features/conquest/ConquestBattle';
 import { CombatPage } from './features/combat/CombatPage';
 import { ChessDashboard } from './features/chess/ChessDashboard';
 import { RiskPage } from './features/risk/RiskPage';
@@ -52,8 +51,6 @@ import { useProfileStore, triggerAutoSync } from './store/useProfileStore';
 import { useBudgetStore } from './store/useBudgetStore';
 import { WelcomeTutorialModal } from './features/onboarding/WelcomeTutorialModal';
 import { UltimateVideoOverlay } from './components/ui/UltimateVideoOverlay';
-import { usePetStore } from './store/usePetStore';
-import { useToast } from './components/ui/Toast';
 
 // Town Hub wrapper to handle navigation
 const TownHubPage = () => {
@@ -110,46 +107,6 @@ function App() {
   const { pendingLevelUp, clearLevelUp } = useGameStore();
   const { isLoggedIn, classType } = useProfileStore();
   const [showWakeUp, setShowWakeUp] = useState(false);
-
-  // Focus on Cosmic Mythic Global Regeneration
-  useEffect(() => {
-    const PULSE_INTERVAL = 60000; // 60s
-    let intervalId: any;
-
-    const runPulse = () => {
-      // Must read exact fresh state per cycle
-      const petStore = usePetStore.getState();
-      const gameStore = useGameStore.getState();
-      
-      if (petStore.equippedPetId === 'cosmic_tortoise') {
-          const currentHp = gameStore.health;
-          const maxHp = gameStore.getMaxHealth();
-          const currentMp = gameStore.mp;
-          const maxMp = gameStore.getMaxMP();
-
-          const hpNeedsRegen = currentHp < maxHp;
-          const mpNeedsRegen = currentMp < maxMp;
-
-          if (hpNeedsRegen || mpNeedsRegen) {
-             // fixed value, not % max (very small increment)
-             const hpAmount = 5;
-             const mpAmount = 5;
-
-             if (hpNeedsRegen) gameStore.addHealth(hpAmount);
-             if (mpNeedsRegen) gameStore.addMP(mpAmount);
-
-             // Optional logic: we don't spam toast every 60 seconds. It works silently in background.
-             // We'll keep it totally silent so it doesn't annoy the user.
-          }
-      }
-    };
-
-    intervalId = setInterval(runPulse, PULSE_INTERVAL);
-    
-    return () => {
-      if (intervalId) clearInterval(intervalId);
-    };
-  }, []); // single mount interval
 
   useEffect(() => {
     console.log('[BOOT] App mounted');

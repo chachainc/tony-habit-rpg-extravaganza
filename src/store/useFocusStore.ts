@@ -2,7 +2,7 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { PERSIST_REGISTRY } from '../data/persistRegistry';
 import { usePetStore } from './usePetStore';
-import { useToast } from '../components/ui/Toast';
+import { useToastStore } from '../components/ui/Toast';
 
 export interface FocusState {
     totalFocusTimeAccumulated: number;
@@ -73,8 +73,8 @@ export const useFocusStore = create<FocusState>()(
                         totalFocusTimeAccumulated: TARGET_FOCUS_SECONDS, // Cap it exactly for the first milestone to keep UI clean
                         hasUnlockedSecondTortoiseBase: true 
                     });
-                    const toast = useToast.getState().addToast;
-                    toast('You have freed the Zen Tortoise! A new presence has appeared...', 'success');
+                    const toast = useToastStore.getState().addToast;
+                    toast({ message: 'You have freed the Zen Tortoise! A new presence has appeared...', type: 'success' });
                     usePetStore.getState().addPet('zen_tortoise');
                 }
 
@@ -83,8 +83,8 @@ export const useFocusStore = create<FocusState>()(
                         hasUnlockedAdvancedTortoise: true,
                         totalAdvancedFocusTimeAccumulated: TARGET_ADVANCED_FOCUS_SECONDS
                     });
-                    const toast = useToast.getState().addToast;
-                    toast('You have awakened the Evolved Tortoise Server! Its true form shifts...', 'success');
+                    const toast = useToastStore.getState().addToast;
+                    toast({ message: 'You have awakened the Evolved Tortoise Server! Its true form shifts...', type: 'success' });
                     usePetStore.getState().addPet('master_tortoise');
                 }
 
@@ -93,8 +93,8 @@ export const useFocusStore = create<FocusState>()(
                         hasUnlockedMythicTortoise: true,
                         totalMythicFocusTimeAccumulated: TARGET_MYTHIC_FOCUS_SECONDS
                     });
-                    const toast = useToast.getState().addToast;
-                    toast('🌌 The Cosmic Tortoise has revealed itself entirely...', 'success');
+                    const toast = useToastStore.getState().addToast;
+                    toast({ message: '🌌 The Cosmic Tortoise has revealed itself entirely...', type: 'success' });
                     usePetStore.getState().addPet('cosmic_tortoise');
                 }
             }
