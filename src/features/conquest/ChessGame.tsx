@@ -3,9 +3,9 @@ import { motion } from 'framer-motion';
 import './ChessGame.css';
 
 import {
-    Color, PieceType, Piece, Board, Move, PIECE_UNICODE, PIECE_VALUES,
-    createInitialBoard, cloneBoard, inBounds, isInCheck, getLegalMoves, applyMove
+    PIECE_UNICODE, PIECE_VALUES, createInitialBoard, isInCheck, getLegalMoves, applyMove
 } from './chessUtils';
+import type { Color, Board, Move } from './chessUtils';
 
 export interface ChessGameProps {
     onComplete: (result: 'win' | 'draw' | 'loss', difficulty: 1 | 2 | 3) => void;

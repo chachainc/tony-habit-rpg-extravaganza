@@ -1,7 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import { PERSIST_REGISTRY } from '../data/persistRegistry';
-import { AffinityType } from './useAffinitySystem';
+import type { AffinityType } from './useAffinitySystem';
 
 export type ChessPlaystyle = 'Magnus' | 'Kasparov' | 'Hikaru' | 'Karpov' | 'Unknown';
 

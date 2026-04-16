@@ -2,7 +2,8 @@ import React, { useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
-import { useJournalStore, JournalCategory } from '../../store/useJournalStore';
+import { useJournalStore } from '../../store/useJournalStore';
+import type { JournalCategory } from '../../store/useJournalStore';
 import './Journal.css';
 
 export const JournalHistory: React.FC = () => {
