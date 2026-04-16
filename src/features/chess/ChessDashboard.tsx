@@ -502,7 +502,7 @@ const LadderView = () => {
                                     setLadderState('intro');
                                 }
                             }}
-                            style={{ background: store.energy >= boss.energy ? '#fbbf24' : '#475569', color: store.energy >= boss.energy ? '#78350f' : '#94a3b8', border: 'none', padding: '0.75rem 2rem', borderRadius: 99px, fontWeight: 'bold' }}>
+                            style={{ background: store.energy >= boss.energy ? '#fbbf24' : '#475569', color: store.energy >= boss.energy ? '#78350f' : '#94a3b8', border: 'none', padding: '0.75rem 2rem', borderRadius: '99px', fontWeight: 'bold' }}>
                             Challenge (⚡ {boss.energy})
                         </button>
                     </div>
