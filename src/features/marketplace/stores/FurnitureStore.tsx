@@ -4,6 +4,7 @@ import { useGameStore } from '../../../store/useGameStore';
 import { useCurrencyStore } from '../../../store/useCurrencyStore';
 import { useInventoryStore } from '../../../store/useInventoryStore';
 import { useSoundStore } from '../../../store/useSoundStore';
+import { getPassiveBonuses } from '../../../store/usePassiveEffects';
 import { ITEM_DATABASE, getItemsByCategory, type Item } from '../../../data/items';
 import { canPurchaseItem } from '../../../data/unlocks';
 import { useState, useCallback } from 'react';
@@ -22,6 +23,12 @@ export const FurnitureStore = ({ onClose }: Props) => {
     const currencyStore = useCurrencyStore();
     const { ownsMarketplaceItem, purchaseMarketplaceItem, marketplaceOwned } = useInventoryStore();
     const { playPurchaseSound, playSuccessSound, playUnlockSound } = useSoundStore();
+
+    // Discount calculation
+    const rawDiscount = skills.Work?.level ? useGameStore.getState().getWorkDiscount() : 0;
+    const equipDiscount = getPassiveBonuses().gold_multiplier ?? 0;
+    const discountPercent = Math.min(50, rawDiscount + equipDiscount);
+    const discountMult = 1 - (discountPercent / 100);
 
     // Modal state
     const [confirmItem, setConfirmItem] = useState<Item | null>(null);
@@ -114,7 +121,7 @@ export const FurnitureStore = ({ onClose }: Props) => {
                                     ownedItems: marketplaceOwned,
                                 };
 
-                                const purchaseCheck = canPurchaseItem(item, playerState, currencyStore);
+                                const purchaseCheck = canPurchaseItem(item, playerState, currencyStore, discountMult);
                                 const isOwned = ownsMarketplaceItem(item.id);
 
                                 return (
@@ -152,7 +159,7 @@ export const FurnitureStore = ({ onClose }: Props) => {
                                     ownedItems: marketplaceOwned,
                                 };
 
-                                const purchaseCheck = canPurchaseItem(item, playerState, currencyStore);
+                                const purchaseCheck = canPurchaseItem(item, playerState, currencyStore, discountMult);
                                 const isOwned = ownsMarketplaceItem(item.id);
 
                                 return (

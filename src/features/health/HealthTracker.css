@@ -2,9 +2,46 @@
     padding: 1.5rem;
     max-width: 720px;
     margin: 0 auto;
-    background: var(--bg-primary, #0f0f1a);
+    background: transparent;
     color: var(--text-primary, #e2e8f0);
     min-height: 100%;
+    position: relative;
+}
+
+.health-bg {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 0;
+    pointer-events: none;
+}
+
+.health-bg__image {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-image: url('/assets/health-bg.jpg');
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+}
+
+.health-bg__overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+}
+
+.health-header, .health-dashboard-scroll {
+    position: relative;
+    z-index: 1;
 }
 
 .health-header {

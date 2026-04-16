@@ -88,10 +88,12 @@
 /* ─── Mobile: Bottom Tab Bar ──────────────── */
 @media (max-width: 768px) and (orientation: portrait) {
     .sidebar {
-        order: 2;
-        position: relative;
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
         width: 100%;
-        min-height: 60px;
+        height: calc(var(--bottom-nav-height) + env(safe-area-inset-bottom, 0px));
         flex-direction: row;
         padding: 0;
         padding-bottom: env(safe-area-inset-bottom, 0px);

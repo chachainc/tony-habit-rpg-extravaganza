@@ -188,6 +188,68 @@ export const TITLES: Title[] = [
         checkValue: 500,
         bonus: { type: 'gold', value: 0.05 }, // +5% gold
     },
+
+    // Grandmaster Chess Bosses (Manual Unlock)
+    {
+        id: 'gm_strategist',
+        name: 'Grandmaster Strategist',
+        icon: '🧠',
+        description: 'Defeated The Strategist on the Chess Ladder.',
+        requirement: 'Defeat The Strategist',
+        checkType: 'battles_won',
+        checkValue: 9999, // Unlocked manually via script
+        bonus: { type: 'xp', value: 0 },
+    },
+    {
+        id: 'gm_tactician',
+        name: 'Grandmaster Tactician',
+        icon: '⚡',
+        description: 'Defeated The Tactician on the Chess Ladder.',
+        requirement: 'Defeat The Tactician',
+        checkType: 'battles_won',
+        checkValue: 9999,
+        bonus: { type: 'xp', value: 0 },
+    },
+    {
+        id: 'gm_endgame',
+        name: 'The Endgame King',
+        icon: '👑',
+        description: 'Defeated The Endgame King on the Chess Ladder.',
+        requirement: 'Defeat The Endgame King',
+        checkType: 'battles_won',
+        checkValue: 9999,
+        bonus: { type: 'xp', value: 0 },
+    },
+    {
+        id: 'gm_reaper',
+        name: 'Mindbreaker',
+        icon: '💀',
+        description: 'Defeated The Reaper on the Chess Ladder.',
+        requirement: 'Defeat The Reaper',
+        checkType: 'battles_won',
+        checkValue: 9999,
+        bonus: { type: 'xp', value: 0 },
+    },
+    {
+        id: 'gm_demon',
+        name: 'Hellmind',
+        icon: '🔥',
+        description: 'Defeated The Demon on the Chess Ladder.',
+        requirement: 'Defeat The Demon',
+        checkType: 'battles_won',
+        checkValue: 9999,
+        bonus: { type: 'xp', value: 0 },
+    },
+    {
+        id: 'gm_skeleton_king',
+        name: 'Undying Master',
+        icon: '💀',
+        description: 'Defeated The Skeleton King on the Chess Ladder.',
+        requirement: 'Defeat The Skeleton King',
+        checkType: 'battles_won',
+        checkValue: 9999,
+        bonus: { type: 'xp', value: 0 },
+    },
 ];
 
 // ── Store ──────────────────────────────────────────────────────

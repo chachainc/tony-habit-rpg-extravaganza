@@ -25,7 +25,7 @@ const ROOM_CARDS = [
     {
         id: 'body',
         icon: <Scale size={28} />,
-        title: 'Body',
+        title: 'Health',
         subtitle: 'Weight & Calories',
         color: 'rgba(236, 72, 153, 0.35)',
         borderColor: 'rgba(236, 72, 153, 0.5)',
@@ -57,6 +57,24 @@ const ROOM_CARDS = [
         color: 'rgba(16, 185, 129, 0.35)',
         borderColor: 'rgba(16, 185, 129, 0.5)',
         route: '/budget',
+    },
+    {
+        id: 'focus',
+        icon: <span style={{ fontSize: '1.6rem' }}>⏳</span>,
+        title: 'Focus Room',
+        subtitle: 'Deep Work',
+        color: 'rgba(56, 189, 248, 0.35)', // Light blue
+        borderColor: 'rgba(56, 189, 248, 0.5)',
+        route: '/focus',
+    },
+    {
+        id: 'journal',
+        icon: <BookOpen size={28} />, // Can reuse BookOpen or perhaps a specific log
+        title: 'Journal',
+        subtitle: 'Log & Reflect',
+        color: 'rgba(168, 85, 247, 0.35)', // Purple
+        borderColor: 'rgba(168, 85, 247, 0.5)',
+        route: '/journal',
     },
     {
         id: 'pet',

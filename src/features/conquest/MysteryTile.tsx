@@ -314,7 +314,7 @@ export const MysteryTile = ({ onClose }: MysteryTileProps) => {
                                                                 whiteSpace: 'nowrap',
                                                             }}
                                                         >
-                                                            🪙 {relic.cost}g
+                                                            <Coins size={12} style={{ display: 'inline', position: 'relative', top: '2px', marginRight: '2px' }} /> {relic.cost}g
                                                         </button>
                                                     )}
                                                 </div>

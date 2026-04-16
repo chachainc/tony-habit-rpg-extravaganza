@@ -78,7 +78,7 @@ const UnitEntity = ({ combatant, isAlly, isActive, isHit, imageSrc, petItem }: {
       <div className={`unit-sprite ${isAlly ? 'player' : 'enemy'}`}>
         <img src={imageSrc} alt={combatant.name} />
       </div>
-      <div className="floating-ui" style={{ minWidth: '130px', transform: 'translateX(-50%) translateY(-20px)' }}>
+      <div className="floating-ui">
         <div className="unit-name">{combatant.name}</div>
         <div className="hp-bar-frame">
           <div className={`hp-bar-fill ${isAlly ? 'ally' : ''}`} style={{ width: `${hpPercent}%` }} />

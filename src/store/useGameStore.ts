@@ -74,6 +74,7 @@ interface GameState {
     getMagicAttack: () => number;
     getMagicDefense: () => number;
     getMaxMP: () => number;
+    getMaxEnergy: () => number;
     getCritRate: () => number;
     getMaxSpellTier: () => number;
     getAttackSpeedTier: () => number;
@@ -528,6 +529,11 @@ export const useGameStore = create<GameState>()(
                 const sleepLevel = skills['Sleep']?.level ?? 1;
                 const passives = getPassiveBonuses();
                 return 20 + ((sleepLevel - 1) * 5) + passives.max_mana_bonus;
+            },
+
+            getMaxEnergy: () => {
+                const passives = getPassiveBonuses();
+                return 100 + passives.max_energy_bonus;
             },
 
             // Crit Rate from Habit Building + Passives

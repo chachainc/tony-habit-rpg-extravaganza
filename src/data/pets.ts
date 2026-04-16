@@ -5,7 +5,7 @@ import type { AffinityType } from './affinities';
 export interface PetPassive {
     name: string;
     description: string;
-    type: 'gold_percent' | 'drop_chance' | 'flat_hp' | 'flat_atk' | 'flat_def' | 'hybrid' | 'hybrid_defense' | 'store_discount' | 'combat_all' | 'daily_rewards' | 'bonus_roll' | 'gold_double_chance' | 'tank_storm' | 'treasure_hoof' | 'blazehorn_burn' | 'frostgrazer_slow' | 'shadowhoof_lifesteal' | 'infernohorn_burn' | 'glacierhoof_freeze' | 'jackpot_multiplier' | 'commander_cow_neutral' | 'rock_cow_defense' | 'dreamshade_cow_sleep';
+    type: 'gold_percent' | 'drop_chance' | 'flat_hp' | 'flat_atk' | 'flat_def' | 'hybrid' | 'hybrid_defense' | 'store_discount' | 'combat_all' | 'daily_rewards' | 'bonus_roll' | 'gold_double_chance' | 'tank_storm' | 'treasure_hoof' | 'blazehorn_burn' | 'frostgrazer_slow' | 'shadowhoof_lifesteal' | 'infernohorn_burn' | 'glacierhoof_freeze' | 'jackpot_multiplier' | 'commander_cow_neutral' | 'rock_cow_defense' | 'dreamshade_cow_sleep' | 'zen_patience_aura' | 'evolved_patience_aura' | 'cosmic_patience_aura';
     value: number | { defense?: number; hp?: number; fortHpPercent?: number; fortCostDiscount?: number; goldPct?: number; flatGold?: number; chanceExtraCurrency?: number; atkPct?: number; burnTurnPct?: number; defPct?: number; slowChancePct?: number; slowTurns?: number; critPct?: number; lifestealPct?: number; spreads?: boolean; freezeChancePct?: number; freezeTurns?: number; rewardMultiplierChance?: number; rewardMultiplier?: number; spdPct?: number; flatDamResist?: number; maxMpPct?: number; healPct?: number; drowsyChance?: number; sleepUpgradeChance?: number; bonusSoldier?: number; };
 }
 
@@ -22,12 +22,13 @@ export interface PetDefinition {
     obtainMethod: string;
     passive: PetPassive;
     affinity?: AffinityType;
+    isStarter?: boolean;
 }
 
 export const PET_DATABASE: Record<string, PetDefinition> = {
-    'pet_cow': {
-        id: 'pet_cow', name: 'Cow', icon: '🐮', image: '/assets/pets/pet_cow_spin.jpg?v=2',
-        rarity: 'common', obtainMethod: 'shop_purchase',
+    'starter_cow': {
+        id: 'starter_cow', name: 'Cow', icon: '🐄',
+        rarity: 'common', obtainMethod: 'none', isStarter: true,
         passive: { name: 'Novice Greed', description: '+2% gold earned', type: 'gold_percent', value: 2 }
     },
     'ethereal_cow': {
@@ -269,5 +270,20 @@ export const PET_DATABASE: Record<string, PetDefinition> = {
         rarity: 'legendary', obtainMethod: 'earned',
         passive: { name: 'Dreamstate', description: '+10% Mana. Restores 2% Max HP/MP on turn start. 15% Drowsy infliction, 10% Sleep inflict.', type: 'dreamshade_cow_sleep', value: { maxMpPct: 10, healPct: 2, drowsyChance: 15, sleepUpgradeChance: 10 } },
         affinity: 'shadow'
+    },
+    'zen_tortoise': {
+        id: 'zen_tortoise', name: 'Zen Tortoise', icon: '🐢💨', image: '/assets/focus_tortoise.jpg',
+        rarity: 'mythic', obtainMethod: 'earned',
+        passive: { name: 'Slow Breath', description: '+5% energy regeneration, +5% healing effectiveness.', type: 'zen_patience_aura', value: 1 }
+    },
+    'master_tortoise': {
+        id: 'master_tortoise', name: 'Evolved Tortoise Server', icon: '🐢🌌', image: '/assets/focus_tortoise_evolved.jpg',
+        rarity: 'mythic', obtainMethod: 'earned',
+        passive: { name: 'Patience Engine', description: '+1% bonus damage per 10 minutes of last focus session (caps at +15%). +10% magic defense.', type: 'evolved_patience_aura', value: 2 }
+    },
+    'cosmic_tortoise': {
+        id: 'cosmic_tortoise', name: 'Cosmic Tortoise', icon: '🐢✨', image: '/assets/focus_tortoise_cosmic.jpg',
+        rarity: 'mythic', obtainMethod: 'earned',
+        passive: { name: 'Stillness of Time', description: 'Time slows in combat: +15% buff/debuff duration. Every 60s: focus surge restores energy+health.', type: 'cosmic_patience_aura', value: 3 }
     }
 };

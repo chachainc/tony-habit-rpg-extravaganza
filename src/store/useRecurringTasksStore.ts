@@ -69,7 +69,7 @@ interface RecurringTasksState {
     weeklyBonusClaimed: boolean;
     customRecurringTasks: RecurringTask[];
     removedTaskIds: string[];
-    taskOverrides: Record<string, { bundle?: BundleType; index?: number }>;
+    taskOverrides: Record<string, { bundle?: BundleType; index?: number; title?: string; activeDays?: number[] }>;
 
     // Workout tracking (1 lift/day, 1 cardio/day)
     lastLiftDate: string | null;
@@ -97,7 +97,7 @@ interface RecurringTasksState {
         activeDays?: number[];
     }) => void;
     removeDailyTask: (id: string) => void;
-    editDailyTask: (id: string, newTitle: string) => void;
+    editDailyTask: (id: string, updates: Partial<RecurringTask>) => void;
     moveDailyTask: (taskId: string, targetBundle: BundleType, toIndex: number) => void;
 
     // Weight helpers
@@ -726,19 +726,21 @@ export const useRecurringTasksStore = create<RecurringTasksState>()(
                 let todaysTasks = [...baseTasks, ...customRecurringTasks]
                     .map(t => upgradeLegacyTask({ ...t, completed: (t as RecurringTask).completed ?? false }))
                     .filter(t => {
-                        if (!t.activeDays) return true;
-                        return t.activeDays.includes(todayDow);
+                        const override = taskOverrides[t.id];
+                        const days = override?.activeDays !== undefined ? override.activeDays : t.activeDays;
+                        if (!days || days.length === 0) return true;
+                        return days.includes(todayDow);
                     })
-                    .map(t => ({ ...t, completed: false, selectedTier: null }));
-
-                // Apply overrides
-                todaysTasks = todaysTasks.map(t => {
-                    const override = taskOverrides[t.id];
-                    if (override?.bundle) {
-                        return { ...t, bundle: override.bundle };
-                    }
-                    return t;
-                });
+                    .map(t => {
+                        const finalTask = { ...t, completed: false, selectedTier: null } as RecurringTask;
+                        const override = taskOverrides[t.id];
+                        if (override) {
+                            if (override.bundle) finalTask.bundle = override.bundle;
+                            if (override.title) finalTask.title = override.title;
+                            if (override.activeDays) finalTask.activeDays = override.activeDays;
+                        }
+                        return finalTask;
+                    });
 
                 // Apply ordering overrides per bundle
                 const bundledTasks: Record<BundleType, RecurringTask[]> = {
@@ -835,15 +837,72 @@ export const useRecurringTasksStore = create<RecurringTasksState>()(
                 });
             },
 
-            editDailyTask: (id, newTitle) => {
-                set(state => ({
-                    dailyTasks: state.dailyTasks.map(t =>
-                        t.id === id ? { ...t, title: newTitle } : t
-                    ),
-                    customRecurringTasks: state.customRecurringTasks.map(t =>
-                        t.id === id ? { ...t, title: newTitle } : t
-                    ),
-                }));
+            editDailyTask: (id, updates) => {
+                set(state => {
+                    const isCustom = id.startsWith('custom-');
+                    const newCustomTasks = isCustom 
+                        ? state.customRecurringTasks.map(t => t.id === id ? { ...t, ...updates } : t)
+                        : state.customRecurringTasks;
+                    
+                    let newOverrides = state.taskOverrides;
+                    if (!isCustom) {
+                        newOverrides = { ...state.taskOverrides };
+                        const existingOverride = newOverrides[id] || {};
+                        newOverrides[id] = { ...existingOverride };
+                        if (updates.title !== undefined) newOverrides[id].title = updates.title;
+                        if (updates.activeDays !== undefined) newOverrides[id].activeDays = updates.activeDays;
+                    }
+
+                    // Dynamically update today's list without a full reset loop:
+                    // Only re-filter and re-map daily Tasks safely.
+                    const todayDow = getEasternDayOfWeek();
+                    const baseTasks = DAILY_TASKS_TEMPLATE.filter(t => !state.removedTaskIds.includes(t.id));
+
+                    let finalTasks = [...baseTasks, ...newCustomTasks]
+                        .map(t => upgradeLegacyTask({ ...t, completed: (t as RecurringTask).completed ?? false }))
+                        .filter(t => {
+                            const override = newOverrides[t.id];
+                            const days = override?.activeDays !== undefined ? override.activeDays : t.activeDays;
+                            if (!days || days.length === 0) return true;
+                            return days.includes(todayDow);
+                        })
+                        .map(t => {
+                            let finalTask = { ...t };
+                            const override = newOverrides[t.id];
+                            if (override) {
+                                if (override.bundle) finalTask.bundle = override.bundle;
+                                if (override.title) finalTask.title = override.title;
+                                if (override.activeDays) finalTask.activeDays = override.activeDays;
+                            }
+                            
+                            // Restore state from previous dailyTasks
+                            const prevTask = state.dailyTasks.find(oldT => oldT.id === t.id);
+                            if (prevTask) {
+                                finalTask.completed = prevTask.completed;
+                                finalTask.selectedTier = prevTask.selectedTier;
+                            } else {
+                                finalTask.completed = false;
+                                finalTask.selectedTier = null;
+                            }
+                            return finalTask as RecurringTask;
+                        });
+
+                    // Sort them correctly
+                    const getIndex = (taskId: string) => newOverrides[taskId]?.index ?? 999;
+                    const bundledTasks: Record<BundleType, RecurringTask[]> = { morning: [], midday: [], afternoon: [], night: [] };
+                    finalTasks.forEach(t => { if (t.bundle) bundledTasks[t.bundle].push(t as RecurringTask); });
+                    const sortedDailyTasks: RecurringTask[] = [];
+                    (['morning', 'midday', 'afternoon', 'night'] as BundleType[]).forEach(bundle => {
+                        const sorted = bundledTasks[bundle].sort((a, b) => getIndex(a.id) - getIndex(b.id));
+                        sortedDailyTasks.push(...sorted);
+                    });
+
+                    return {
+                        customRecurringTasks: newCustomTasks,
+                        dailyTasks: sortedDailyTasks,
+                        taskOverrides: newOverrides
+                    };
+                });
             },
 
             moveDailyTask: (taskId, targetBundle, toIndex) => {

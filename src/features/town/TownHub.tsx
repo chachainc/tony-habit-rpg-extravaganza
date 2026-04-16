@@ -11,6 +11,7 @@ import {
 import { Panel } from '../../components/ui/Panel';
 import { Particles } from '../../components/vfx/Particles';
 import { useGameStore } from '../../store/useGameStore';
+import { Hourglass } from 'lucide-react';
 import './TownHub.css';
 
 interface Building {
@@ -57,6 +58,15 @@ export const TownHub: React.FC<TownHubProps> = ({ onNavigate }) => {
             description: 'Walk around and visit 5 stores',
             color: '#f59e0b',
             onClick: () => onNavigate('marketplace'),
+        },
+        {
+            id: 'focus',
+            name: 'Focus Room',
+            icon: <Hourglass size={40} />,
+            description: 'Free the tortoise through focused time',
+            color: '#10b981',
+            onClick: () => onNavigate('focus'),
+            notification: false,
         },
 
         {

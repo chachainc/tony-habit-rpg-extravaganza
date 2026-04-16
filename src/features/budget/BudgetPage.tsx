@@ -1,34 +1,23 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { DollarSign, Zap, Gift, History, PlusCircle, Trash2, TrendingDown, Flame, Clock } from 'lucide-react';
+import { DollarSign, History, PlusCircle, Trash2, TrendingDown, Flame, Clock } from 'lucide-react';
 import { Panel } from '../../components/ui/Panel';
-import { useBudgetStore, BUDGET_CATEGORIES, getEasternDateString, type Transaction, type BudgetCategory } from '../../store/useBudgetStore';
+import { useBudgetStore, BUDGET_CATEGORIES, type Transaction, type BudgetCategory } from '../../store/useBudgetStore';
 import { useToastStore } from '../../components/ui/Toast';
 import './BudgetPage.css';
 
 export const BudgetPage: React.FC = () => {
     const {
         budget,
-        weeklyGiftType,
         transactions,
         addTransaction,
         removeTransaction,
         getTotalSpent,
-        getPowerMultiplier,
-        getDailyGiftTier,
-        quickPresets,
-        usePreset,
-        addPreset,
         weeklyStreak,
-        getStreakMultiplier,
         weekHistory,
         getSpentByCategory,
         setForceShowSetup,
         processDailyLogin,
-        lastBudgetGiftClaimDate,
-        rewardedMoneyLogCountToday,
-        moneyTrackingGoldEarnedToday,
-        zeroSpendClaimedToday,
         creditCardResetDay,
         setCreditCardResetDay,
     } = useBudgetStore();
@@ -40,11 +29,9 @@ export const BudgetPage: React.FC = () => {
         processDailyLogin();
     }, [processDailyLogin]);
 
+    const [activeTab, setActiveTab] = useState<'budget' | 'history'>('budget');
     // ── Transaction form state ───────────────────────────────────────────────
     const [txAmount, setTxAmount] = useState('');
-    const [txLabel, setTxLabel] = useState('');
-    const [txCategory, setTxCategory] = useState<BudgetCategory>('other');
-    const [saveAsQuickAdd, setSaveAsQuickAdd] = useState(false);
 
     // ── No budget guard ──────────────────────────────────────────────────────
     if (!budget) {
@@ -86,17 +73,7 @@ export const BudgetPage: React.FC = () => {
     const totalSpent = getTotalSpent();
     const remaining = Math.max(0, budget.amount - totalSpent);
     const progressPercent = Math.min(100, (totalSpent / budget.amount) * 100);
-    const powerMultiplier = getPowerMultiplier();
-    const dailyTier = getDailyGiftTier();
-    const streakMul = getStreakMultiplier();
     const categorySpend = getSpentByCategory();
-
-    const getDaysUntilReset = () => {
-        const now = new Date(new Date().toLocaleString('en-US', { timeZone: 'America/New_York' }));
-        const daysUntilSun = (7 - now.getDay()) % 7;
-        return daysUntilSun === 0 ? 7 : daysUntilSun;
-    };
-    const daysUntilReset = getDaysUntilReset();
     const progressClass = progressPercent >= 100 ? 'danger' : progressPercent >= 80 ? 'warning' : 'safe';
 
     // ── Handlers ─────────────────────────────────────────────────────────────
@@ -105,368 +82,248 @@ export const BudgetPage: React.FC = () => {
         e.preventDefault();
         e.stopPropagation();
 
-        const trimmed = txLabel.trim();
         const amount = parseFloat(txAmount);
 
         // Validate with user-visible feedback
-        if (!trimmed) {
-            addToast({ message: 'Please enter an item name', type: 'error', duration: 2500 });
-            return;
-        }
-        if (isNaN(amount) || amount < 0) {
-            addToast({ message: 'Please enter a valid amount 0 or greater', type: 'error', duration: 2500 });
+        if (isNaN(amount) || amount <= 0) {
+            addToast({ message: 'Please enter a valid amount greater than 0', type: 'error', duration: 2500 });
             return;
         }
 
-        // Save transaction
-        addTransaction(amount, trimmed, txCategory);
-
-        // Save as Quick Add if requested and no duplicate label exists, but don't save $0
-        if (saveAsQuickAdd && amount > 0) {
-            const isDupe = quickPresets.some(p => p.label.toLowerCase() === trimmed.toLowerCase());
-            if (!isDupe) {
-                const cat = BUDGET_CATEGORIES[txCategory];
-                addPreset({ emoji: cat.emoji, label: trimmed, amount, category: txCategory });
-            }
-        }
+        // Save transaction with default simple values
+        addTransaction(amount, 'Expense', 'other');
 
         // Success toast
-        addToast({ message: `✅ Logged: ${trimmed} — $${amount.toFixed(2)}`, type: 'success', duration: 3000 });
+        addToast({ message: `✅ Logged: $${amount.toFixed(2)}`, type: 'success', duration: 3000 });
 
         // Reset form
         setTxAmount('');
-        setTxLabel('');
-        setTxCategory('other');
-        setSaveAsQuickAdd(false);
     };
 
-    const handleUsePreset = (presetId: string) => {
-        const preset = quickPresets.find(p => p.id === presetId);
-        usePreset(presetId);
-        if (preset) {
-            addToast({ message: `✅ Logged: ${preset.label} — $${preset.amount.toFixed(2)}`, type: 'success', duration: 2500 });
-        }
-    };
-
-    const isFormValid = txLabel.trim().length > 0 && !isNaN(parseFloat(txAmount)) && parseFloat(txAmount) >= 0;
+    const isFormValid = !isNaN(parseFloat(txAmount)) && parseFloat(txAmount) > 0;
 
     return (
-        <div className="budget-page-container fade-in">
+        <div className="budget-tab-wrapper">
+            <div className="budget-bg-layer" />
+            <div className="budget-bg-overlay" />
+            
+            <div className="budget-page-container fade-in" style={{ position: 'relative', zIndex: 1 }}>
 
-            {/* ══ 1. HEADER ══════════════════════════════════════════ */}
-            <div className="budget-header">
-                <h1 className="budget-page-title">
-                    <DollarSign size={22} className="budget-title-icon" />
-                    Weekly Budget (Resets Monday)
-                </h1>
-                <p className="budget-subtitle">Track spending to maintain combat power &amp; earn daily gifts.</p>
-                <div className="bp-header-meta">
-                    <div className="bp-streak-header" style={{ color: '#64748b', fontSize: '0.75rem' }}>
-                        <Clock size={13} />
-                        <span>Resets in {daysUntilReset} day{daysUntilReset !== 1 ? 's' : ''}</span>
-                    </div>
-                    {weeklyStreak > 0 && (
-                        <div className="bp-streak-header">
-                            <Flame size={16} className="bp-streak-flame" />
-                            <span>{weeklyStreak} Week Streak</span>
-                            <span className="bp-streak-mul">{streakMul.toFixed(1)}x chest bonus</span>
-                        </div>
-                    )}
-                </div>
+            <div className="bp-tabs">
+                <button
+                    className={`bp-tab ${activeTab === 'budget' ? 'active' : ''}`}
+                    onClick={() => setActiveTab('budget')}
+                >
+                    Budget
+                </button>
+                <button
+                    className={`bp-tab ${activeTab === 'history' ? 'active' : ''}`}
+                    onClick={() => setActiveTab('history')}
+                >
+                    Money History
+                </button>
             </div>
 
-            {/* ══ 2. BUDGET PROGRESS ════════════════════════════════ */}
-            <div className="bp-card">
-                <div className="bp-card-header">
-                    <div className="bp-card-title">
-                        <TrendingDown size={16} className="bp-card-icon" />
-                        Budget Progress
+            {/* MAIN BUDGET VIEW */}
+            {activeTab === 'budget' && (
+                <>
+                    {/* ══ 1. HEADER ══════════════════════════════════════════ */}
+                    <div className="budget-header" style={{ marginBottom: '1rem' }}>
+                        <h1 className="budget-page-title">
+                            <DollarSign size={22} className="budget-title-icon" />
+                            Weekly Budget
+                        </h1>
                     </div>
-                    <span className="bp-spent-label">
-                        <span className="bp-spent-val">${totalSpent.toFixed(2)}</span>
-                        <span className="bp-spent-sep"> / </span>
-                        <span className="bp-budget-total">${budget.amount.toFixed(2)}</span>
-                    </span>
-                </div>
-                <div className="bp-progress-track">
-                    <motion.div
-                        className={`bp-progress-fill bp-fill-${progressClass}`}
-                        initial={{ width: 0 }}
-                        animate={{ width: `${progressPercent}%` }}
-                        transition={{ duration: 1.1, ease: 'easeOut' }}
-                    />
-                </div>
-                <div className="bp-progress-meta">
-                    <span className="bp-meta-pct">{progressPercent.toFixed(0)}% spent</span>
-                    <span className={`bp-meta-remaining ${progressClass === 'danger' ? 'bp-danger' : ''}`}>
-                        ${remaining.toFixed(2)} remaining
-                    </span>
-                </div>
-            </div>
 
-            {/* ══ 3. STATS ROW — compact ════════════════════════════ */}
-            <div className="bp-stats-row">
-                <div className="bp-card bp-stat-card">
-                    <div className="bp-stat-row-inner">
-                        <div className="bp-stat-icon-wrap bp-icon-gold"><Zap size={16} /></div>
-                        <div>
-                            <div className="bp-stat-label">Power Bonus</div>
-                            <div className="bp-stat-big bp-gold">{powerMultiplier.toFixed(2)}x</div>
-                            <div className="bp-stat-sub">ATK / DEF / MATK</div>
+                    {/* ══ CREDIT CARD RESET DAY ═══════════════════════════ */}
+                    <div className="bp-card bp-reset-card" style={{ padding: '0.85rem 1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                            <Clock size={16} className="bp-card-icon" />
+                            <span style={{ fontSize: '0.9rem', fontWeight: 600 }}>Credit Card Bill Reset Day</span>
                         </div>
+                        <input 
+                            type="number" 
+                            min="1" max="31" 
+                            value={creditCardResetDay || ''} 
+                            onChange={(e) => {
+                                const val = parseInt(e.target.value);
+                                if (!isNaN(val) && val >= 1 && val <= 31) {
+                                    setCreditCardResetDay(val);
+                                } else if (e.target.value === '') {
+                                    setCreditCardResetDay(null);
+                                }
+                            }}
+                            placeholder="1-31"
+                            className="tx-input"
+                            style={{ width: '60px', padding: '0.25rem 0.5rem', textAlign: 'center', margin: 0, fontSize: '0.9rem' }}
+                        />
                     </div>
-                </div>
 
-                <div className="bp-card bp-stat-card">
-                    <div className="bp-stat-row-inner">
-                        <div className="bp-stat-icon-wrap bp-icon-purple"><Gift size={16} /></div>
-                        <div>
-                            <div className="bp-stat-label">Daily Gift Tier</div>
-                            <div className="bp-stat-big bp-purple">Tier {dailyTier?.tier || 0}</div>
-                            <div className="bp-stat-sub">
-                                {dailyTier?.giftAmount
-                                    ? `+${dailyTier.giftAmount} ${weeklyGiftType}/day`
-                                    : 'No daily gift'}
+                    {/* ══ LOG SPENDING FORM ══════════════════════════════ */}
+                    <div className="bp-card bp-form-card" style={{ marginBottom: '1rem', padding: '1rem' }}>
+                        <div style={{ fontSize: '1.05rem', fontWeight: 700, marginBottom: '0.85rem', textAlign: 'center', color: '#f1f5f9' }}>
+                            Money Spent
+                        </div>
+                        <form onSubmit={handleAddTransaction} className="add-tx-form-inner" style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
+                            <div className="tx-amount-wrapper" style={{ width: '100%', position: 'relative' }}>
+                                <span className="currency-symbol" style={{ position: 'absolute', fontSize: '1.2rem', left: '16px', top: '50%', transform: 'translateY(-50%)' }}>$</span>
+                                <input
+                                    type="number"
+                                    step="0.01"
+                                    min="0"
+                                    placeholder="___"
+                                    value={txAmount}
+                                    onChange={(e) => setTxAmount(e.target.value)}
+                                    className="tx-input amount-input"
+                                    style={{ width: '100%', fontSize: '1.2rem', padding: '0.85rem 1rem 0.85rem 2.5rem', textAlign: 'center', boxSizing: 'border-box' }}
+                                    autoFocus
+                                />
                             </div>
-                            {lastBudgetGiftClaimDate === getEasternDateString() && (
-                                <div style={{ fontSize: '0.7rem', color: '#10b981', marginTop: '4px', fontWeight: 'bold' }}>
-                                    ✨ Today's gift claimed
+                            <button
+                                type="submit"
+                                className={`bp-log-btn ${isFormValid ? 'bp-log-btn--active' : 'bp-log-btn--disabled'}`}
+                                disabled={!isFormValid}
+                                style={{ padding: '0.9rem', fontSize: '1.05rem', fontWeight: 700, width: '100%', borderRadius: '8px', cursor: isFormValid ? 'pointer' : 'not-allowed', marginTop: '0.25rem', background: isFormValid ? 'linear-gradient(135deg, #10b981, #059669)' : 'rgba(255,255,255,0.05)', color: isFormValid ? '#fff' : 'rgba(255,255,255,0.3)', border: 'none' }}
+                            >
+                                Log Spending
+                            </button>
+                        </form>
+                    </div>
+
+                    {/* ══ TRANSACTION LOG ════════════════════════════════ */}
+                    <div className="bp-card bp-tx-card">
+                        <div className="bp-card-header">
+                            <div className="bp-card-title">
+                                <History size={16} className="bp-card-icon" />
+                                Transaction Log
+                            </div>
+                        </div>
+                        <div className="bp-card-divider" />
+                        <div className="tx-list">
+                            {transactions.length === 0 ? (
+                                <div className="tx-empty">
+                                    <p>No transactions yet.</p>
                                 </div>
+                            ) : (
+                                transactions.map((tx: Transaction) => (
+                                    <motion.div
+                                        key={tx.id}
+                                        className="tx-item"
+                                        initial={{ opacity: 0, x: -10 }}
+                                        animate={{ opacity: 1, x: 0 }}
+                                    >
+                                        <div className="tx-info" style={{ justifyContent: 'center' }}>
+                                            <span className="tx-label" style={{ fontSize: '1.2rem', fontWeight: 800 }}>
+                                                ${tx.amount.toFixed(2)}
+                                            </span>
+                                            <span className="tx-date">{tx.date}</span>
+                                        </div>
+                                        <div className="tx-right">
+                                            <span className="tx-value">-${tx.amount.toFixed(2)}</span>
+                                            <button
+                                                className="tx-delete-btn"
+                                                onClick={() => removeTransaction(tx.id)}
+                                                title="Remove Transaction"
+                                            >
+                                                <Trash2 size={15} />
+                                            </button>
+                                        </div>
+                                    </motion.div>
+                                ))
                             )}
                         </div>
                     </div>
-                </div>
-            </div>
-
-            {/* ══ 4. QUICK ADD ══════════════════════════════════════ */}
-            {quickPresets.length > 0 && (
-                <div className="bp-presets-section">
-                    <div className="bp-presets-label">Quick Add</div>
-                    <div className="bp-presets-row">
-                        {quickPresets.map(p => (
-                            <button key={p.id} className="bp-preset-btn" onClick={() => handleUsePreset(p.id)}>
-                                <span className="bp-preset-emoji">{p.emoji}</span>
-                                <span className="bp-preset-name">{p.label}</span>
-                                <span className="bp-preset-amount">${p.amount}</span>
-                            </button>
-                        ))}
-                    </div>
-                </div>
+                </>
             )}
 
-            {/* ══ 5. LOG SPENDING FORM ══════════════════════════════ */}
-            <div className="bp-card bp-form-card">
-                <div className="bp-card-title" style={{ marginBottom: '0.75rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
-                    <div>
-                        <PlusCircle size={14} className="bp-card-icon" />
-                        Add Custom Spending
+            {/* MONEY HISTORY VIEW */}
+            {activeTab === 'history' && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                    {/* ══ HEADER (For History Tab) ══ */}
+                    <div className="budget-header" style={{ marginBottom: '0.5rem' }}>
+                        <h1 className="budget-page-title">
+                            <History size={22} className="budget-title-icon" />
+                            Money History
+                        </h1>
+                        <p className="budget-subtitle">Analytics and past budgets</p>
                     </div>
-                    <div style={{ fontSize: '0.75rem', color: '#64748b', display: 'flex', gap: '0.75rem', fontWeight: 'normal' }}>
-                         <span>Logs: {rewardedMoneyLogCountToday} / 5</span>
-                         <span>Gold: {moneyTrackingGoldEarnedToday} / 100</span>
-                    </div>
-                </div>
 
-                {moneyTrackingGoldEarnedToday >= 100 ? (
-                    <div className="bp-reward-maxed-msg" style={{ fontSize: '0.8rem', color: '#10b981', background: 'rgba(16, 185, 129, 0.1)', padding: '0.5rem', borderRadius: '4px', marginBottom: '1rem', border: '1px solid rgba(16, 185, 129, 0.2)' }}>
-                        🏆 Daily money tracking reward max reached.
-                    </div>
-                ) : (
-                    zeroSpendClaimedToday && (
-                        <div className="bp-reward-maxed-msg" style={{ fontSize: '0.8rem', color: '#10b981', background: 'rgba(16, 185, 129, 0.1)', padding: '0.5rem', borderRadius: '4px', marginBottom: '1rem', border: '1px solid rgba(16, 185, 129, 0.2)' }}>
-                            🏆 You claimed the $0 daily bonus! Reward max reached.
+                    {/* ══ BUDGET PROGRESS ════════════════════════════════ */}
+                    <div className="bp-card">
+                        <div className="bp-card-header">
+                            <div className="bp-card-title">
+                                <TrendingDown size={16} className="bp-card-icon" />
+                                Budget Progress
+                            </div>
+                            <span className="bp-spent-label">
+                                <span className="bp-spent-val">${totalSpent.toFixed(2)}</span>
+                                <span className="bp-spent-sep"> / </span>
+                                <span className="bp-budget-total">${budget.amount.toFixed(2)}</span>
+                            </span>
                         </div>
-                    )
-                )}
-
-                <form onSubmit={handleAddTransaction} className="add-tx-form-inner">
-                    {/* Name + Amount row */}
-                    <div className="form-row">
-                        <input
-                            type="text"
-                            placeholder="What did you buy?"
-                            value={txLabel}
-                            onChange={(e) => setTxLabel(e.target.value)}
-                            className="tx-input"
-                        />
-                        <div className="tx-amount-wrapper">
-                            <span className="currency-symbol">$</span>
-                            <input
-                                type="number"
-                                step="0.01"
-                                min="0"
-                                placeholder="0.00"
-                                value={txAmount}
-                                onChange={(e) => setTxAmount(e.target.value)}
-                                className="tx-input amount-input"
+                        <div className="bp-progress-track">
+                            <motion.div
+                                className={`bp-progress-fill bp-fill-${progressClass}`}
+                                initial={{ width: 0 }}
+                                animate={{ width: `${progressPercent}%` }}
+                                transition={{ duration: 1.1, ease: 'easeOut' }}
                             />
                         </div>
-                    </div>
-
-                    {/* Category selector */}
-                    <div className="bp-cat-row">
-                        {Object.entries(BUDGET_CATEGORIES).map(([key, cat]) => (
-                            <button
-                                key={key}
-                                type="button"
-                                className={`bp-cat-chip ${txCategory === key ? 'bp-cat-active' : ''}`}
-                                style={{ '--cat-color': cat.color } as React.CSSProperties}
-                                onClick={() => setTxCategory(key as BudgetCategory)}
-                            >
-                                {cat.emoji} <span className="bp-cat-chip-label">{cat.label}</span>
-                            </button>
-                        ))}
-                    </div>
-
-                    {/* Save as Quick Add — compact toggle row */}
-                    <label className="bp-save-quick-add">
-                        <input
-                            type="checkbox"
-                            checked={saveAsQuickAdd}
-                            onChange={(e) => setSaveAsQuickAdd(e.target.checked)}
-                        />
-                        <span>Save as Quick Add</span>
-                        {quickPresets.some(p => p.label.toLowerCase() === txLabel.trim().toLowerCase()) && txLabel.trim() && (
-                            <span className="bp-save-quick-add-hint">· already saved</span>
-                        )}
-                    </label>
-
-                    {/* Submit button — native button, no wrapper component */}
-                    <button
-                        type="submit"
-                        className={`bp-log-btn ${isFormValid ? 'bp-log-btn--active' : 'bp-log-btn--disabled'}`}
-                        disabled={!isFormValid}
-                    >
-                        Log Spending
-                    </button>
-                </form>
-            </div>
-
-            {/* ══ 6. SPENDING BREAKDOWN (only when data) ═══════════ */}
-            {totalSpent > 0 && (
-                <div className="bp-card bp-cat-card">
-                    <div className="bp-card-header">
-                        <div className="bp-card-title">📊 Spending Breakdown</div>
-                    </div>
-                    <div className="bp-cat-bars">
-                        {Object.entries(categorySpend)
-                            .filter(([, amt]) => amt > 0)
-                            .sort(([, a], [, b]) => b - a)
-                            .map(([cat, amt]) => {
-                                const info = BUDGET_CATEGORIES[cat as BudgetCategory];
-                                const pct = (amt / totalSpent) * 100;
-                                return (
-                                    <div key={cat} className="bp-cat-bar-row">
-                                        <span className="bp-cat-bar-label">{info.emoji} {info.label}</span>
-                                        <div className="bp-cat-bar-track">
-                                            <motion.div
-                                                className="bp-cat-bar-fill"
-                                                style={{ backgroundColor: info.color }}
-                                                initial={{ width: 0 }}
-                                                animate={{ width: `${pct}%` }}
-                                                transition={{ duration: 0.8 }}
-                                            />
-                                        </div>
-                                        <span className="bp-cat-bar-amt">${amt.toFixed(0)}</span>
-                                    </div>
-                                );
-                            })}
-                    </div>
-                </div>
-            )}
-
-            {/* ══ 7. TRANSACTION LOG ════════════════════════════════ */}
-            <div className="bp-card bp-tx-card">
-                <div className="bp-card-header">
-                    <div className="bp-card-title">
-                        <History size={16} className="bp-card-icon" />
-                        Transaction Log
-                    </div>
-                </div>
-                <div className="bp-card-divider" />
-                <div className="tx-list">
-                    {transactions.length === 0 ? (
-                        <div className="tx-empty">
-                            <p>No transactions yet.</p>
+                        <div className="bp-progress-meta">
+                            <span className="bp-meta-pct">{progressPercent.toFixed(0)}% spent</span>
+                            <span className={`bp-meta-remaining ${progressClass === 'danger' ? 'bp-danger' : ''}`}>
+                                ${remaining.toFixed(2)} remaining
+                            </span>
                         </div>
-                    ) : (
-                        transactions.map((tx: Transaction) => {
-                            const catInfo = BUDGET_CATEGORIES[tx.category || 'other'];
-                            return (
-                                <motion.div
-                                    key={tx.id}
-                                    className="tx-item"
-                                    initial={{ opacity: 0, x: -10 }}
-                                    animate={{ opacity: 1, x: 0 }}
-                                >
-                                    <div className="tx-info">
-                                        <span className="tx-label">
-                                            <span className="tx-cat-emoji" style={{ color: catInfo.color }}>{catInfo.emoji}</span>
-                                            {tx.label}
-                                        </span>
-                                        <span className="tx-date">{tx.date}</span>
-                                    </div>
-                                    <div className="tx-right">
-                                        <span className="tx-value">-${tx.amount.toFixed(2)}</span>
-                                        <button
-                                            className="tx-delete-btn"
-                                            onClick={() => removeTransaction(tx.id)}
-                                            title="Remove Transaction"
-                                        >
-                                            <Trash2 size={15} />
-                                        </button>
-                                    </div>
-                                </motion.div>
-                            );
-                        })
+                    </div>
+
+                    {/* ══ SPENDING BREAKDOWN ═══════════ */}
+                    {totalSpent > 0 && (
+                        <div className="bp-card bp-cat-card">
+                            <div className="bp-card-header">
+                                <div className="bp-card-title">📊 Spending Breakdown</div>
+                            </div>
+                            <div className="bp-cat-bars">
+                                {Object.entries(categorySpend)
+                                    .filter(([, amt]) => amt > 0)
+                                    .sort(([, a], [, b]) => b - a)
+                                    .map(([cat, amt]) => {
+                                        const info = BUDGET_CATEGORIES[cat as BudgetCategory];
+                                        const pct = (amt / totalSpent) * 100;
+                                        return (
+                                            <div key={cat} className="bp-cat-bar-row">
+                                                <span className="bp-cat-bar-label">{info.emoji} {info.label}</span>
+                                                <div className="bp-cat-bar-track">
+                                                    <motion.div
+                                                        className="bp-cat-bar-fill"
+                                                        style={{ backgroundColor: info.color }}
+                                                        initial={{ width: 0 }}
+                                                        animate={{ width: `${pct}%` }}
+                                                        transition={{ duration: 0.8 }}
+                                                    />
+                                                </div>
+                                                <span className="bp-cat-bar-amt">${amt.toFixed(0)}</span>
+                                            </div>
+                                        );
+                                    })}
+                            </div>
+                        </div>
+                    )}
+
+                    {/* ══ PAST WEEKS ═══════════════════════════ */}
+                    {weekHistory.length > 0 && (
+                        <div className="bp-card bp-history-card">
+                            <div className="bp-card-header">
+                                <div className="bp-card-title">
+                                    <History size={16} className="bp-card-icon" />
+                                    Past Weeks
+                                </div>
+                            </div>
+                            <HistoryChart history={weekHistory} />
+                        </div>
                     )}
                 </div>
-            </div>
-
-            {/* ══ 8. PAST WEEKS (compact) ═══════════════════════════ */}
-            {weekHistory.length > 0 && (
-                <div className="bp-card bp-history-card">
-                    <div className="bp-card-header">
-                        <div className="bp-card-title">
-                            <History size={16} className="bp-card-icon" />
-                            Past Weeks
-                        </div>
-                    </div>
-                    <HistoryChart history={weekHistory} />
-                </div>
             )}
-
-            {/* ══ 9. SETTINGS / RESET DAY ═══════════════════════════ */}
-            <div className="bp-card bp-settings-card" style={{ marginTop: '1.5rem' }}>
-                <div className="bp-card-header">
-                    <div className="bp-card-title">
-                        <Clock size={16} className="bp-card-icon" />
-                        Settings
-                    </div>
-                </div>
-                <div className="bp-card-divider" />
-                <div style={{ padding: '1rem', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                    <label style={{ fontSize: '0.9rem', color: '#cbd5e1' }}>Credit Card Bill Reset Day</label>
-                    <input 
-                        type="number" 
-                        min="1" max="31" 
-                        value={creditCardResetDay || ''} 
-                        onChange={(e) => {
-                            const val = parseInt(e.target.value);
-                            if (!isNaN(val) && val >= 1 && val <= 31) {
-                                setCreditCardResetDay(val);
-                            } else if (e.target.value === '') {
-                                setCreditCardResetDay(null);
-                            }
-                        }}
-                        placeholder="1-31"
-                        className="tx-input"
-                        style={{ maxWidth: '100px' }}
-                    />
-                    <div style={{ fontSize: '0.8rem', color: '#94a3b8' }}>
-                        {creditCardResetDay ? `Your credit card bill resets on day ${creditCardResetDay} each month.` : 'Set your credit card bill reset day.'}
-                    </div>
-                </div>
             </div>
         </div>
     );

@@ -5,6 +5,9 @@ import { useRiskStore } from './useRiskStore';
 import { useTraitStore } from './useTraitStore';
 import { useAuraStore } from './useAuraStore';
 import { useTitleStore } from './useTitleStore';
+import { useChessStore } from './useChessStore';
+import { useFocusStore } from './useFocusStore';
+import { CHESS_OPENINGS } from '../data/chessOpenings';
 
 export interface PassiveBonuses {
     attack_bonus: number;
@@ -18,6 +21,9 @@ export interface PassiveBonuses {
     magic_attack_bonus: number;
     magic_defense_bonus: number;
     max_mana_bonus: number;
+    max_energy_bonus: number;
+    heal_bonus_pct: number;
+    energy_regen_pct: number;
     xp_multiplier: number;   // Percentage, e.g. 10 = +10%
     gold_multiplier: number; // Percentage, e.g. 8 = +8%
 }
@@ -55,6 +61,8 @@ const applyStatBonuses = (bonuses: PassiveBonuses, sb: ItemStatBonuses | undefin
     if (sb.goldMultiplier) bonuses.gold_multiplier += sb.goldMultiplier;
     if (sb.intelligence) bonuses.intelligence_bonus += sb.intelligence;
     if (sb.strategy) bonuses.strategy_bonus += sb.strategy;
+    if (sb.magicDefense) bonuses.magic_defense_bonus += sb.magicDefense;
+    if (sb.maxEnergy) bonuses.max_energy_bonus += sb.maxEnergy;
 };
 
 export const getPassiveBonuses = (): PassiveBonuses => {
@@ -70,6 +78,9 @@ export const getPassiveBonuses = (): PassiveBonuses => {
         magic_attack_bonus: 0,
         magic_defense_bonus: 0,
         max_mana_bonus: 0,
+        max_energy_bonus: 0,
+        heal_bonus_pct: 0,
+        energy_regen_pct: 0,
         xp_multiplier: 0,
         gold_multiplier: 0,
     };
@@ -122,6 +133,20 @@ export const getPassiveBonuses = (): PassiveBonuses => {
             if (type === 'flat_def' && typeof value === 'number') bonuses.defense_bonus += value;
             if (type === 'flat_hp' && typeof value === 'number') bonuses.max_hp_bonus += value;
             if (type === 'store_discount' && typeof value === 'number') bonuses.gold_multiplier += value;
+            if (type === 'zen_patience_aura') {
+                bonuses.heal_bonus_pct += 5;
+                bonuses.energy_regen_pct += 5;
+            }
+            if (type === 'evolved_patience_aura') {
+                const focusStore = useFocusStore.getState();
+                const lastSessionMinutes = Math.floor(focusStore.lastFocusDuration / 60);
+                const blocksOf10 = Math.floor(lastSessionMinutes / 10);
+                const damageBoost = Math.min(15, blocksOf10); // Cap at 15%
+                
+                bonuses.attack_bonus += Math.floor(bonuses.attack_bonus * (damageBoost / 100)) || damageBoost;
+                bonuses.magic_attack_bonus += Math.floor(bonuses.magic_attack_bonus * (damageBoost / 100)) || damageBoost;
+                bonuses.magic_defense_bonus += Math.floor(bonuses.magic_defense_bonus * 0.10) || 10;
+            }
             if (type === 'hybrid_defense' && typeof value === 'object') {
                 if (value.defense) bonuses.defense_bonus += Math.floor(bonuses.defense_bonus * (value.defense / 100)) || value.defense;
                 if (value.hp) bonuses.max_hp_bonus += Math.floor(bonuses.max_hp_bonus * (value.hp / 100)) || value.hp;
@@ -210,6 +235,41 @@ export const getPassiveBonuses = (): PassiveBonuses => {
         if (type === 'gold') bonuses.gold_multiplier += value * 100;
         if (type === 'crit') bonuses.crit_bonus += value * 100;
         if (type === 'speed') bonuses.strategy_bonus += value * 100; // proxy speed
+    }
+
+    // Process Chess Mastery Buffs
+    const chessStore = useChessStore.getState();
+    chessStore.openingsMastered.forEach(id => {
+        const opening = CHESS_OPENINGS.find(o => o.id === id);
+        if (opening?.combatBuff) {
+            if (opening.combatBuff.attack) bonuses.attack_bonus += opening.combatBuff.attack;
+            if (opening.combatBuff.defense) bonuses.defense_bonus += opening.combatBuff.defense;
+            if (opening.combatBuff.crit) bonuses.crit_bonus += opening.combatBuff.crit;
+            if (opening.combatBuff.goldMultiplier) bonuses.gold_multiplier += opening.combatBuff.goldMultiplier;
+            if (opening.combatBuff.magicAttack) bonuses.magic_attack_bonus += opening.combatBuff.magicAttack;
+        }
+    });
+
+    // Process Chess Ladder Boss Wins
+    if (chessStore.ladderWins.includes('boss_1')) {
+        bonuses.defense_bonus += Math.max(5, Math.floor(bonuses.defense_bonus * 0.05)); // +5% defense
+    }
+    if (chessStore.ladderWins.includes('boss_2')) {
+        bonuses.crit_bonus += 5; // +5% crit chance
+    }
+    if (chessStore.ladderWins.includes('boss_3')) {
+        bonuses.attack_bonus += Math.max(10, Math.floor(bonuses.attack_bonus * 0.10)); // +10% scaling bonus
+        bonuses.max_hp_bonus += Math.max(10, Math.floor(bonuses.max_hp_bonus * 0.10)); 
+    }
+    if (chessStore.ladderWins.includes('boss_4')) {
+        bonuses.defense_bonus += Math.max(5, Math.floor(bonuses.defense_bonus * 0.05)); // +5% defense
+    }
+    if (chessStore.ladderWins.includes('boss_5')) {
+        bonuses.crit_bonus += 5; // +5% crit chance (The Demon)
+    }
+    if (chessStore.ladderWins.includes('boss_6')) {
+        bonuses.attack_bonus += Math.max(10, Math.floor(bonuses.attack_bonus * 0.10)); // +10% scaling bonus
+        bonuses.max_hp_bonus += Math.max(10, Math.floor(bonuses.max_hp_bonus * 0.10)); 
     }
 
     return bonuses;

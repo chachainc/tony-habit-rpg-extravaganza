@@ -34,14 +34,14 @@ export interface PetState {
 export const usePetStore = create<PetState>()(
     persist(
         (set, get) => ({
-            equippedPetId: 'pet_cow',
+            equippedPetId: 'starter_cow',
             name: 'Moo',
             health: 100,
             hunger: 80,
             mood: 80,
             energy: 90,
-            ownedPets: ['pet_cow'],
-            petQuantities: { 'pet_cow': 1 },
+            ownedPets: ['starter_cow'],
+            petQuantities: { 'starter_cow': 1 },
 
             feed: (amount) => set((state) => ({
                 hunger: Math.min(100, state.hunger + amount),
@@ -108,7 +108,7 @@ export const usePetStore = create<PetState>()(
         }),
         {
             name: PERSIST_REGISTRY.pets.persistKey,
-            version: 1, // Bump version to trigger migration
+            version: 2, // Bump version to trigger migration
             migrate: (persistedState: any, version: number) => {
                 const state = { ...persistedState };
                 if (version === 0) {
@@ -148,6 +148,17 @@ export const usePetStore = create<PetState>()(
                             console.log('[usePetStore] Granted 1000 tickets as compensation for pet combat removal.');
                         }).catch(console.error);
                     }, 2000);
+                }
+                if (version < 2) {
+                    if (state.equippedPetId === 'pet_cow') state.equippedPetId = 'starter_cow';
+                    if (state.ownedPets && state.ownedPets.includes('pet_cow')) {
+                        state.ownedPets = state.ownedPets.filter((p: string) => p !== 'pet_cow');
+                        if (!state.ownedPets.includes('starter_cow')) state.ownedPets.push('starter_cow');
+                    }
+                    if (state.petQuantities && state.petQuantities['pet_cow']) {
+                        state.petQuantities['starter_cow'] = (state.petQuantities['starter_cow'] || 0) + state.petQuantities['pet_cow'];
+                        delete state.petQuantities['pet_cow'];
+                    }
                 }
                 return state;
             },

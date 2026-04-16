@@ -707,10 +707,10 @@ const WEAPON_ITEMS: Item[] = [
 // ==================== PET ITEMS ====================
 const PET_ITEMS: Item[] = [
     {
-        id: 'pet_cow',
+        id: 'starter_cow',
         name: 'Cow',
         description: 'Your loyal starting companion',
-        icon: '🐮',
+        icon: '🐄',
         type: 'pet',
         category: 'social',
         unlockRequirement: {},

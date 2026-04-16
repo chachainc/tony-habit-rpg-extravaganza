@@ -3,12 +3,13 @@ import { persist } from 'zustand/middleware';
 import { useGameStore } from './useGameStore';
 import { PERSIST_REGISTRY } from '../data/persistRegistry';
 
-export type BookType = 'fantasy' | 'self-improvement' | 'business';
+export type BookType = 'fantasy' | 'self-improvement' | 'business' | 'philosophy';
 
 export const BOOK_TYPES = [
-    { id: 'fantasy',          label: 'Fantasy',          icon: '📘', color: '#a855f7', tomeId: 'book_fantasy_lv1',    tomeName: 'Fantasy Tome I' },
-    { id: 'self-improvement', label: 'Self Improvement',  icon: '📒', color: '#eab308', tomeId: 'book_self-improvement_lv1', tomeName: 'Self-Improvement Tome I' },
-    { id: 'business',        label: 'Business',          icon: '📓', color: '#22c55e', tomeId: 'book_business_lv1',   tomeName: 'Business Tome I' },
+    { id: 'fantasy',          label: 'Fantasy',          icon: '📘', color: '#a855f7', tomeId: 'fantasy_tome_1',    tomeName: 'Fantasy Tome I' },
+    { id: 'self-improvement', label: 'Self Improvement',  icon: '📒', color: '#eab308', tomeId: 'discipline_tome_1', tomeName: 'Discipline Tome I' },
+    { id: 'business',        label: 'Business',          icon: '📓', color: '#22c55e', tomeId: 'commerce_tome_1',   tomeName: 'Commerce Tome I' },
+    { id: 'philosophy',      label: 'Philosophy',        icon: '📚', color: '#8b5cf6', tomeId: 'philosophy_tome_1', tomeName: 'Philosophy Tome I' },
 ] as const;
 
 export const BOOK_TYPE_MAP = Object.fromEntries(BOOK_TYPES.map(t => [t.id, t])) as Record<string, typeof BOOK_TYPES[number]>;
@@ -56,11 +57,11 @@ const BOOK_INTELLIGENCE_XP_REWARD = 100; // Unused, keeping for any legacy refer
 /** Returns XP rewards and tomeId for a given category + format */
 function getBookRewards(bookType: BookType, format: 'physical' | 'audiobook') {
     const xpRewards: { skill: string; amount: number }[] = [];
-    let tomeId = 'book_fantasy_lv1';
+    let tomeId = 'fantasy_tome_1';
     let tomeName = 'Fantasy Tome I';
 
     if (bookType === 'fantasy') {
-        tomeId = 'book_fantasy_lv1'; tomeName = 'Fantasy Tome I';
+        tomeId = 'fantasy_tome_1'; tomeName = 'Fantasy Tome I';
         if (format === 'audiobook') {
             xpRewards.push({ skill: 'Intelligence', amount: 15 });
         } else {
@@ -68,18 +69,26 @@ function getBookRewards(bookType: BookType, format: 'physical' | 'audiobook') {
             xpRewards.push({ skill: 'Habit', amount: 5 });
         }
     } else if (bookType === 'self-improvement') {
-        tomeId = 'book_self-improvement_lv1'; tomeName = 'Self-Improvement Tome I';
+        tomeId = 'discipline_tome_1'; tomeName = 'Discipline Tome I';
         if (format === 'audiobook') {
             xpRewards.push({ skill: 'Habit', amount: 15 });
         } else {
             xpRewards.push({ skill: 'Habit', amount: 25 });
         }
     } else if (bookType === 'business') {
-        tomeId = 'book_business_lv1'; tomeName = 'Business Tome I';
+        tomeId = 'commerce_tome_1'; tomeName = 'Commerce Tome I';
         if (format === 'audiobook') {
             xpRewards.push({ skill: 'Work', amount: 15 });
         } else {
             xpRewards.push({ skill: 'Work', amount: 25 });
+            xpRewards.push({ skill: 'Habit', amount: 5 });
+        }
+    } else if (bookType === 'philosophy') {
+        tomeId = 'philosophy_tome_1'; tomeName = 'Philosophy Tome I';
+        if (format === 'audiobook') {
+            xpRewards.push({ skill: 'Intelligence', amount: 15 });
+        } else {
+            xpRewards.push({ skill: 'Intelligence', amount: 25 });
             xpRewards.push({ skill: 'Habit', amount: 5 });
         }
     }

@@ -361,7 +361,7 @@ export const Conquest = () => {
                     <div className="hud-stat gold"><Coins size={14} /> {currency.gold}</div>
                     <div className="hud-stat sigils"><Crown size={14} /> {conquest.sigils}</div>
                     {conquest.balloons > 0 && <div className="hud-stat" style={{ color: '#60a5fa' }}>🎈 {conquest.balloons}</div>}
-                    {conquest.shmeckles > 0 && <div className="hud-stat" style={{ color: '#a78bfa' }}>🪙 {conquest.shmeckles}</div>}
+                    {conquest.shmeckles > 0 && <div className="hud-stat" style={{ color: '#a78bfa' }}>🐌 {conquest.shmeckles}</div>}
                     <button
                         onClick={() => setShowMeta(true)}
                         style={{
@@ -487,7 +487,7 @@ export const Conquest = () => {
                                                 ❤️ Heal {activeResourceTile.healChoice}% Max HP
                                             </button>
                                             <button onClick={() => applyResourceReward([], activeResourceTile.goldChoice)}>
-                                                🪙 +{activeResourceTile.goldChoice} Gold
+                                                <Coins size={14} style={{ display: 'inline', position: 'relative', top: '2px', marginRight: '4px' }}/>+{activeResourceTile.goldChoice} Gold
                                             </button>
                                         </div>
                                     )}
@@ -497,12 +497,12 @@ export const Conquest = () => {
                                         <div className="event-options">
                                             {activeResourceTile.rewards.map((r, i) => (
                                                 <button key={i} onClick={() => applyResourceReward([r])}>
-                                                    {r.type === 'sigil' ? '🔱' : r.type === 'balloon' ? '🎈' : '🪙'} +{r.amount} {r.type.charAt(0).toUpperCase() + r.type.slice(1)}s
+                                                    {r.type === 'sigil' ? '🔱' : r.type === 'balloon' ? '🎈' : '🐌'} +{r.amount} {r.type.charAt(0).toUpperCase() + r.type.slice(1)}s
                                                 </button>
                                             ))}
                                             {activeResourceTile.goldChoice && (
                                                 <button onClick={() => applyResourceReward([], activeResourceTile.goldChoice)}>
-                                                    🪙 +{activeResourceTile.goldChoice} Gold
+                                                    <Coins size={14} style={{ display: 'inline', position: 'relative', top: '2px', marginRight: '4px' }}/>+{activeResourceTile.goldChoice} Gold
                                                 </button>
                                             )}
                                         </div>
@@ -514,7 +514,7 @@ export const Conquest = () => {
                                             <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', marginBottom: '1rem' }}>
                                                 {activeResourceTile.rewards.map((r, i) => (
                                                     <span key={i} style={{ background: '#1e3a5f', border: '1px solid #3b82f6', borderRadius: 8, padding: '0.3rem 0.7rem', fontSize: '0.85rem', color: '#93c5fd' }}>
-                                                        {r.type === 'sigil' ? '🔱' : r.type === 'balloon' ? '🎈' : '🪙'} +{r.amount}
+                                                        {r.type === 'sigil' ? '🔱' : r.type === 'balloon' ? '🎈' : '🐌'} +{r.amount}
                                                     </span>
                                                 ))}
                                                 {conquest.rewardAmplifierActive && (

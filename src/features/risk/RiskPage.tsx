@@ -4,7 +4,7 @@ import { useRiskStore, RISK_CARDS, REGIONS, type TerritoryNode, type RegionId, t
 import { useConquestStore } from '../../store/useConquestStore';
 import { useCurrencyStore } from '../../store/useCurrencyStore';
 import { RISK_CAMPAIGNS, CAMPAIGN_ORDER, ALL_REGIONS } from '../../data/riskMaps';
-import { Map as MapIcon, ArrowLeft, Swords, TrendingUp, X, ShoppingCart, HelpCircle } from 'lucide-react';
+import { Map as MapIcon, ArrowLeft, Swords, TrendingUp, X, ShoppingCart, HelpCircle, Coins } from 'lucide-react';
 import './RiskPage.css';
 
 // Map canvas dimensions (pixels)
@@ -811,7 +811,7 @@ export const RiskPage = () => {
                                     if (def.currency === 'gold') canBuy = currency.gold >= def.cost;
                                     if (def.currency === 'shmeckles') canBuy = currency.shmeckles >= def.cost;
                                 }
-                                const cIcon = def.currency === 'sigils' ? '🔱' : def.currency === 'gold' ? '🪙' : '🐌';
+                                const cIcon = def.currency === 'sigils' ? '🔱' : def.currency === 'gold' ? <Coins size={14} style={{ display: 'inline', position: 'relative', top: '2px' }} /> : '🐌';
                                 const cLabel = def.currency === 'sigils' ? 'Sigils' : def.currency === 'gold' ? 'Gold' : 'Shmeckles';
                                 return (
                                     <div key={def.id} className={`card-item-rich rarity-common ${owned ? 'owned-card-row' : ''}`} style={{ borderLeftColor: owned ? '#10b981' : '#60a5fa' }}>

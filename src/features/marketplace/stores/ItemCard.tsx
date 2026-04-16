@@ -112,30 +112,9 @@ export const ItemCard = ({
                     </div>
                 )}
 
-                {/* Cost */}
-                <div className="item-cost">
-                    {item.cost.gold !== undefined && item.cost.gold > 0 && (
-                        discountPercent > 0 ? (
-                            <span className="cost-item">
-                                <span style={{ textDecoration: 'line-through', opacity: 0.6, fontSize: '0.85em', marginRight: '4px' }}>
-                                    {item.cost.gold}
-                                </span>
-                                <span style={{ color: '#ef4444' }}>{discountedGoldCost}</span>
-                                <span style={{ color: '#ef4444', fontSize: '0.8em', marginLeft: '4px' }}>(-{discountPercent}%)</span> 💰
-                            </span>
-                        ) : (
-                            <span className="cost-item">💰 {item.cost.gold}</span>
-                        )
-                    )}
-                    {(item.cost.tickets ?? 0) > 0 && <span className="cost-item">🎫 {item.cost.tickets}</span>}
-                    {(item.cost.diamonds ?? 0) > 0 && <span className="cost-item">💎 {item.cost.diamonds}</span>}
-                    {item.cost.tokens && Object.entries(item.cost.tokens).map(([skill, amount]) => (
-                        <span key={skill} className="cost-item">🎖️ {amount} {skill}</span>
-                    ))}
-                </div>
             </div>
 
-            {/* Action Button */}
+            {/* Action Button (Now acts as the price display too) */}
             <div className="item-card-action">
                 {isOwned ? (
                     evolveNode ? evolveNode : (
@@ -149,17 +128,33 @@ export const ItemCard = ({
                         <Lock size={18} />
                         Locked
                     </button>
-                ) : !canAfford ? (
-                    <button className="item-btn item-btn--expensive" disabled>
-                        {missingCurrency.some(c => c.includes('Gold')) && missingCurrency.some(c => c.includes('Diamond'))
-                            ? 'Need Gold & Diamonds'
-                            : missingCurrency.some(c => c.includes('Diamond'))
-                            ? `Need Diamonds`
-                            : 'Not Enough Gold'}
-                    </button>
                 ) : (
-                    <button className="item-btn item-btn--purchase" onClick={onPurchase}>
-                        Purchase
+                    <button 
+                        className={`item-cost-button item-btn ${canAfford ? 'item-btn--purchase' : 'item-btn--expensive'}`} 
+                        disabled={!canAfford}
+                        onClick={onPurchase}
+                        style={{ padding: '0.4rem 0.6rem', width: '100%', justifyContent: 'center' }}
+                    >
+                        <div className="item-cost" style={{ marginTop: 0, justifyContent: 'center' }}>
+                            {item.cost.gold !== undefined && item.cost.gold > 0 && (
+                                discountPercent > 0 ? (
+                                    <span className="cost-item">
+                                        <span style={{ textDecoration: 'line-through', opacity: 0.6, fontSize: '0.85em', marginRight: '4px' }}>
+                                            {item.cost.gold}
+                                        </span>
+                                        <span style={{ color: canAfford ? '#ef4444' : 'inherit' }}>{discountedGoldCost}</span>
+                                        <span style={{ color: canAfford ? '#ef4444' : 'inherit', fontSize: '0.8em', marginLeft: '4px' }}>(-{discountPercent}%)</span> 💰
+                                    </span>
+                                ) : (
+                                    <span className="cost-item">💰 {item.cost.gold}</span>
+                                )
+                            )}
+                            {(item.cost.tickets ?? 0) > 0 && <span className="cost-item">🎫 {item.cost.tickets}</span>}
+                            {(item.cost.diamonds ?? 0) > 0 && <span className="cost-item">💎 {item.cost.diamonds}</span>}
+                            {item.cost.tokens && Object.entries(item.cost.tokens).map(([skill, amount]) => (
+                                <span key={skill} className="cost-item">🎖️ {amount} {skill}</span>
+                            ))}
+                        </div>
                     </button>
                 )}
             </div>

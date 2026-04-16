@@ -1,4 +1,5 @@
 export type AffinityType = 'fire' | 'ice' | 'shadow' | 'economy' | 'luck' | 'neutral';
+import { useChessStore } from './useChessStore';
 
 export interface AffinityLoadout {
     petAffinity?: AffinityType;
@@ -69,8 +70,9 @@ export const calculateAffinitySynergy = (
     // 1. Calculate Dominant Task Affinity
     const dominantTaskAffinity = determineDominantTaskAffinity(recentTasks);
 
-    // 2. Count Major Sources (Pet, Weapon, Spell)
-    const majors = [loadout.petAffinity, loadout.weaponAffinity, loadout.spellAffinity].filter(Boolean) as AffinityType[];
+    // 2. Count Major Sources (Pet, Weapon, Spell, Chess Mastery)
+    const chessAffinity = useChessStore.getState().getChessAffinity();
+    const majors = [loadout.petAffinity, loadout.weaponAffinity, loadout.spellAffinity, chessAffinity].filter(Boolean) as AffinityType[];
     
     // Which affinity shows up most among majors? (Exclude neutral)
     const majorScores: Record<AffinityType, number> = { fire: 0, ice: 0, shadow: 0, economy: 0, luck: 0, neutral: 0 };

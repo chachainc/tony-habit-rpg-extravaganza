@@ -262,8 +262,8 @@
 /* --- Floating UI --- */
 .floating-ui {
     position: absolute;
-    top: -40px;
-    /* Float closely above head */
+    bottom: 100%;
+    margin-bottom: 20px; /* Float comfortably above head */
     left: 50%;
     transform: translateX(-50%);
     width: 160px;
@@ -512,16 +512,15 @@
 
     .squad-zone.allies {
         /* Raised so the floating-ui (HUD) sits well above the fixed action bar.
-           The HUD floats ~90-120px above the sprite; at bottom:42% on a
-           ~450px visible stage the HUD top edge is ~330px from screen bottom,
-           which is safely above the ~196px fixed action bar zone. */
-        bottom: 42%;
+           We moved it down slightly from 42% -> 35% because the HUD now sits
+           strictly above the player bounds, requiring more vertical headroom. */
+        bottom: 34%;
         left: 2%;
         z-index: 20;
     }
 
     .squad-zone.enemies {
-        bottom: 48%;
+        bottom: 42%;
         right: 2%;
         z-index: 10;
     }
@@ -546,9 +545,11 @@
 
     .floating-ui {
         /* Widen HUD so HP/MP/Energy text is legible */
-        top: -30px;
-        width: 130px;
-        padding: 3px 6px;
+        bottom: 100%;
+        top: auto;
+        margin-bottom: 10px; /* Space buffer above sprite */
+        width: 140px;
+        padding: 4px 6px;
     }
 
     .unit-name {
