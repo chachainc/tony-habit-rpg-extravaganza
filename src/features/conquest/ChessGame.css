@@ -159,17 +159,6 @@
     background-color: rgba(167, 139, 250, 0.5); /* #a78bfa */
 }
 
-.chess-piece-white {
-    color: #f8fafc;
-    text-shadow: 0 4px 6px rgba(0,0,0,0.5), 0 1px 1px rgba(0,0,0,0.8);
-    z-index: 10;
-}
-
-.chess-piece-black {
-    color: #1e293b;
-    text-shadow: 0 4px 6px rgba(0,0,0,0.6), 0 -1px 0px rgba(255,255,255,0.15);
-    z-index: 10;
-}
 
 .chess-actions {
     width: 100%;

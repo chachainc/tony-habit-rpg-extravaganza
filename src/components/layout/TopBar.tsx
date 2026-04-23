@@ -9,7 +9,72 @@ import { useConquestStore } from '../../store/useConquestStore';
 import { useProfileStore } from '../../store/useProfileStore';
 import { useCurrencyStore } from '../../store/useCurrencyStore';
 import { useTitleStore } from '../../store/useTitleStore';
+import { useActiveBuffs } from '../../hooks/useActiveBuffs';
+import { useState, useEffect } from 'react';
 import './TopBar.css';
+
+// Stat display helper component
+const StatItem = ({ 
+    icon, 
+    baseValue, 
+    buffPct, 
+    sources, 
+    label, 
+    tooltipTitle, 
+    className, 
+    onClick, 
+    showBaseOutofMax = false, 
+    maxValue = 0 
+}: {
+    icon: React.ReactNode, baseValue: number, buffPct: number, sources: string[],
+    label: string, tooltipTitle: string, className: string, onClick: () => void,
+    showBaseOutofMax?: boolean, maxValue?: number
+}) => {
+    const [showTooltip, setShowTooltip] = useState(false);
+    const [recentBuff, setRecentBuff] = useState(false);
+
+    // Watch for buff increases to trigger animation
+    useEffect(() => {
+        if (buffPct > 0) {
+            setRecentBuff(true);
+            const t = setTimeout(() => setRecentBuff(false), 2000);
+            return () => clearTimeout(t);
+        }
+    }, [buffPct]);
+
+    // Format display
+    const finalDisplay = showBaseOutofMax ? `${Math.round(baseValue)}/${maxValue}` : baseValue;
+    const isBuffed = buffPct > 0;
+
+    return (
+        <div 
+            className={`top-bar__stat ${className} ${recentBuff ? 'pulse' : ''} ${isBuffed ? 'top-bar__stat--buffed' : ''}`}
+            onClick={onClick}
+            onMouseEnter={() => setShowTooltip(true)}
+            onMouseLeave={() => setShowTooltip(false)}
+            onTouchStart={() => setShowTooltip(true)}
+            onTouchEnd={() => setTimeout(() => setShowTooltip(false), 1500)}
+        >
+            {icon}
+            <span>{finalDisplay} {isBuffed ? `(+${buffPct}%)` : ''}</span>
+
+            {recentBuff && <motion.div initial={{ y: 0, opacity: 1 }} animate={{ y: -20, opacity: 0 }} transition={{ duration: 1.5 }} className="stat-buff-added">+{buffPct}% {label}</motion.div>}
+
+            {showTooltip && (
+                <div className="top-bar__tooltip">
+                    <div className="top-bar__tooltip-title">{tooltipTitle}</div>
+                    <div>Base: {showBaseOutofMax ? `${Math.round(baseValue)}/${maxValue}` : baseValue}</div>
+                    {isBuffed && (
+                        <>
+                            <div>Buff bonus: +{buffPct}%</div>
+                            <div className="top-bar__tooltip-source">Sources: {sources.join(', ')}</div>
+                        </>
+                    )}
+                </div>
+            )}
+        </div>
+    );
+};
 
 export const TopBar = () => {
     const navigate = useNavigate();
@@ -33,6 +98,8 @@ export const TopBar = () => {
     const def = getDefense();
     const magicAtk = getMagicAttack();
     const maxMP = getMaxMP();
+    
+    const activeBuffs = useActiveBuffs();
 
     // Get current HP from battle or assume full
     const currentHP = player?.hp ?? 100;
@@ -109,34 +176,42 @@ export const TopBar = () => {
             {/* Center Section: Combat Stats - always visible */}
             <div className="top-bar__section top-bar__section--stats">
                 {/* HP */}
-                <div
-                    className="top-bar__stat top-bar__stat--hp top-bar__stat--clickable"
-                    title="Hit Points"
+                <StatItem
+                    icon={<Heart size={16} />}
+                    baseValue={currentHP}
+                    maxValue={maxHP}
+                    showBaseOutofMax={true}
+                    buffPct={activeBuffs.healthPct}
+                    sources={activeBuffs.sources.health}
+                    label="HP"
+                    tooltipTitle="Hit Points"
+                    className="top-bar__stat--hp top-bar__stat--clickable"
                     onClick={() => navigate('/stats')}
-                >
-                    <Heart size={16} />
-                    <span>{Math.round(currentHP)}/{maxHP}</span>
-                </div>
+                />
 
                 {/* ATK */}
-                <div
-                    className="top-bar__stat top-bar__stat--atk top-bar__stat--clickable"
-                    title={`Physical: ${atk} | Magic: ${magicAtk}`}
+                <StatItem
+                    icon={<Sword size={16} />}
+                    baseValue={atk}
+                    buffPct={activeBuffs.attackPct}
+                    sources={activeBuffs.sources.attack}
+                    label="ATK"
+                    tooltipTitle={`Physical: ${atk} | Magic: ${magicAtk}`}
+                    className="top-bar__stat--atk top-bar__stat--clickable"
                     onClick={() => navigate('/combat')}
-                >
-                    <Sword size={16} />
-                    <span>{atk}</span>
-                </div>
+                />
 
                 {/* DEF */}
-                <div
-                    className="top-bar__stat top-bar__stat--def top-bar__stat--clickable"
-                    title="Defense"
+                <StatItem
+                    icon={<Shield size={16} />}
+                    baseValue={def}
+                    buffPct={activeBuffs.defensePct}
+                    sources={activeBuffs.sources.defense}
+                    label="DEF"
+                    tooltipTitle="Defense"
+                    className="top-bar__stat--def top-bar__stat--clickable"
                     onClick={() => navigate('/combat')}
-                >
-                    <Shield size={16} />
-                    <span>{def}</span>
-                </div>
+                />
 
                 {/* Magic ATK - desktop only */}
                 <div

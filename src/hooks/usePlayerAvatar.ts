@@ -37,16 +37,3 @@ export function usePlayerAvatar(): string {
     return getPlayerAvatar(classType);
 }
 
-const ULTIMATE_MAP: Record<string, string> = {
-    Warrior: 'Berserker Cleave',
-    Guardian: 'Judgment Slam',
-    Ranger: 'Phantom Volley',
-    Mage: 'Arcane Rupture',
-};
-
-export function getUltimateName(classType: ClassType): string {
-    if (classType && ULTIMATE_MAP[classType]) {
-        return ULTIMATE_MAP[classType];
-    }
-    return 'Berserker Cleave';
-}

@@ -1400,7 +1400,7 @@
     z-index: 10;
     display: flex;
     flex-direction: column;
-    padding: 0.5rem 0.75rem 5.5rem; /* bottom clears nav bar */
+    padding: 0.5rem 0.75rem calc(var(--bottom-nav-height, 50px) + env(safe-area-inset-bottom, 0px) + 0.75rem); /* bottom clears nav bar */
     background: rgba(8,11,22,0.92);
     border-top: 1px solid rgba(139,92,246,0.15);
     flex-shrink: 0;
@@ -1495,43 +1495,7 @@
     border-radius: 10px;
 }
 
-/* ── Ultimate button ────────────────────────────────── */
-.cq-ultimate-btn {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    width: 100%;
-    padding: 0.55rem 0.85rem;
-    border-radius: 10px;
-    font-weight: 800;
-    font-size: 0.85rem;
-    cursor: pointer;
-    transition: all 0.25s ease;
-    margin-bottom: 0.5rem;
-    border: 2px solid #475569;
-    background: #1e293b;
-    color: #64748b;
-}
-
-.cq-ultimate-btn.ready {
-    background: linear-gradient(135deg, #b45309, #78350f);
-    border-color: #fbbf24;
-    color: #fff;
-    box-shadow: 0 0 16px rgba(251,191,36,0.35);
-    animation: ult-btn-pulse 1.5s ease-in-out infinite alternate;
-}
-
-@keyframes ult-btn-pulse {
-    from { box-shadow: 0 0 10px rgba(251,191,36,0.25); }
-    to   { box-shadow: 0 0 24px rgba(251,191,36,0.55); }
-}
-
-.cq-ultimate-btn:disabled { opacity: 0.5; cursor: not-allowed; animation: none; }
-
-.cq-ult-icon  { font-size: 1.1rem; }
-.cq-ult-name  { flex: 1; text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.cq-ult-energy { font-size: 0.75rem; color: rgba(255,255,255,0.6); flex-shrink: 0; }
-
+/* removed ultimate button css */
 /* ── 2-col action grid ──────────────────────────────── */
 .cq-action-grid {
     display: grid;
@@ -1593,9 +1557,7 @@
     background: linear-gradient(135deg, #713f12, #451a03);
     border-color: #f59e0b;
     color: #fde68a;
-    grid-column: 1 / -1;
-    min-height: 48px;
-    padding: 0.4rem;
+    min-height: 72px;
 }
 .cq-action-btn.flee .cq-btn-top {
     font-size: 0.75rem;

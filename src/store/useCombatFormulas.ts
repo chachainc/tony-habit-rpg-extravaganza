@@ -90,37 +90,8 @@ export function getMilestoneForSkill(_skillName: SkillName, level: number): Mile
     return { currentTier, nextTier, progressToNext, levelsToNext };
 }
 
-// ═══════════════════════════════════════════
-// SYNERGY SYSTEM
-// ═══════════════════════════════════════════
+// SYNERGY SYSTEM DELETED
 
-export interface SynergyInfo {
-    active: boolean;
-    bonusMultiplier: number;
-    cardioLevel: number;
-    strengthLevel: number;
-    levelDiff: number;
-    description: string;
-}
-
-export function getSkillSynergyBonus(): SynergyInfo {
-    const { skills } = useGameStore.getState();
-    const cardioLevel = skills['Cardio'].level;
-    const strengthLevel = skills['Strength'].level;
-    const levelDiff = Math.abs(cardioLevel - strengthLevel);
-    const active = levelDiff <= 3;
-
-    return {
-        active,
-        bonusMultiplier: active ? 1.05 : 1.0,
-        cardioLevel,
-        strengthLevel,
-        levelDiff,
-        description: active
-            ? `Body & Strength Synergy: Cardio Lv.${cardioLevel} ↔ Strength Lv.${strengthLevel} (+5% ATK)`
-            : `Synergy inactive (gap: ${levelDiff} levels, need ≤3)`,
-    };
-}
 
 // ═══════════════════════════════════════════
 // DETAILED COMBAT BREAKDOWN
@@ -144,7 +115,6 @@ export interface CombatBreakdown {
     spd: StatBreakdown;
     critChance: StatBreakdown;
     mp: StatBreakdown;
-    synergy: SynergyInfo;
 }
 
 export function getDetailedCombatBreakdown(): CombatBreakdown {
@@ -161,7 +131,6 @@ export function getDetailedCombatBreakdown(): CombatBreakdown {
     const activeAura = AURAS.find(a => a.id === auraStore.activeAuraId);
     const weeklyProgress = consistencyStore.getWeeklyProgress();
     const hasBerserk = weeklyProgress.daysCompleted >= 3;
-    const synergy = getSkillSynergyBonus();
     const budgetPower = useBudgetStore.getState().getPowerMultiplier();
 
     // ── ATK ──────────────────────────────
@@ -203,11 +172,6 @@ export function getDetailedCombatBreakdown(): CombatBreakdown {
         atkSubtotal += auraVal;
     }
 
-    if (synergy.active) {
-        const synergyVal = Math.round(atkSubtotal * 0.05);
-        atkSources.push({ label: 'Synergy (+5%)', value: synergyVal });
-        atkSubtotal += synergyVal;
-    }
 
     if (hasBerserk) {
         const berserkVal = Math.round(atkSubtotal * 0.25);
@@ -378,6 +342,5 @@ export function getDetailedCombatBreakdown(): CombatBreakdown {
             sources: filterSources(critSources),
         },
         mp: { total: Math.round(baseMp + bookMpBonus), sources: filterSources(mpSources) },
-        synergy,
     };
 }

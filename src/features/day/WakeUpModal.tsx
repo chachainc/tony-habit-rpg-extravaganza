@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import React from 'react';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Sun, Moon, Zap, Calendar, Gift, Flame, Trophy, Scale } from 'lucide-react';
@@ -16,7 +17,7 @@ export const WakeUpModal = ({ onComplete }: { onComplete: () => void }) => {
     const navigate = useNavigate();
     const { wakeUp, getEasternTime, skipTracking } = useDayStore();
     const { addSkillXp } = useGameStore();
-    const { streakDay, streakCount, checkIn, getRewardForDay, getStreakStatus } = useCheckInStore();
+    const { currentStreak, checkIn, getRewardForDay, getStreakStatus, validateStreak } = useCheckInStore();
     const { canCheckIn, missedYesterday } = getStreakStatus();
     const { logWeight, hasLoggedWeightToday, getLastWeight } = useHealthStore();
     const { completeTask } = useRecurringTasksStore();
@@ -26,6 +27,12 @@ export const WakeUpModal = ({ onComplete }: { onComplete: () => void }) => {
     const [sleepXpEarned, setSleepXpEarned] = useState<number | null>(null);
     const [checkInReward, setCheckInReward] = useState<CheckInReward | null>(null);
     const [showCheckInReward, setShowCheckInReward] = useState(false);
+
+    React.useEffect(() => {
+        validateStreak();
+    }, [validateStreak]);
+
+    const displayStreak = canCheckIn ? currentStreak + 1 : currentStreak;
     const [stage, setStage] = useState<Stage>('sleep');
     const [weightInput, setWeightInput] = useState('');
 
@@ -214,22 +221,22 @@ export const WakeUpModal = ({ onComplete }: { onComplete: () => void }) => {
                         <div className="wake-checkin__streak">
                             <Flame size={28} className="wake-checkin__flame" />
                             <div className="wake-checkin__streak-info">
-                                <span className="wake-checkin__streak-count">{streakCount}</span>
+                                <span className="wake-checkin__streak-count">{currentStreak}</span>
                                 <span className="wake-checkin__streak-label">Day Streak</span>
                             </div>
                         </div>
 
-                        {missedYesterday && streakCount > 0 && (
+                        {missedYesterday && currentStreak === 0 && (
                             <div className="wake-checkin__warning">
-                                ⚠️ Streak broken! You'll receive a consolation reward.
+                                ⚠️ Streak broken! Restarting at Day 1.
                             </div>
                         )}
 
                         <div className="wake-checkin__calendar">
                             {weekDays.map((day) => {
                                 const reward = getRewardForDay(day);
-                                const isCurrentDay = day === streakDay;
-                                const isPastDay = day < streakDay;
+                                const isCurrentDay = canCheckIn ? displayStreak === day : false;
+                                const isPastDay = currentStreak >= day;
 
                                 return (
                                     <div

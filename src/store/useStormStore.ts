@@ -6,23 +6,36 @@ import { useArenaStatsStore } from './useArenaStatsStore';
 import { usePetStore } from './usePetStore';
 
 // ── Castle / Base Health Tuning ───────────────────────────────────────────
-export const BASE_MAX_HP = 100;              // starting max HP (upgrades add to this)
-export const BASE_DAMAGE_PER_ENEMY_PER_TICK = 5;  // HP lost per enemy at base per second
+export const BASE_MAX_HP = 100;
+export const CASTLE_X = 95;   // % x position of castle
+export const CASTLE_Y = 50;   // % y position of castle
+export const FORT_BOUNDARY_X = 85; // % where barricades live — the fort wall
+export const WIRE_ZONE_X_MIN = 58; // forward trap lane — barbed wire goes here
+export const WIRE_ZONE_X_MAX = 75; // left of barricade
 
 // ── Lane definitions ──────────────────────────────────────────────────────
-const LANE_Y = [30, 50, 70]; // 3 lanes at 30%, 50%, 70%
+const LANE_Y = [25, 50, 75]; // 3 lanes
 
-// ── Enemy type definitions for Storm ──────────────────────────────────────
+// ── Enemy type definitions — gold rewards ONLY (no shmeckles per kill) ────
 export type StormEnemyType = 'goblin' | 'orc' | 'skeleton' | 'bat_swarm' | 'dark_knight' | 'golem' | 'boss_slime';
 
-export const STORM_ENEMY_DEFS: Record<StormEnemyType, { icon: string; name: string; hpBase: number; speedBase: number; damageBase: number; reward: number; isBoss?: boolean }> = {
-    goblin:       { icon: '👺', name: 'Goblin',      hpBase: 20,  speedBase: 4.0, damageBase: 5,  reward: 2 },
-    skeleton:     { icon: '💀', name: 'Skeleton',    hpBase: 30,  speedBase: 3.5, damageBase: 6,  reward: 3 },
-    bat_swarm:    { icon: '🦇', name: 'Bat Swarm',   hpBase: 15,  speedBase: 5.0, damageBase: 3,  reward: 2 },
-    orc:          { icon: '👹', name: 'Orc',         hpBase: 50,  speedBase: 2.5, damageBase: 8,  reward: 5 },
-    dark_knight:  { icon: '⚔️', name: 'Dark Knight', hpBase: 80,  speedBase: 2.0, damageBase: 12, reward: 8 },
-    golem:        { icon: '🪨', name: 'Golem',       hpBase: 150, speedBase: 1.5, damageBase: 15, reward: 12 },
-    boss_slime:   { icon: '👑', name: 'King Slime',  hpBase: 300, speedBase: 1.0, damageBase: 20, reward: 25, isBoss: true },
+export const STORM_ENEMY_DEFS: Record<StormEnemyType, {
+    icon: string;
+    name: string;
+    hpBase: number;
+    speedBase: number;
+    damageBase: number;
+    goldReward: number;   // gold per kill
+    tier: number;         // 1=common … 5=boss
+    isBoss?: boolean;
+}> = {
+    goblin:      { icon: '👺', name: 'Goblin',      hpBase: 20,  speedBase: 4.0, damageBase: 5,  goldReward: 1,  tier: 1 },
+    bat_swarm:   { icon: '🦇', name: 'Bat Swarm',   hpBase: 15,  speedBase: 5.5, damageBase: 3,  goldReward: 1,  tier: 1 },
+    skeleton:    { icon: '💀', name: 'Skeleton',    hpBase: 30,  speedBase: 3.5, damageBase: 6,  goldReward: 2,  tier: 2 },
+    orc:         { icon: '👹', name: 'Orc',         hpBase: 55,  speedBase: 2.5, damageBase: 8,  goldReward: 3,  tier: 3 },
+    dark_knight: { icon: '⚔️', name: 'Dark Knight', hpBase: 90,  speedBase: 2.0, damageBase: 12, goldReward: 5,  tier: 4 },
+    golem:       { icon: '🪨', name: 'Golem',       hpBase: 180, speedBase: 1.2, damageBase: 18, goldReward: 8,  tier: 5 },
+    boss_slime:  { icon: '👑', name: 'King Slime',  hpBase: 350, speedBase: 1.0, damageBase: 20, goldReward: 50, tier: 5, isBoss: true },
 };
 
 function getStormWaveEnemies(wave: number): StormEnemyType[] {
@@ -61,7 +74,6 @@ function getStormWaveEnemies(wave: number): StormEnemyType[] {
     return enemies;
 }
 
-// ── Wave Preview helper ──
 export function getStormWavePreview(wave: number): Record<string, number> {
     const enemies = getStormWaveEnemies(wave);
     const counts: Record<string, number> = {};
@@ -72,26 +84,23 @@ export function getStormWavePreview(wave: number): Record<string, number> {
 }
 
 export type StormGameState = 'idle' | 'playing' | 'paused' | 'victory' | 'defeat';
-
 export type DefenderType = 'cow' | 'swordsman' | 'shield' | 'archer' | 'medic';
 
-// ── Ability definitions ──
 export interface AbilityDef {
     name: string;
     icon: string;
-    cooldown: number; // ms
+    cooldown: number;
     description: string;
 }
 
 export const DEFENDER_ABILITIES: Record<DefenderType, AbilityDef> = {
-    cow:       { name: 'Stampede',  icon: '🐂', cooldown: 15000, description: '3x damage to all in range' },
+    cow:       { name: 'Stampede',  icon: '🐂', cooldown: 15000, description: '3× damage to all in range' },
     swordsman: { name: 'Rally',     icon: '📯', cooldown: 20000, description: '+50% damage to all defenders for 5s' },
-    shield:    { name: 'Fortify',   icon: '🛡️', cooldown: 18000, description: 'Block all damage for 3s' },
-    archer:    { name: 'Volley',    icon: '🎯', cooldown: 12000, description: 'Fire 5 shots at random enemies' },
+    shield:    { name: 'Fortify',   icon: '🛡️', cooldown: 18000, description: 'Block all damage for 3s + taunt enemies' },
+    archer:    { name: 'Volley',    icon: '🎯', cooldown: 12000, description: 'Fire 5 arrows at random enemies' },
     medic:     { name: 'Mass Heal', icon: '💚', cooldown: 25000, description: 'Fully heal all defenders' },
 };
 
-// ── Veterancy XP thresholds ──
 const RANK_THRESHOLDS = [0, 30, 70, 120];
 function getRankFromXp(xp: number): number {
     for (let i = RANK_THRESHOLDS.length - 1; i >= 0; i--) {
@@ -100,26 +109,30 @@ function getRankFromXp(xp: number): number {
     return 0;
 }
 
-// Basic entity bounds for the side-view lane
+// ── Interfaces ────────────────────────────────────────────────────────────
 export interface CombatEntity {
     id: string;
     type: string;
     hp: number;
     maxHp: number;
-    x: number; // 0 (left) to 100 (right/fort)
-    y: number; // vertical position as % (30, 50, 70 for lanes)
+    x: number;
+    y: number;
     damage: number;
     speed: number;
     range: number;
-    cooldown: number; // attack cooldown
+    cooldown: number;
     maxCooldown: number;
 }
 
 export interface Enemy extends CombatEntity {
-    reward: number; // Shmeckles dropped
+    goldReward: number;
     enemyType: StormEnemyType;
-    lane: number; // 0, 1, or 2
-    isElite?: boolean; // 2x HP, 2x reward, red glow
+    lane: number;
+    isElite?: boolean;
+    // Pathing state
+    reachedBoundary: boolean;   // true once x >= FORT_BOUNDARY_X
+    targetX: number;            // diagonal target
+    targetY: number;
 }
 
 export interface StormDamagePopup {
@@ -129,6 +142,7 @@ export interface StormDamagePopup {
     value: number;
     isCrit: boolean;
     age: number;
+    icon: string;   // '🪙' for gold, '🐌' for shmeckle, '💎' for diamond
 }
 
 export interface Defender extends CombatEntity {
@@ -137,14 +151,17 @@ export interface Defender extends CombatEntity {
     xp: number;
     rank: number;
     abilityReady: boolean;
-    abilityCooldownTimer: number; // ms until next ability
-    fortifyUntil: number; // timestamp — shield fortify active until
+    abilityCooldownTimer: number;
+    fortifyUntil: number;
 }
 
 export interface Obstacle {
     id: string;
     type: 'barbed_wire' | 'barricade';
     x: number;
+    y: number;            // centre y% of this segment
+    yStart: number;       // top of segment (for collision)
+    yEnd: number;         // bottom of segment
     hp: number;
     maxHp: number;
     slowFactor?: number;
@@ -157,19 +174,20 @@ export interface Projectile {
     fromY: number;
     toX: number;
     toY: number;
-    progress: number; // 0 to 1
+    progress: number;
     damage: number;
     targetId: string;
-    isHeal?: boolean; // medic heal projectile
+    isHeal?: boolean;
+    sourceType: DefenderType | 'barbed_wire'; // for visual identity
 }
-
-// Legacy SavedFormation interface removed
 
 export interface StormState {
     gameState: StormGameState;
     wave: number;
+    // Castle HP (fortHp renamed for clarity but kept compatible)
     fortHp: number;
     maxFortHp: number;
+    castleHit: boolean;       // triggers shake animation
     enemies: Enemy[];
     defenders: Defender[];
     obstacles: Obstacle[];
@@ -193,24 +211,16 @@ export interface StormState {
         shmeckleWaveBonusLevel: number;
         shmeckleKillBonusLevel: number;
     };
-    lastWaveRewards: { shmeckles: number; gold: number } | null;
+    lastWaveRewards: { shmeckles: number; gold: number; diamonds?: number } | null;
 
-    // Combo system
     comboCount: number;
-    comboTimer: number; // ms remaining on combo window
+    comboTimer: number;
     comboPopups: { id: string; count: number; bonus: number; x: number; y: number; age: number }[];
 
-    // High score
     bestWave: number;
-
-    // Boss warning
     bossWarningActive: boolean;
     bossWarningTimer: number;
-
-    // Rally buff (global damage boost)
     rallyUntil: number;
-
-    // Damage popups
     damagePopups: StormDamagePopup[];
 
     // Actions
@@ -219,34 +229,35 @@ export interface StormState {
     pauseGame: () => void;
     resumeGame: () => void;
     gameTick: (deltaMs: number) => void;
-    
-    // Purchasing
+
     buyDefender: (type: DefenderType) => boolean;
-    buyObstacle: (type: 'barbed_wire' | 'barricade', xPos: number) => boolean;
+    buyObstacle: (type: 'barbed_wire' | 'barricade') => boolean;
     buyUpgrade: (upgradeKey: keyof StormState['upgrades']) => boolean;
     storeDefender: (id: string) => void;
     storeObstacle: (id: string) => void;
     storeAllDefenders: () => void;
     storeAllObstacles: () => void;
     hasBoughtFirstCow: boolean;
-    
-    // Movement
+
     moveDefender: (id: string, x: number, y: number) => void;
     activateAbility: (id: string) => void;
 
-    // Wave Generation
     startNextWave: () => void;
     endGame: (victory: boolean) => void;
 }
 
-const DEFENDER_COSTS: Record<DefenderType, number> = { cow: 5, swordsman: 15, shield: 25, archer: 20, medic: 20 };
+// ── Cost / Stat tables ────────────────────────────────────────────────────
+const DEFENDER_COSTS: Record<DefenderType, number> = {
+    cow: 5, swordsman: 15, shield: 25, archer: 20, medic: 20
+};
 
+// Rebalanced stats: higher cost = clearly more powerful
 const DEFENDER_STATS: Record<DefenderType, { hp: number; dmg: number; range: number; cd: number }> = {
-    cow:       { hp: 60, dmg: 8,  range: 20, cd: 2000 },
-    swordsman: { hp: 40, dmg: 15, range: 5,  cd: 1000 },
-    shield:    { hp: 100, dmg: 5, range: 5,  cd: 1000 },
-    archer:    { hp: 40, dmg: 10, range: 40, cd: 1500 },
-    medic:     { hp: 35, dmg: 0,  range: 25, cd: 2000 },
+    cow:       { hp: 80,  dmg: 6,  range: 12, cd: 2000 }, // cheap frontliner
+    swordsman: { hp: 50,  dmg: 18, range: 5,  cd: 900  }, // melee DPS
+    archer:    { hp: 35,  dmg: 14, range: 45, cd: 1400 }, // ranged DPS
+    medic:     { hp: 30,  dmg: 0,  range: 30, cd: 1800 }, // healer
+    shield:    { hp: 150, dmg: 3,  range: 5,  cd: 1500 }, // pure tank + taunt
 };
 
 const getPetFortStats = () => {
@@ -260,6 +271,25 @@ const getPetFortStats = () => {
     return { hpPercent: 0, costDiscount: 0 };
 };
 
+// ── Helper: recompute barricade segments when obstacles change ────────────
+function recomputeBarricadeSegments(obstacles: Obstacle[]): Obstacle[] {
+    const barricades = obstacles.filter(o => o.type === 'barricade');
+    const others = obstacles.filter(o => o.type !== 'barricade');
+    const n = barricades.length;
+    if (n === 0) return obstacles;
+
+    const segH = 100 / n;
+    const updated = barricades.map((b, i) => ({
+        ...b,
+        x: FORT_BOUNDARY_X,
+        y: i * segH + segH / 2,
+        yStart: i * segH,
+        yEnd: (i + 1) * segH,
+    }));
+    return [...others, ...updated];
+}
+
+// ── Store ─────────────────────────────────────────────────────────────────
 export const useStormStore = create<StormState>()(
     persist(
         (set, get) => ({
@@ -267,6 +297,7 @@ export const useStormStore = create<StormState>()(
     wave: 1,
     fortHp: 100,
     maxFortHp: 100,
+    castleHit: false,
     enemies: [],
     defenders: [],
     obstacles: [],
@@ -277,7 +308,7 @@ export const useStormStore = create<StormState>()(
     defenderInventory: { cow: 0, swordsman: 0, shield: 0, archer: 0, medic: 0 },
     obstacleInventory: { barbed_wire: 0, barricade: 0 },
     hasBoughtFirstCow: localStorage.getItem('stf-free-cow-claimed') === 'true',
-    
+
     upgrades: {
         fortHealthLevel: 0,
         fortArmorLevel: 0,
@@ -301,38 +332,14 @@ export const useStormStore = create<StormState>()(
 
     bossWarningActive: false,
     bossWarningTimer: 0,
-
     rallyUntil: 0,
 
+    // ── Lifecycle ─────────────────────────────────────────────────────────
     startGame: () => {
         set(state => {
             const petStats = getPetFortStats();
             const baseHp = BASE_MAX_HP + (state.upgrades.fortHealthLevel * 50);
             const maxFortHp = Math.floor(baseHp * (1 + (petStats.hpPercent / 100)));
-            
-            return { 
-                gameState: 'idle',  // idle, not playing — prevents instant false victory on empty battlefield
-                enemies: [],
-                projectiles: [],
-                comboCount: 0,
-                comboTimer: 0,
-                comboPopups: [],
-                bossWarningActive: false,
-                rallyUntil: 0,
-                lastWaveRewards: null,
-                enemiesToSpawn: [],
-                maxFortHp,
-                fortHp: maxFortHp,
-            };
-        });
-    },
-
-    resetToIdle: () => {
-        set(state => {
-            const petStats = getPetFortStats();
-            const baseHp = BASE_MAX_HP + (state.upgrades.fortHealthLevel * 50);
-            const maxFortHp = Math.floor(baseHp * (1 + (petStats.hpPercent / 100)));
-
             return {
                 gameState: 'idle',
                 enemies: [],
@@ -346,6 +353,30 @@ export const useStormStore = create<StormState>()(
                 enemiesToSpawn: [],
                 maxFortHp,
                 fortHp: maxFortHp,
+                castleHit: false,
+            };
+        });
+    },
+
+    resetToIdle: () => {
+        set(state => {
+            const petStats = getPetFortStats();
+            const baseHp = BASE_MAX_HP + (state.upgrades.fortHealthLevel * 50);
+            const maxFortHp = Math.floor(baseHp * (1 + (petStats.hpPercent / 100)));
+            return {
+                gameState: 'idle',
+                enemies: [],
+                projectiles: [],
+                comboCount: 0,
+                comboTimer: 0,
+                comboPopups: [],
+                bossWarningActive: false,
+                rallyUntil: 0,
+                lastWaveRewards: null,
+                enemiesToSpawn: [],
+                maxFortHp,
+                fortHp: maxFortHp,
+                castleHit: false,
             };
         });
     },
@@ -353,16 +384,18 @@ export const useStormStore = create<StormState>()(
     pauseGame: () => set({ gameState: 'paused' }),
     resumeGame: () => set({ gameState: 'playing' }),
 
+    // ── Movement ──────────────────────────────────────────────────────────
     moveDefender: (id, x, y) => {
         set(state => ({
             defenders: state.defenders.map(d =>
                 d.id === id
-                    ? { ...d, x: Math.max(10, Math.min(95, x)), y: Math.max(15, Math.min(85, y)) }
+                    ? { ...d, x: Math.max(10, Math.min(93, x)), y: Math.max(15, Math.min(85, y)) }
                     : d
             )
         }));
     },
 
+    // ── Abilities ─────────────────────────────────────────────────────────
     activateAbility: (defId) => {
         const state = get();
         const defender = state.defenders.find(d => d.id === defId);
@@ -371,7 +404,6 @@ export const useStormStore = create<StormState>()(
         const abilityDef = DEFENDER_ABILITIES[defender.defenderType];
         const now = Date.now();
 
-        // Mark ability as used
         set(s => ({
             defenders: s.defenders.map(d =>
                 d.id === defId
@@ -382,37 +414,28 @@ export const useStormStore = create<StormState>()(
 
         switch (defender.defenderType) {
             case 'cow': {
-                // Stampede: 3x damage to all enemies in range
                 const effectiveDamage = (defender.damage + (state.upgrades.defenderDamageLevel * 5)) * 3;
                 set(s => ({
                     enemies: s.enemies.map(e => {
                         const dx = e.x - defender.x;
                         const dy = (e.y - defender.y) * 0.5;
                         const dist = Math.sqrt(dx * dx + dy * dy);
-                        if (dist <= defender.range) {
-                            return { ...e, hp: e.hp - effectiveDamage };
-                        }
-                        return e;
+                        return dist <= defender.range ? { ...e, hp: e.hp - effectiveDamage } : e;
                     })
                 }));
                 break;
             }
-            case 'swordsman': {
-                // Rally: +50% damage to all defenders for 5s
+            case 'swordsman':
                 set({ rallyUntil: now + 5000 });
                 break;
-            }
-            case 'shield': {
-                // Fortify: block all damage for 3s
+            case 'shield':
                 set(s => ({
                     defenders: s.defenders.map(d =>
                         d.id === defId ? { ...d, fortifyUntil: now + 3000 } : d
                     )
                 }));
                 break;
-            }
             case 'archer': {
-                // Volley: fire 5 projectiles at random enemies
                 const targets = [...state.enemies].sort(() => Math.random() - 0.5).slice(0, 5);
                 const effectiveDmg = defender.damage + (state.upgrades.defenderDamageLevel * 5);
                 const newProjs: Projectile[] = targets.map((t, i) => ({
@@ -424,59 +447,73 @@ export const useStormStore = create<StormState>()(
                     progress: 0,
                     damage: effectiveDmg,
                     targetId: t.id,
+                    sourceType: 'archer',
                 }));
                 set(s => ({ projectiles: [...s.projectiles, ...newProjs] }));
                 break;
             }
-            case 'medic': {
-                // Mass Heal: fully heal all defenders
+            case 'medic':
                 set(s => ({
                     defenders: s.defenders.map(d => ({ ...d, hp: d.maxHp }))
                 }));
                 break;
-            }
         }
     },
+
+    // ── Store / recall ────────────────────────────────────────────────────
     storeAllDefenders: () => {
         const state = get();
         const newInventory = { ...state.defenderInventory };
-        
         state.defenders.forEach(d => {
             newInventory[d.defenderType] = (newInventory[d.defenderType] ?? 0) + 1;
         });
-        
-        set({
-            defenders: [],
-            defenderInventory: newInventory
-        });
+        set({ defenders: [], defenderInventory: newInventory });
     },
 
     storeAllObstacles: () => {
         const state = get();
         const newInventory = { ...state.obstacleInventory };
-        
         state.obstacles.forEach(o => {
             const key = o.type === 'barbed_wire' ? 'barbed_wire' : 'barricade';
             newInventory[key] = (newInventory[key] ?? 0) + 1;
         });
-        
-        set({
-            obstacles: [],
-            obstacleInventory: newInventory
-        });
+        set({ obstacles: [], obstacleInventory: newInventory });
     },
 
+    storeDefender: (id) => {
+        const state = get();
+        const defender = state.defenders.find(d => d.id === id);
+        if (!defender) return;
+        set(s => ({
+            defenders: s.defenders.filter(d => d.id !== id),
+            defenderInventory: {
+                ...s.defenderInventory,
+                [defender.defenderType]: (s.defenderInventory[defender.defenderType] || 0) + 1
+            }
+        }));
+    },
+
+    storeObstacle: (id) => {
+        const state = get();
+        const obs = state.obstacles.find(o => o.id === id);
+        if (!obs) return;
+        const newObs = state.obstacles.filter(o => o.id !== id);
+        set(s => ({
+            obstacles: recomputeBarricadeSegments(newObs),
+            obstacleInventory: { ...s.obstacleInventory, [obs.type]: (s.obstacleInventory[obs.type] || 0) + 1 }
+        }));
+    },
+
+    // ── Wave launching ─────────────────────────────────────────────────────
     startNextWave: () => {
         const { wave } = get();
         const types = getStormWaveEnemies(wave);
-
-        // Check for boss and trigger warning
         const hasBoss = types.includes('boss_slime');
 
         const newEnemies: Enemy[] = types.map((eType, i) => {
             const def = STORM_ENEMY_DEFS[eType];
             const waveScale = 1 + (wave - 1) * 0.15;
-            const lane = i % 3; // distribute across 3 lanes
+            const lane = i % 3;
             const isElite = !def.isBoss && Math.random() < 0.10;
             const eliteHp = Math.ceil(def.hpBase * waveScale) * (isElite ? 2 : 1);
             return {
@@ -485,16 +522,19 @@ export const useStormStore = create<StormState>()(
                 enemyType: eType,
                 hp: eliteHp,
                 maxHp: eliteHp,
-                x: -5 - (Math.random() * 10), // spawn offscreen left, staggered
+                x: -5 - (Math.random() * 10),
                 y: LANE_Y[lane],
                 damage: Math.ceil(def.damageBase * waveScale),
                 speed: def.speedBase + (Math.random() * 0.5),
                 range: 2,
                 cooldown: 0,
                 maxCooldown: 1000,
-                reward: (def.reward + Math.floor(wave / 3)) * (isElite ? 2 : 1),
+                goldReward: def.goldReward * (isElite ? 2 : 1),
                 lane,
                 isElite,
+                reachedBoundary: false,
+                targetX: CASTLE_X,
+                targetY: CASTLE_Y,
             };
         });
 
@@ -508,40 +548,20 @@ export const useStormStore = create<StormState>()(
             comboTimer: 0,
             bossWarningActive: hasBoss,
             bossWarningTimer: hasBoss ? 2000 : 0,
+            castleHit: false,
         });
     },
 
-    storeDefender: (id) => {
-        const state = get();
-        const defender = state.defenders.find(d => d.id === id);
-        if (!defender) return;
-        set(s => ({
-            defenders: s.defenders.filter(d => d.id !== id),
-            defenderInventory: { ...s.defenderInventory, [defender.defenderType]: (s.defenderInventory[defender.defenderType] || 0) + 1 }
-        }));
-    },
-
-    storeObstacle: (id) => {
-        const state = get();
-        const obs = state.obstacles.find(o => o.id === id);
-        if (!obs) return;
-        set(s => ({
-            obstacles: s.obstacles.filter(o => o.id !== id),
-            obstacleInventory: { ...s.obstacleInventory, [obs.type]: (s.obstacleInventory[obs.type] || 0) + 1 }
-        }));
-    },
-
+    // ── Purchasing ────────────────────────────────────────────────────────
     buyDefender: (type) => {
         const cost = DEFENDER_COSTS[type];
         const store = useCurrencyStore.getState();
         const state = get();
-
         const isFree = type === 'cow' && !state.hasBoughtFirstCow;
         const owned = state.defenderInventory[type] || 0;
-        
+
         if (owned > 0 || isFree || store.shmeckles >= cost) {
             if (owned > 0) {
-                // Consume inventory instead of shmeckles
                 set(s => ({ defenderInventory: { ...s.defenderInventory, [type]: owned - 1 } }));
             } else {
                 if (!isFree) store.spendShmeckles(cost);
@@ -553,8 +573,6 @@ export const useStormStore = create<StormState>()(
 
             const s = DEFENDER_STATS[type];
             const hpBonus = state.upgrades.defenderHealthLevel * 10;
-
-            // Place defenders spread across right side with varied y positions
             const existingCount = state.defenders.length;
             const yPos = LANE_Y[existingCount % 3];
 
@@ -584,12 +602,11 @@ export const useStormStore = create<StormState>()(
         return false;
     },
 
-    buyObstacle: (type, xPos) => {
+    buyObstacle: (type) => {
         const costs = { 'barbed_wire': 10, 'barricade': 30 };
         const cost = costs[type];
         const store = useCurrencyStore.getState();
         const state = get();
-
         const owned = state.obstacleInventory[type] || 0;
 
         if (owned > 0 || store.shmeckles >= cost) {
@@ -598,16 +615,45 @@ export const useStormStore = create<StormState>()(
             } else {
                 store.spendShmeckles(cost);
             }
-            const newObstacle: Obstacle = {
-                id: `obs-${Date.now()}`,
-                type,
-                hp: type === 'barricade' ? 200 : 50,
-                maxHp: type === 'barricade' ? 200 : 50,
-                x: xPos,
-                slowFactor: type === 'barbed_wire' ? 0.3 : undefined,
-                damagePerTick: type === 'barbed_wire' ? 2 : 0
-            };
-            set(state => ({ obstacles: [...state.obstacles, newObstacle] }));
+
+            const durabilityBonus = state.upgrades.trapDurabilityLevel * 20;
+
+            let newObs: Obstacle;
+            if (type === 'barricade') {
+                // Will be recomputed by recomputeBarricadeSegments
+                newObs = {
+                    id: `obs-${Date.now()}`,
+                    type: 'barricade',
+                    x: FORT_BOUNDARY_X,
+                    y: 50,
+                    yStart: 0,
+                    yEnd: 100,
+                    hp: 250 + durabilityBonus,
+                    maxHp: 250 + durabilityBonus,
+                };
+            } else {
+                // Barbed wire — placed in FORWARD TRAP ZONE left of the barricade wall
+                // Distribute across the wire zone so multiple wires don't pile up
+                const existingWireCount = state.obstacles.filter(o => o.type === 'barbed_wire').length;
+                // Spread x across wire zone, cycling slightly so they don't overlap exactly
+                const xPos = WIRE_ZONE_X_MIN + ((existingWireCount * 5) % (WIRE_ZONE_X_MAX - WIRE_ZONE_X_MIN));
+                const wireY = LANE_Y[existingWireCount % 3];
+                newObs = {
+                    id: `obs-${Date.now()}`,
+                    type: 'barbed_wire',
+                    x: xPos,
+                    y: wireY,
+                    yStart: wireY - 15,
+                    yEnd: wireY + 15,
+                    hp: 60 + durabilityBonus,
+                    maxHp: 60 + durabilityBonus,
+                    slowFactor: 0.30,
+                    damagePerTick: 2 + state.upgrades.wireStrengthLevel,
+                };
+            }
+
+            const updatedObs = [...state.obstacles, newObs];
+            set({ obstacles: recomputeBarricadeSegments(updatedObs) });
             return true;
         }
         return false;
@@ -617,40 +663,35 @@ export const useStormStore = create<StormState>()(
         const currentLevel = get().upgrades[upgradeKey];
         const petStats = getPetFortStats();
         let cost = 50 + (currentLevel * 50);
-        
         cost = Math.floor(cost * (1 - (petStats.costDiscount / 100)));
 
         const store = useCurrencyStore.getState();
-
         if (store.shmeckles >= cost) {
             store.spendShmeckles(cost);
             set(state => {
                 const newUpgrades = { ...state.upgrades, [upgradeKey]: currentLevel + 1 };
-                
                 let newMaxHp = state.maxFortHp;
                 if (upgradeKey === 'fortHealthLevel') {
                     const baseHp = BASE_MAX_HP + (newUpgrades.fortHealthLevel * 50);
                     newMaxHp = Math.floor(baseHp * (1 + (petStats.hpPercent / 100)));
                 }
-
-                const hpGain = upgradeKey === 'fortHealthLevel' ? Math.floor(50 * (1 + (petStats.hpPercent / 100))) : 0;
-
-                return { 
-                    upgrades: newUpgrades,
-                    maxFortHp: newMaxHp,
-                    fortHp: state.fortHp + hpGain
-                };
+                const hpGain = upgradeKey === 'fortHealthLevel'
+                    ? Math.floor(50 * (1 + (petStats.hpPercent / 100)))
+                    : 0;
+                return { upgrades: newUpgrades, maxFortHp: newMaxHp, fortHp: state.fortHp + hpGain };
             });
             return true;
         }
         return false;
     },
 
+    // ── End game ──────────────────────────────────────────────────────────
     endGame: (victory) => {
         set(state => {
             const petStats = getPetFortStats();
             const baseHp = BASE_MAX_HP + (state.upgrades.fortHealthLevel * 50);
             const calcMaxHp = Math.floor(baseHp * (1 + (petStats.hpPercent / 100)));
+            const isBossWave = state.wave % 5 === 0;
 
             const newState: Partial<StormState> = {
                 gameState: victory ? 'victory' : 'defeat',
@@ -659,27 +700,37 @@ export const useStormStore = create<StormState>()(
                 fortHp: calcMaxHp,
                 projectiles: [],
                 bossWarningActive: false,
+                castleHit: false,
             };
-            
+
             if (victory) {
+                // Wave shmeckles (kept as wave bonus — not per kill)
                 const waveShmeckles = state.wave * 5 + (state.upgrades.shmeckleWaveBonusLevel * 5);
+                // Early game shmeckle bonus (waves 1-3)
+                const earlyBonus = state.wave <= 3 ? state.wave : 0;
+                const totalShmeckles = waveShmeckles + earlyBonus;
                 const waveGold = Math.min(state.wave * 5, 50);
+                // Boss wave diamonds
+                const waveDiamonds = isBossWave ? 1 : 0;
 
-                newState.lastWaveRewards = { shmeckles: waveShmeckles, gold: waveGold };
+                newState.lastWaveRewards = {
+                    shmeckles: totalShmeckles,
+                    gold: waveGold,
+                    diamonds: waveDiamonds,
+                };
 
-                // Arena stats
                 const arenaStats = useArenaStatsStore.getState();
                 arenaStats.recordWaveSurvived();
                 arenaStats.recordGold(waveGold);
-                arenaStats.recordShmeckles(waveShmeckles);
+                arenaStats.recordShmeckles(totalShmeckles);
                 arenaStats.updateStormBest(state.wave);
 
-                // Grant XP to surviving defenders
+                // Grant XP, rank defenders
                 newState.defenders = state.defenders.map(d => {
                     const newXp = d.xp + 10;
                     const newRank = getRankFromXp(newXp);
-                    const rankDmgBonus = newRank * 0.2; // +20% per rank
-                    const rankHpBonus = newRank * 0.15; // +15% per rank
+                    const rankDmgBonus = newRank * 0.2;
+                    const rankHpBonus = newRank * 0.15;
                     const baseStat = DEFENDER_STATS[d.defenderType];
                     return {
                         ...d,
@@ -692,11 +743,11 @@ export const useStormStore = create<StormState>()(
                 });
 
                 import('./useCurrencyStore').then(({ useCurrencyStore: cs }) => {
-                    cs.getState().addShmeckles(waveShmeckles);
+                    cs.getState().addShmeckles(totalShmeckles);
                     cs.getState().addGold(waveGold);
+                    if (waveDiamonds > 0) cs.getState().addDiamonds(waveDiamonds);
                 });
 
-                // Update best wave
                 const finalWave = state.wave;
                 if (finalWave > state.bestWave) {
                     newState.bestWave = finalWave;
@@ -704,17 +755,17 @@ export const useStormStore = create<StormState>()(
                 }
             } else {
                 newState.lastWaveRewards = null;
-                // Update best wave on defeat too
                 if (state.wave > state.bestWave) {
                     newState.bestWave = state.wave;
                     localStorage.setItem('stf-best-wave', String(state.wave));
                 }
             }
-            
+
             return newState;
         });
     },
 
+    // ── Main game tick ────────────────────────────────────────────────────
     gameTick: (deltaMs) => {
         const state = get();
         if (state.gameState !== 'playing') return;
@@ -727,90 +778,113 @@ export const useStormStore = create<StormState>()(
         let bossWarningTimer = state.bossWarningTimer;
         if (bossWarningActive) {
             bossWarningTimer -= deltaMs;
-            if (bossWarningTimer <= 0) {
-                bossWarningActive = false;
-                bossWarningTimer = 0;
-            }
+            if (bossWarningTimer <= 0) { bossWarningActive = false; bossWarningTimer = 0; }
         }
 
         // Combo timer
         let comboCount = state.comboCount;
         let comboTimer = state.comboTimer;
         let comboPopups = [...state.comboPopups];
-
         if (comboTimer > 0) {
             comboTimer -= deltaMs;
-            if (comboTimer <= 0) {
-                comboCount = 0;
-                comboTimer = 0;
-            }
+            if (comboTimer <= 0) { comboCount = 0; comboTimer = 0; }
         }
-
-        // Age out combo popups
         comboPopups = comboPopups
             .map(p => ({ ...p, age: p.age + deltaMs }))
             .filter(p => p.age < 1500);
 
-        // 1. Spawning — one enemy per second
+        // Spawn logic
         if (enemiesToSpawn.length > 0) {
             spawnTimer += deltaMs;
-            if (spawnTimer >= 600) { // slightly faster spawn rate
+            if (spawnTimer >= 600) {
                 const toSpawn = enemiesToSpawn.shift();
                 if (toSpawn) enemies.push(toSpawn);
                 spawnTimer = 0;
             }
         }
 
-        // 2. Obstacle Processing
+        // ── Obstacle Processing ──────────────────────────────────────────
         const enemySlows = new Map<string, number>();
-        const enemyObstacleBlock = new Map<string, Obstacle>();
+        const enemyBarricadeBlock = new Map<string, Obstacle>();
 
         for (const obs of obstacles) {
             for (const e of enemies) {
-                if (Math.abs(e.x - obs.x) < 5) {
-                    if (obs.type === 'barbed_wire') {
-                        enemySlows.set(e.id, obs.slowFactor || 1);
-                        e.hp -= (obs.damagePerTick || 0) * (deltaMs/1000);
-                        obs.hp -= 2 * (deltaMs/1000);
-                    } else if (obs.type === 'barricade') {
-                        enemyObstacleBlock.set(e.id, obs);
+                if (e.hp <= 0) continue;
+                if (obs.type === 'barricade') {
+                    // Barricades block enemies at the fort boundary wall
+                    if (Math.abs(e.x - obs.x) < 4 && e.y >= obs.yStart && e.y <= obs.yEnd) {
+                        enemyBarricadeBlock.set(e.id, obs);
+                    }
+                } else if (obs.type === 'barbed_wire') {
+                    // Barbed wire in forward trap zone — apply slow + damage by proximity
+                    if (Math.abs(e.x - obs.x) < 5 && e.y >= obs.yStart && e.y <= obs.yEnd) {
+                        enemySlows.set(e.id, obs.slowFactor ?? 1);
+                        e.hp -= (obs.damagePerTick || 0) * (deltaMs / 1000);
+                        obs.hp -= 1.5 * (deltaMs / 1000);
                     }
                 }
             }
         }
 
-        // Rally buff check
+        // Rally buff
         const rallyActive = now < state.rallyUntil;
 
-        // 3. Enemy Movement & Combat
+        // ── Enemy Movement & Combat ───────────────────────────────────────
+        let castleHit = false;
+
         for (const e of enemies) {
             if (e.hp <= 0) continue;
 
-            const blockObs = enemyObstacleBlock.get(e.id);
-            const slow = enemySlows.get(e.id) || 1;
+            const blockObs = enemyBarricadeBlock.get(e.id);
+            const slow = enemySlows.get(e.id) ?? 1;
 
             if (blockObs) {
+                // Attack barricade
                 e.cooldown -= deltaMs;
                 if (e.cooldown <= 0) {
                     blockObs.hp -= e.damage;
                     e.cooldown = e.maxCooldown;
                 }
             } else {
-                e.x += e.speed * slow * (deltaMs / 1000);
+                // Check if reached fort boundary — switch to diagonal pathing
+                if (e.x >= FORT_BOUNDARY_X && !e.reachedBoundary) {
+                    e.reachedBoundary = true;
+                    e.targetX = CASTLE_X;
+                    e.targetY = CASTLE_Y;
+                }
 
-                if (e.x >= 100) {
-                    e.x = 100;
-                    const damageReduction = state.upgrades.fortArmorLevel * 2;
-                    const tickDamage = Math.max(0.5, BASE_DAMAGE_PER_ENEMY_PER_TICK - damageReduction);
-                    fortHp -= tickDamage * (deltaMs / 1000);
+                if (e.reachedBoundary) {
+                    // Diagonal pathing toward castle
+                    const dx = e.targetX - e.x;
+                    const dy = e.targetY - e.y;
+                    const dist = Math.sqrt(dx * dx + dy * dy);
+                    if (dist > 1) {
+                        const step = e.speed * slow * (deltaMs / 1000);
+                        e.x += (dx / dist) * step;
+                        e.y += (dy / dist) * step;
+                    }
+
+                    // Attack castle
+                    if (e.x >= CASTLE_X - 2) {
+                        e.cooldown -= deltaMs;
+                        if (e.cooldown <= 0) {
+                            const damageReduction = state.upgrades.fortArmorLevel * 2;
+                            const tickDamage = Math.max(0.5, e.damage * 0.1 - damageReduction * 0.05);
+                            fortHp -= tickDamage * (deltaMs / 1000);
+                            castleHit = true;
+                            e.cooldown = e.maxCooldown;
+                        }
+                    }
+                } else {
+                    // Straight march toward boundary
+                    e.x += e.speed * slow * (deltaMs / 1000);
                 }
             }
         }
 
-        // 4. Defender Combat — spawn projectiles
+        // ── Defender Combat — spawn typed projectiles ────────────────────
         const newProjectiles = [...projectiles];
 
-        // Ability cooldown ticking
         const updatedDefenders = defenders.map(d => {
             const updated = { ...d };
             if (!updated.abilityReady && updated.abilityCooldownTimer > 0) {
@@ -825,153 +899,212 @@ export const useStormStore = create<StormState>()(
 
         for (const d of updatedDefenders) {
             d.cooldown -= deltaMs;
-            if (d.cooldown <= 0) {
-                const rankDmgBonus = d.rank * 0.2;
-                const rallyBonus = rallyActive ? 0.5 : 0;
-                const effectiveDamage = (d.damage + (state.upgrades.defenderDamageLevel * 5)) * (1 + rankDmgBonus + rallyBonus);
+            if (d.cooldown > 0) continue;
 
-                if (d.defenderType === 'medic') {
-                    // Medic: heal lowest-HP friendly in range
-                    let lowestDef: Defender | null = null;
-                    let lowestPct = 1;
-                    for (const ally of updatedDefenders) {
-                        if (ally.id === d.id || ally.hp >= ally.maxHp) continue;
-                        const dx = ally.x - d.x;
-                        const dy = (ally.y - d.y) * 0.5;
-                        const dist = Math.sqrt(dx * dx + dy * dy);
-                        if (dist <= d.range) {
-                            const pct = ally.hp / ally.maxHp;
-                            if (pct < lowestPct) {
-                                lowestPct = pct;
-                                lowestDef = ally;
-                            }
+            const rankDmgBonus = d.rank * 0.2;
+            const rallyBonus = rallyActive ? 0.5 : 0;
+            const effectiveDamage = (d.damage + (state.upgrades.defenderDamageLevel * 5)) * (1 + rankDmgBonus + rallyBonus);
+            const isFortified = d.fortifyUntil > now;
+
+            if (d.defenderType === 'medic') {
+                // Heal lowest HP ally in range
+                let lowestDef: Defender | null = null;
+                let lowestPct = 1;
+                for (const ally of updatedDefenders) {
+                    if (ally.id === d.id || ally.hp >= ally.maxHp) continue;
+                    const dx = ally.x - d.x;
+                    const dy = (ally.y - d.y) * 0.5;
+                    if (Math.sqrt(dx * dx + dy * dy) <= d.range) {
+                        const pct = ally.hp / ally.maxHp;
+                        if (pct < lowestPct) { lowestPct = pct; lowestDef = ally; }
+                    }
+                }
+                if (lowestDef) {
+                    const healAmount = 15 + (state.upgrades.defenderDamageLevel * 3);
+                    newProjectiles.push({
+                        id: `heal-${now}-${d.id}`,
+                        fromX: d.x, fromY: d.y,
+                        toX: lowestDef.x, toY: lowestDef.y,
+                        progress: 0,
+                        damage: healAmount,
+                        targetId: lowestDef.id,
+                        isHeal: true,
+                        sourceType: 'medic',
+                    });
+                    d.cooldown = Math.max(200, d.maxCooldown - (state.upgrades.defenderSpeedLevel * 100));
+                }
+            } else if (d.defenderType === 'shield' && !isFortified) {
+                // Shield: taunt (handled above) + weak melee attack
+                let bestTarget: Enemy | null = null;
+                let bestDist = Infinity;
+                for (const e of enemies) {
+                    if (e.hp <= 0) continue;
+                    const dx = e.x - d.x;
+                    const dy = (e.y - d.y) * 0.5;
+                    const dist = Math.sqrt(dx * dx + dy * dy);
+                    if (dist <= d.range && dist < bestDist) { bestDist = dist; bestTarget = e; }
+                }
+                if (bestTarget) {
+                    newProjectiles.push({
+                        id: `proj-${now}-${d.id}`,
+                        fromX: d.x, fromY: d.y,
+                        toX: bestTarget.x, toY: bestTarget.y,
+                        progress: 0,
+                        damage: effectiveDamage,
+                        targetId: bestTarget.id,
+                        sourceType: 'shield',
+                    });
+                    d.cooldown = Math.max(300, d.maxCooldown - (state.upgrades.defenderSpeedLevel * 100));
+                }
+            } else {
+                // Standard attack: prefer shield-taunted enemy if shield exists
+                let candidates = enemies.filter(e => e.hp > 0);
+
+                // If any shield units present, enemies prioritize attacking them
+                // (We implement it the other way: defenders should still attack nearest)
+                let bestTarget: Enemy | null = null;
+                let bestDist = Infinity;
+                for (const e of candidates) {
+                    const dx = e.x - d.x;
+                    const dy = (e.y - d.y) * 0.5;
+                    const dist = Math.sqrt(dx * dx + dy * dy);
+                    if (dist <= d.range && dist < bestDist) { bestDist = dist; bestTarget = e; }
+                }
+
+                if (bestTarget) {
+                    // Archer projectile is fast: handled by PROJECTILE_SPEED multiplier applied per sourceType
+                    newProjectiles.push({
+                        id: `proj-${now}-${d.id}`,
+                        fromX: d.x, fromY: d.y,
+                        toX: bestTarget.x, toY: bestTarget.y,
+                        progress: 0,
+                        damage: effectiveDamage,
+                        targetId: bestTarget.id,
+                        sourceType: d.defenderType,
+                    });
+                    d.cooldown = Math.max(200, d.maxCooldown - (state.upgrades.defenderSpeedLevel * 100));
+                }
+            }
+
+            // Shield taunt — REAL: redirect nearby enemies' target Y toward this defender
+            // This makes enemies walk toward the shield unit rather than straight to castle
+            if (d.defenderType === 'shield') {
+                const tauntRange = d.range * 2.5; // wider aggro radius
+                for (const e of enemies) {
+                    if (e.hp <= 0) continue;
+                    const dx = e.x - d.x;
+                    const dy = (e.y - d.y) * 0.5;
+                    const dist = Math.sqrt(dx * dx + dy * dy);
+                    if (dist <= tauntRange) {
+                        // Pull enemy Y toward shield's Y over time
+                        e.targetY = d.y;
+                        // If enemy hasn't reached boundary yet, also nudge lane toward shield
+                        if (!e.reachedBoundary) {
+                            e.y = e.y + (d.y - e.y) * 0.02 * (deltaMs / 16);
                         }
-                    }
-                    if (lowestDef) {
-                        const healAmount = 15 + (state.upgrades.defenderDamageLevel * 3);
-                        newProjectiles.push({
-                            id: `heal-${now}-${d.id}`,
-                            fromX: d.x,
-                            fromY: d.y,
-                            toX: lowestDef.x,
-                            toY: lowestDef.y,
-                            progress: 0,
-                            damage: healAmount,
-                            targetId: lowestDef.id,
-                            isHeal: true,
-                        });
-                        d.cooldown = Math.max(200, d.maxCooldown - (state.upgrades.defenderSpeedLevel * 100));
-                    }
-                } else {
-                    // Find closest target in range (use distance formula with x and y)
-                    let bestTarget: Enemy | null = null;
-                    let bestDist = Infinity;
-                    for (const e of enemies) {
-                        if (e.hp <= 0) continue;
-                        const dx = e.x - d.x;
-                        const dy = (e.y - d.y) * 0.5; // y is scaled down since y% is tighter
-                        const dist = Math.sqrt(dx * dx + dy * dy);
-                        if (dist <= d.range && dist < bestDist) {
-                            bestDist = dist;
-                            bestTarget = e;
-                        }
-                    }
-                    
-                    if (bestTarget) {
-                        newProjectiles.push({
-                            id: `proj-${now}-${d.id}`,
-                            fromX: d.x,
-                            fromY: d.y,
-                            toX: bestTarget.x,
-                            toY: bestTarget.y,
-                            progress: 0,
-                            damage: effectiveDamage,
-                            targetId: bestTarget.id,
-                        });
-                        d.cooldown = Math.max(200, d.maxCooldown - (state.upgrades.defenderSpeedLevel * 100));
                     }
                 }
             }
         }
 
-        // 5. Update projectiles
-        const PROJECTILE_SPEED = 3.0; // progress per second (takes ~0.33s to cross)
+        // ── Projectile Movement (per-type speed) ─────────────────────────
+        const PROJ_SPEED: Record<string, number> = {
+            cow:       1.5,
+            swordsman: 3.0,
+            shield:    2.5,
+            archer:    5.0,
+            medic:     2.0,
+            barbed_wire: 0,
+        };
+
         const activeProjectiles: Projectile[] = [];
         for (const p of newProjectiles) {
-            p.progress += PROJECTILE_SPEED * (deltaMs / 1000);
+            const speed = PROJ_SPEED[p.sourceType] ?? 3.0;
+            p.progress += speed * (deltaMs / 1000);
             if (p.progress >= 1) {
                 if (p.isHeal) {
-                    // Heal projectile — heal the defender
                     const target = updatedDefenders.find(d => d.id === p.targetId);
-                    if (target) {
-                        target.hp = Math.min(target.maxHp, target.hp + p.damage);
-                    }
+                    if (target) target.hp = Math.min(target.maxHp, target.hp + p.damage);
                 } else {
-                    // Hit — apply damage to target
                     const target = enemies.find(e => e.id === p.targetId && e.hp > 0);
-                    if (target) {
-                        // Fortify check — if target is attacking a fortified defender, skip (enemies don't receive this)
-                        target.hp -= p.damage;
-                    }
+                    if (target) target.hp -= p.damage;
                 }
             } else {
                 activeProjectiles.push(p);
             }
         }
 
-        // 6. Cleanup Dead Entities & Grant Rewards + Combos
+        // ── Kill processing — gold only, boss gives shmeckles + diamonds ──
         const arenaStats = useArenaStatsStore.getState();
         const damagePopups: StormDamagePopup[] = [];
+
         const filteredEnemies = enemies.filter(e => {
-            if (e.hp <= 0 && e.x < 100) {
-                const bonus = Math.floor(e.reward * (state.upgrades.shmeckleKillBonusLevel * 0.2));
-                
-                // Combo system
+            if (e.hp <= 0 && e.x < CASTLE_X + 2) {
+                const def = STORM_ENEMY_DEFS[e.enemyType];
+                const isBoss = def?.isBoss;
+
                 comboCount++;
-                comboTimer = 1500; // 1.5s combo window
+                comboTimer = 1500;
                 let comboBonus = 0;
                 if (comboCount >= 3) {
-                    comboBonus = comboCount * 2;
+                    comboBonus = comboCount;
                     comboPopups.push({
                         id: `combo-${now}-${e.id}`,
                         count: comboCount,
                         bonus: comboBonus,
-                        x: e.x,
-                        y: e.y,
-                        age: 0,
+                        x: e.x, y: e.y, age: 0,
                     });
                     arenaStats.recordCombo();
                 }
 
-                const totalReward = e.reward + bonus + comboBonus;
-                useCurrencyStore.getState().addShmeckles(totalReward);
+                const goldAmount = e.goldReward + comboBonus;
 
-                // Damage popup
-                damagePopups.push({ id: `dpop-${now}-${e.id}`, x: e.x, y: e.y, value: totalReward, isCrit: !!e.isElite, age: 0 });
+                // Grant gold for all kills
+                useCurrencyStore.getState().addGold(goldAmount, { exact: true });
 
-                // Arena stats
+                // Boss extra rewards
+                if (isBoss) {
+                    useCurrencyStore.getState().addShmeckles(5);
+                    useCurrencyStore.getState().addDiamonds(1);
+                    // Boss popup
+                    damagePopups.push({
+                        id: `dpop-boss-${now}`,
+                        x: e.x, y: e.y - 8,
+                        value: 1, isCrit: true, age: 0, icon: '💎',
+                    });
+                    damagePopups.push({
+                        id: `dpop-boss2-${now}`,
+                        x: e.x, y: e.y,
+                        value: 5, isCrit: false, age: 0, icon: '🐌',
+                    });
+                }
+
+                // Gold popup
+                damagePopups.push({
+                    id: `dpop-${now}-${e.id}`,
+                    x: e.x, y: e.y + (isBoss ? 8 : 0),
+                    value: goldAmount, isCrit: !!e.isElite, age: 0, icon: '🪙',
+                });
+
                 arenaStats.recordKill();
-                arenaStats.recordShmeckles(totalReward);
+                arenaStats.recordGold(goldAmount);
                 if (e.isElite) arenaStats.recordEliteKill();
-                if (STORM_ENEMY_DEFS[e.enemyType]?.isBoss) arenaStats.recordBossKill();
+                if (isBoss) arenaStats.recordBossKill();
                 return false;
             }
             return e.hp > 0;
         });
 
-        const filteredObstacles = obstacles.filter(o => o.hp > 0);
+        const filteredObstacles = recomputeBarricadeSegments(obstacles.filter(o => o.hp > 0));
 
         // Fort auto-repair
         if (state.upgrades.fortRepairLevel > 0) {
-            const repairRate = state.upgrades.fortRepairLevel * 2; // HP per second
+            const repairRate = state.upgrades.fortRepairLevel * 2;
             fortHp = Math.min(state.maxFortHp, fortHp + repairRate * (deltaMs / 1000));
         }
 
-        // 7. Win/Loss Condition
-        if (fortHp <= 0) {
-            get().endGame(false);
-            return;
-        }
+        // ── Win/Loss Check ────────────────────────────────────────────────
+        if (fortHp <= 0) { get().endGame(false); return; }
 
         if (filteredEnemies.length === 0 && enemiesToSpawn.length === 0 && state.gameState === 'playing') {
             get().endGame(true);
@@ -989,6 +1122,7 @@ export const useStormStore = create<StormState>()(
             comboCount,
             comboTimer,
             comboPopups,
+            castleHit,
             damagePopups: [
                 ...(state.damagePopups || []).map(p => ({ ...p, age: p.age + deltaMs })).filter(p => p.age < 1200),
                 ...damagePopups,

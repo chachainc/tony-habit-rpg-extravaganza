@@ -41,7 +41,20 @@ export interface MemoryLog {
     mostSigilsInRun: number;
 }
 
-export type RunBuffType = 'strength' | 'defense' | 'wealth' | 'curse';
+export type RunBuffType = 
+    | 'attackPercent' 
+    | 'defensePercent' 
+    | 'critPercent' 
+    | 'maxHpFlat' 
+    | 'maxHpPercent' 
+    | 'healingBonusPercent' 
+    | 'goldGainPercent' 
+    | 'chessRewardBonus'
+    // Legacy support flags:
+    | 'strength' 
+    | 'defense' 
+    | 'wealth' 
+    | 'curse';
 
 export interface RunBuff {
     id: string;

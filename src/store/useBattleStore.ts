@@ -1,11 +1,10 @@
 import { create } from 'zustand';
-import { ENEMY_DB, type Ability, type Element, getElementMultiplier, ELEMENT_ICONS } from './useEnemyStore';
+import { ENEMY_DB, DEFAULT_ABILITIES, type Ability, type Element, getElementMultiplier, ELEMENT_ICONS } from './useEnemyStore';
 import { useGameStore } from './useGameStore';
 import { useConsistencyStore } from './useConsistencyStore';
 import { useMagicStore, SPELL_DB } from './useMagicStore';
 import { useRoomStore } from './useRoomStore';
 import { useCampaignStore } from './useCampaignStore';
-import { getSkillSynergyBonus } from './useCombatFormulas';
 import { getPassiveBonuses } from './usePassiveEffects';
 import { usePetStore } from './usePetStore';
 import { useEquipmentStore, EQUIPMENT_DB } from './useEquipmentStore';
@@ -118,7 +117,7 @@ interface BattleState {
     applyDamage: (attacker: Combatant, defender: Combatant, ability: Ability) => number;
     resetBattle: () => void;
     playerDefend: () => void; // New action
-    executeUltimate: (ultimateName: string) => void; // Execute ultimate action
+    executeUltimate: (ultimateName: string) => void; // Execute ultimate action (stub - preserved for compatibility)
     resumeFromUltimate: () => void; // Called when ultimate video concludes
     activeUltimateVideo: string | null;
     castSpell: (spellId: string) => void; // Cast a spell from magic store
@@ -130,6 +129,7 @@ interface BattleState {
     conquestContext: 'arena' | 'conquest' | 'conquest_elite' | 'conquest_boss' | 'conquest_vault' | 'risk' | 'tower-defense' | null;
     conquestEnemyPower?: number;
     pendingBurnSpread: boolean;
+    _resolveSpellEffect: (spell: any, newMP: number, newEnergy: number) => void;
 }
 
 // Player abilities - Replaced with the 3 distinct actions
@@ -206,8 +206,17 @@ export const useBattleStore = create<BattleState>()((set, get) => ({
     pendingBurnSpread: false,
 
     initBattle: (enemyId: string, options?: { context?: 'arena' | 'conquest' | 'conquest_elite' | 'conquest_boss' | 'conquest_vault'; conquestTier?: number }) => {
-        const enemyDef = ENEMY_DB[enemyId];
-        if (!enemyDef) return;
+        let enemyDef = ENEMY_DB[enemyId];
+        if (!enemyDef) {
+            console.error(`[Combat Engine] Critical Error: Enemy ID '${enemyId}' not found in ENEMY_DB. Injecting safe fallback to prevent black screen.`);
+            enemyDef = {
+                id: 'unknown_entity', name: 'Unknown Entity', icon: '❓', element: 'neutral',
+                description: 'A structural error in reality. Combat engine fallback.', rarity: 'common', floor: 1,
+                baseHp: 50, baseAtk: 10, baseDef: 5, baseSpd: 20, critRate: 0.0, critDmg: 1.0,
+                requiredAtk: 1, requiredDef: 1, goldReward: 0, xpReward: 0, abilities: [DEFAULT_ABILITIES.basic_attack],
+                behaviorHint: 'Unknown.', personalityTag: 'The Glitch', weaknessSkill: 'Work', affinitySkill: 'Work', thresholdLevel: 1, openingLine: 'ERR_ENTITY_NOT_FOUND', isBoss: false, unlocks: [],
+            };
+        }
 
         const gameStore = useGameStore.getState();
         const consistencyStore = useConsistencyStore.getState();
@@ -229,6 +238,28 @@ export const useBattleStore = create<BattleState>()((set, get) => ({
         let playerAtk = Math.round(gameStore.getAttack());
         let playerDef = Math.round(gameStore.getDefense());
 
+        const invEquip = useInventoryStore.getState().equipped;
+        if (invEquip.head === 'frostbound_helm') {
+             playerDef = Math.round(playerDef * 1.06);
+        }
+        if (invEquip.chest === 'frostbound_chestplate') {
+             playerDef = Math.round(playerDef * 1.10);
+             playerHp = Math.round(playerHp * 1.05);
+        }
+        if (invEquip.legs === 'frostbound_leggings') {
+             playerDef = Math.round(playerDef * 1.08);
+             playerHp = Math.round(playerHp * 1.04);
+        }
+        if (invEquip.feet === 'frostbound_boots') {
+             playerDef = Math.round(playerDef * 1.05);
+        }
+        if (invEquip.cloak === 'frostbound_cloak') {
+             playerDef = Math.round(playerDef * 1.05);
+        }
+        if (invEquip.hands === 'frostbound_gauntlets') {
+             playerAtk = Math.round(playerAtk * 1.06);
+        }
+
         // Speed determined by Cardio speed tier (not Flexibility)
         const cardioTier = gameStore.getAttackSpeedTier();
         let playerSpd = Math.round(cardioTier * 20 + 10); // Tier 1=30, 2=50, 3=70, 4=90, 5=110
@@ -237,9 +268,8 @@ export const useBattleStore = create<BattleState>()((set, get) => ({
         playerDef = Math.round(playerDef * (1 + roomBonuses.defPercent / 100));
         playerSpd = Math.round(playerSpd * (1 + roomBonuses.spdPercent / 100));
 
-        // Apply Cardio↔Strength synergy bonus
-        const synergy = getSkillSynergyBonus();
-        playerAtk = Math.round(playerAtk * synergy.bonusMultiplier);
+        if (invEquip.feet === 'frostbound_boots') playerSpd = Math.round(playerSpd * 1.05);
+        if (invEquip.hands === 'frostbound_gauntlets') playerSpd = Math.round(playerSpd * 1.04);
 
         // Sleep = mana pool; use gameStore.getMaxMP() which is Sleep-based
         const playerMaxMana = gameStore.getMaxMP();
@@ -690,92 +720,9 @@ export const useBattleStore = create<BattleState>()((set, get) => ({
         setTimeout(() => get().endTurn(), 800);
     },
 
-    executeUltimate: (ultimateName: string) => {
-        const { player, enemy, phase } = get();
-        if (phase !== 'select_action' || !player || !enemy) return;
-        if (player.energy < 100) return;
-
-        // Trigger hit stop first
-        set({ phase: 'hit_stop' });
-
-        // Let the UI know an ultimate is activating to trigger the screen shake
-        set({
-            lastDamage: { target: 'enemy', amount: 0, isCrit: false, type: 'ultimateActivation' }
-        });
-
-        // Delay the execution (120ms Hit Stop)
-        setTimeout(() => {
-            const currentStore = get();
-            if (currentStore.phase !== 'hit_stop') return; // Safety check
-
-            set({ phase: 'executing', activeUltimateVideo: ultimateName });
-
-            // Build a temporary absolute/true ability acting as the Ultimate
-            const ultimateAbility: Ability = {
-                id: 'class_ultimate',
-                name: ultimateName,
-                type: 'ultimate',
-                description: 'Class specific ultimate.',
-                icon: '💥',
-                element: 'neutral',
-                damageMultiplier: 3.0, // totalAttack * 3
-                cooldown: 0,
-                energyCost: 100
-            };
-
-            // Apply damage explicitly (resolves immediately as required)
-            const damage = get().applyDamage(player, enemy, ultimateAbility);
-
-            // Reset Energy to 0
-            const updatedPlayer = {
-                ...player,
-                energy: 0,
-            };
-
-            const newHp = enemy.hp - damage;
-
-            let newEnemyDots = [...enemy.dots];
-            let newEnemyDebuffs = [...enemy.debuffs];
-            let newLog = [...get().combatLog, { message: `💥 ${player.name} unleashes ${ultimateName} for ${damage} damage!`, type: 'damage' as const }];
-            
-            try {
-                const petDef = usePetStore.getState().getEquippedPetDef();
-                if (petDef?.passive?.type === 'blazehorn_burn') {
-                    const pct = (petDef.passive.value as any).burnTurnPct || 2;
-                    const burnDmg = Math.max(1, Math.floor(enemy.maxHp * (pct / 100)));
-                    if (!newEnemyDots.some(d => d.damage === burnDmg)) {
-                        newEnemyDots.push({ damage: burnDmg, turnsLeft: 3 });
-                        newLog.push({ message: `🔥 Blazehorn applies Burn (${burnDmg} dmg/turn)!`, type: 'debuff' as const });
-                    }
-                } else if (petDef?.passive?.type === 'frostgrazer_slow') {
-                    const chance = (petDef.passive.value as any).slowChancePct || 20;
-                    const turns = (petDef.passive.value as any).slowTurns || 2;
-                    if (Math.random() < chance / 100) {
-                        if (!newEnemyDebuffs.some(d => d.stat === 'spd')) {
-                            const spdDecrease = Math.max(1, Math.floor(enemy.spd * 0.5));
-                            newEnemyDebuffs.push({ stat: 'spd', amount: spdDecrease, turnsLeft: turns });
-                            newLog.push({ message: `❄️ Frostgrazer freezes ${enemy.name}! SPD reduced!`, type: 'debuff' as const });
-                        }
-                    }
-                } else if (petDef?.passive?.type === 'shadowhoof_lifesteal') {
-                    const pct = (petDef.passive.value as any).lifestealPct || 3;
-                    const healAmount = Math.max(1, Math.floor(damage * (pct / 100)));
-                    if (healAmount > 0) {
-                        updatedPlayer.hp = Math.min(updatedPlayer.maxHp, updatedPlayer.hp + healAmount);
-                        newLog.push({ message: `🌑 Shadowhoof syphons ${healAmount} HP!`, type: 'heal' as const, value: healAmount });
-                    }
-                }
-            } catch(e) {}
-
-            set({
-                player: updatedPlayer,
-                enemy: { ...enemy, dots: newEnemyDots, debuffs: newEnemyDebuffs, hp: newHp },
-                selectedAbility: null,
-                lastDamage: { target: 'enemy', amount: damage, isCrit: true, type: 'ultimate' }, // 1.5x popup
-                combatLog: newLog as any,
-            });
-            
-        }, 120);
+    // executeUltimate is preserved as a stub (premium spells replaced this mechanic)
+    executeUltimate: (_ultimateName: string) => {
+        // No-op: ultimate cinematic mechanic replaced by premium spells
     },
 
     resumeFromUltimate: () => {
@@ -838,8 +785,29 @@ export const useBattleStore = create<BattleState>()((set, get) => ({
 
         set({ phase: 'executing' });
 
-        // Apply damage
-        const damage = get().applyDamage(enemy, player, chosenAbility);
+        // Dodge calculation
+        let dodgeChance = useGameStore.getState().getDodgeChance();
+        
+        const invEquip = useInventoryStore.getState().equipped;
+        if (invEquip.cloak === 'frostbound_cloak') dodgeChance += 0.05;
+        if (invEquip.feet === 'frostbound_boots' && enemy.chilledTurns > 0) {
+            const petDef = usePetStore.getState().getEquippedPetDef();
+            if (petDef?.affinity === 'ice') {
+                 dodgeChance += 0.05;
+            }
+        }
+        
+        let damage = 0;
+        if (Math.random() < dodgeChance && !chosenAbility.isMagic) {
+            set({
+                combatLog: [
+                    ...get().combatLog,
+                    { message: `💨 ${player.name} elegantly dodged ${enemy.name}'s attack!`, type: 'buff' }
+                ]
+            });
+        } else {
+            damage = get().applyDamage(enemy, player, chosenAbility);
+        }
 
         // Update cooldowns
         const newCooldowns = { ...enemy.cooldowns };
@@ -918,6 +886,16 @@ export const useBattleStore = create<BattleState>()((set, get) => ({
             })
             .filter(d => d.turnsLeft > 0);
 
+        // Frostbound Leggings HP regen
+        let hpRegenAmount = 0;
+        if (current.isPlayer) {
+            const petDef = usePetStore.getState().getEquippedPetDef();
+            const invEquip = useInventoryStore.getState().equipped;
+            if (invEquip.legs === 'frostbound_leggings' && petDef?.affinity === 'ice' && enemy.chilledTurns > 0) {
+                 hpRegenAmount = Math.max(1, Math.floor(current.maxHp * 0.01));
+            }
+        }
+
         // Reset isDefending for the character starting their turn
         // Regenerate mana at the end of turn
         const updatedCurrent = {
@@ -928,8 +906,9 @@ export const useBattleStore = create<BattleState>()((set, get) => ({
             dots: tickedDots,
             isDefending: false, // Reset defense at start of turn
             mana: Math.min(current.maxMana, current.mana + current.manaRegen), // Mana regen
-            hp: Math.max(0, current.hp - dotDamage),
+            hp: Math.max(0, Math.min(current.maxHp, current.hp - dotDamage + hpRegenAmount)),
             frozenTurns: Math.max(0, current.frozenTurns - 1),
+            chilledTurns: Math.max(0, (current.chilledTurns || 0) - 1),
         };
 
         // Get next in turn order
@@ -1052,7 +1031,7 @@ export const useBattleStore = create<BattleState>()((set, get) => ({
         attacker.buffs.forEach(b => { if (b.stat === 'atk') effectiveAtk += b.amount; });
         attacker.debuffs.forEach(d => { if (d.stat === 'atk') effectiveAtk -= d.amount; });
 
-        const effectiveDef = calculateEffectiveDefense(defender, ability.isMagic);
+        let effectiveDef = calculateEffectiveDefense(defender, ability.isMagic);
 
         // Crit check - spells don't crit
         const isCrit = ability.isMagic ? false : Math.random() < attacker.critRate;
@@ -1096,13 +1075,18 @@ export const useBattleStore = create<BattleState>()((set, get) => ({
             else if (activeWeaponId === 'sovereign_ledger') weaponScalar = 1.12;
             else if (activeWeaponId === 'diceblade' || activeWeaponId === 'chaos_edge') weaponScalar = 1.12;
 
+            // Frostbound 4-Piece: Chilled enemies have -15% defense
+            if (get().frostboundSetCount >= 4 && (defender.chilledTurns > 0 || defender.frozenTurns > 0)) {
+                effectiveDef *= 0.85;
+            }
+
             // Chestplate: player attacks vs chilled/frozen
             if (defender.chilledTurns > 0 || defender.frozenTurns > 0) {
                  if (activeWeaponId === 'glacial_hammer' || activeWeaponId === 'frost_titan_breaker') {
                      frostDmgBonus += 0.10;
                  }
             }
-            // Gauntlets: +8% bonus, +15% if ice weapon
+            // Gauntlets: Attacks vs Chilled deal +8% (+15% with Ice weapon)
             if (invEquip.hands === 'frostbound_gauntlets' && defender.chilledTurns > 0) {
                  frostDmgBonus += (activeWeaponId === 'glacial_hammer' || activeWeaponId === 'frost_titan_breaker') ? 0.15 : 0.08;
             }
@@ -1170,13 +1154,21 @@ export const useBattleStore = create<BattleState>()((set, get) => ({
             const spellDefMagic = useMagicStore.getState().equippedSpell;
             const activeSpellAffinity = spellDefMagic ? SPELL_DB[spellDefMagic]?.affinity : undefined;
             
-            // Chestplate: incoming from frozen is reduced by 10%
+            // Chestplate: incoming from Chilled/Frozen is reduced by 10%
             if (invEquip.chest === 'frostbound_chestplate' && (attacker.chilledTurns > 0 || attacker.frozenTurns > 0)) {
-                incomingModifiers *= (activeSpellAffinity === 'ice' ? 0.85 : 0.90);
+                let chestMult = 0.90;
+                if (attacker.frozenTurns > 0 && activeSpellAffinity === 'ice') chestMult = 0.85; // Extra -5% vs Freeze w/ spell
+                incomingModifiers *= chestMult;
             }
+            
             // Leggings: 12% reduction
             if (invEquip.legs === 'frostbound_leggings' && (attacker.chilledTurns > 0 || attacker.frozenTurns > 0)) {
-                incomingModifiers *= 0.88;
+                let legMult = 0.88;
+                const activeWeaponId = useInventoryStore.getState().equipped.weapon;
+                if (attacker.frozenTurns > 0 && (activeWeaponId === 'glacial_hammer' || activeWeaponId === 'frost_titan_breaker')) {
+                    legMult = 0.83; // Extra -5% vs Freeze w/ icy weapon
+                }
+                incomingModifiers *= legMult;
             }
         }
 
@@ -1272,15 +1264,41 @@ export const useBattleStore = create<BattleState>()((set, get) => ({
 
         // Apply debuffs to defender
         if (ability.effects?.debuff) {
-            defender.debuffs.push({
-                stat: ability.effects.debuff.stat,
-                amount: ability.effects.debuff.amount,
-                turnsLeft: ability.effects.debuff.turns,
-            });
-            logs.push({
-                message: `${defender.name}'s ${ability.effects.debuff.stat.toUpperCase()} decreased!`,
-                type: 'debuff',
-            });
+            let resisting = false;
+            // Status Resistances
+            if (defender.isPlayer) {
+                const invEquip = useInventoryStore.getState().equipped;
+                if (ability.effects.debuff.stat === 'spd') {
+                    let slowResist = 0;
+                    if (invEquip.head === 'frostbound_helm') slowResist += 0.03;
+                    if (invEquip.feet === 'frostbound_boots') slowResist += 0.15;
+                    
+                    if (Math.random() < slowResist) {
+                        resisting = true;
+                        logs.push({ message: `❄️ Resisted Slow!`, type: 'buff' });
+                    }
+                }
+                
+                // Boots + Ice Spell: +10% general status resist
+                const spellDefMagic = useMagicStore.getState().equippedSpell;
+                const activeSpellAffinity = spellDefMagic ? SPELL_DB[spellDefMagic]?.affinity : undefined;
+                if (!resisting && invEquip.feet === 'frostbound_boots' && activeSpellAffinity === 'ice' && Math.random() < 0.10) {
+                     resisting = true;
+                     logs.push({ message: `❄️ Glacial Boots resisted debuff!`, type: 'buff' });
+                }
+            }
+            
+            if (!resisting) {
+                defender.debuffs.push({
+                    stat: ability.effects.debuff.stat,
+                    amount: ability.effects.debuff.amount,
+                    turnsLeft: ability.effects.debuff.turns,
+                });
+                logs.push({
+                    message: `${defender.name}'s ${ability.effects.debuff.stat.toUpperCase()} decreased!`,
+                    type: 'debuff',
+                });
+            }
         }
 
         // Apply DOT
@@ -1322,6 +1340,50 @@ export const useBattleStore = create<BattleState>()((set, get) => ({
             const healAmount = Math.max(1, Math.floor(finalDamage * (lifestealPct / 100)));
             attacker.hp = Math.min(attacker.maxHp, attacker.hp + healAmount);
             logs.push({ message: `🩸 Syphoned ${healAmount} HP!`, type: 'heal', value: healAmount });
+        }
+
+        // Frostbound Helm: Chill Attacker Passive
+        if (defender.isPlayer && finalDamage > 0) {
+            const invEquip = useInventoryStore.getState().equipped;
+            if (invEquip.head === 'frostbound_helm') {
+                let chillChance = 0.10;
+                const petDef = usePetStore.getState().getEquippedPetDef();
+                if (petDef?.affinity === 'ice') chillChance = 0.15;
+
+                if (Math.random() < chillChance) {
+                    let chillDur = 1;
+                    const xpWeaponId = useXpWeaponStore.getState().equippedWeaponId;
+                    const weaponId = xpWeaponId || invEquip.weapon;
+                    const isIceWeapon = weaponId === 'glacial_hammer' || weaponId === 'frost_titan_breaker';
+                    if (isIceWeapon) chillDur += 1;
+                    if (get().frostboundSetCount >= 2) chillDur += 1; // 2-Piece logic
+                    
+                    attacker.chilledTurns = Math.max(attacker.chilledTurns || 0, chillDur);
+                    logs.push({ message: `❄️ Frostbound Helm chills ${attacker.name}!`, type: 'debuff' });
+                }
+            }
+            
+            // Frostbound Cloak AoE pulse chill ("20% chance to counter-chill ALL enemies", functioning on current enemy here)
+            if (invEquip.cloak === 'frostbound_cloak') {
+                const spellDefMagic = useMagicStore.getState().equippedSpell;
+                const activeSpellAffinity = spellDefMagic ? SPELL_DB[spellDefMagic]?.affinity : undefined;
+                
+                let cloakChance = 0.20;
+                if (activeSpellAffinity === 'ice') cloakChance = 0.35;
+                
+                if (Math.random() < cloakChance) {
+                    let chillDur = 1 + (get().frostboundSetCount >= 2 ? 1 : 0);
+                    attacker.chilledTurns = Math.max(attacker.chilledTurns || 0, chillDur);
+                    logs.push({ message: `❄️ Frost Pulse counter-chills ${attacker.name}!`, type: 'debuff' });
+                    
+                    const petDef = usePetStore.getState().getEquippedPetDef();
+                    if (petDef?.affinity === 'ice') {
+                         const atkReduction = Math.max(1, Math.floor(attacker.atk * 0.1));
+                         attacker.debuffs.push({ stat: 'atk', amount: atkReduction, turnsLeft: chillDur });
+                         logs.push({ message: `❄️ Frost Pulse weakens ${attacker.name}'s attacks!`, type: 'debuff' });
+                    }
+                }
+            }
         }
 
         set({
@@ -1377,23 +1439,65 @@ export const useBattleStore = create<BattleState>()((set, get) => ({
             return;
         }
 
-        // Deduct MP
+        // Check Energy cost
+        if (spell.energyCost && player.energy < spell.energyCost) {
+            set({
+                combatLog: [...get().combatLog, {
+                    message: `Not enough Energy! Need ${spell.energyCost}, have ${Math.round(player.energy)}`,
+                    type: 'info'
+                }],
+            });
+            return;
+        }
+
+        const isPremiumCinematic = spell.energyCost && spell.energyCost >= 100;
+
+        // Deduct MP & Energy
         const newMP = currentMP - spell.mpCost;
+        const newEnergy = spell.energyCost ? Math.max(0, player.energy - spell.energyCost) : player.energy;
 
         const initialLogs: CombatLog[] = [{
             message: `${player.name} casts ${spell.icon} ${spell.name}!`,
             type: 'info'
         }];
 
-        // Consume MP and start action
-        set({
-            combatLog: [...get().combatLog, ...initialLogs],
-            currentMP: newMP,
-            phase: 'executing'
-        });
+        if (isPremiumCinematic) {
+            set({
+                phase: 'hit_stop',
+                currentMP: newMP,
+                lastDamage: { target: 'enemy', amount: 0, isCrit: false, type: 'ultimateActivation' }
+            });
+            
+            setTimeout(() => {
+                const currentStore = get();
+                if (currentStore.phase !== 'hit_stop') return;
+                
+                set({
+                    phase: 'executing',
+                    activeUltimateVideo: spell.name,
+                    combatLog: [...get().combatLog, ...initialLogs],
+                });
+                get()._resolveSpellEffect(spell, newMP, newEnergy);
+            }, 120);
+        } else {
+            // Normal spell
+            set({
+                combatLog: [...get().combatLog, ...initialLogs],
+                currentMP: newMP,
+                phase: 'executing'
+            });
+            get()._resolveSpellEffect(spell, newMP, newEnergy);
+        }
+    },
 
-        let updatedPlayer = { ...player };
+    _resolveSpellEffect: (spell: any, newMP: number, newEnergy: number) => {
+        const { player, enemy } = get();
+        if (!player || !enemy) return;
+
+        let updatedPlayer = { ...player, energy: newEnergy };
         let updatedEnemy = { ...enemy };
+        
+        const isPremiumCinematic = spell.energyCost && spell.energyCost >= 100;
 
         // Apply spell effects
         if (spell.effect.type === 'heal') {
@@ -1556,20 +1660,31 @@ export const useBattleStore = create<BattleState>()((set, get) => ({
             });
         }
 
-        // Add extra energy for casting spells (+15% faster ultimate)
-        const bonusEnergy = Math.min(100 - updatedPlayer.energy, 15);
-        updatedPlayer.energy += bonusEnergy;
+        // Add extra energy for casting spells (if not a premium energy-draining spell)
+        if (!spell.energyCost) {
+             const bonusEnergy = Math.min(100 - updatedPlayer.energy, 15);
+             updatedPlayer.energy += bonusEnergy;
+        }
         // Set spell cooldown from spell definition, then do final player sync
-        set({ player: updatedPlayer, spellCooldownTurns: spell.cooldownTurns ?? 0 });
+        set({ player: updatedPlayer, spellCooldownTurns: spell.cooldownTurns ?? 0, currentMP: newMP });
 
         // Check for victory
         if (updatedEnemy.hp <= 0) {
+            if (isPremiumCinematic) {
+                // Let resumeFromUltimate handle the victory transition
+                return;
+            }
             setTimeout(() => {
                 set({
                     phase: 'victory',
                     combatLog: [...get().combatLog, { message: '🎉 Victory!', type: 'victory' }],
                 });
             }, 800);
+            return;
+        }
+
+        if (isPremiumCinematic) {
+            // Let the cinematic finish, it will call resumeFromUltimate which calls endTurn
             return;
         }
 

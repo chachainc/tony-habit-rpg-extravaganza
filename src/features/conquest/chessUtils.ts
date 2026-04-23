@@ -4,8 +4,8 @@ export type Piece = { type: PieceType; color: Color } | null;
 export type Board = Piece[][];
 
 export const PIECE_UNICODE: Record<string, string> = {
-    'wK': '♚', 'wQ': '♛', 'wR': '♜', 'wB': '♝', 'wN': '♞', 'wP': '♟',
-    'bK': '♚', 'bQ': '♛', 'bR': '♜', 'bB': '♝', 'bN': '♞', 'bP': '♟',
+    'wK': '♚\uFE0E', 'wQ': '♛\uFE0E', 'wR': '♜\uFE0E', 'wB': '♝\uFE0E', 'wN': '♞\uFE0E', 'wP': '♟\uFE0E',
+    'bK': '♚\uFE0E', 'bQ': '♛\uFE0E', 'bR': '♜\uFE0E', 'bB': '♝\uFE0E', 'bN': '♞\uFE0E', 'bP': '♟\uFE0E',
 };
 
 export const PIECE_VALUES: Record<PieceType, number> = {
@@ -20,6 +20,27 @@ export function createInitialBoard(): Board {
         board[1][c] = { type: 'P', color: 'b' };
         board[6][c] = { type: 'P', color: 'w' };
         board[7][c] = { type: backRow[c], color: 'w' };
+    }
+    return board;
+}
+
+export function parseFen(fen: string): Board {
+    const board: Board = Array(8).fill(null).map(() => Array(8).fill(null));
+    const [placement] = fen.split(' ');
+    const rows = placement.split('/');
+    
+    for (let r = 0; r < 8; r++) {
+        let c = 0;
+        for (const char of rows[r]) {
+            if (/\d/.test(char)) {
+                c += parseInt(char, 10);
+            } else {
+                const color: Color = char === char.toUpperCase() ? 'w' : 'b';
+                const type = char.toUpperCase() as PieceType;
+                board[r][c] = { type, color };
+                c++;
+            }
+        }
     }
     return board;
 }

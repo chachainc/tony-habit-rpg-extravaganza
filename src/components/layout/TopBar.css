@@ -227,6 +227,65 @@
     animation: statPulse 0.4s ease;
 }
 
+/* === STAT BUFF SYSTEM === */
+.top-bar__stat--buffed {
+    text-shadow: 0 0 8px currentColor;
+    border-color: currentColor;
+    background: rgba(20, 20, 20, 0.8);
+}
+
+.stat-buff-added {
+    position: absolute;
+    top: -20px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 0.75rem;
+    font-weight: 800;
+    color: #4ade80;
+    text-shadow: 0 2px 4px rgba(0,0,0,0.8);
+    pointer-events: none;
+    z-index: 10;
+    white-space: nowrap;
+}
+
+/* Tooltip */
+.top-bar__tooltip-container {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.top-bar__tooltip {
+    position: absolute;
+    top: 120%;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(15, 23, 42, 0.95);
+    border: 1px solid rgba(139, 0, 0, 0.4);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.8);
+    padding: 0.5rem 0.75rem;
+    border-radius: 6px;
+    color: #f1f5f9;
+    font-size: 0.7rem;
+    white-space: nowrap;
+    z-index: 200;
+    pointer-events: none;
+}
+
+.top-bar__tooltip-title {
+    font-weight: 700;
+    color: #cbd5e1;
+    margin-bottom: 0.2rem;
+    border-bottom: 1px solid rgba(255,255,255,0.1);
+    padding-bottom: 0.2rem;
+}
+
+.top-bar__tooltip-source {
+    color: #60a5fa;
+    display: block;
+    margin-top: 0.1rem;
+}
+
 /* === RESPONSIVE - Even more compact === */
 @media (max-width: 1024px) {
     .top-bar {

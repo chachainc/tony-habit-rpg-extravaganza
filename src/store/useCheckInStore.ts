@@ -76,60 +76,91 @@ export function getStreakReward(streakCount: number): CheckInReward {
     return WEEK1[streakCount] ?? WEEK1[1];
 }
 
-const CONSOLATION_REWARD: CheckInReward = {
-    gold: 25,
-    // xp: 5,
-};
+
 
 interface CheckInState {
-    streakDay: number; // 1-7 cycle
-    streakCount: number; // Total consecutive days
+    currentCycleDay: number; // 1-7 cycle
+    currentStreak: number; // Resets on miss
+    longestStreak: number; // Never resets
     lastCheckInDate: string | null;
     hasCheckedInToday: boolean;
+
+    // Legacy fields
+    streakDay?: number;
+    streakCount?: number;
 
     // Actions
     checkIn: () => CheckInReward | null;
     getRewardForDay: (day: number) => CheckInReward;
     getStreakStatus: () => { canCheckIn: boolean; missedYesterday: boolean };
+    validateStreak: () => void;
 }
 
 export const useCheckInStore = create<CheckInState>()(
     persist(
         (set, get) => ({
-            streakDay: 0,
-            streakCount: 0,
+            currentCycleDay: 1,
+            currentStreak: 0,
+            longestStreak: 0,
             lastCheckInDate: null,
             hasCheckedInToday: false,
 
+            validateStreak: () => {
+                const state = get();
+                // Handle arbitrary legacy state migration simply
+                if (state.streakCount !== undefined || state.streakDay !== undefined) {
+                    set({
+                        currentStreak: state.streakCount ?? 0,
+                        longestStreak: state.streakCount ?? 0,
+                        currentCycleDay: state.streakDay ?? 1,
+                        streakCount: undefined,
+                        streakDay: undefined
+                    });
+                }
+
+                // Normal validation
+                const updatedState = get();
+                const today = getEasternDateString();
+                const missedYesterday = updatedState.lastCheckInDate && updatedState.lastCheckInDate !== today && !isYesterday(updatedState.lastCheckInDate);
+                
+                if (missedYesterday && updatedState.currentStreak > 0) {
+                    set({
+                        currentStreak: 0,
+                        currentCycleDay: 1,
+                    });
+                }
+            },
+
             checkIn: () => {
                 const state = get();
+                state.validateStreak(); // Ensure state is fresh
+                const latestState = get();
                 const today = getEasternDateString();
 
                 // Already checked in today
-                if (state.lastCheckInDate === today) {
+                if (latestState.lastCheckInDate === today) {
                     return null;
                 }
 
-                const { missedYesterday } = state.getStreakStatus();
                 let reward: CheckInReward;
                 let newStreakDay: number;
                 let newStreakCount: number;
 
-                if (missedYesterday || state.lastCheckInDate === null) {
-                    // Streak broken or first time — reset
-                    if (state.streakCount > 0 && missedYesterday) {
-                        reward = CONSOLATION_REWARD;
-                    } else {
-                        reward = getStreakReward(1);
-                    }
+                // Since validateStreak already resets currentStreak to 0 if missedYesterday,
+                // we can just treat it as continuing or starting from 0.
+                if (latestState.currentStreak === 0) {
+                    reward = getStreakReward(1);
                     newStreakDay = 1;
                     newStreakCount = 1;
                 } else {
                     // Continue streak
-                    const safeStreakDay = Number.isFinite(state.streakDay) ? state.streakDay : 0;
-                    newStreakDay = (safeStreakDay % 7) + 1;
-                    newStreakCount = state.streakCount + 1;
-                    reward = getStreakReward(newStreakCount);
+                    newStreakCount = latestState.currentStreak + 1;
+                    newStreakDay = ((newStreakCount - 1) % 7) + 1;
+                    reward = getStreakReward(newStreakCount); // Give reward based on overall streak, wait...
+                    // "Do NOT use lifetime streak to calculate reward position"
+                    // Wait! The user says "Reward cycle must NEVER continue after a break"
+                    // Does getStreakReward(currentStreak) use lifetime or active? 
+                    // currentStreak resets on a break, so it is the active run (albeit spanning multiple weeks).
                 }
 
                 let finalReward = { ...reward };
@@ -186,8 +217,9 @@ export const useCheckInStore = create<CheckInState>()(
                 });
 
                 set({
-                    streakDay: newStreakDay,
-                    streakCount: newStreakCount,
+                    currentCycleDay: newStreakDay,
+                    currentStreak: newStreakCount,
+                    longestStreak: Math.max(latestState.longestStreak, newStreakCount),
                     lastCheckInDate: today,
                     hasCheckedInToday: true,
                 });

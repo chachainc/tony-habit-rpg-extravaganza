@@ -10,7 +10,7 @@ import { useCampaignStore } from '../../store/useCampaignStore';
 import { usePetStore, PET_DATABASE } from '../../store/usePetStore';
 import { useMagicStore } from '../../store/useMagicStore';
 import { ArenaBattlefieldLayout } from './ArenaBattlefieldLayout';
-import { getDetailedCombatBreakdown, getSkillSynergyBonus } from '../../store/useCombatFormulas';
+import { getDetailedCombatBreakdown } from '../../store/useCombatFormulas';
 import { getPassiveBonuses } from '../../store/usePassiveEffects';
 import { WeaponEquipWidget } from './WeaponEquipWidget';
 import { useXpWeaponStore } from '../../store/useXpWeaponStore';
@@ -52,8 +52,7 @@ import generalInertiaImg from '../../assets/bosses/general_inertia.png';
 import flickerBurnoutImg from '../../assets/bosses/flicker_burnout.png';
 
 // Player sprite
-import { useProfileStore } from '../../store/useProfileStore';
-import { usePlayerAvatar, getUltimateName } from '../../hooks/usePlayerAvatar';
+import { usePlayerAvatar } from '../../hooks/usePlayerAvatar';
 
 // Map floor ranges to background images
 const getBackgroundForFloor = (floor: number): string => {
@@ -244,9 +243,6 @@ export const Arena = ({ onClose }: { onClose: () => void }) => {
     const navigate = useNavigate();
     const location = useLocation();
     const heroImage = usePlayerAvatar();
-    const classType = useProfileStore(s => s.classType);
-    const ultimateName = getUltimateName(classType);
-    const synergy = getSkillSynergyBonus();
     const { getMagicAttack } = useGameStore();
     const { addGold } = useCurrencyStore();
     const { markDefeated } = useEnemyStore();
@@ -819,11 +815,6 @@ export const Arena = ({ onClose }: { onClose: () => void }) => {
                                                                 })}
                                                             </tbody>
                                                         </table>
-                                                        {breakdown.synergy.active && (
-                                                            <div className="synergy-banner" style={{ marginTop: '0.75rem' }}>
-                                                                🔗 {breakdown.synergy.description}
-                                                            </div>
-                                                        )}
                                                     </div>
                                                 );
                                             })()}
@@ -832,15 +823,41 @@ export const Arena = ({ onClose }: { onClose: () => void }) => {
                                             <div className="active-pet-section">
                                                 <div className="prep-section-label">ACTIVE PET</div>
                                                 {equippedPet ? (
-                                                    <div className="pet-prep-card">
-                                                        <span className="pet-prep-icon">{equippedPet.icon}</span>
-                                                        <div className="pet-prep-info">
-                                                            <span className="pet-prep-name">{equippedPet.name}</span>
-                                                            
+                                                    <div className="pet-prep-card" style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem', padding: '0.6rem 0.8rem', background: 'rgba(30,41,59,0.5)', borderRadius: '8px', border: '1px solid rgba(148,163,184,0.1)' }}>
+                                                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+                                                            <span className="pet-prep-icon" style={{ fontSize: '1.5rem', filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.5))' }}>{equippedPet.icon}</span>
+                                                            <span className="pet-prep-name" style={{ fontWeight: 800, fontSize: '0.9rem', color: '#f8fafc' }}>{equippedPet.name}</span>
+                                                        </div>
+                                                        <div className="pet-prep-passive" style={{
+                                                            fontSize: '0.75rem',
+                                                            color: 'rgba(255, 255, 255, 0.7)',
+                                                            paddingTop: '0.4rem',
+                                                            borderTop: '1px dotted rgba(255, 255, 255, 0.15)',
+                                                            display: 'flex',
+                                                            flexDirection: 'column',
+                                                            gap: '0.2rem'
+                                                        }}>
+                                                            <span style={{ fontWeight: 800, fontSize: '0.65rem', textTransform: 'uppercase', color: 'rgba(148,163,184,0.8)' }}>Passive:</span>
+                                                            <span style={{
+                                                                color:
+                                                                    ['flat_atk', 'blazehorn_burn', 'shadowhoof_lifesteal', 'infernohorn_burn', 'tank_storm', 'combat_all'].includes(equippedPet.passive.type) ? '#fca5a5' :
+                                                                    ['flat_def', 'frostgrazer_slow', 'glacierhoof_freeze', 'rock_cow_defense'].includes(equippedPet.passive.type) ? '#93c5fd' :
+                                                                    ['gold_percent', 'gold_double_chance', 'treasure_hoof', 'store_discount', 'jackpot_multiplier', 'daily_rewards'].includes(equippedPet.passive.type) ? '#fde047' :
+                                                                        '#d8b4fe'
+                                                            }}>{(() => {
+                                                                const desc = equippedPet.passive.description;
+                                                                if (desc.includes('. ')) {
+                                                                    return desc.split('. ').map((line, i, arr) => {
+                                                                        if (!line.trim()) return null;
+                                                                        return <div key={i}>• {line}{i < arr.length - 1 ? '.' : ''}</div>;
+                                                                    });
+                                                                }
+                                                                return <div>{desc}</div>;
+                                                            })()}</span>
                                                         </div>
                                                     </div>
                                                 ) : (
-                                                    <div className="no-buffs">None</div>
+                                                    <div className="no-buffs" style={{ color: 'rgba(255,255,255,0.4)', fontStyle: 'italic', fontSize: '0.85rem' }}>No pet equipped</div>
                                                 )}
                                             </div>
 
@@ -906,39 +923,6 @@ export const Arena = ({ onClose }: { onClose: () => void }) => {
                                     </Panel>
                                 </div>
 
-                                <div style={{ background: 'rgba(30, 41, 59, 0.8)', padding: '1rem', borderRadius: '8px', border: '1px solid #334155', display: 'flex', flexDirection: 'column', gap: '0.5rem', marginTop: '1rem' }}>
-                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                        <div style={{ fontSize: '0.85rem', color: '#94a3b8', textTransform: 'uppercase' }}>Class</div>
-                                        <div style={{ fontWeight: 'bold', color: '#a78bfa' }}>{classType || 'Warrior'}</div>
-                                    </div>
-                                    
-                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                        <div style={{ fontSize: '0.85rem', color: '#94a3b8', textTransform: 'uppercase' }}>Ultimate</div>
-                                        <div style={{ fontWeight: 'bold', color: '#fde68a' }}>{ultimateName}</div>
-                                    </div>
-
-                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                        <div style={{ fontSize: '0.85rem', color: '#94a3b8', textTransform: 'uppercase' }}>Synergy</div>
-                                        <div style={{ fontWeight: 'bold', color: synergy.active ? '#a3e635' : '#475569', fontSize: '0.75rem' }}>
-                                            {synergy.description}
-                                        </div>
-                                    </div>
-
-                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                        <div style={{ fontSize: '0.85rem', color: '#94a3b8', textTransform: 'uppercase' }}>Synergy</div>
-                                        <div style={{ fontWeight: 'bold', color: synergy.active ? '#a3e635' : '#475569', fontSize: '0.75rem' }}>
-                                            {synergy.description}
-                                        </div>
-                                    </div>
-
-                                    <div style={{ marginTop: '0.5rem' }}>
-                                        <div style={{ fontSize: '0.85rem', color: '#94a3b8', marginBottom: '0.25rem', textTransform: 'uppercase' }}>Energy (Preview)</div>
-                                        <div className="energy-bar-wrap" style={{ position: 'relative', height: '12px', background: '#000', borderRadius: '4px', overflow: 'hidden' }}>
-                                            <div style={{ width: '0%', height: '100%', background: 'linear-gradient(90deg, #b45309, #d97706)' }} />
-                                            <span style={{ fontSize: '0.65rem', color: '#fbbf24', position: 'absolute', right: '4px', top: '50%', transform: 'translateY(-50%)' }}>0</span>
-                                        </div>
-                                    </div>
-                                </div>
 
                                 <div className="prep-buttons" style={{ marginTop: '1rem' }}>
                                     <GachaButton
@@ -1028,41 +1012,7 @@ export const Arena = ({ onClose }: { onClose: () => void }) => {
 
                         {/* ACTION BAR (25%) */}
                         <div className="action-bar-container" style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                            {player && (
-                                <div style={{ display: 'flex', justifyContent: 'center' }}>
-                                    <button
-                                        className={`command-btn ultimate-btn ${player.energy >= 100 ? 'ready' : 'locked'}`}
-                                        disabled={phase !== 'select_action' || autoAttack || isRolling || isHeavyRolling || player.energy < 100}
-                                        style={{ 
-                                            width: '100%', 
-                                            maxWidth: '400px',
-                                            padding: '0.75rem',
-                                            borderRadius: '8px',
-                                            border: player.energy >= 100 ? '2px solid #fbbf24' : '2px solid #475569',
-                                            background: player.energy >= 100 ? 'linear-gradient(135deg, #b45309 0%, #78350f 100%)' : '#1e293b',
-                                            color: player.energy >= 100 ? '#fff' : '#64748b',
-                                            boxShadow: player.energy >= 100 ? '0 0 15px rgba(251, 191, 36, 0.5)' : 'none',
-                                            fontWeight: 'bold',
-                                            textTransform: 'uppercase',
-                                            cursor: player.energy >= 100 ? 'pointer' : 'not-allowed',
-                                            transition: 'all 0.3s ease'
-                                        }}
-                                        onClick={() => {
-                                            if (phase === 'select_action' && player.energy >= 100) {
-                                                useBattleStore.getState().executeUltimate(ultimateName);
-                                            }
-                                        }}
-                                    >
-                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                            <span style={{ fontSize: '1.2rem' }}>💥</span>
-                                            <span>{ultimateName}</span>
-                                            <span style={{ fontSize: '0.85rem', color: player.energy >= 100 ? '#fde68a' : '#475569' }}>
-                                                {Math.floor(player.energy)}/100
-                                            </span>
-                                        </div>
-                                    </button>
-                                </div>
-                            )}
+
 
                             {player && (
                                 <div className="action-buttons">
@@ -1216,7 +1166,8 @@ export const Arena = ({ onClose }: { onClose: () => void }) => {
                                             : null;
                                         
                                         const onCooldown = spellCooldownTurns > 0;
-                                        const canCast = spell && currentMP >= spell.mpCost && !onCooldown;
+                                        const hasEnergy = spell?.energyCost ? player.energy >= spell.energyCost : true;
+                                        const canCast = spell && currentMP >= spell.mpCost && hasEnergy && !onCooldown;
 
                                         return (
                                             <button
@@ -1238,9 +1189,9 @@ export const Arena = ({ onClose }: { onClose: () => void }) => {
                                                     {spell && onCooldown ? (
                                                         <span style={{ color: '#ef4444' }}>⚠️ {spellCooldownTurns}t CD</span>
                                                     ) : spell && !canCast ? (
-                                                        <span style={{ color: '#ef4444' }}>{spell.mpCost} MP</span>
+                                                        <span style={{ color: '#ef4444' }}>{spell.mpCost} MP {spell.energyCost ? `+ ${spell.energyCost} NRG` : ''}</span>
                                                     ) : spell ? (
-                                                        <span>{spell.mpCost} MP</span>
+                                                        <span>{spell.mpCost} MP {spell.energyCost ? `+ ${spell.energyCost} NRG` : ''}</span>
                                                     ) : (
                                                         'Not Equipped'
                                                     )}

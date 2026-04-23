@@ -3,6 +3,7 @@ import { useBattleStore, type Combatant } from '../../store/useBattleStore';
 import { useAuraStore, AURAS } from '../../store/useAuraStore';
 import { usePetStore } from '../../store/usePetStore';
 import { useCampaignStore } from '../../store/useCampaignStore';
+import { useInventoryStore } from '../../store/useInventoryStore';
 import { ITEM_DATABASE } from '../../data/items';
 import { usePlayerAvatar } from '../../hooks/usePlayerAvatar';
 import forestRuinsBg from '../../assets/backgrounds/forest_ruins.png';
@@ -66,6 +67,7 @@ const UnitEntity = ({ combatant, isAlly, isActive, isHit, imageSrc, petItem }: {
   const hpPercent = Math.max(0, (combatant.hp / combatant.maxHp) * 100);
   const mpPercent = combatant.maxMana ? Math.max(0, (combatant.mana / combatant.maxMana) * 100) : 0;
   const energyPercent = combatant.energy;
+  const hasFrostHelm = isAlly && useInventoryStore.getState().equipped.head === 'frostbound_helm';
 
   return (
     <div className={`unit-entity ${isAlly ? 'ally' : 'enemy'} ${isActive ? 'attacking' : ''} ${isHit ? 'hit' : ''}`}>
@@ -75,8 +77,10 @@ const UnitEntity = ({ combatant, isAlly, isActive, isHit, imageSrc, petItem }: {
           <span style={{ fontSize: '2.5rem', filter: 'drop-shadow(0 5px 10px rgba(0,0,0,0.5))' }}>{petItem.icon}</span>
         </div>
       )}
-      <div className={`unit-sprite ${isAlly ? 'player' : 'enemy'}`}>
+      <div className={`unit-sprite ${isAlly ? 'player' : 'enemy'} ${combatant?.frozenTurns > 0 ? 'frozen-encasement' : (combatant?.chilledTurns > 0 ? 'chilled-aura' : '')} ${hasFrostHelm ? 'frostbound-aura' : ''}`}>
         <img src={imageSrc} alt={combatant.name} />
+        {combatant?.frozenTurns > 0 && <div className="status-icon chill-status" style={{ position: 'absolute', top: '-15px', right: isAlly ? '-15px' : 'auto', left: isAlly ? 'auto' : '-15px', fontSize: '2.5rem', zIndex: 10, filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.8))' }}>🧊</div>}
+        {combatant?.chilledTurns > 0 && combatant?.frozenTurns <= 0 && <div className="status-icon chill-status" style={{ position: 'absolute', top: '-15px', right: isAlly ? '-15px' : 'auto', left: isAlly ? 'auto' : '-15px', fontSize: '2rem', zIndex: 10, animation: 'floatUpSlow 2s ease-in-out infinite alternate', filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.5))' }}>❄️</div>}
       </div>
       <div className="floating-ui">
         <div className="unit-name">{combatant.name}</div>

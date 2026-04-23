@@ -49,7 +49,7 @@ const NODE_TYPE_LABELS: Partial<Record<ConquestNodeType, string[]>> = {
     cursed:         ['Dark Altar', 'Cursed Monolith', 'Blood Pact Shrine'],
     treasure_vault: ['Vault of Greed', 'Sealed Treasury', 'Guardian\'s Chamber'],
     artifact:       ['Ancient Ruin', 'Forgotten Archive', 'Relic Alcove'],
-    minigame:       ['Tactician\'s Trial', 'Fae Mischief', 'Arena Challenge'],
+    minigame:       ['Goongie Challenge', 'Fae Mischief', 'Arena Challenge'],
 };
 
 const NODE_TYPE_DESCRIPTIONS: Partial<Record<ConquestNodeType, string>> = {

@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
-import { ChevronLeft, BookOpen, Zap, Target, Crown, Award, Bolt } from 'lucide-react';
+import { ChevronLeft, BookOpen, Zap, Target, Crown, Award, Bolt, Brain, Sword } from 'lucide-react';
 import { useChessStore } from '../../store/useChessStore';
 import { CHESS_OPENINGS } from '../../data/chessOpenings';
 import type { ChessOpening } from '../../data/chessOpenings';
@@ -12,11 +12,16 @@ import type { Board } from '../conquest/chessUtils';
 import { useCurrencyStore } from '../../store/useCurrencyStore';
 import { useGameStore } from '../../store/useGameStore';
 import { useTitleStore } from '../../store/useTitleStore';
+import { CHESS_HISTORY_ERAS } from '../../data/chessStyles';
+import type { ChessHistoricalPlayer } from '../../data/chessStyles';
 import { ChessGame } from '../conquest/ChessGame';
+import { BossArenaView } from './BossArenaView';
+import { ChessLessons } from './screens/ChessLessons';
+import cowChessBg from '../../assets/cow_chess.jpg';
 import './ChessDashboard.css';
-import '../conquest/ChessGame.css'; // Reuse board rendering styles
+import '../conquest/ChessGame.css';
 
-type TabState = 'dashboard' | 'lessons' | 'traps' | 'playstyles' | 'ladder' | 'codex';
+type TabState = 'dashboard' | 'lessons' | 'interactive_lessons' | 'traps' | 'playstyles' | 'ladder' | 'codex';
 
 export const ChessDashboard = () => {
     const navigate = useNavigate();
@@ -29,16 +34,12 @@ export const ChessDashboard = () => {
         return () => clearInterval(interval);
     }, [chessStore]);
 
-    const getBackgroundClass = () => {
-        if (activeTab === 'lessons') return 'chess-bg-lesson';
-        if (activeTab === 'traps') return 'chess-bg-puzzle';
-        if (activeTab === 'ladder') return 'chess-bg-ladder';
-        return 'chess-bg-dashboard';
-    };
-
     return (
         <div className="chess-system-container">
-            <div className={getBackgroundClass()} />
+            <div className="chess-bg-wrapper">
+                <img src={cowChessBg} alt="Magical Chess Training Hall" className="chess-bg-img" />
+                <div className="chess-bg-overlay" />
+            </div>
             
             <div className="chess-system-content">
                 <div className="chess-sys-header">
@@ -63,6 +64,17 @@ export const ChessDashboard = () => {
                                         <p style={{ margin: 0, color: '#94a3b8', fontSize: '0.9rem' }}>Master beginner and intermediate lines.</p>
                                         <div className="chess-progress-track">
                                             <div className="chess-progress-fill" style={{ width: `${(chessStore.openingsMastered.length / CHESS_OPENINGS.length) * 100}%` }} />
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div className="chess-dash-card" onClick={() => setActiveTab('interactive_lessons')}>
+                                    <div className="chess-dash-card-icon"><Brain size={28} color="#10b981" /></div>
+                                    <div className="chess-dash-card-info">
+                                        <h2>Interactive Lessons</h2>
+                                        <p style={{ margin: 0, color: '#94a3b8', fontSize: '0.9rem' }}>Guided step-by-step masterclasses.</p>
+                                        <div className="chess-progress-track">
+                                            <div className="chess-progress-fill" style={{ width: `${(chessStore.interactiveLessonsMastered.length > 0 ? 100 : 0)}%`, background: '#10b981' }} />
                                         </div>
                                     </div>
                                 </div>
@@ -102,6 +114,12 @@ export const ChessDashboard = () => {
                                     </div>
                                 </div>
                             </div>
+                        </motion.div>
+                    )}
+
+                    {activeTab === 'interactive_lessons' && (
+                        <motion.div key="inter_lessons" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+                            <ChessLessons onBack={() => setActiveTab('dashboard')} />
                         </motion.div>
                     )}
 
@@ -306,20 +324,22 @@ const TrapEngine = ({ trap, onBack, onSolve }: { trap: ChessTrap, onBack: () => 
     };
 
     return (
-        <div className="lesson-container" style={{ position: 'relative' }}>
+        <div className="trap-container">
             {status === 'solved' && (
-                <motion.div initial={{ scale: 0, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="trap-flash-overlay">
-                    <h2>TRAP TRIGGERED</h2>
+                <motion.div initial={{ scale: 0.8, opacity: 0, y: 20 }} animate={{ scale: 1, opacity: 1, y: 0 }} className="trap-flash-overlay--success">
+                    <h2>TRAP EXECUTED</h2>
                     <p>+ {trap.combatEffect.replace('_', ' ').toUpperCase()} UNLOCKED</p>
                 </motion.div>
             )}
 
-            <div className="lesson-top-ui">
-                <h2 style={{ color: '#ef4444', margin: '0 0 0.5rem 0' }}>{trap.name}</h2>
-                <span style={{ background: '#7f1d1d', color: '#fecaca', padding: '0.2rem 0.5rem', borderRadius: 4, fontSize: '0.8rem' }}>Challenge Mode</span>
+            <div className="trap-top-ui">
+                <h2 style={{ color: '#ef4444', margin: '0 0 0.5rem 0', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}>
+                    <Zap size={24} /> {trap.name}
+                </h2>
+                <div style={{ background: 'rgba(239, 68, 68, 0.1)', border: '1px solid rgba(239, 68, 68, 0.3)', color: '#fca5a5', padding: '0.3rem 0.8rem', borderRadius: 99, fontSize: '0.85rem', display: 'inline-block', fontWeight: 'bold' }}>Challenge Mode Active</div>
             </div>
 
-            <div className="chess-board" style={{ boxShadow: status === 'failed' ? '0 0 30px rgba(239, 68, 68, 0.6)' : 'none', transition: 'box-shadow 0.3s' }}>
+            <div className={`chess-board trap-board ${status === 'failed' ? 'trap-board--failed' : ''} ${status === 'solved' ? 'trap-board--solved' : ''}`}>
                 {board.map((row, r) => row.map((cell, c) => {
                     const isLight = (r + c) % 2 === 0;
                     const isSelected = selected && selected[0] === r && selected[1] === c;
@@ -331,54 +351,293 @@ const TrapEngine = ({ trap, onBack, onSolve }: { trap: ChessTrap, onBack: () => 
                 }))}
             </div>
 
-            <div className="lesson-bottom-ui">
-                <h3 style={{ color: 'white', margin: '0 0 0.5rem 0' }}>Find the Finisher</h3>
-                <p style={{ color: '#94a3b8', fontSize: '0.9rem' }}>{trap.explanation}</p>
-                <div style={{ display: 'flex', gap: '0.5rem', marginTop: '1rem' }}>
-                    <button onClick={onBack} style={{ flex: 1, background: '#334155', color: 'white', border: 'none', padding: '0.75rem', borderRadius: 8 }}>Retreat</button>
+            <div className="trap-bottom-ui">
+                <h3 style={{ color: 'white', margin: '0 0 0.5rem 0', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                    <Target size={20} color="#60a5fa" /> Find the Finisher
+                </h3>
+                <p style={{ color: '#cbd5e1', fontSize: '1rem', lineHeight: 1.5, background: 'rgba(0,0,0,0.3)', padding: '1rem', borderRadius: 8, borderLeft: '4px solid #ef4444' }}>
+                    {trap.explanation}
+                </p>
+                <div style={{ display: 'flex', gap: '0.5rem', marginTop: '1.5rem' }}>
+                    <button onClick={onBack} style={{ flex: 1, background: 'transparent', border: '2px solid #64748b', color: '#f8fafc', padding: '0.85rem', borderRadius: 8, fontWeight: 'bold', fontSize: '1rem' }}>Retreat</button>
                 </div>
+            </div>
+            
+            {/* Nav Safety Spacer */}
+            <div style={{ height: 'calc(var(--bottom-nav-height, 60px) + env(safe-area-inset-bottom, 0px))', width: '100%', flexShrink: 0 }} />
+        </div>
+    );
+};
+
+// ─── PLAYSTYLES MUSEUM VIEW ──────────────────────────────────────────────────
+const PlaystylesView = () => {
+    const store = useChessStore();
+    const [viewData, setViewData] = useState<{ mode: 'timeline' | 'player' | 'lesson' | 'simulation' | 'arena', player: ChessHistoricalPlayer | null, challengeId?: string }>({ mode: 'timeline', player: null });
+
+    if (viewData.mode === 'arena' && viewData.player && viewData.challengeId) {
+        const challengeToLoad = viewData.player.arenaChallenges?.find(c => c.id === viewData.challengeId);
+        if (challengeToLoad) {
+            return <BossArenaView player={viewData.player} challenge={challengeToLoad} onExit={() => setViewData({ mode: 'player', player: viewData.player })} />;
+        }
+    }
+
+    if (viewData.mode === 'player' && viewData.player) {
+        return <PlaystylesPlayerDetail player={viewData.player} store={store} onBack={() => setViewData({ mode: 'timeline', player: null })} onLaunchLesson={() => setViewData({ mode: 'lesson', player: viewData.player })} onLaunchSimulation={() => setViewData({ mode: 'simulation', player: viewData.player })} onLaunchArena={(cid) => setViewData({ mode: 'arena', player: viewData.player, challengeId: cid })}/>;
+    }
+
+    if (viewData.mode === 'lesson' && viewData.player) {
+        return <PlayerLessonEngine player={viewData.player} onBack={() => setViewData({ mode: 'player', player: viewData.player })} onComplete={() => { store.completeStyleLesson(viewData.player!.id); setViewData({ mode: 'player', player: viewData.player }); }} />;
+    }
+
+    if (viewData.mode === 'simulation' && viewData.player && viewData.player.simulation) {
+        return <PlayerSimulationEngine player={viewData.player} onBack={() => setViewData({ mode: 'player', player: viewData.player })} />;
+    }
+
+    const { aggressiveScore, defensiveScore, positionalScore, tacticalScore } = store.behavior;
+    const completedProfiles = store.completedStyleLessons.length;
+    
+    // Derived style profile unlock check (Only visible if they studied at least 2 players)
+    let dynamicAnalysis = 'Study at least 2 masters fully to unlock your personal profile.';
+    if (completedProfiles >= 2) {
+        if (aggressiveScore > positionalScore && tacticalScore > defensiveScore) dynamicAnalysis = 'You strongly lean toward Morphy-esque aggression and fast tactical resolutions.';
+        else if (positionalScore > aggressiveScore && defensiveScore > tacticalScore) dynamicAnalysis = 'You exhibit a solid, Steinitz-like tendency towards safe structure and defensive patience.';
+        else dynamicAnalysis = 'You hold a universal balance, shifting between active breaks and quiet defense.';
+    }
+
+    return (
+        <div className="playstyles-timeline-hub">
+            <div className="playstyles-header">
+                <h2>The Grandmaster Archive</h2>
+                <p>Learn how the greatest minds envisioned the board.</p>
+            </div>
+
+            <div className="playstyles-era-list">
+                {CHESS_HISTORY_ERAS.map((era) => (
+                    <div key={era.id} className="era-section">
+                        <div className="era-header">
+                            <h3>{era.title}</h3>
+                            <span className="era-years">{era.years}</span>
+                        </div>
+                        <p className="era-desc">{era.description}</p>
+
+                        <div className="era-players-grid">
+                            {era.players.map((player) => {
+                                const isCompleted = store.completedStyleLessons.includes(player.id);
+                                return (
+                                    <div key={player.id} className={`player-card-mini ${isCompleted ? 'completed' : ''}`} onClick={() => setViewData({ mode: 'player', player })}>
+                                        <div className="player-card-content">
+                                            <div style={{ fontWeight: 'bold', fontSize: '1.2rem', color: isCompleted ? '#10b981' : '#f8fafc' }}>{player.name}</div>
+                                            <div style={{ fontSize: '0.85rem', color: '#94a3b8', margin: '0.2rem 0' }}>{player.nationality}</div>
+                                            <div style={{ fontStyle: 'italic', color: '#cbd5e1', fontSize: '0.9rem' }}>"{player.tagline}"</div>
+                                        </div>
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    </div>
+                ))}
+            </div>
+
+            <div className="playstyles-inference-box">
+                <h4>Your Predicted Profile</h4>
+                <p>{dynamicAnalysis}</p>
+                {completedProfiles < 2 && <div className="progress-bar-container" style={{ marginTop: '0.5rem', background: '#334155', height: 6, borderRadius: 3 }}><div style={{ background: '#a855f7', height: '100%', width: `${(completedProfiles/2)*100}%` }}/></div>}
+            </div>
+            
+            <div style={{ height: 'calc(var(--bottom-nav-height, 60px) + env(safe-area-inset-bottom, 0px) + 20px)' }} />
+        </div>
+    );
+};
+
+const PlaystylesPlayerDetail = ({ player, store, onBack, onLaunchLesson, onLaunchSimulation, onLaunchArena }: { player: ChessHistoricalPlayer, store: any, onBack: () => void, onLaunchLesson: () => void, onLaunchSimulation: () => void, onLaunchArena: (cid: string) => void }) => {
+    return (
+        <div className="player-detail-view" style={{ paddingBottom: 'calc(var(--bottom-nav-height, 60px) + env(safe-area-inset-bottom, 0px) + 20px)' }}>
+            <button onClick={onBack} className="btn-back" style={{ background: 'transparent', border: 'none', color: '#f8fafc', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1rem', padding: 0 }}><ChevronLeft size={24}/> Back to Era</button>
+            <div className="player-detail-hero">
+                <h1>{player.name}</h1>
+                <div style={{ color: '#60a5fa', fontWeight: 'bold' }}>{player.years}</div>
+                <div style={{ fontSize: '1.1rem', color: '#cbd5e1', fontStyle: 'italic', margin: '0.5rem 0' }}>"{player.tagline}"</div>
+            </div>
+
+            <div style={{ margin: '1.5rem 0' }}>
+                <h3 style={{ color: '#fcd34d', borderBottom: '1px solid #78350f', paddingBottom: '0.5rem' }}>Achievements</h3>
+                <p style={{ color: '#f8fafc', lineHeight: 1.5 }}>{player.achievements}</p>
+            </div>
+
+            <div style={{ margin: '1.5rem 0' }}>
+                <h3 style={{ color: '#a855f7', borderBottom: '1px solid #4c1d95', paddingBottom: '0.5rem' }}>Core Style</h3>
+                <ul style={{ color: '#e2e8f0', lineHeight: 1.6, paddingLeft: '1.2rem' }}>
+                    {player.playstyleCharacteristics.map((tr, i) => <li key={i}>{tr}</li>)}
+                </ul>
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', marginTop: '2rem' }}>
+                <button onClick={onLaunchLesson} style={{ padding: '1rem', background: store.completedStyleLessons.includes(player.id) ? '#059669' : '#3b82f6', color: 'white', border: 'none', borderRadius: 8, fontSize: '1.1rem', fontWeight: 'bold', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}>
+                    <BookOpen size={20} />
+                    {store.completedStyleLessons.includes(player.id) ? 'Replay Master Lesson' : 'Study Interactive Lesson'}
+                </button>
+                
+                {player.simulation && (
+                    <button onClick={onLaunchSimulation} style={{ padding: '1rem', background: '#1e293b', border: '2px solid #475569', color: '#cbd5e1', borderRadius: 8, fontSize: '1.1rem', fontWeight: 'bold', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}>
+                        <Target size={20} /> Try Master Simulation
+                    </button>
+                )}
+
+                {player.arenaChallenges && player.arenaChallenges.map(challenge => (
+                    <button key={challenge.id} onClick={() => onLaunchArena(challenge.id)} style={{ marginTop: '1rem', padding: '1.25rem', background: 'linear-gradient(135deg, #7f1d1d, #450a0a)', border: '2px solid #b91c1c', color: '#fef2f2', borderRadius: 12, fontSize: '1.2rem', fontWeight: 'bold', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', boxShadow: '0 4px 15px rgba(185, 28, 28, 0.4)' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}><Sword size={24} color="#fca5a5" /> Enter Boss Arena</div>
+                        <div style={{ fontSize: '0.9rem', color: '#fca5a5', fontWeight: 'normal' }}>Tier {challenge.tier}: {challenge.title}</div>
+                    </button>
+                ))}
             </div>
         </div>
     );
 };
 
-// ─── PLAYSTYLES VIEW ─────────────────────────────────────────────────────────
-const PlaystylesView = () => {
-    const store = useChessStore();
-    const style = store.getPlaystyle();
-    const affinity = store.getChessAffinity();
+const PlayerLessonEngine = ({ player, onBack, onComplete }: { player: ChessHistoricalPlayer, onBack: () => void, onComplete: () => void }) => {
+    const [board, setBoard] = useState<Board>(createInitialBoard);
+    const [step, setStep] = useState(0);
 
-    const descriptions: Record<string, string> = {
-        'Magnus': 'Consistent, calm, positional. You slowly suffocate your opponents and prefer solid structures.',
-        'Kasparov': 'Aggressive, dynamic, punishing. You sacrifice safety to crush the enemy immediately.',
-        'Hikaru': 'Fast, tactical, tricky. You rely on quick patterns, traps, and tactical vision.',
-        'Karpov': 'Purely defensive. You create an unbreakable fortress and let the enemy destroy themselves.',
-        'Unknown': 'Learn more openings and solve traps to develop your Grandmaster identity.'
-    };
+    const moves = player.lesson.interactiveMoves;
+    const isComplete = step >= moves.length;
+    const currentMoveData = isComplete ? null : moves[step];
+
+    useEffect(() => {
+        // Build state up to current step
+        let b = createInitialBoard();
+        player.lesson.startStateMoves.forEach(sm => {
+            b = applyMove(b, sm as any, null);
+        });
+        for (let i = 0; i < step; i++) {
+            b = applyMove(b, moves[i] as any, null);
+        }
+        setBoard(b);
+    }, [step, player]);
 
     return (
-        <div className="playstyle-hub">
-            <h2 style={{ color: 'white', margin: '0 0 0.5rem 0' }}>Combat Integration Hub</h2>
-            <p style={{ color: '#94a3b8', margin: '0 0 1.5rem 0' }}>Your chess habits dictate your passive combat synergy.</p>
+        <div className="player-lesson-wrapper">
+            <div className="lesson-nav-top">
+                <button onClick={onBack} style={{ background:'transparent', border:'none', color:'#cbd5e1', padding: 0 }}><ChevronLeft size={28}/></button>
+                <div style={{ color: 'white', fontWeight: 'bold' }}>{player.name} Lesson</div>
+                <div style={{ width: 28 }} />
+            </div>
 
-            <div className="playstyle-identity">
-                <div className="playstyle-avatar">
-                    {style === 'Kasparov' ? '🔥' : style === 'Hikaru' ? '⚡' : style === 'Karpov' ? '❄️' : '🧠'}
+            <div className="teaching-board-container" style={{ position: 'relative' }}>
+                <div className="chess-board teaching-board">
+                    {board.map((row, r) => row.map((cell, c) => {
+                        const isLight = (r + c) % 2 === 0;
+                        const isHighlight = currentMoveData && ((currentMoveData.fr === r && currentMoveData.fc === c) || (currentMoveData.tr === r && currentMoveData.tc === c));
+                        return (
+                            <div key={`${r}-${c}`} className={`chess-cell ${isLight ? 'light' : 'dark'} ${isHighlight ? 'teaching-highlight' : ''}`}>
+                                {cell && <span className={cell.color === 'w' ? 'chess-piece-white' : 'chess-piece-black'}>{PIECE_UNICODE[`${cell.color}${cell.type}`]}</span>}
+                            </div>
+                        );
+                    }))}
                 </div>
-                <div className="playstyle-stats">
-                    <h3 style={{ margin: 0, color: 'white', fontSize: '1.5rem' }}>{style}</h3>
-                    <p style={{ color: '#60a5fa', fontWeight: 'bold' }}>{affinity ? `Generating ${affinity.toUpperCase()} Affinity Synergy` : 'No Affinity Generated yet'}</p>
-                    <p style={{ fontSize: '0.85rem' }}>{descriptions[style]}</p>
+                
+                {/* SVG Overlay for arrows */}
+                {currentMoveData && (
+                    <svg className="teaching-arrow-layer" viewBox="0 0 800 800" style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', pointerEvents: 'none', zIndex: 20 }}>
+                        <defs>
+                            <marker id="arrowhead" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto">
+                                <polygon points="0 0, 6 3, 0 6" fill="#facc15" />
+                            </marker>
+                        </defs>
+                        <line 
+                            x1={`${(currentMoveData.fc + 0.5) * 100}`} 
+                            y1={`${(currentMoveData.fr + 0.5) * 100}`} 
+                            x2={`${(currentMoveData.tc + 0.5) * 100}`} 
+                            y2={`${(currentMoveData.tr + 0.5) * 100}`} 
+                            stroke="#facc15" 
+                            strokeWidth="15" 
+                            opacity="0.85"
+                            strokeLinecap="round"
+                            markerEnd="url(#arrowhead)" 
+                            className="teaching-animated-arrow"
+                        />
+                    </svg>
+                )}
+            </div>
+
+            <div className="teaching-panel">
+                <div className="teaching-panel-header">Move {step + 1} of {moves.length}</div>
+                {isComplete ? (
+                    <div>
+                        <h3 style={{ color: '#10b981', margin: '0 0 0.5rem 0' }}>Lesson Complete!</h3>
+                        <p style={{ color: '#e2e8f0' }}>You've witnessed {player.name}'s legendary intuition in action.</p>
+                        <button onClick={onComplete} style={{ width: '100%', padding: '1rem', background: '#10b981', color: 'white', border: 'none', borderRadius: 8, fontWeight: 'bold', marginTop: '1rem' }}>Finish Study</button>
+                    </div>
+                ) : (
+                    <div>
+                        <h3 style={{ color: '#facc15', margin: '0 0 0.5rem 0' }}>{currentMoveData?.notation}</h3>
+                        <p style={{ color: '#f8fafc', fontSize: '1rem', lineHeight: 1.5, minHeight: 60 }}>{currentMoveData?.explanation}</p>
+                        <div style={{ display: 'flex', gap: '0.5rem', marginTop: '1rem' }}>
+                            <button disabled={step === 0} onClick={() => setStep(s => s - 1)} style={{ flex: 1, padding: '0.75rem', border: '1px solid #475569', background: '#1e293b', color: step === 0 ? '#475569' : 'white', borderRadius: 8 }}>Prev Step</button>
+                            <button onClick={() => setStep(s => s + 1)} style={{ flex: 2, padding: '0.75rem', border: 'none', background: '#3b82f6', color: 'white', borderRadius: 8, fontWeight: 'bold' }}>Next Step</button>
+                        </div>
+                    </div>
+                )}
+            </div>
+            <div style={{ height: 'calc(var(--bottom-nav-height, 60px) + env(safe-area-inset-bottom, 0px))', flexShrink: 0 }} />
+        </div>
+    );
+};
+
+const PlayerSimulationEngine = ({ player, onBack }: { player: ChessHistoricalPlayer, onBack: () => void }) => {
+    const sim = player.simulation;
+    const [board, setBoard] = useState<Board>(createInitialBoard);
+    const [answeredIdx, setAnsweredIdx] = useState<number | null>(null);
+
+    useEffect(() => {
+        if (!sim) return;
+        let b = createInitialBoard();
+        sim.boardSetupMoves.forEach(sm => {
+            b = applyMove(b, sm as any, null);
+        });
+        setBoard(b);
+    }, [sim]);
+
+    if (!sim) return null;
+
+    return (
+        <div className="player-lesson-wrapper">
+             <div className="lesson-nav-top">
+                <button onClick={onBack} style={{ background:'transparent', border:'none', color:'#cbd5e1', padding: 0 }}><ChevronLeft size={28}/></button>
+                <div style={{ color: '#fca5a5', fontWeight: 'bold' }}>Master Intuition Trial</div>
+                <div style={{ width: 28 }} />
+            </div>
+
+            <div className="teaching-board-container">
+                <div className="chess-board teaching-board">
+                    {board.map((row, r) => row.map((cell, c) => (
+                        <div key={`${r}-${c}`} className={`chess-cell ${(r + c) % 2 === 0 ? 'light' : 'dark'}`}>
+                            {cell && <span className={cell.color === 'w' ? 'chess-piece-white' : 'chess-piece-black'}>{PIECE_UNICODE[`${cell.color}${cell.type}`]}</span>}
+                        </div>
+                    )))}
                 </div>
             </div>
 
-            <div style={{ marginTop: '2rem' }}>
-                <h4 style={{ color: 'white', borderBottom: '1px solid #334155', paddingBottom: '0.5rem' }}>Under The Hood</h4>
-                <div style={{ display: 'flex', justifyContent: 'space-between', color: '#94a3b8', marginTop: '0.5rem' }}><span>Aggression Score</span> <span>{store.behavior.aggressiveScore}</span></div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', color: '#94a3b8', marginTop: '0.5rem' }}><span>Positional Score</span> <span>{store.behavior.positionalScore}</span></div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', color: '#94a3b8', marginTop: '0.5rem' }}><span>Defense Score</span> <span>{store.behavior.defensiveScore}</span></div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', color: '#94a3b8', marginTop: '0.5rem' }}><span>Tactical Traps</span> <span>{store.behavior.trapUsageCount}</span></div>
+            <div className="teaching-panel">
+                <h3 style={{ color: 'white', margin: '0 0 1rem 0' }}>What would {player.name} do here?</h3>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                    {sim.options.map((opt, idx) => {
+                        const isRevealed = answeredIdx !== null;
+                        const bgColor = isRevealed ? (opt.isCorrect ? '#064e3b' : (answeredIdx === idx ? '#7f1d1d' : '#1e293b')) : '#1e293b';
+                        const borderColor = isRevealed ? (opt.isCorrect ? '#10b981' : (answeredIdx === idx ? '#ef4444' : '#334155')) : '#334155';
+                        
+                        return (
+                            <button key={idx} disabled={isRevealed} onClick={() => setAnsweredIdx(idx)} style={{ background: bgColor, border: `2px solid ${borderColor}`, padding: '1rem', borderRadius: 8, color: 'white', textAlign: 'left', transition: 'all 0.2s', cursor: isRevealed ? 'default' : 'pointer' }}>
+                                <div style={{ fontWeight: 'bold', fontSize: '1.1rem', marginBottom: isRevealed ? '0.5rem' : 0 }}>Play {opt.notation}</div>
+                                {isRevealed && <div style={{ fontSize: '0.9rem', color: opt.isCorrect ? '#a7f3d0' : '#fecaca', lineHeight: 1.4 }}>{opt.explanation}</div>}
+                            </button>
+                        );
+                    })}
+                </div>
+                {answeredIdx !== null && (
+                    <button onClick={onBack} style={{ marginTop: '1.5rem', width: '100%', padding: '1rem', background: 'transparent', color: 'white', border: '2px solid #64748b', borderRadius: 8, fontWeight: 'bold' }}>{sim.options[answeredIdx].isCorrect ? 'Well done. Return to Museum.' : 'Insight gained. Return to Museum.'}</button>
+                )}
             </div>
+            <div style={{ height: 'calc(var(--bottom-nav-height, 60px) + env(safe-area-inset-bottom, 0px))', flexShrink: 0 }} />
         </div>
     );
 };
@@ -395,9 +654,9 @@ const LadderView = () => {
     const [activeBoss, setActiveBoss] = useState<string | null>(null);
 
     const bosses = [
-        { id: 'boss_1', titleId: 'gm_strategist', name: 'The Strategist', difficulty: 3, energy: 30, desc: 'High positional play. Avoid blunders.', reward: '+5% Defense Permanently', avatar: '🧠' },
-        { id: 'boss_2', titleId: 'gm_tactician', name: 'The Tactician', difficulty: 4, energy: 40, desc: 'Tricky with traps. Plays extremely sharp lines.', reward: '+5% Crit Chance Permanently', avatar: '⚡' },
-        { id: 'boss_3', titleId: 'gm_endgame', name: 'The Endgame King', difficulty: 5, energy: 50, desc: 'Flawless execution. A true Grandmaster trial.', reward: '+10% All Stats Permanently', avatar: '👑' },
+        { id: 'boss_1', titleId: 'gm_strategist', name: 'The Strategist', difficulty: 3, energy: 30, desc: 'High positional play. Avoid blunders.', reward: '+5% Defense Permanently', avatar: '/assets/strategist_boss.jpg', isImage: true },
+        { id: 'boss_2', titleId: 'gm_tactician', name: 'The Tactician', difficulty: 4, energy: 40, desc: 'Tricky with traps. Plays extremely sharp lines.', reward: '+5% Crit Chance Permanently', avatar: '/assets/tactician_boss.jpg', isImage: true },
+        { id: 'boss_3', titleId: 'gm_endgame', name: 'The Endgame King', difficulty: 5, energy: 50, desc: 'Flawless execution. A true Grandmaster trial.', reward: '+10% All Stats Permanently', avatar: '/assets/endgame_king_boss.jpg', isImage: true },
         { id: 'boss_4', titleId: 'gm_reaper', name: 'The Reaper', difficulty: 5, energy: 60, desc: 'Calm, calculated, and extremely difficult to outplay.', reward: '+5% Defense Permanently', avatar: '/assets/reaper_boss.jpg', isImage: true },
         { id: 'boss_5', titleId: 'gm_demon', name: 'The Demon', difficulty: 5, energy: 60, desc: 'Chaotic, fast, aggressive, and incredibly dangerous.', reward: '+5% Crit Chance Permanently', avatar: '/assets/demon_boss.jpg', isImage: true },
         { id: 'boss_6', titleId: 'gm_skeleton_king', name: 'The Skeleton King', difficulty: 5, energy: 70, desc: 'Patient early game, nearly unbeatable late game.', reward: '+10% Scaling Bonus Permanently', avatar: '/assets/skeleton_king_boss.jpg', isImage: true },
@@ -463,6 +722,7 @@ const LadderView = () => {
                 {/* Reusing ChessGame component for full match logic */}
                 <ChessGame 
                     canPlay={true} 
+                    isBossMode={true}
                     onClose={() => { setActiveBoss(null); setLadderState('list'); }} 
                     onComplete={(res) => {
                         if (res === 'win') {
@@ -486,14 +746,23 @@ const LadderView = () => {
         <div style={{ background: 'rgba(15, 23, 42, 0.85)', padding: '1.5rem', borderRadius: 16 }}>
             <h2 style={{ color: 'white', marginTop: 0, textAlign: 'center' }}>Grandmaster Ladder</h2>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', marginTop: '1.5rem' }}>
-                {bosses.map((boss, idx) => (
-                    <div key={boss.id} className="boss-card" style={{ borderColor: store.ladderWins.includes(boss.id) ? '#fbbf24' : '#334155' }}>
-                        <div className="boss-avatar">
-                            {boss.isImage ? <img src={boss.avatar} alt="Boss" style={{ width: 64, height: 64, borderRadius: '50%', objectFit: 'cover', border: '2px solid #64748b' }} /> : boss.avatar}
-                        </div>
-                        <div>
-                            <h3>{boss.name}</h3>
-                            <div className="boss-difficulty">Difficulty: {['Hard', 'Severe', 'Impossible'][idx]}</div>
+                {bosses.map((boss, idx) => {
+                    let specialClass = '';
+                    let containerClass = '';
+                    if (boss.id === 'boss_1') { specialClass = 'boss-card--strategist'; containerClass = 'strategist-img-container'; }
+                    if (boss.id === 'boss_2') { specialClass = 'boss-card--tactician'; containerClass = 'tactician-img-container'; }
+                    if (boss.id === 'boss_3') { specialClass = 'boss-card--endgame-king'; containerClass = 'endgame-img-container'; }
+                    
+                    const isPremiumImage = boss.isImage;
+
+                    return (
+                        <div key={boss.id} className={`boss-card ${specialClass}`} style={{ borderColor: store.ladderWins.includes(boss.id) ? '#fbbf24' : (boss.id === 'boss_3' ? '#b45309' : (boss.id === 'boss_2' ? '#ea580c' : '#334155')) }}>
+                            <div className={`boss-avatar ${containerClass}`}>
+                                {boss.isImage ? <img src={boss.avatar} alt="Boss" className={isPremiumImage ? 'special-boss-img' : ''} style={{ width: 64, height: 64, borderRadius: '50%', objectFit: 'cover', border: isPremiumImage ? 'none' : '2px solid #64748b' }} /> : boss.avatar}
+                            </div>
+                            <div className="boss-info" style={{ zIndex: 2 }}>
+                            <h3 style={{ color: 'white', margin: '0 0 0.5rem 0' }}>{boss.name}</h3>
+                            <div className="boss-difficulty" style={{ zIndex: 2 }}>Difficulty: {['Hard', 'Severe', 'Impossible', 'Impossible', 'Impossible', 'Impossible'][idx]}</div>
                             <p style={{ color: '#94a3b8', fontSize: '0.9rem' }}>{boss.desc}</p>
                             <p style={{ color: '#fbbf24', fontSize: '0.9rem', fontWeight: 'bold', margin: '0.25rem 0' }}>Reward: {boss.reward}</p>
                         </div>
@@ -509,7 +778,8 @@ const LadderView = () => {
                             Challenge (⚡ {boss.energy})
                         </button>
                     </div>
-                ))}
+                );
+            })}
             </div>
         </div>
     );

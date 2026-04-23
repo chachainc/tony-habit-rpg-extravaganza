@@ -1,0 +1,461 @@
+/* ═══════════════════════════════════════════════════════
+   GOONGIE CHALLENGE — Tactical Puzzle Encounter
+   Mobile-first, RPG-styled chess puzzle UI
+   ═══════════════════════════════════════════════════════ */
+
+.goongie-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 1000;
+    background: rgba(0, 0, 0, 0.88);
+    backdrop-filter: blur(6px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.75rem;
+    padding-bottom: calc(var(--bottom-nav-height, 50px) + env(safe-area-inset-bottom, 0px) + 0.75rem);
+}
+
+/* ── Modal card ──────────────────────────────────────── */
+.goongie-modal {
+    background: linear-gradient(180deg, #1a2540 0%, #0d1526 100%);
+    border: 1px solid rgba(139, 92, 246, 0.3);
+    border-radius: 18px;
+    padding: 1.25rem 1.25rem 1rem;
+    width: 100%;
+    max-width: 420px;
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.6rem;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.8),
+                0 0 0 1px rgba(139, 92, 246, 0.1) inset;
+    transition: box-shadow 0.2s ease;
+}
+
+.goongie-modal.flash-wrong {
+    box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.6),
+                0 20px 60px rgba(239, 68, 68, 0.3);
+    animation: wrong-flash 0.55s ease;
+}
+
+@keyframes wrong-flash {
+    0%   { box-shadow: 0 0 0 3px rgba(239,68,68,0.7), 0 20px 60px rgba(239,68,68,0.4); }
+    50%  { box-shadow: 0 0 0 8px rgba(239,68,68,0.3), 0 20px 60px rgba(239,68,68,0.15); }
+    100% { box-shadow: 0 0 0 3px rgba(239,68,68,0.0), 0 20px 60px rgba(0,0,0,0.8); }
+}
+
+/* ── Header ──────────────────────────────────────────── */
+.goongie-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+}
+
+.goongie-title-block {
+    display: flex;
+    align-items: center;
+    gap: 0.65rem;
+}
+
+.goongie-theme-icon {
+    font-size: 1.6rem;
+    line-height: 1;
+    filter: drop-shadow(0 2px 6px rgba(139,92,246,0.5));
+}
+
+.goongie-title {
+    font-size: 1rem;
+    font-weight: 900;
+    color: #f1f5f9;
+    letter-spacing: 0.4px;
+    text-transform: uppercase;
+}
+
+.goongie-diff {
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    margin-top: 0.1rem;
+}
+
+.goongie-close-btn {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: #94a3b8;
+    font-size: 1.5rem;
+    line-height: 1;
+    width: 36px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.15s;
+    flex-shrink: 0;
+}
+
+.goongie-close-btn:hover {
+    color: #ef4444;
+    background: rgba(239, 68, 68, 0.1);
+    border-color: rgba(239, 68, 68, 0.3);
+}
+
+/* ── Objective ───────────────────────────────────────── */
+.goongie-objective {
+    text-align: center;
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: #fde68a;
+    background: rgba(251, 191, 36, 0.08);
+    border: 1px solid rgba(251, 191, 36, 0.2);
+    border-radius: 8px;
+    padding: 0.4rem 0.75rem;
+    text-shadow: 0 0 12px rgba(251, 191, 36, 0.3);
+}
+
+/* ── Status bar ──────────────────────────────────────── */
+.goongie-status-bar {
+    text-align: center;
+    font-size: 0.8rem;
+    font-weight: 700;
+    padding: 0.4rem 0.75rem;
+    border-radius: 8px;
+    min-height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 0.3rem;
+}
+
+.goongie-status-bar.playing {
+    color: #94a3b8;
+    background: rgba(148, 163, 184, 0.05);
+    border: 1px solid rgba(148, 163, 184, 0.1);
+}
+
+.goongie-status-bar.wrong {
+    color: #fca5a5;
+    background: rgba(239, 68, 68, 0.1);
+    border: 1px solid rgba(239, 68, 68, 0.3);
+    flex-direction: column;
+    gap: 0.1rem;
+}
+
+.goongie-status-bar.success {
+    color: #86efac;
+    background: rgba(34, 197, 94, 0.1);
+    border: 1px solid rgba(34, 197, 94, 0.3);
+    font-size: 0.95rem;
+    letter-spacing: 0.5px;
+    animation: success-pulse 0.4s ease;
+}
+
+@keyframes success-pulse {
+    0%   { transform: scale(0.95); }
+    60%  { transform: scale(1.03); }
+    100% { transform: scale(1); }
+}
+
+.goongie-hint {
+    font-size: 0.7rem;
+    font-weight: 600;
+    color: rgba(252, 165, 165, 0.7);
+    font-style: italic;
+}
+
+/* ── Board wrapper (1:1 aspect ratio, max mobile-safe) ── */
+.goongie-board-wrap {
+    width: 100%;
+    max-width: 380px;
+    align-self: center;
+    aspect-ratio: 1 / 1;
+    border: 3px solid rgba(99, 102, 241, 0.4);
+    border-radius: 6px;
+    overflow: hidden;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5),
+                0 0 0 1px rgba(99, 102, 241, 0.15) inset;
+}
+
+/* ── Chess board grid ─────────────────────────────────── */
+.goongie-board {
+    display: grid;
+    grid-template-columns: repeat(8, 1fr);
+    grid-template-rows: repeat(8, 1fr);
+    width: 100%;
+    height: 100%;
+    user-select: none;
+}
+
+.goongie-board.flipped {
+    transform: rotate(180deg);
+}
+
+/* ── Individual squares ──────────────────────────────── */
+.goongie-square {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: filter 0.12s ease;
+    aspect-ratio: 1 / 1;
+}
+
+.goongie-square.light { background-color: #d4c7a5; }
+.goongie-square.dark  { background-color: #7c6b4e; }
+
+.goongie-square.selected {
+    background-color: rgba(253, 224, 71, 0.85) !important;
+}
+
+.goongie-square.last-from {
+    background-color: rgba(99, 160, 99, 0.55) !important;
+}
+
+.goongie-square.last-to {
+    background-color: rgba(99, 160, 99, 0.75) !important;
+}
+
+.goongie-square.in-check {
+    background: radial-gradient(circle, rgba(239,68,68,0.9) 0%, rgba(239,68,68,0.5) 50%, transparent 70%) !important;
+}
+
+.goongie-square:active:not(.selected) {
+    filter: brightness(0.9);
+}
+
+/* ── Move indicators ─────────────────────────────────── */
+.goongie-move-dot {
+    position: absolute;
+    width: 28%;
+    height: 28%;
+    border-radius: 50%;
+    background: rgba(0, 0, 0, 0.35);
+    pointer-events: none;
+    z-index: 2;
+}
+
+.goongie-capture-ring {
+    position: absolute;
+    inset: 0;
+    border-radius: 50%;
+    border: 4px solid rgba(0, 0, 0, 0.35);
+    pointer-events: none;
+    z-index: 2;
+}
+
+/* ── Pieces ──────────────────────────────────────────── */
+.goongie-piece {
+    position: relative;
+    z-index: 3;
+    font-size: clamp(1.3rem, 5.5vw, 2.4rem);
+    line-height: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    pointer-events: none;
+    font-style: normal;
+}
+
+.white-piece {
+    color: #fffde7;
+    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.85), 0 0 6px rgba(0, 0, 0, 0.5);
+}
+
+.black-piece {
+    color: #1a1207;
+    text-shadow: 0 1px 2px rgba(255, 255, 255, 0.15);
+}
+
+/* Flip black's pieces when board is flipped */
+.goongie-board.flipped .goongie-piece {
+    transform: rotate(180deg);
+}
+
+/* ── Coordinate labels ───────────────────────────────── */
+.goongie-rank-label,
+.goongie-file-label {
+    position: absolute;
+    font-size: 0.5rem;
+    font-weight: 700;
+    line-height: 1;
+    pointer-events: none;
+    z-index: 5;
+}
+
+.goongie-rank-label {
+    top: 2px;
+    left: 2px;
+}
+
+.goongie-file-label {
+    bottom: 1px;
+    right: 2px;
+}
+
+.dark-text  { color: rgba(0, 0, 0, 0.5); }
+.light-text { color: rgba(255, 255, 255, 0.55); }
+
+/* ── Progress indicator ──────────────────────────────── */
+.goongie-progress {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    justify-content: center;
+    padding: 0.2rem 0;
+}
+
+.goongie-progress-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: rgba(148, 163, 184, 0.2);
+    border: 1px solid rgba(148, 163, 184, 0.3);
+    transition: all 0.25s ease;
+}
+
+.goongie-progress-dot.done {
+    background: #22c55e;
+    border-color: #22c55e;
+}
+
+.goongie-progress-dot.current {
+    background: #a78bfa;
+    border-color: #a78bfa;
+    box-shadow: 0 0 8px rgba(167, 139, 250, 0.6);
+    animation: progress-pulse 1.2s ease-in-out infinite alternate;
+}
+
+@keyframes progress-pulse {
+    from { transform: scale(1); }
+    to   { transform: scale(1.3); }
+}
+
+.goongie-progress-label {
+    font-size: 0.65rem;
+    color: rgba(148, 163, 184, 0.7);
+    font-weight: 600;
+    margin-left: 0.3rem;
+}
+
+/* ── Action buttons ──────────────────────────────────── */
+.goongie-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    width: 100%;
+}
+
+.goongie-btn {
+    width: 100%;
+    padding: 0.75rem 1rem;
+    border-radius: 10px;
+    font-weight: 800;
+    font-size: 0.9rem;
+    cursor: pointer;
+    border: 2px solid transparent;
+    transition: all 0.18s ease;
+    letter-spacing: 0.3px;
+}
+
+.goongie-btn:active { transform: scale(0.97); }
+
+.goongie-btn-primary {
+    background: linear-gradient(135deg, #6d28d9, #4c1d95);
+    border-color: #a78bfa;
+    color: #f5f3ff;
+}
+
+.goongie-btn-primary:hover {
+    background: linear-gradient(135deg, #7c3aed, #5b21b6);
+    box-shadow: 0 4px 16px rgba(139, 92, 246, 0.4);
+}
+
+.goongie-btn-secondary {
+    background: rgba(255, 255, 255, 0.05);
+    border-color: rgba(255, 255, 255, 0.1);
+    color: #94a3b8;
+}
+
+.goongie-btn-secondary:hover {
+    background: rgba(255, 255, 255, 0.08);
+    border-color: rgba(255, 255, 255, 0.15);
+    color: #cbd5e1;
+}
+
+.goongie-btn-danger {
+    background: rgba(239, 68, 68, 0.1);
+    border-color: rgba(239, 68, 68, 0.3);
+    color: #fca5a5;
+}
+
+.goongie-btn-danger:hover {
+    background: rgba(239, 68, 68, 0.2);
+    border-color: rgba(239, 68, 68, 0.5);
+}
+
+.goongie-btn-success {
+    background: linear-gradient(135deg, #16a34a, #15803d);
+    border-color: #4ade80;
+    color: #f0fdf4;
+    animation: success-glow 1.5s ease-in-out infinite alternate;
+}
+
+@keyframes success-glow {
+    from { box-shadow: 0 0 8px rgba(34, 197, 94, 0.3); }
+    to   { box-shadow: 0 0 20px rgba(34, 197, 94, 0.6); }
+}
+
+/* ── Reward block ────────────────────────────────────── */
+.goongie-reward-block {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    width: 100%;
+}
+
+.goongie-reward-row {
+    display: flex;
+    justify-content: center;
+    gap: 1.5rem;
+    padding: 0.5rem;
+    background: rgba(34, 197, 94, 0.06);
+    border: 1px solid rgba(34, 197, 94, 0.15);
+    border-radius: 8px;
+}
+
+.goongie-reward-item {
+    font-size: 0.9rem;
+    font-weight: 800;
+    color: #86efac;
+}
+
+/* ── Fallback state ──────────────────────────────────── */
+.goongie-fallback {
+    text-align: center;
+    padding: 2rem 1rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1rem;
+}
+
+.goongie-fallback-icon {
+    font-size: 3rem;
+}
+
+.goongie-fallback h3 {
+    color: #f1f5f9;
+    font-size: 1.2rem;
+    margin: 0;
+}
+
+.goongie-fallback p {
+    color: #94a3b8;
+    font-size: 0.9rem;
+    margin: 0;
+}
