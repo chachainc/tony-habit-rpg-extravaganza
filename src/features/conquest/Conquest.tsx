@@ -422,14 +422,13 @@ export const Conquest = () => {
                         🏛️ Meta
                     </button>
                 </div>
-                </div>
             </div>
 
             {/* ── DEV DEBUG BANNER ───────────────────────────────────── */}
             {conquest.currentNodeId && (
                 <div style={{ position: 'absolute', top: 60, left: 0, right: 0, zIndex: 9999, backgroundColor: 'rgba(220, 38, 38, 0.9)', color: 'white', fontSize: '0.75rem', padding: '4px 8px', fontFamily: 'monospace', display: 'flex', flexWrap: 'wrap', gap: '8px', justifyContent: 'center', pointerEvents: 'none' }}>
-                    <span>Node: {generatedMap.find(n => n.id === conquest.currentNodeId)?.label || conquest.currentNodeId}</span>
-                    <span>Type: {generatedMap.find(n => n.id === conquest.currentNodeId)?.type}</span>
+                    <span>Node: {conquest.generatedMap.find(n => n.id === conquest.currentNodeId)?.label || conquest.currentNodeId}</span>
+                    <span>Type: {conquest.generatedMap.find(n => n.id === conquest.currentNodeId)?.type}</span>
                     <span>Comp: Conquest.tsx</span>
                     {conquest.activeConquestEnemyId && <span>ID: {conquest.activeConquestEnemyId}</span>}
                 </div>
