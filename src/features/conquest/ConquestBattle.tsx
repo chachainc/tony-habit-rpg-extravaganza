@@ -1,7 +1,7 @@
 import { useNavigate } from 'react-router-dom';
 import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Heart, ChevronLeft, Shield, LogOut, ChevronDown, ChevronUp, Zap } from 'lucide-react';
+import { Heart, ChevronLeft, Shield, LogOut, Zap } from 'lucide-react';
 import { useBattleStore } from '../../store/useBattleStore';
 import { useConquestStore } from '../../store/useConquestStore';
 import { useMagicStore } from '../../store/useMagicStore';
@@ -31,8 +31,6 @@ export const ConquestBattle = () => {
     const [heavyRollValue, setHeavyRollValue] = useState<number | null>(null);
     const initialPlayerHpRef = useRef<number | null>(null);
     const [enemySpecialText, setEnemySpecialText] = useState<string | null>(null);
-
-    const [showInfoPanel, setShowInfoPanel] = useState(false);
 
     const conquestEnemyDef = conquest.activeConquestEnemyId
         ? CONQUEST_ENEMIES.find(e => e.id === conquest.activeConquestEnemyId) ?? null
@@ -544,7 +542,7 @@ export const ConquestBattle = () => {
                                         ? Math.round(spell.baseDamage * (1 + (useGameStore.getState().skills['Intelligence']?.level ?? 1) * 0.03) * battle.playerDamageModifier)
                                         : Math.round(spell.effect.value * getMagicAttack() * battle.playerDamageModifier))
                                     : null;
-                                const hasEnergy = spell?.energyCost ? battle.player?.energy >= spell.energyCost : true;
+                                const hasEnergy = spell?.energyCost ? (battle.player?.energy ?? 0) >= spell.energyCost : true;
                                 const canCast = spell && battle.currentMP >= spell.mpCost && hasEnergy && !onCooldown;
 
                                 return (

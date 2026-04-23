@@ -52,7 +52,6 @@ import generalInertiaImg from '../../assets/bosses/general_inertia.png';
 import flickerBurnoutImg from '../../assets/bosses/flicker_burnout.png';
 
 // Player sprite
-import { useProfileStore } from '../../store/useProfileStore';
 import { usePlayerAvatar } from '../../hooks/usePlayerAvatar';
 
 // Map floor ranges to background images
@@ -244,7 +243,6 @@ export const Arena = ({ onClose }: { onClose: () => void }) => {
     const navigate = useNavigate();
     const location = useLocation();
     const heroImage = usePlayerAvatar();
-    const classType = useProfileStore(s => s.classType);
     const { getMagicAttack } = useGameStore();
     const { addGold } = useCurrencyStore();
     const { markDefeated } = useEnemyStore();

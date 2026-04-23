@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
-import { ChevronLeft, BookOpen, Zap, Target, Crown, Award, Bolt, Skull, Brain, Ghost, Sparkles, Sword } from 'lucide-react';
+import { ChevronLeft, BookOpen, Zap, Target, Crown, Award, Bolt, Brain, Sword } from 'lucide-react';
 import { useChessStore } from '../../store/useChessStore';
 import { CHESS_OPENINGS } from '../../data/chessOpenings';
 import type { ChessOpening } from '../../data/chessOpenings';
@@ -13,12 +13,11 @@ import { useCurrencyStore } from '../../store/useCurrencyStore';
 import { useGameStore } from '../../store/useGameStore';
 import { useTitleStore } from '../../store/useTitleStore';
 import { CHESS_HISTORY_ERAS } from '../../data/chessStyles';
-import type { ChessHistoricalPlayer, ChessEra } from '../../data/chessStyles';
+import type { ChessHistoricalPlayer } from '../../data/chessStyles';
 import { ChessGame } from '../conquest/ChessGame';
 import { BossArenaView } from './BossArenaView';
 import { ChessLessons } from './screens/ChessLessons';
 import cowChessBg from '../../assets/cow_chess.jpg';
-import strategistImg from '../../assets/strategist_boss.jpg';
 import './ChessDashboard.css';
 import '../conquest/ChessGame.css';
 

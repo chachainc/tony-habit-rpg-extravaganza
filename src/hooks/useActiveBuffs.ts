@@ -1,4 +1,3 @@
-import { useState, useEffect } from 'react';
 import { useConquestStore } from '../store/useConquestStore';
 
 export interface ActiveBuffs {

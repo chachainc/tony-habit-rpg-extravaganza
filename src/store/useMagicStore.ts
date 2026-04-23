@@ -31,7 +31,7 @@ export interface Spell {
     effect: {
         type: 'heal' | 'damage' | 'shield' | 'buff';
         value: number; // % for heal, multiplier for damage (old spells), baseDamage for new spells, turns for shield
-        element?: 'fire' | 'ice' | 'lightning' | 'cosmic' | 'neutral';
+        element?: 'fire' | 'ice' | 'lightning' | 'cosmic' | 'shadow' | 'neutral';
         dot?: { damage: number; turns: number };
     };
     energyCost?: number; // Requires Energy in combat

@@ -4,30 +4,36 @@ import type { SkillName } from './useGameStore';
 import { PERSIST_REGISTRY } from '../data/persistRegistry';
 
 // Element system with rock-paper-scissors advantages
-export type Element = 'fire' | 'water' | 'nature' | 'electric' | 'neutral';
+export type Element = 'fire' | 'water' | 'nature' | 'electric' | 'ice' | 'shadow' | 'neutral';
 
 export const ELEMENT_ICONS: Record<Element, string> = {
     fire: '🔥',
     water: '💧',
     nature: '🌿',
     electric: '⚡',
+    ice: '❄️',
+    shadow: '🌑',
     neutral: '✨',
 };
 
 // Element advantage multipliers
 export const getElementMultiplier = (attacker: Element, defender: Element): number => {
-    const advantages: Record<Element, Element> = {
+    const advantages: Partial<Record<Element, Element>> = {
         fire: 'nature',
         water: 'fire',
         nature: 'water',
         electric: 'water',
+        ice: 'nature',
+        shadow: 'neutral',
         neutral: 'neutral', // No advantage
     };
-    const disadvantages: Record<Element, Element> = {
+    const disadvantages: Partial<Record<Element, Element>> = {
         fire: 'water',
         water: 'electric',
         nature: 'fire',
         electric: 'nature',
+        ice: 'fire',
+        shadow: 'electric',
         neutral: 'neutral', // No disadvantage
     };
 
@@ -1268,28 +1274,17 @@ export const ENEMY_DB: Record<string, EnemyDef> = {
                 energyCost: 0,
             },
         ],
+        isBoss: false,
         behaviorHint: 'High defense but low HP. Catch it before it escapes!',
         personalityTag: 'The Treasure',
         weaknessSkill: 'Luck',
         affinitySkill: 'Flexibility',
         thresholdLevel: 1,
         openingLine: '*Jingle jingle*',
-        isBoss: false,
         unlocks: ['golden_crown'],
     },
-    // ========================================
-    // CONQUEST ENEMIES
-    // ========================================
-    'ash_crawler': { id: 'ash_crawler', name: 'Ash Crawler', description: 'Fast low-defense creature.', icon: '🦂', element: 'fire', rarity: 'common', floor: 1, baseHp: 80, baseAtk: 15, baseDef: 5, baseSpd: 70, critRate: 0.05, critDmg: 1.5, goldReward: 10, xpReward: 10, requiredAtk: 0, requiredDef: 0, abilities: [], behaviorHint: '', personalityTag: '', weaknessSkill: 'Health', affinitySkill: 'Health', thresholdLevel: 1, openingLine: '', isBoss: false, unlocks: [] },
-    'sigil_leech': { id: 'sigil_leech', name: 'Sigil Leech', description: 'Steals one random resource.', icon: '🩸', element: 'water', rarity: 'common', floor: 1, baseHp: 90, baseAtk: 12, baseDef: 8, baseSpd: 60, critRate: 0.05, critDmg: 1.5, goldReward: 10, xpReward: 10, requiredAtk: 0, requiredDef: 0, abilities: [], behaviorHint: '', personalityTag: '', weaknessSkill: 'Health', affinitySkill: 'Health', thresholdLevel: 1, openingLine: '', isBoss: false, unlocks: [] },
-    'iron_husk': { id: 'iron_husk', name: 'Iron Husk', description: 'High defense but low attack.', icon: '🛡️', element: 'neutral', rarity: 'common', floor: 1, baseHp: 120, baseAtk: 10, baseDef: 20, baseSpd: 30, critRate: 0.05, critDmg: 1.5, goldReward: 10, xpReward: 10, requiredAtk: 0, requiredDef: 0, abilities: [], behaviorHint: '', personalityTag: '', weaknessSkill: 'Health', affinitySkill: 'Health', thresholdLevel: 1, openingLine: '', isBoss: false, unlocks: [] },
-    'balloon_goblin': { id: 'balloon_goblin', name: 'Balloon Goblin', description: 'Fast attacker.', icon: '🎈', element: 'nature', rarity: 'rare', floor: 1, baseHp: 85, baseAtk: 18, baseDef: 6, baseSpd: 80, critRate: 0.1, critDmg: 1.5, goldReward: 15, xpReward: 15, requiredAtk: 0, requiredDef: 0, abilities: [], behaviorHint: '', personalityTag: '', weaknessSkill: 'Health', affinitySkill: 'Health', thresholdLevel: 1, openingLine: '', isBoss: false, unlocks: [] },
-    'gem_cultist': { id: 'gem_cultist', name: 'Gem Cultist', description: 'Balanced enemy.', icon: '💎', element: 'electric', rarity: 'rare', floor: 1, baseHp: 100, baseAtk: 15, baseDef: 10, baseSpd: 50, critRate: 0.05, critDmg: 1.5, goldReward: 20, xpReward: 20, requiredAtk: 0, requiredDef: 0, abilities: [], behaviorHint: '', personalityTag: '', weaknessSkill: 'Health', affinitySkill: 'Health', thresholdLevel: 1, openingLine: '', isBoss: false, unlocks: [] },
-    'mirror_shade': { id: 'mirror_shade', name: 'Mirror Shade', description: 'Copies player ATK.', icon: '🪞', element: 'neutral', rarity: 'epic', floor: 1, baseHp: 110, baseAtk: 20, baseDef: 10, baseSpd: 60, critRate: 0.1, critDmg: 1.5, goldReward: 25, xpReward: 25, requiredAtk: 0, requiredDef: 0, abilities: [], behaviorHint: '', personalityTag: '', weaknessSkill: 'Health', affinitySkill: 'Health', thresholdLevel: 1, openingLine: '', isBoss: false, unlocks: [] },
-    'ruin_knight': { id: 'ruin_knight', name: 'Ruin Knight', description: 'Late-run heavy enemy.', icon: '⚔️', element: 'fire', rarity: 'epic', floor: 1, baseHp: 150, baseAtk: 22, baseDef: 15, baseSpd: 40, critRate: 0.05, critDmg: 1.5, goldReward: 30, xpReward: 30, requiredAtk: 0, requiredDef: 0, abilities: [], behaviorHint: '', personalityTag: '', weaknessSkill: 'Health', affinitySkill: 'Health', thresholdLevel: 1, openingLine: '', isBoss: false, unlocks: [] },
-    'crystal_warden': { id: 'crystal_warden', name: 'Crystal Warden', description: 'Mini-boss enemy.', icon: '🔮', element: 'electric', rarity: 'legendary', floor: 1, baseHp: 200, baseAtk: 25, baseDef: 20, baseSpd: 55, critRate: 0.15, critDmg: 1.8, goldReward: 50, xpReward: 50, requiredAtk: 0, requiredDef: 0, abilities: [], behaviorHint: '', personalityTag: '', weaknessSkill: 'Health', affinitySkill: 'Health', thresholdLevel: 1, openingLine: 'You shall not pass.', isBoss: true, unlocks: [] },
-    'the_pathkeeper': { id: 'the_pathkeeper', name: 'The Pathkeeper', description: 'A massive guardian of the Conquest path.', icon: '💀', element: 'neutral', rarity: 'legendary', floor: 1, baseHp: 300, baseAtk: 30, baseDef: 25, baseSpd: 50, critRate: 0.1, critDmg: 2.0, goldReward: 100, xpReward: 100, requiredAtk: 0, requiredDef: 0, abilities: [], behaviorHint: '', personalityTag: '', weaknessSkill: 'Health', affinitySkill: 'Health', thresholdLevel: 1, openingLine: 'Your journey ends here.', isBoss: true, unlocks: [] },
 };
+
 
 interface EnemyState {
     defeatedEnemies: string[];

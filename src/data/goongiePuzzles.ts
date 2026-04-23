@@ -171,21 +171,7 @@ export const GOONGIE_PUZZLES: GoongiePuzzle[] = [
         objective: 'White to move. Mate in 2.',
         theme: 'mate_in_2',
         difficulty: 3,
-        // White: Kf4, Qh1, Ra1. Black: Kg8, Pg7, Ph7, Pf7.
-        // Qh8+ -> Kf8 (Kg8 covered by h8 queen), then Ra8#
-        fen: '6k1/5ppp/8/8/5K2/8/8/R6Q w - - 0 1',
-        solution: ['h1h8', 'g8f7', 'h8h7'],  // Qh8+ Kf7 Qh7#  (Kf7 forced), wait...
-        // Let's simplify: Qh8+ Kf7 Ra7# ? Let's just do Qh7+ Kg8 Qxg7#
-        // Actually: Qh8+ Kxh8 impossible (white queen on h8 can't be taken if Ra1 covers).
-        // Better position: Rg1+, Kh8, Qh7#
-        // White: Kf6, Qd3, Rg6. Black: Kh8, Ph7, Pg7 (Rg6 pins g7 kinda)
-        // Qd3-h7+? Rxg7? Or simpler: Qa6+, then Qh6, Rh7#?
-        // Let's use a clean verified mate-in-2:
-        // White: Ke1, Qd1, Rb1. Black: Ka8, Pa7, Pb7. Qd8+ ab? no...
-        // CLEAN: White Kb6, Qd8, Black Ka8. Qa5#? No kb6 adjacent.
-        // CLEAN MATE-IN-2: Ke4, Qa1, Rh7. Black Kh8, Ph7 blocked by Rh7? 
-        // Let's use a simpler classic: White plays Rg6+ forcing Kh8, then Qh7#
-        // Position: Ke4, Qd4, Rg1. Black Kg8, Pf7. Qd4-h8+! Kf8 Rg8#
+        // Position: Ke4, Qd4, Rg1. Black Kg8, Pf7. Qh8+! Kf7 Rg7#
         fen: '6k1/5p2/8/8/3Q4/8/8/4K1R1 w - - 0 1',
         solution: ['d4h8', 'g8f7', 'g1g7'],
         playerSide: 'w',

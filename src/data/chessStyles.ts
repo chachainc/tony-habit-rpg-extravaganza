@@ -121,7 +121,6 @@ export const CHESS_HISTORY_ERAS: ChessEra[] = [
                         { notation: "a3", isCorrect: false, explanation: "Too passive. Morphy never wasted time with early sideways pawn moves." }
                     ]
                 },
-                simulation: null,
                 arenaChallenges: [
                 {
                     id: 'morphy_t1',

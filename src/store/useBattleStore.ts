@@ -1,11 +1,10 @@
 import { create } from 'zustand';
-import { ENEMY_DB, type Ability, type Element, getElementMultiplier, ELEMENT_ICONS } from './useEnemyStore';
+import { ENEMY_DB, DEFAULT_ABILITIES, type Ability, type Element, getElementMultiplier, ELEMENT_ICONS } from './useEnemyStore';
 import { useGameStore } from './useGameStore';
 import { useConsistencyStore } from './useConsistencyStore';
 import { useMagicStore, SPELL_DB } from './useMagicStore';
 import { useRoomStore } from './useRoomStore';
 import { useCampaignStore } from './useCampaignStore';
-import { getSkillSynergyBonus } from './useCombatFormulas';
 import { getPassiveBonuses } from './usePassiveEffects';
 import { usePetStore } from './usePetStore';
 import { useEquipmentStore, EQUIPMENT_DB } from './useEquipmentStore';
@@ -118,7 +117,7 @@ interface BattleState {
     applyDamage: (attacker: Combatant, defender: Combatant, ability: Ability) => number;
     resetBattle: () => void;
     playerDefend: () => void; // New action
-    executeUltimate: (ultimateName: string) => void; // Execute ultimate action
+    executeUltimate: (ultimateName: string) => void; // Execute ultimate action (stub - preserved for compatibility)
     resumeFromUltimate: () => void; // Called when ultimate video concludes
     activeUltimateVideo: string | null;
     castSpell: (spellId: string) => void; // Cast a spell from magic store
@@ -130,6 +129,7 @@ interface BattleState {
     conquestContext: 'arena' | 'conquest' | 'conquest_elite' | 'conquest_boss' | 'conquest_vault' | 'risk' | 'tower-defense' | null;
     conquestEnemyPower?: number;
     pendingBurnSpread: boolean;
+    _resolveSpellEffect: (spell: any, newMP: number, newEnergy: number) => void;
 }
 
 // Player abilities - Replaced with the 3 distinct actions
@@ -720,7 +720,10 @@ export const useBattleStore = create<BattleState>()((set, get) => ({
         setTimeout(() => get().endTurn(), 800);
     },
 
-// executeUltimate deleted in favor of premium spells
+    // executeUltimate is preserved as a stub (premium spells replaced this mechanic)
+    executeUltimate: (_ultimateName: string) => {
+        // No-op: ultimate cinematic mechanic replaced by premium spells
+    },
 
     resumeFromUltimate: () => {
         const { player, enemy } = get();
@@ -1663,7 +1666,7 @@ export const useBattleStore = create<BattleState>()((set, get) => ({
              updatedPlayer.energy += bonusEnergy;
         }
         // Set spell cooldown from spell definition, then do final player sync
-        set({ player: updatedPlayer, spellCooldownTurns: spell.cooldownTurns ?? 0 });
+        set({ player: updatedPlayer, spellCooldownTurns: spell.cooldownTurns ?? 0, currentMP: newMP });
 
         // Check for victory
         if (updatedEnemy.hp <= 0) {
