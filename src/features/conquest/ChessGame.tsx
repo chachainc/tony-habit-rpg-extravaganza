@@ -11,6 +11,7 @@ export interface ChessGameProps {
     onComplete: (result: 'win' | 'draw' | 'loss', difficulty: 1 | 2 | 3) => void;
     onClose: () => void;
     canPlay: boolean;
+    isBossMode?: boolean;
 }
 
 // ─── AI ───────────────────────────────────────
@@ -92,7 +93,7 @@ function aiMoveMinimax(board: Board, legalMoves: Move[], enPassant: [number, num
 
 // ─── COMPONENT ────────────────────────────────
 
-export const ChessGame = ({ onComplete, onClose, canPlay }: ChessGameProps) => {
+export const ChessGame = ({ onComplete, onClose, canPlay, isBossMode }: ChessGameProps) => {
     const [board, setBoard] = useState<Board>(createInitialBoard);
     const [turn, setTurn] = useState<Color>('w');
     const [selected, setSelected] = useState<[number, number] | null>(null);
@@ -138,12 +139,14 @@ export const ChessGame = ({ onComplete, onClose, canPlay }: ChessGameProps) => {
             if (legal.length === 0) return;
 
             let aiMove: Move;
-            switch (difficulty) {
+            const effectiveDifficulty = isBossMode ? 3 : difficulty; // Force max logic for bosses
+
+            switch (effectiveDifficulty) {
                 // Easy: greedy (best immediate capture/position) — no more random blunders
                 case 1: aiMove = aiMoveGreedy(board, legal, enPassant); break;
                 // Medium: minimax 2-ply — looks 2 moves ahead
                 case 2: aiMove = aiMoveMinimax(board, legal, enPassant, 2); break;
-                // Hard: minimax 3-ply — looks 3 moves ahead
+                // Hard/Impossible: minimax 3-ply — looks 3 moves ahead
                 case 3: aiMove = aiMoveMinimax(board, legal, enPassant, 3); break;
                 default: aiMove = aiMoveGreedy(board, legal, enPassant);
             }
@@ -265,17 +268,23 @@ export const ChessGame = ({ onComplete, onClose, canPlay }: ChessGameProps) => {
 
                 {/* Difficulty selector */}
                 {!gameOver && (
-                    <div className="chess-difficulty-select">
-                        {[1, 2, 3].map(d => (
-                            <button
-                                key={d}
-                                className={`difficulty-btn ${difficulty === d ? 'active-difficulty' : ''}`}
-                                onClick={() => setDifficulty(d as 1 | 2 | 3)}
-                            >
-                                {d === 1 ? 'Easy' : d === 2 ? 'Medium' : 'Hard'}
-                            </button>
-                        ))}
-                    </div>
+                    isBossMode ? (
+                        <div style={{ textAlign: 'center', marginBottom: '1rem', color: '#ef4444', fontWeight: 'bold', fontSize: '1.1rem', letterSpacing: '2px', textShadow: '0 0 10px rgba(239,68,68,0.5)', border: '1px solid #ef4444', background: 'rgba(239,68,68,0.1)', padding: '0.5rem', borderRadius: '8px' }}>
+                            BOSS DIFFICULTY: IMPOSSIBLE
+                        </div>
+                    ) : (
+                        <div className="chess-difficulty-select">
+                            {[1, 2, 3].map(d => (
+                                <button
+                                    key={d}
+                                    className={`difficulty-btn ${difficulty === d ? 'active-difficulty' : ''}`}
+                                    onClick={() => setDifficulty(d as 1 | 2 | 3)}
+                                >
+                                    {d === 1 ? 'Easy' : d === 2 ? 'Medium' : 'Hard'}
+                                </button>
+                            ))}
+                        </div>
+                    )
                 )}
 
                 <div className="chess-status">{status}</div>
@@ -311,7 +320,7 @@ export const ChessGame = ({ onComplete, onClose, canPlay }: ChessGameProps) => {
                     ) : (
                         <button
                             className="chess-action-btn chess-complete-btn"
-                            onClick={() => onComplete(gameOver === 'resigned' ? 'loss' : gameOver, difficulty)}
+                            onClick={() => onComplete(gameOver === 'resigned' ? 'loss' : gameOver, isBossMode ? 3 : difficulty)}
                         >
                             Claim {getXP(gameOver)} Strategy XP
                         </button>

@@ -21,6 +21,8 @@ import { Library } from './features/library/Library';
 import { GymTracker } from './features/gym/GymTracker';
 import { HealthTracker } from './features/health/HealthTracker';
 import { Conquest } from './features/conquest/Conquest';
+import { ConquestBattle } from './features/conquest/ConquestBattle';
+import { CaravanEncounter } from './features/conquest/CaravanEncounter';
 import { CombatPage } from './features/combat/CombatPage';
 import { ChessDashboard } from './features/chess/ChessDashboard';
 import { RiskPage } from './features/risk/RiskPage';
@@ -214,6 +216,8 @@ function App() {
           <Route path="gym" element={<GymTracker />} />
           <Route path="health" element={<HealthTracker />} />
           <Route path="conquest" element={<Conquest />} />
+          <Route path="conquest/battle" element={<ErrorBoundary><ConquestBattle /></ErrorBoundary>} />
+          <Route path="conquest/caravan" element={<ErrorBoundary><CaravanEncounter /></ErrorBoundary>} />
           <Route path="focus" element={<FocusRoom />} />
           <Route path="journal" element={<JournalHub />} />
           <Route path="journal/:category" element={<JournalEditor />} />

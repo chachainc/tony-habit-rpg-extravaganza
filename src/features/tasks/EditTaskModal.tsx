@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { motion } from 'framer-motion';
-import { Pencil, CheckCircle, X } from 'lucide-react';
+import { Pencil, Check, X } from 'lucide-react';
 import type { RecurringTask } from '../../store/useRecurringTasksStore';
+import { useToastStore } from '../../components/ui/Toast';
 
 interface EditTaskModalProps {
     task: RecurringTask | null;
@@ -27,6 +29,16 @@ export const EditTaskModal: React.FC<EditTaskModalProps> = ({ task, currentOverr
         }
     }, [task, currentOverride]);
 
+    // Handle body locking
+    useEffect(() => {
+        if (task) {
+            document.body.style.overflow = 'hidden';
+        }
+        return () => {
+            document.body.style.overflow = '';
+        };
+    }, [task]);
+
     if (!task) return null;
 
     const toggleDay = (day: number) => {
@@ -37,42 +49,122 @@ export const EditTaskModal: React.FC<EditTaskModalProps> = ({ task, currentOverr
 
     const handleSave = (e: React.FormEvent) => {
         e.preventDefault();
+        
+        const finalTitle = title.trim() || task.title;
+        const previousDays = currentOverride?.activeDays ?? task.activeDays ?? [0, 1, 2, 3, 4, 5, 6];
+        const titleChanged = finalTitle !== (currentOverride?.title ?? task.title);
+        const daysChanged = JSON.stringify(activeDays) !== JSON.stringify(previousDays);
+
         onSave(task.id, {
-            title: title.trim() || task.title,
+            title: finalTitle,
             activeDays
         });
+
+        if (titleChanged || daysChanged) {
+            useToastStore.getState().addToast({
+                type: 'success',
+                message: 'Task updated successfully',
+                duration: 2500
+            });
+        }
+        
         onClose();
     };
 
-    return (
+    const isDirty = (title.trim() && title.trim() !== (currentOverride?.title ?? task.title)) || 
+                    JSON.stringify(activeDays) !== JSON.stringify(currentOverride?.activeDays ?? task.activeDays ?? [0, 1, 2, 3, 4, 5, 6]);
+
+    return createPortal(
         <motion.div
             className="todo-modal-overlay"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={onClose}
+            style={{
+                position: 'fixed',
+                inset: 0,
+                backgroundColor: 'rgba(0, 0, 0, 0.75)',
+                backdropFilter: 'blur(8px)',
+                WebkitBackdropFilter: 'blur(8px)',
+                zIndex: 100000, // Stay securely above Layout bottom nav
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                padding: 'env(safe-area-inset-top, 20px) 16px env(safe-area-inset-bottom, 20px) 16px'
+            }}
         >
             <motion.div
                 className="todo-modal-card"
-                initial={{ scale: 0.9, y: 30, opacity: 0 }}
+                initial={{ scale: 0.95, y: 20, opacity: 0 }}
                 animate={{ scale: 1, y: 0, opacity: 1 }}
-                exit={{ scale: 0.9, y: 30, opacity: 0 }}
+                exit={{ scale: 0.95, y: 20, opacity: 0 }}
                 onClick={e => e.stopPropagation()}
-                style={{ padding: '1.5rem', background: 'var(--bg-card)', borderRadius: '16px', maxWidth: '400px', width: '90%' }}
+                style={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    background: '#0f172a',
+                    border: '1px solid rgba(6, 182, 212, 0.2)',
+                    boxShadow: '0 20px 40px rgba(0,0,0,0.8), 0 0 0 1px rgba(255,255,255,0.05) inset',
+                    borderRadius: '24px',
+                    width: '100%',
+                    maxWidth: '420px',
+                    // Use max-height that leaves room for iOS keyboard / safe areas
+                    maxHeight: 'min(90dvh, calc(100dvh - env(safe-area-inset-bottom) - 40px))', 
+                    overflow: 'hidden',
+                }}
             >
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '1.1rem', fontWeight: 700 }}>
-                        <Pencil size={20} className="text-muted" />
-                        Edit Task
+                {/* Header Container */}
+                <div style={{ 
+                    padding: '20px 24px', 
+                    borderBottom: '1px solid rgba(255,255,255,0.06)',
+                    display: 'flex', 
+                    justifyContent: 'space-between', 
+                    alignItems: 'center',
+                    background: 'rgba(255,255,255,0.02)',
+                    flexShrink: 0
+                }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                        <div style={{ 
+                            background: 'rgba(6, 182, 212, 0.15)', 
+                            color: '#22d3ee',
+                            padding: '8px', 
+                            borderRadius: '10px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center'
+                        }}>
+                            <Pencil size={18} strokeWidth={2.5} />
+                        </div>
+                        <h2 style={{ fontSize: '1.25rem', fontWeight: 800, margin: 0, color: '#f8fafc', letterSpacing: '-0.02em' }}>
+                            Edit Task
+                        </h2>
                     </div>
-                    <button onClick={onClose} style={{ background: 'transparent', border: 'none', color: 'var(--text-muted)', cursor: 'pointer' }}>
-                        <X size={24} />
+                    <button 
+                        type="button"
+                        onClick={onClose} 
+                        style={{ 
+                            background: 'transparent', 
+                            border: 'none', 
+                            color: '#64748b', 
+                            cursor: 'pointer',
+                            padding: '6px',
+                            display: 'flex',
+                            borderRadius: '50%',
+                            transition: 'all 0.2s',
+                            outline: 'none'
+                        }}
+                    >
+                        <X size={20} strokeWidth={2.5} />
                     </button>
                 </div>
                 
-                <form onSubmit={handleSave} style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                        <label style={{ fontSize: '0.85rem', color: 'var(--text-muted)', fontWeight: 600 }}>Task Title</label>
+                {/* Scrollable Form Body */}
+                <div style={{ padding: '24px', overflowY: 'auto', flex: 1, display: 'flex', flexDirection: 'column', gap: '24px' }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                        <label style={{ fontSize: '0.8rem', color: '#94a3b8', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                            Task Title
+                        </label>
                         <input
                             type="text"
                             value={title}
@@ -81,20 +173,26 @@ export const EditTaskModal: React.FC<EditTaskModalProps> = ({ task, currentOverr
                             autoFocus
                             style={{
                                 width: '100%',
-                                background: 'rgba(0,0,0,0.2)',
-                                border: '1px solid var(--border)',
-                                padding: '12px 16px',
-                                borderRadius: '8px',
-                                color: 'white',
+                                background: 'rgba(0,0,0,0.3)',
+                                border: '1px solid rgba(6, 182, 212, 0.2)',
+                                padding: '14px 16px',
+                                borderRadius: '12px',
+                                color: '#f8fafc',
                                 fontSize: '1rem',
-                                outline: 'none'
+                                outline: 'none',
+                                transition: 'border-color 0.2s',
+                                boxShadow: 'inset 0 2px 4px rgba(0,0,0,0.2)'
                             }}
+                            onFocus={(e) => e.target.style.borderColor = '#06b6d4'}
+                            onBlur={(e) => e.target.style.borderColor = 'rgba(6, 182, 212, 0.2)'}
                         />
                     </div>
 
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                        <label style={{ fontSize: '0.85rem', color: 'var(--text-muted)', fontWeight: 600 }}>Active Days</label>
-                        <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                        <label style={{ fontSize: '0.8rem', color: '#94a3b8', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                            Active Days
+                        </label>
+                        <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
                             {['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'].map((label, idx) => {
                                 const isActive = activeDays.includes(idx);
                                 return (
@@ -104,13 +202,13 @@ export const EditTaskModal: React.FC<EditTaskModalProps> = ({ task, currentOverr
                                         onClick={() => toggleDay(idx)}
                                         style={{
                                             flex: 1,
-                                            minWidth: '40px',
-                                            padding: '10px 0',
-                                            borderRadius: '8px',
-                                            border: isActive ? '1px solid var(--text-strong)' : '1px solid rgba(255,255,255,0.1)',
-                                            background: isActive ? 'var(--text-strong)' : 'rgba(0,0,0,0.2)',
-                                            color: isActive ? 'var(--bg-dark)' : 'var(--text-secondary)',
-                                            fontWeight: isActive ? 700 : 500,
+                                            minWidth: '42px',
+                                            padding: '12px 0',
+                                            borderRadius: '10px',
+                                            border: isActive ? '1px solid #06b6d4' : '1px solid rgba(255,255,255,0.08)',
+                                            background: isActive ? 'rgba(6, 182, 212, 0.15)' : 'rgba(0,0,0,0.2)',
+                                            color: isActive ? '#22d3ee' : '#64748b',
+                                            fontWeight: isActive ? 800 : 600,
                                             fontSize: '0.85rem',
                                             cursor: 'pointer',
                                             transition: 'all 0.2s'
@@ -122,31 +220,66 @@ export const EditTaskModal: React.FC<EditTaskModalProps> = ({ task, currentOverr
                             })}
                         </div>
                     </div>
+                </div>
 
+                {/* Sticky Footer */}
+                <div style={{ 
+                    padding: '20px 24px', 
+                    borderTop: '1px solid rgba(255,255,255,0.06)',
+                    background: 'rgba(15, 23, 42, 0.95)',
+                    display: 'flex',
+                    gap: '12px',
+                    backdropFilter: 'blur(4px)',
+                    flexShrink: 0
+                }}>
                     <button
-                        type="submit"
+                        type="button"
+                        onClick={onClose}
                         style={{
-                            width: '100%',
+                            flex: 1,
                             padding: '14px',
-                            borderRadius: '8px',
-                            background: 'var(--text-strong)',
-                            color: 'var(--bg-dark)',
-                            fontSize: '1rem',
+                            borderRadius: '12px',
+                            background: 'rgba(255,255,255,0.05)',
+                            color: '#cbd5e1',
+                            fontSize: '0.95rem',
                             fontWeight: 700,
+                            border: '1px solid rgba(255,255,255,0.1)',
+                            cursor: 'pointer',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                        }}
+                    >
+                        Cancel
+                    </button>
+                    <button
+                        type="button"
+                        onClick={handleSave}
+                        style={{
+                            flex: 2,
+                            padding: '14px',
+                            borderRadius: '12px',
+                            background: isDirty ? 'linear-gradient(135deg, #06b6d4 0%, #0891b2 100%)' : 'rgba(255,255,255,0.1)',
+                            color: isDirty ? '#ffffff' : '#94a3b8',
+                            fontSize: '0.95rem',
+                            fontWeight: 800,
                             display: 'flex',
                             alignItems: 'center',
                             justifyContent: 'center',
                             gap: '8px',
                             border: 'none',
-                            cursor: 'pointer',
-                            marginTop: '0.5rem'
+                            cursor: isDirty ? 'pointer' : 'default',
+                            boxShadow: isDirty ? '0 4px 12px rgba(6, 182, 212, 0.3)' : 'none',
+                            transition: 'all 0.2s',
+                            opacity: isDirty ? 1 : 0.7
                         }}
                     >
-                        <CheckCircle size={18} />
-                        Save Changes
+                        <Check size={18} strokeWidth={2.5} />
+                        {isDirty ? 'Save Changes' : 'Saved'}
                     </button>
-                </form>
+                </div>
             </motion.div>
-        </motion.div>
+        </motion.div>,
+        document.body
     );
 };

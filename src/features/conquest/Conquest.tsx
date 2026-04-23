@@ -14,7 +14,9 @@ import {
 } from '../../data/conquest';
 import { usePlayerAvatar } from '../../hooks/usePlayerAvatar';
 import { ConquestStoreUI } from './ConquestStore';
+import { GoongieChallenge } from './GoongieChallenge';
 import { ChessGame } from './ChessGame';
+import { GOONGIE_PUZZLES } from '../../data/goongiePuzzles';
 import { ConquestTiles } from './ConquestTiles';
 import { MysteryTile } from './MysteryTile';
 import { ConquestMeta } from './ConquestMeta';
@@ -61,6 +63,8 @@ export const Conquest = () => {
     const [showStore, setShowStore] = useState(false);
     const [showMeta, setShowMeta] = useState(false);
     const [showChess, setShowChess] = useState(false);
+    const [showGoongie, setShowGoongie] = useState(false);
+    const [activePuzzle, setActivePuzzle] = useState<import('../../data/goongiePuzzles').GoongiePuzzle | null>(null);
     const [showTiles, setShowTiles] = useState(false);
     const [showMystery, setShowMystery] = useState(false);
     const [activeEvent, setActiveEvent] = useState<string | null>(null);
@@ -160,31 +164,58 @@ export const Conquest = () => {
             case 'battle':
             case 'elite':
             case 'boss': {
-                // Pick enemy based on tier
-                const pool = getEnemiesForTier(node.tier);
-                const randomEnemy = pool.length > 0
-                    ? pool[Math.floor(Math.random() * pool.length)].id
-                    : 'ash_crawler';
-                // Use the run's assigned boss for boss nodes, random enemy otherwise
-                const enemyId = node.type === 'boss'
-                    ? (conquest.runBossId || 'the_pathkeeper')
-                    : randomEnemy;
+                try {
+                    // Pick enemy based on tier
+                    const pool = getEnemiesForTier(node.tier);
+                    const randomEnemy = pool.length > 0
+                        ? pool[Math.floor(Math.random() * pool.length)].id
+                        : 'ash_crawler';
+                    // Use the run's assigned boss for boss nodes, random enemy otherwise
+                    const enemyId = node.type === 'boss'
+                        ? (conquest.runBossId || 'the_pathkeeper')
+                        : randomEnemy;
 
-                useBattleStore.getState().initBattle(enemyId, {
-                    context: node.type === 'elite' ? 'conquest_elite' : node.type === 'boss' ? 'conquest_boss' : 'conquest',
-                    conquestTier: node.tier
-                });
-                navigate('/conquest/battle');
+                    if (!enemyId) throw new Error("Enemy ID failed to resolve");
+
+                    // Set conquest identity BEFORE jumping to battle store
+                    conquest.setActiveConquestEnemy(enemyId);
+
+                    useBattleStore.getState().initBattle(enemyId, {
+                        context: node.type === 'elite' ? 'conquest_elite' : node.type === 'boss' ? 'conquest_boss' : 'conquest',
+                        conquestTier: node.tier
+                    });
+                    
+                    navigate('/conquest/battle');
+                } catch (err) {
+                    console.error("[Conquest] Failed to load encounter:", err);
+                    import('../../components/ui/Toast').then(({ useToastStore }) => {
+                        useToastStore.getState().addToast({
+                            type: 'error',
+                            message: 'Encounter failed to load',
+                            duration: 3000
+                        });
+                    });
+                }
                 break;
             }
             case 'treasure_vault': {
-                // High-difficulty combat, then big reward
-                useBattleStore.getState().initBattle('crystal_warden', {
-                    context: 'conquest_vault',
-                    conquestTier: node.tier
-                });
-                conquest.completeTreasureVault();
-                navigate('/conquest/battle');
+                try {
+                    const enemyId = 'crystal_warden';
+                    conquest.setActiveConquestEnemy(enemyId);
+
+                    // High-difficulty combat, then big reward
+                    useBattleStore.getState().initBattle(enemyId, {
+                        context: 'conquest_vault',
+                        conquestTier: node.tier
+                    });
+                    conquest.completeTreasureVault();
+                    navigate('/conquest/battle');
+                } catch (err) {
+                    console.error("[Conquest] Failed to load treasure vault:", err);
+                    import('../../components/ui/Toast').then(({ useToastStore }) => {
+                        useToastStore.getState().addToast({ type: 'error', message: 'Vault failed to load', duration: 3000 });
+                    });
+                }
                 break;
             }
             case 'treasure': {
@@ -229,7 +260,11 @@ export const Conquest = () => {
                 setActiveEvent(node.label);
                 break;
             case 'shop':
-                setShowStore(true);
+                if (node.label === 'Traveling Caravan') {
+                    navigate('/conquest/caravan');
+                } else {
+                    setShowStore(true);
+                }
                 break;
             case 'campfire':
                 setShowCampfire(true);
@@ -241,8 +276,20 @@ export const Conquest = () => {
                 setShowCursed(true);
                 break;
             case 'minigame':
-                if (node.label === 'Fae Mischief') setShowTiles(true);
-                else setShowChess(true);
+                if (node.label === 'Fae Mischief') {
+                    setShowTiles(true);
+                } else if (node.label === 'Goongie Challenge') {
+                    // Pick a puzzle scaled to the current floor / act
+                    const floor = conquest.runFloor ?? 1;
+                    const targetDiff = floor <= 3 ? 1 : floor <= 6 ? 2 : floor <= 9 ? 3 : floor <= 12 ? 4 : 5;
+                    const eligible = GOONGIE_PUZZLES.filter(p => p.difficulty === targetDiff);
+                    const pool = eligible.length > 0 ? eligible : GOONGIE_PUZZLES.filter(p => p.difficulty <= targetDiff);
+                    const picked = pool[Math.floor(Math.random() * pool.length)] ?? GOONGIE_PUZZLES[0];
+                    setActivePuzzle(picked);
+                    setShowGoongie(true);
+                } else {
+                    setShowChess(true);
+                }
                 break;
         }
     };
@@ -375,7 +422,18 @@ export const Conquest = () => {
                         🏛️ Meta
                     </button>
                 </div>
+                </div>
             </div>
+
+            {/* ── DEV DEBUG BANNER ───────────────────────────────────── */}
+            {conquest.currentNodeId && (
+                <div style={{ position: 'absolute', top: 60, left: 0, right: 0, zIndex: 9999, backgroundColor: 'rgba(220, 38, 38, 0.9)', color: 'white', fontSize: '0.75rem', padding: '4px 8px', fontFamily: 'monospace', display: 'flex', flexWrap: 'wrap', gap: '8px', justifyContent: 'center', pointerEvents: 'none' }}>
+                    <span>Node: {generatedMap.find(n => n.id === conquest.currentNodeId)?.label || conquest.currentNodeId}</span>
+                    <span>Type: {generatedMap.find(n => n.id === conquest.currentNodeId)?.type}</span>
+                    <span>Comp: Conquest.tsx</span>
+                    {conquest.activeConquestEnemyId && <span>ID: {conquest.activeConquestEnemyId}</span>}
+                </div>
+            )}
 
             {/* Main Viewport Map */}
             <div className="spire-map-viewport" ref={mapContainerRef}>
@@ -548,7 +606,7 @@ export const Conquest = () => {
                                 conquest.addRunArtifact(CONQUEST_ARTIFACTS[activeArtifactIdx].id);
                                 conquest.addRunBuff({
                                     id: `artifact_${Date.now()}`,
-                                    type: 'wealth',
+                                    type: 'goldGainPercent',
                                     label: `${CONQUEST_ARTIFACTS[activeArtifactIdx].name}: ${CONQUEST_ARTIFACTS[activeArtifactIdx].description}`,
                                     amount: 0,
                                 });
@@ -620,7 +678,7 @@ export const Conquest = () => {
                                     <Heart size={16} /> Rest (Restore 30% HP)
                                 </button>
                                 <button onClick={() => {
-                                    conquest.addRunBuff({ id: `buff_${Date.now()}`, type: 'strength', label: 'Focused: +5% ATK', amount: 5 });
+                                    conquest.addRunBuff({ id: `buff_${Date.now()}`, type: 'attackPercent', label: 'Focused', amount: 5 });
                                     setShowCampfire(false);
                                 }}>
                                     <Swords size={16} /> Focus (+5% ATK Buff)
@@ -640,10 +698,10 @@ export const Conquest = () => {
                             <p>You touch the cold stone and feel a blessing wash over you.</p>
                             <div className="event-options">
                                 <button onClick={() => {
-                                    const blessings: Array<{ type: 'strength' | 'defense'; label: string; amount: number }> = [
-                                        { type: 'strength', label: 'Shrine Blessing: +10% ATK',    amount: 10 },
-                                        { type: 'defense',  label: 'Shrine Blessing: +10% DEF',    amount: 10 },
-                                        { type: 'defense',  label: 'Shrine Blessing: +10% Max HP', amount: 10 },
+                                    const blessings: Array<{ type: 'attackPercent' | 'defensePercent' | 'maxHpPercent'; label: string; amount: number }> = [
+                                        { type: 'attackPercent', label: 'Shrine Blessing',    amount: 10 },
+                                        { type: 'defensePercent',  label: 'Shrine Blessing',    amount: 10 },
+                                        { type: 'maxHpPercent',  label: 'Shrine Blessing', amount: 10 },
                                     ];
                                     const pick = blessings[Math.floor(Math.random() * blessings.length)];
                                     conquest.addRunBuff({ id: `shrine_${Date.now()}`, ...pick });
@@ -712,6 +770,25 @@ export const Conquest = () => {
                     }}
                     onClose={() => setShowChess(false)}
                     canPlay={strategy.canPlayChessToday()}
+                />}
+            </AnimatePresence>
+            <AnimatePresence>
+                {showGoongie && <GoongieChallenge
+                    puzzle={activePuzzle}
+                    onComplete={(success) => {
+                        if (success && activePuzzle) {
+                            currency.addGold(activePuzzle.reward.gold);
+                            if (activePuzzle.reward.sigils && activePuzzle.reward.sigils > 0) {
+                                conquest.addSigils(activePuzzle.reward.sigils);
+                            }
+                        } else if (!success) {
+                            // Fail penalty: small HP damage
+                            conquest.takeDamage(Math.floor(conquest.runMaxHP * 0.08));
+                        }
+                        setShowGoongie(false);
+                        setActivePuzzle(null);
+                    }}
+                    onClose={() => { setShowGoongie(false); setActivePuzzle(null); }}
                 />}
             </AnimatePresence>
             <AnimatePresence>

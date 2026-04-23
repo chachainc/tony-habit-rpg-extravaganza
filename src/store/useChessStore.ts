@@ -19,6 +19,9 @@ export interface ChessState {
     openingsMastered: string[];
     trapsMastered: string[];
     ladderWins: string[];
+    completedStyleLessons: string[]; // Isolated Playstyles history museum progress
+    interactiveLessonsMastered: string[]; // For new Interactive Mobile Lesson system
+    arenaProgress: Record<string, { highestTierCleared: number; attempts: number; clears: number }>;
 
     // Behavior Tracking
     behavior: ChessBehavior;
@@ -32,9 +35,14 @@ export interface ChessState {
     masterOpening: (id: string, stylePoints: Partial<ChessBehavior>) => void;
     masterTrap: (id: string) => void;
     recordLadderWin: (id: string) => void;
+    completeStyleLesson: (playerId: string) => void;
+    completeInteractiveLesson: (lessonId: string) => void;
     addBehavior: (points: Partial<ChessBehavior>) => void;
     consumeEnergy: (amount: number) => boolean;
+    replenishEnergy: (amount: number) => void;
     tickEnergy: () => void;
+    recordArenaAttempt: (bossId: string) => void;
+    recordArenaClear: (bossId: string, tier: number) => void;
 
     // Compute
     getPlaystyle: () => ChessPlaystyle;
@@ -47,6 +55,9 @@ export const useChessStore = create<ChessState>()(
             openingsMastered: [],
             trapsMastered: [],
             ladderWins: [],
+            completedStyleLessons: [],
+            interactiveLessonsMastered: [],
+            arenaProgress: {},
 
             behavior: {
                 aggressiveScore: 0,
@@ -85,6 +96,20 @@ export const useChessStore = create<ChessState>()(
                 }
             },
 
+            completeStyleLesson: (playerId) => {
+                const state = get();
+                if (!state.completedStyleLessons.includes(playerId)) {
+                    set({ completedStyleLessons: [...state.completedStyleLessons, playerId] });
+                }
+            },
+
+            completeInteractiveLesson: (lessonId) => {
+                const state = get();
+                if (!state.interactiveLessonsMastered.includes(lessonId)) {
+                    set({ interactiveLessonsMastered: [...state.interactiveLessonsMastered, lessonId] });
+                }
+            },
+
             addBehavior: (points) => {
                 set((state) => ({
                     behavior: {
@@ -109,6 +134,38 @@ export const useChessStore = create<ChessState>()(
                     return true;
                 }
                 return false;
+            },
+
+            replenishEnergy: (amount) => {
+                set((state) => ({ energy: Math.min(state.maxEnergy, state.energy + amount) }));
+            },
+
+            recordArenaAttempt: (bossId) => {
+                set((state) => {
+                    const current = state.arenaProgress[bossId] || { highestTierCleared: 0, attempts: 0, clears: 0 };
+                    return {
+                        arenaProgress: {
+                            ...state.arenaProgress,
+                            [bossId]: { ...current, attempts: current.attempts + 1 }
+                        }
+                    };
+                });
+            },
+
+            recordArenaClear: (bossId, tier) => {
+                set((state) => {
+                    const current = state.arenaProgress[bossId] || { highestTierCleared: 0, attempts: 0, clears: 0 };
+                    return {
+                        arenaProgress: {
+                            ...state.arenaProgress,
+                            [bossId]: { 
+                                ...current, 
+                                clears: current.clears + 1,
+                                highestTierCleared: Math.max(current.highestTierCleared, tier)
+                            }
+                        }
+                    };
+                });
             },
 
             tickEnergy: () => {

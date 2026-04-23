@@ -34,6 +34,7 @@ export interface Spell {
         element?: 'fire' | 'ice' | 'lightning' | 'cosmic' | 'neutral';
         dot?: { damage: number; turns: number };
     };
+    energyCost?: number; // Requires Energy in combat
     affinity?: AffinityType;
 }
 
@@ -299,7 +300,7 @@ export const SPELL_DB: Record<string, Spell> = {
         name: 'Frostbolt',
         icon: '❄️',
         image: frostboltImg,
-        description: 'Deal light damage and apply Chill (2 turns).',
+        description: 'Deal light damage and apply Chill (2 turns). +15% damage with Ice Weapon. Ice Pet grants 20% chance to Chill. Frostbound Set extends Chill duration.',
         goldCost: 800,
         mpCost: 5,
         flexibilityTier: 1,
@@ -315,7 +316,7 @@ export const SPELL_DB: Record<string, Spell> = {
         name: 'Glacial Prison',
         icon: '🧊',
         image: glacialPrisonImg,
-        description: 'Deal moderate damage and Freeze target for 1 turn. Freezes for 2 turns if already Chilled.',
+        description: 'Deal moderate damage and Freeze target for 1 turn. Freezes for 2 turns if already Chilled. +20% damage with Ice Weapon. Frostbound Set (-15% defense to frozen enemies).',
         goldCost: 2500,
         mpCost: 15,
         flexibilityTier: 2,
@@ -331,7 +332,7 @@ export const SPELL_DB: Record<string, Spell> = {
         name: 'Absolute Zero',
         icon: '🥶',
         image: absoluteZeroImg,
-        description: 'Freeze ALL enemies for 1 turn and deal 15% max HP damage. Triggers shatter logic.',
+        description: 'Instantly apply Chill, then Freeze enemy for 1 turn and deal 15% max HP damage. Triggers shatter logic. Ice pet extends freeze. Frostbound (6) triggers Ice Burst.',
         goldCost: 10000,
         mpCost: 40,
         flexibilityTier: 5,
@@ -341,6 +342,66 @@ export const SPELL_DB: Record<string, Spell> = {
         cooldownTurns: 6,
         effect: { type: 'damage', value: 10, element: 'ice' },
         affinity: 'ice'
+    },
+    'berserker_cleave': {
+        id: 'berserker_cleave',
+        name: 'Berserker Cleave',
+        icon: '⚔️🔥',
+        description: 'A devastating premium spell. Unleash monumental physical power. Requires massive energy buildup to activate.',
+        goldCost: 18000,
+        energyCost: 100,
+        mpCost: 30,
+        flexibilityTier: 5,
+        intelligenceRequired: 15,
+        tier: 'master',
+        baseDamage: 120, // Huge base
+        cooldownTurns: 8,
+        effect: { type: 'damage', value: 120, element: 'fire' },
+    },
+    'judgment_slam': {
+        id: 'judgment_slam',
+        name: 'Judgment Slam',
+        icon: '🛡️⚡',
+        description: 'A devastating premium spell. Strike with the weight of absolute authority. Requires massive energy buildup to activate.',
+        goldCost: 18000,
+        energyCost: 100,
+        mpCost: 30,
+        flexibilityTier: 5,
+        intelligenceRequired: 15,
+        tier: 'master',
+        baseDamage: 120,
+        cooldownTurns: 8,
+        effect: { type: 'damage', value: 120, element: 'lightning' },
+    },
+    'phantom_volley': {
+        id: 'phantom_volley',
+        name: 'Phantom Volley',
+        icon: '🏹🌑',
+        description: 'A devastating premium spell. Rain lethal shadow arrows across the field. Requires massive energy buildup to activate.',
+        goldCost: 18000,
+        energyCost: 100,
+        mpCost: 30,
+        flexibilityTier: 5,
+        intelligenceRequired: 15,
+        tier: 'master',
+        baseDamage: 120,
+        cooldownTurns: 8,
+        effect: { type: 'damage', value: 120, element: 'shadow' },
+    },
+    'arcane_rupture': {
+        id: 'arcane_rupture',
+        name: 'Arcane Rupture',
+        icon: '🔮🌠',
+        description: 'A devastating premium spell. Tear reality apart with raw cosmic power. Requires massive energy buildup to activate.',
+        goldCost: 18000,
+        energyCost: 100,
+        mpCost: 30,
+        flexibilityTier: 5,
+        intelligenceRequired: 15,
+        tier: 'master',
+        baseDamage: 120,
+        cooldownTurns: 8,
+        effect: { type: 'damage', value: 120, element: 'cosmic' },
     },
 
     // ══════════════════════════════════════════════

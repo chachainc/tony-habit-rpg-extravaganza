@@ -6,11 +6,11 @@ import { useBattleStore } from '../../store/useBattleStore';
 import { useConquestStore } from '../../store/useConquestStore';
 import { useMagicStore } from '../../store/useMagicStore';
 import { useGameStore } from '../../store/useGameStore';
-import { usePlayerAvatar, getUltimateName } from '../../hooks/usePlayerAvatar';
+import { usePlayerAvatar } from '../../hooks/usePlayerAvatar';
 import { useProfileStore } from '../../store/useProfileStore';
 import { CONQUEST_ENEMIES, CONQUEST_ELEMENT_ICONS, type ConquestElement } from '../../data/conquest';
-import { getSkillSynergyBonus } from '../../store/useCombatFormulas';
 import bgMap from '../../assets/backgrounds/infernal_citadel.png';
+import { useInventoryStore } from '../../store/useInventoryStore';
 import './Conquest.css';
 
 export const ConquestBattle = () => {
@@ -19,10 +19,8 @@ export const ConquestBattle = () => {
     const battle = useBattleStore();
     const heroImage = usePlayerAvatar();
     const classType = useProfileStore(s => s.classType);
-    const ultimateName = getUltimateName(classType);
     const getMagicAttack = useGameStore(s => s.getMagicAttack);
     const getOwnedSpells = useMagicStore(s => s.getOwnedSpells);
-    const synergy = getSkillSynergyBonus();
 
     const [blessingApplied, setBlessingApplied] = useState(false);
     const [showVictoryModal, setShowVictoryModal] = useState(false);
@@ -34,11 +32,7 @@ export const ConquestBattle = () => {
     const initialPlayerHpRef = useRef<number | null>(null);
     const [enemySpecialText, setEnemySpecialText] = useState<string | null>(null);
 
-    // Collapsible info panel (collapsed by default on mobile)
     const [showInfoPanel, setShowInfoPanel] = useState(false);
-    // Ultimate ready popup
-    const [showUltReady, setShowUltReady] = useState(false);
-    const prevEnergyRef = useRef(0);
 
     const conquestEnemyDef = conquest.activeConquestEnemyId
         ? CONQUEST_ENEMIES.find(e => e.id === conquest.activeConquestEnemyId) ?? null
@@ -202,17 +196,6 @@ export const ConquestBattle = () => {
         }
     }, [battle.phase]); // eslint-disable-line react-hooks/exhaustive-deps
 
-    // Watch for ultimate becoming ready — show popup once
-    useEffect(() => {
-        if (!battle.player) return;
-        const prev = prevEnergyRef.current;
-        const curr = battle.player.energy;
-        if (prev < 100 && curr >= 100 && battle.phase !== 'prep') {
-            setShowUltReady(true);
-            setTimeout(() => setShowUltReady(false), 3500);
-        }
-        prevEnergyRef.current = curr;
-    }, [battle.player?.energy, battle.phase]); // eslint-disable-line react-hooks/exhaustive-deps
 
     const handleFlee = () => {
         const fleeCost = Math.floor(conquest.runMaxHP * 0.15);
@@ -237,7 +220,23 @@ export const ConquestBattle = () => {
     const elementIcon = CONQUEST_ELEMENT_ICONS[enemyElement];
 
     if (!player || !enemy) {
-        return null; // Guard useEffect will handle the redirect
+        return (
+            <div className="conquest-container safe-area-container" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', backgroundColor: '#0f172a', padding: 20 }}>
+                <div style={{ backgroundColor: '#1e293b', padding: '2rem', borderRadius: 12, textAlign: 'center', border: '1px solid #334155', maxWidth: 400 }}>
+                    <Shield size={48} color="#94a3b8" style={{ marginBottom: '1rem', opacity: 0.5 }} />
+                    <h2 style={{ color: '#f8fafc', fontSize: '1.25rem', marginBottom: '0.5rem' }}>Combat Error</h2>
+                    <p style={{ color: '#94a3b8', fontSize: '0.9rem', marginBottom: '1.5rem', lineHeight: 1.5 }}>
+                        The combat encounter failed to serialize properly.
+                    </p>
+                    <button 
+                        onClick={() => navigate('/conquest', { replace: true })} 
+                        style={{ padding: '0.75rem 1.5rem', backgroundColor: '#334155', color: '#f8fafc', border: 'none', borderRadius: 8, fontWeight: 600, width: '100%' }}
+                    >
+                        Return to Map
+                    </button>
+                </div>
+            </div>
+        );
     }
 
     const battleBg = (enemy as any).image || bgMap;
@@ -246,12 +245,20 @@ export const ConquestBattle = () => {
     const energyPct = player.energy;
     const isPlayerTurn = battle.phase === 'select_action';
     const isExecuting = battle.phase === 'executing' || battle.phase === 'enemy_turn';
-    const ultReady = energyPct >= 100;
+    const hasFrostHelm = useInventoryStore.getState().equipped.head === 'frostbound_helm';
 
     return (
         <div className="cq-battle-container">
             <div className="cq-bg-layer" style={{ backgroundImage: `url(${battleBg})` }} />
             <div className="bg-overlay" />
+
+            {/* ── DEV DEBUG BANNER ───────────────────────────────────── */}
+            <div style={{ position: 'absolute', top: 0, left: 0, right: 0, zIndex: 9999, backgroundColor: 'rgba(220, 38, 38, 0.9)', color: 'white', fontSize: '0.75rem', padding: '4px 8px', fontFamily: 'monospace', display: 'flex', flexWrap: 'wrap', gap: '8px', justifyContent: 'center', pointerEvents: 'none' }}>
+                <span>Node: {conquestEnemyDef?.name || enemy.name}</span>
+                <span>Type: Combat</span>
+                <span>Comp: ConquestBattle.tsx</span>
+                <span>ID: {enemy.id}</span>
+            </div>
 
             {/* ── Header ──────────────────────────────────────────────── */}
             <div className="cq-battle-header">
@@ -272,9 +279,15 @@ export const ConquestBattle = () => {
                 <div className="cq-side enemy-side">
                     <div className="cq-side-portrait">
                         {(enemy as any).image ? (
-                            <img src={(enemy as any).image} alt={enemy.name} className="cq-portrait-img enemy" />
+                            <img src={(enemy as any).image} alt={enemy.name} className={`cq-portrait-img enemy ${enemy.frozenTurns > 0 ? 'frozen-encasement' : (enemy.chilledTurns > 0 ? 'chilled-aura' : '')}`} />
                         ) : (
-                            <span className="cq-portrait-emoji">{enemy.icon}</span>
+                            <span className={`cq-portrait-emoji ${enemy.frozenTurns > 0 ? 'frozen-encasement' : (enemy.chilledTurns > 0 ? 'chilled-aura' : '')}`}>{enemy.icon}</span>
+                        )}
+                        {enemy.frozenTurns > 0 && (
+                            <div className="status-icon chill-status" style={{ position: 'absolute', top: '-15px', right: '-15px', fontSize: '2.5rem', zIndex: 10, filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.8))' }}>🧊</div>
+                        )}
+                        {enemy.chilledTurns > 0 && enemy.frozenTurns <= 0 && (
+                            <div className="status-icon chill-status" style={{ position: 'absolute', top: '-15px', right: '-15px', fontSize: '2rem', zIndex: 10, animation: 'floatUpSlow 2s ease-in-out infinite alternate', filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.5))' }}>❄️</div>
                         )}
                     </div>
                     <div className="cq-side-name">
@@ -296,7 +309,13 @@ export const ConquestBattle = () => {
                 {/* Player side */}
                 <div className="cq-side player-side">
                     <div className="cq-side-portrait">
-                        <img src={heroImage} alt="Hero" className={`cq-portrait-img player ${ultReady ? 'ult-ready-glow' : ''}`} />
+                        <img src={heroImage} alt="Hero" className={`cq-portrait-img player ${player.frozenTurns > 0 ? 'frozen-encasement' : (player.chilledTurns > 0 ? 'chilled-aura' : '')} ${hasFrostHelm ? 'frostbound-aura' : ''}`} />
+                        {player.frozenTurns > 0 && (
+                            <div className="status-icon chill-status" style={{ position: 'absolute', top: '-15px', left: '-15px', fontSize: '2.5rem', zIndex: 10, filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.8))' }}>🧊</div>
+                        )}
+                        {player.chilledTurns > 0 && player.frozenTurns <= 0 && (
+                            <div className="status-icon chill-status" style={{ position: 'absolute', top: '-15px', left: '-15px', fontSize: '2rem', zIndex: 10, animation: 'floatUpSlow 2s ease-in-out infinite alternate', filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.5))' }}>❄️</div>
+                        )}
                         {conquest.runBuffs.length > 0 && (
                             <div className="cq-buff-row">
                                 {conquest.runBuffs.slice(0, 3).map(b => (
@@ -316,7 +335,7 @@ export const ConquestBattle = () => {
                         <span className="cq-hp-label">{Math.max(0, player.hp)}/{player.maxHp}</span>
                     </div>
                     {/* Energy bar */}
-                    <div className={`cq-energy-bar-wrap ${ultReady ? 'ult-ready-energy' : ''}`}>
+                    <div className="cq-energy-bar-wrap">
                         <div className="cq-energy-bar" style={{ width: `${energyPct}%` }} />
                         <span className="cq-energy-label">
                             <Zap size={9} style={{ display: 'inline', verticalAlign: 'middle' }} />
@@ -331,78 +350,23 @@ export const ConquestBattle = () => {
                 {battle.combatLog.slice(-2).reverse().map((entry, i) => (
                     <div key={i} className={`cq-log-entry cq-log-${entry.type}`}>{entry.message}</div>
                 ))}
+                <div className="cq-info-summary" style={{ justifyContent: 'center', backgroundColor: 'rgba(30, 41, 59, 0.7)' }}>
+                    <span className="cq-info-summary-text" style={{ fontSize: '0.9rem', color: '#94a3b8' }}>
+                        Class: <strong style={{ color: '#a78bfa' }}>{classType || 'Warrior'}</strong>
+                    </span>
+                </div>
+
+                <button className="cq-action-btn primary cq-start-btn" onClick={() => battle.startBattle()}>
+                    ⚔️ Start Battle
+                </button>
             </div>
 
-            {/* ── Ultimate Ready Popup ──────────────────────────────── */}
-            <AnimatePresence>
-                {showUltReady && (
-                    <motion.div
-                        className="cq-ult-ready-banner"
-                        initial={{ opacity: 0, y: -20, scale: 0.92 }}
-                        animate={{ opacity: 1, y: 0, scale: 1 }}
-                        exit={{ opacity: 0, y: -12, scale: 0.95 }}
-                        transition={{ duration: 0.28 }}
-                    >
-                        <span className="cq-ult-ready-icon">💥</span>
-                        <span>Ultimate Ready: <strong>{ultimateName}</strong></span>
-                    </motion.div>
-                )}
-            </AnimatePresence>
 
             {/* ── Action Panel ──────────────────────────────────────── */}
             <div className="cq-action-panel">
                 {battle.phase === 'prep' ? (
                     /* ── Prep state: collapsible info + start button ── */
                     <div className="cq-prep-section">
-
-                        {/* Collapsed summary row always visible */}
-                        <div className="cq-info-summary" onClick={() => setShowInfoPanel(p => !p)}>
-                            <span className="cq-info-summary-text">
-                                <span className="cq-info-class">{classType || 'Warrior'}</span>
-                                <span className="cq-info-sep">·</span>
-                                <span className="cq-info-ult">{ultimateName}</span>
-                            </span>
-                            <span className="cq-info-toggle-btn">
-                                {showInfoPanel ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
-                                {showInfoPanel ? 'Hide' : 'Details'}
-                            </span>
-                        </div>
-
-                        {/* Expanded panel */}
-                        <AnimatePresence>
-                            {showInfoPanel && (
-                                <motion.div
-                                    className="cq-info-expanded"
-                                    initial={{ height: 0, opacity: 0 }}
-                                    animate={{ height: 'auto', opacity: 1 }}
-                                    exit={{ height: 0, opacity: 0 }}
-                                    transition={{ duration: 0.22 }}
-                                >
-                                    <div className="cq-info-row">
-                                        <span className="cq-info-key">CLASS</span>
-                                        <span className="cq-info-val purple">{classType || 'Warrior'}</span>
-                                    </div>
-                                    <div className="cq-info-row">
-                                        <span className="cq-info-key">ULTIMATE</span>
-                                        <span className="cq-info-val gold">{ultimateName}</span>
-                                    </div>
-                                    <div className="cq-info-row">
-                                        <span className="cq-info-key">SYNERGY</span>
-                                        <span className="cq-info-val" style={{ color: synergy.active ? '#a3e635' : '#475569', fontSize: '0.78rem' }}>
-                                            {synergy.description}
-                                        </span>
-                                    </div>
-                                    <div className="cq-info-row">
-                                        <span className="cq-info-key">ENERGY</span>
-                                        <div className="cq-energy-bar-wrap" style={{ flex: 1, maxWidth: 140 }}>
-                                            <div style={{ width: '0%', height: '100%', background: 'linear-gradient(90deg, #b45309, #d97706)', borderRadius: '99px' }} />
-                                            <span className="cq-energy-label">0/100</span>
-                                        </div>
-                                    </div>
-                                </motion.div>
-                            )}
-                        </AnimatePresence>
-
                         <button className="cq-action-btn primary cq-start-btn" onClick={() => battle.startBattle()}>
                             ⚔️ Start Battle
                         </button>
@@ -410,22 +374,6 @@ export const ConquestBattle = () => {
                 ) : (
                     /* ── Battle state ── */
                     <>
-                        {/* Ultimate button — full width row */}
-                        <button
-                            className={`cq-ultimate-btn ${ultReady ? 'ready' : 'locked'}`}
-                            disabled={!isPlayerTurn || isExecuting || isRolling || isHeavyRolling || !ultReady}
-                            onClick={() => {
-                                if (isPlayerTurn && ultReady) {
-                                    useBattleStore.getState().executeUltimate(ultimateName);
-                                    setShowUltReady(false);
-                                }
-                            }}
-                        >
-                            <span className="cq-ult-icon">💥</span>
-                            <span className="cq-ult-name">{ultimateName}</span>
-                            <span className="cq-ult-energy">{Math.floor(energyPct)}/100</span>
-                        </button>
-
                         <AnimatePresence>
                             {(isRolling || isHeavyRolling) && (
                                 <motion.div
@@ -596,7 +544,8 @@ export const ConquestBattle = () => {
                                         ? Math.round(spell.baseDamage * (1 + (useGameStore.getState().skills['Intelligence']?.level ?? 1) * 0.03) * battle.playerDamageModifier)
                                         : Math.round(spell.effect.value * getMagicAttack() * battle.playerDamageModifier))
                                     : null;
-                                const canCast = spell && battle.currentMP >= spell.mpCost && !onCooldown;
+                                const hasEnergy = spell?.energyCost ? battle.player?.energy >= spell.energyCost : true;
+                                const canCast = spell && battle.currentMP >= spell.mpCost && hasEnergy && !onCooldown;
 
                                 return (
                                     <button
@@ -613,9 +562,9 @@ export const ConquestBattle = () => {
                                             {spell && onCooldown ? (
                                                 <span style={{ color: '#ef4444' }}>⚠️ {spellCooldownTurns}t</span>
                                             ) : spell && !canCast ? (
-                                                <span style={{ color: '#ef4444' }}>{spell.mpCost} MP</span>
+                                                <span style={{ color: '#ef4444' }}>{spell.mpCost} MP {spell.energyCost ? `+ ${spell.energyCost} NRG` : ''}</span>
                                             ) : spell ? (
-                                                <span>{spell.mpCost} MP</span>
+                                                <span>{spell.mpCost} MP {spell.energyCost ? `+ ${spell.energyCost} NRG` : ''}</span>
                                             ) : 'Not Equipped'}
                                         </div>
                                     </button>

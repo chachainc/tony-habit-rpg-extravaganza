@@ -32,6 +32,12 @@ const ARMOR_ITEMS = [
     'steel_plate',
     'ashforge_plate',
     'mythric_plate',
+    'frostbound_helm',
+    'frostbound_chestplate',
+    'frostbound_gauntlets',
+    'frostbound_leggings',
+    'frostbound_boots',
+    'frostbound_cloak',
 ];
 
 export const ArmorStore = ({ onClose }: Props) => {

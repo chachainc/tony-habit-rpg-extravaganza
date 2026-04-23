@@ -43,7 +43,7 @@ export const ConquestStoreUI = ({ onClose }: ConquestStoreUIProps) => {
                         <div className="cq-store-item">
                             <div className="cq-store-item-info">
                                 <span className="cq-store-item-name">⚔️ Warlord's Edge</span>
-                                <span className="cq-store-item-desc">+10 ATK for the duration of this run</span>
+                                <span className="cq-store-item-desc">+10% ATK for the duration of this run</span>
                             </div>
                             <button
                                 className="cq-store-buy-btn"
@@ -52,8 +52,8 @@ export const ConquestStoreUI = ({ onClose }: ConquestStoreUIProps) => {
                                         currency.spendGold(25);
                                         conquest.addRunBuff({
                                             id: `warlord_edge_${Date.now()}`,
-                                            type: 'strength',
-                                            label: "Warlord's Edge: +10 ATK",
+                                            type: 'attackPercent',
+                                            label: "Warlord's Edge",
                                             amount: 10,
                                         });
                                     }

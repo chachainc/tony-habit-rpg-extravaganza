@@ -14,7 +14,6 @@ import { usePlayerAvatar } from '../../hooks/usePlayerAvatar';
 import { useMagicStore, SPELL_DB } from '../../store/useMagicStore';
 import { useTitleStore, TITLES } from '../../store/useTitleStore';
 import { useProfileStore } from '../../store/useProfileStore';
-import { getSkillSynergyBonus } from '../../store/useCombatFormulas';
 import './LoadoutPanel.css';
 
 type RadialSlotId = 
@@ -43,7 +42,6 @@ export const LoadoutPanel = ({ onClose }: { onClose: () => void }) => {
     const titleStore = useTitleStore();
     
     const classType = useProfileStore(s => s.classType);
-    const synergy = getSkillSynergyBonus();
 
     // ── UI State ──
     const [activeSlot, setActiveSlot] = useState<RadialSlotId | null>(null);
@@ -485,14 +483,6 @@ export const LoadoutPanel = ({ onClose }: { onClose: () => void }) => {
                     <div style={{ position: 'absolute', top: '10px', left: '10px', background: 'rgba(30,20,60,0.8)', border: '1px solid rgba(139,92,246,0.3)', padding: '0.75rem', borderRadius: '8px', zIndex: 10 }}>
                         <div style={{ fontSize: '0.75rem', color: '#94a3b8', textTransform: 'uppercase', marginBottom: '4px' }}>Class</div>
                         <div style={{ fontWeight: 'bold', color: '#a78bfa', marginBottom: '8px', fontSize: '1.1rem' }}>{classType || 'Warrior'}</div>
-                        
-                        <div style={{ fontSize: '0.75rem', color: '#94a3b8', textTransform: 'uppercase', marginBottom: '4px' }}>Active Synergy</div>
-                        <div 
-                            title="Synergy activates when both skills >= 1"
-                            style={{ fontWeight: 'bold', color: synergy.active ? '#a3e635' : '#475569', fontSize: '0.85rem', maxWidth: '200px', cursor: 'help' }}
-                        >
-                            {synergy.description}
-                        </div>
                     </div>
 
                     <div className="loadout-character-avatar">

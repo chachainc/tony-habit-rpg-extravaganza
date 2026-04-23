@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import React from 'react';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Calendar, Flame, Trophy } from 'lucide-react';
@@ -8,10 +9,14 @@ import './CheckInModal.css';
 import './CheckInModalTapHint.css';
 
 export const CheckInModal = ({ onClose }: { onClose: () => void }) => {
-    const { streakDay, streakCount, checkIn, getStreakStatus } = useCheckInStore();
+    const { currentStreak, longestStreak, checkIn, getStreakStatus, validateStreak } = useCheckInStore();
     const { canCheckIn, missedYesterday } = getStreakStatus();
     const [showReward, setShowReward] = useState(false);
     const [lastReward, setLastReward] = useState<any>(null);
+
+    React.useEffect(() => {
+        validateStreak();
+    }, [validateStreak]);
 
     const handleCheckIn = () => {
         const reward = checkIn();
@@ -22,9 +27,9 @@ export const CheckInModal = ({ onClose }: { onClose: () => void }) => {
     };
 
     // Determine which week page to show based on total streak count
-    // For a brand-new user (streakCount=0) or week 1, show week 1.
-    // After claiming today, streakCount is already updated, so we peek ahead.
-    const displayStreak = canCheckIn ? streakCount + 1 : streakCount;
+    // For a brand-new user (currentStreak=0) or week 1, show week 1.
+    // After claiming today, currentStreak is already updated, so we peek ahead.
+    const displayStreak = canCheckIn ? currentStreak + 1 : currentStreak;
     const currentWeek = Math.min(4, Math.ceil(Math.max(displayStreak, 1) / 7));
     const isWeek5Plus = displayStreak >= 29;
 
@@ -40,20 +45,26 @@ export const CheckInModal = ({ onClose }: { onClose: () => void }) => {
                 <div className="streak-display">
                     <Flame className="flame-icon" />
                     <div className="streak-info">
-                        <span className="streak-count">{streakCount}</span>
+                        <span className="streak-count">{currentStreak}</span>
                         <span className="streak-label">Day Streak</span>
                     </div>
+                    {longestStreak > 0 && (
+                        <div className="best-streak-info" style={{ marginLeft: 'auto', textAlign: 'right', display: 'flex', flexDirection: 'column', alignItems: 'flex-end', justifyContent: 'center' }}>
+                            <span className="streak-count" style={{ fontSize: '1.2rem', color: '#ffb347', fontWeight: 'bold' }}>{longestStreak}</span>
+                            <span className="streak-label" style={{ fontSize: '0.8rem', color: '#8c9bb4', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Best Streak</span>
+                        </div>
+                    )}
                 </div>
-                {missedYesterday && streakCount > 0 && (
+                {missedYesterday && currentStreak === 0 && (
                     <div className="streak-warning">
-                        <p>⚠️ Streak broken! You'll receive a consolation reward.</p>
+                        <p>⚠️ Streak broken! Restarting at Day 1.</p>
                     </div>
                 )}
                 <div className="week-calendar">
                     {weekDays.map((day) => {
                         const reward = getStreakReward(day);
-                        const isCurrentDay = day === streakDay || (canCheckIn && day === streakDay);
-                        const isPastDay = day < streakDay;
+                        const isCurrentDay = canCheckIn ? displayStreak === day : false;
+                        const isPastDay = currentStreak >= day;
                         return (
                             <motion.div
                                 key={day}
@@ -107,17 +118,21 @@ export const CheckInModal = ({ onClose }: { onClose: () => void }) => {
                 <div className="streak-display">
                     <Flame className="flame-icon" />
                     <div className="streak-info">
-                        <span className="streak-count">{streakCount}</span>
+                        <span className="streak-count">{currentStreak}</span>
                         <span className="streak-label">Day Streak</span>
                     </div>
+                    {longestStreak > 0 && (
+                        <div className="best-streak-info" style={{ marginLeft: 'auto', textAlign: 'right', display: 'flex', flexDirection: 'column', alignItems: 'flex-end', justifyContent: 'center' }}>
+                            <span className="streak-count" style={{ fontSize: '1.2rem', color: '#ffb347', fontWeight: 'bold' }}>{longestStreak}</span>
+                            <span className="streak-label" style={{ fontSize: '0.8rem', color: '#8c9bb4', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Best Streak</span>
+                        </div>
+                    )}
                 </div>
                 <div className="week-calendar">
                     {weekDays.map((day) => {
                         const reward = getStreakReward(day);
-                        const isCurrentDay = canCheckIn
-                            ? streakCount + 1 === day
-                            : streakCount === day;
-                        const isPastDay = streakCount >= day && !isCurrentDay;
+                        const isCurrentDay = canCheckIn ? displayStreak === day : false;
+                        const isPastDay = currentStreak >= day;
                         return (
                             <motion.div
                                 key={day}
@@ -157,7 +172,7 @@ export const CheckInModal = ({ onClose }: { onClose: () => void }) => {
 
     // ── Week 5+ fire mode ───────────────────────────────────────────────
     const renderFireMode = () => {
-        const todayStreakDay = canCheckIn ? streakCount + 1 : streakCount;
+        const todayStreakDay = displayStreak;
         const reward = getStreakReward(todayStreakDay);
         return (
             <>
@@ -168,9 +183,15 @@ export const CheckInModal = ({ onClose }: { onClose: () => void }) => {
                 <div className="streak-display">
                     <Flame className="flame-icon" />
                     <div className="streak-info">
-                        <span className="streak-count">{streakCount}</span>
+                        <span className="streak-count">{currentStreak}</span>
                         <span className="streak-label">Day Streak</span>
                     </div>
+                    {longestStreak > 0 && (
+                        <div className="best-streak-info" style={{ marginLeft: 'auto', textAlign: 'right', display: 'flex', flexDirection: 'column', alignItems: 'flex-end', justifyContent: 'center' }}>
+                            <span className="streak-count" style={{ fontSize: '1.2rem', color: '#ffb347', fontWeight: 'bold' }}>{longestStreak}</span>
+                            <span className="streak-label" style={{ fontSize: '0.8rem', color: '#8c9bb4', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Best Streak</span>
+                        </div>
+                    )}
                 </div>
                 <div className="fire-mode-box">
                     <motion.div

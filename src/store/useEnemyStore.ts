@@ -437,6 +437,88 @@ export const ENEMY_DB: Record<string, EnemyDef> = {
         unlocks: ['desk', 'plant', 'poster'],
     },
     // ========================================
+    // CONQUEST ENEMIES (Baseline Templates)
+    // These ensure initBattle does not natively abort.
+    // ConquestBattle.tsx intercepts and multiplies these stats.
+    // ========================================
+    'ash_crawler': {
+        id: 'ash_crawler', name: 'Ash Crawler', icon: '🦂', element: 'fire',
+        description: 'Fast low-defense creature.', rarity: 'common', floor: 1,
+        baseHp: 100, baseAtk: 20, baseDef: 10, baseSpd: 70, critRate: 0.1, critDmg: 1.5,
+        requiredAtk: 5, requiredDef: 3, goldReward: 20, xpReward: 20, abilities: [DEFAULT_ABILITIES.basic_attack],
+        behaviorHint: 'Fast and attacks twice in its logic.', personalityTag: 'The Quick', weaknessSkill: 'Cardio', affinitySkill: 'Sleep', thresholdLevel: 5, openingLine: 'SCREEECH!', isBoss: false, unlocks: [],
+    },
+    'sigil_leech': {
+        id: 'sigil_leech', name: 'Sigil Leech', icon: '🩸', element: 'shadow',
+        description: 'Steals resources.', rarity: 'rare', floor: 2,
+        baseHp: 100, baseAtk: 20, baseDef: 20, baseSpd: 50, critRate: 0.05, critDmg: 1.5,
+        requiredAtk: 5, requiredDef: 3, goldReward: 20, xpReward: 20, abilities: [DEFAULT_ABILITIES.basic_attack],
+        behaviorHint: 'Steals sigils.', personalityTag: 'The Thief', weaknessSkill: 'Strength', affinitySkill: 'Flexibility', thresholdLevel: 5, openingLine: 'Give me your power...', isBoss: false, unlocks: [],
+    },
+    'iron_husk': {
+        id: 'iron_husk', name: 'Iron Husk', icon: '🛡️', element: 'neutral',
+        description: 'High defense.', rarity: 'epic', floor: 3,
+        baseHp: 120, baseAtk: 15, baseDef: 40, baseSpd: 30, critRate: 0.05, critDmg: 1.5,
+        requiredAtk: 5, requiredDef: 3, goldReward: 20, xpReward: 20, abilities: [DEFAULT_ABILITIES.basic_attack],
+        behaviorHint: 'Very fortified.', personalityTag: 'The Husk', weaknessSkill: 'Intelligence', affinitySkill: 'Hygiene', thresholdLevel: 5, openingLine: '...', isBoss: false, unlocks: [],
+    },
+    'balloon_goblin': {
+        id: 'balloon_goblin', name: 'Balloon Goblin', icon: '🎈', element: 'nature',
+        description: 'Drops extra balloons.', rarity: 'common', floor: 4,
+        baseHp: 90, baseAtk: 20, baseDef: 10, baseSpd: 60, critRate: 0.05, critDmg: 1.5,
+        requiredAtk: 5, requiredDef: 3, goldReward: 20, xpReward: 20, abilities: [DEFAULT_ABILITIES.basic_attack],
+        behaviorHint: 'Drops balloons.', personalityTag: 'The Hoarder', weaknessSkill: 'Habit', affinitySkill: 'Social', thresholdLevel: 5, openingLine: 'Mine!', isBoss: false, unlocks: [],
+    },
+    'gem_cultist': {
+        id: 'gem_cultist', name: 'Gem Cultist', icon: '💎', element: 'ice',
+        description: 'Drops gem.', rarity: 'rare', floor: 5,
+        baseHp: 100, baseAtk: 20, baseDef: 10, baseSpd: 50, critRate: 0.05, critDmg: 1.5,
+        requiredAtk: 5, requiredDef: 3, goldReward: 20, xpReward: 20, abilities: [DEFAULT_ABILITIES.basic_attack],
+        behaviorHint: 'Drops gem.', personalityTag: 'The Cultist', weaknessSkill: 'Sleep', affinitySkill: 'Work', thresholdLevel: 5, openingLine: 'We worship the crystal.', isBoss: false, unlocks: [],
+    },
+    'mirror_shade': {
+        id: 'mirror_shade', name: 'Mirror Shade', icon: '🪞', element: 'shadow',
+        description: 'Copies Atk.', rarity: 'epic', floor: 6,
+        baseHp: 120, baseAtk: 10, baseDef: 10, baseSpd: 60, critRate: 0.05, critDmg: 1.5,
+        requiredAtk: 5, requiredDef: 3, goldReward: 20, xpReward: 20, abilities: [DEFAULT_ABILITIES.basic_attack],
+        behaviorHint: 'Mirrors player.', personalityTag: 'The Reflection', weaknessSkill: 'Intelligence', affinitySkill: 'Strength', thresholdLevel: 5, openingLine: 'I am you...', isBoss: false, unlocks: [],
+    },
+    'ruin_knight': {
+        id: 'ruin_knight', name: 'Ruin Knight', icon: '⚔️', element: 'fire',
+        description: 'Atk increases.', rarity: 'legendary', floor: 7,
+        baseHp: 150, baseAtk: 25, baseDef: 20, baseSpd: 40, critRate: 0.1, critDmg: 1.5,
+        requiredAtk: 5, requiredDef: 3, goldReward: 20, xpReward: 20, abilities: [DEFAULT_ABILITIES.basic_attack],
+        behaviorHint: 'Atk increases.', personalityTag: 'The Ruined', weaknessSkill: 'Health', affinitySkill: 'Luck', thresholdLevel: 5, openingLine: 'Fall before me.', isBoss: false, unlocks: [],
+    },
+    'crystal_warden': {
+        id: 'crystal_warden', name: 'Crystal Warden', icon: '🔮', element: 'ice',
+        description: 'Mini-boss vault guardian.', rarity: 'legendary', floor: 8,
+        baseHp: 200, baseAtk: 30, baseDef: 30, baseSpd: 50, critRate: 0.1, critDmg: 1.5,
+        requiredAtk: 5, requiredDef: 3, goldReward: 20, xpReward: 20, abilities: [DEFAULT_ABILITIES.basic_attack],
+        behaviorHint: 'Tough vault guard.', personalityTag: 'The Warden', weaknessSkill: 'Cardio', affinitySkill: 'Strength', thresholdLevel: 5, openingLine: 'The vault is sealed.', isBoss: true, unlocks: [],
+    },
+    'the_pathkeeper': {
+        id: 'the_pathkeeper', name: 'The Pathkeeper', icon: '💀', element: 'shadow',
+        description: 'Final boss.', rarity: 'legendary', floor: 9,
+        baseHp: 300, baseAtk: 40, baseDef: 40, baseSpd: 50, critRate: 0.1, critDmg: 1.5,
+        requiredAtk: 5, requiredDef: 3, goldReward: 20, xpReward: 20, abilities: [DEFAULT_ABILITIES.basic_attack],
+        behaviorHint: 'Final boss.', personalityTag: 'The Guardian', weaknessSkill: 'Social', affinitySkill: 'Habit', thresholdLevel: 5, openingLine: 'NO ONE ESCAPES THE PATH!', isBoss: true, unlocks: [],
+    },
+    'the_dreadwyrm': {
+        id: 'the_dreadwyrm', name: 'The Dreadwyrm', icon: '🐉', element: 'fire',
+        description: 'Dragon boss.', rarity: 'legendary', floor: 10,
+        baseHp: 350, baseAtk: 50, baseDef: 35, baseSpd: 45, critRate: 0.15, critDmg: 1.5,
+        requiredAtk: 5, requiredDef: 3, goldReward: 20, xpReward: 20, abilities: [DEFAULT_ABILITIES.basic_attack],
+        behaviorHint: 'Dragon.', personalityTag: 'The Wyrm', weaknessSkill: 'Sleep', affinitySkill: 'Luck', thresholdLevel: 5, openingLine: 'BURN!', isBoss: true, unlocks: [],
+    },
+    'the_voidweaver': {
+        id: 'the_voidweaver', name: 'The Voidweaver', icon: '🕸️', element: 'ice',
+        description: 'Void boss.', rarity: 'legendary', floor: 10,
+        baseHp: 280, baseAtk: 45, baseDef: 50, baseSpd: 60, critRate: 0.1, critDmg: 1.5,
+        requiredAtk: 5, requiredDef: 3, goldReward: 20, xpReward: 20, abilities: [DEFAULT_ABILITIES.basic_attack],
+        behaviorHint: 'Void.', personalityTag: 'The Weaver', weaknessSkill: 'Intelligence', affinitySkill: 'Cardio', thresholdLevel: 5, openingLine: 'Return to nothing.', isBoss: true, unlocks: [],
+    },
+    // ========================================
     // NEW D&D/DIABLO-INSPIRED ENEMIES
     // ========================================
     'hellish_imp': {

@@ -182,7 +182,7 @@ const ARMOR_ITEMS: Item[] = [
     {
         id: 'frostbound_helm',
         name: 'Frostbound Helm',
-        description: 'A freezing helm of absolute zero.',
+        description: 'A freezing helm of absolute zero. Grants +6% Defense and +3% Slow Resistance.',
         icon: '🧊',
         image: frostboundHelmImg,
         type: 'armor',
@@ -197,7 +197,7 @@ const ARMOR_ITEMS: Item[] = [
     {
         id: 'frostbound_chestplate',
         name: 'Frostbound Chestplate',
-        description: 'Heavy chest armor forged in a blizzard.',
+        description: 'Heavy chest armor forged in a blizzard. Grants +10% Defense and +5% Max HP. Passively reduces damage taken from Chilled enemies by 10%.',
         icon: '🦺',
         image: frostboundChestplateImg,
         type: 'armor',
@@ -205,14 +205,14 @@ const ARMOR_ITEMS: Item[] = [
         category: 'combat',
         unlockRequirement: {},
         cost: { gold: 400 },
-        stats: { defense: 10, hp: 50 },
+        stats: { defense: 10, hp: 5 },
         affinity: 'ice',
         rarity: 'rare' 
     },
     {
         id: 'frostbound_gauntlets',
         name: 'Frostbound Gauntlets',
-        description: 'Chilling gauntlets that numb enemies.',
+        description: 'Chilling gauntlets. Grants +6% damage and +4% attack speed. Attacks vs Chilled enemies deal +8% damage.',
         icon: '🧤',
         image: frostboundGauntletsImg,
         type: 'armor',
@@ -220,14 +220,14 @@ const ARMOR_ITEMS: Item[] = [
         category: 'combat',
         unlockRequirement: {},
         cost: { gold: 300 },
-        stats: { defense: 2, attack: 4 },
+        stats: { defense: 2, attack: 6 },
         affinity: 'ice',
         rarity: 'uncommon' 
     },
     {
         id: 'frostbound_leggings',
         name: 'Frostbound Leggings',
-        description: 'Hardened ice greaves.',
+        description: 'Hardened ice greaves. Grants +8% Defense and +4% max HP. Taking damage from Chilled/Frozen enemies reduces damage by 12%.',
         icon: '👖',
         image: frostboundLeggingsImg,
         type: 'armor',
@@ -235,14 +235,14 @@ const ARMOR_ITEMS: Item[] = [
         category: 'combat',
         unlockRequirement: {},
         cost: { gold: 325 },
-        stats: { defense: 8, hp: 20 },
+        stats: { defense: 8, hp: 4 },
         affinity: 'ice',
         rarity: 'rare' 
     },
     {
         id: 'frostbound_boots',
         name: 'Frostbound Boots',
-        description: 'Boots that glide effortlessly over snow.',
+        description: 'Boots that glide effortlessly. Grants +5% defense and +5% action speed. Grants 15% resistance to slow effects.',
         icon: '👢',
         image: frostboundBootsImg,
         type: 'armor',
@@ -257,7 +257,7 @@ const ARMOR_ITEMS: Item[] = [
     {
         id: 'frostbound_cloak',
         name: 'Frostbound Cloak',
-        description: 'A magical cloak perpetually dropping snow.',
+        description: 'A magical cloak perpetually dropping snow. Grants +5% Dodge and +6% Status Resistance. When hit, 20% chance to counter-chill enemy.',
         icon: '🧥',
         image: frostboundCloakImg,
         type: 'armor',

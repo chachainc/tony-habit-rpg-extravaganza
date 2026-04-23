@@ -66,7 +66,7 @@ export const CONQUEST_MAP_NODES: ConquestNodeData[] = [
 
     // Tier 7
     { id: 'n7_a', type: 'event',   label: 'The Toll Bridge',   description: 'A troll demands payment.',         connections: ['boss'],         tier: 7 },
-    { id: 'n7_b', type: 'minigame', label: "Tactician's Trial", description: 'Prove your strategic mind.',      connections: ['boss'],         tier: 7 },
+    { id: 'n7_b', type: 'minigame', label: "Goongie Challenge", description: 'Prove your strategic mind.',      connections: ['boss'],         tier: 7 },
 
     // Tier 8 (Boss)
     { id: 'boss', type: 'boss', label: 'The Pathkeeper', description: 'A massive guardian of the Conquest path. Boss becomes stronger the more Treasure Vaults you completed.', connections: [], tier: 8 },
@@ -281,7 +281,7 @@ export const CONQUEST_EVENT_TABLE: Record<string, EventData> = {
 
 export const MINIGAME_REWARDS = {
     'Fae Mischief':      { sigils: 5,  gold: 30 },
-    "Tactician's Trial": { sigils: 10, gold: 60 },
+    "Goongie Challenge": { sigils: 10, gold: 60 },
 };
 
 export const DICE_SYSTEM = {

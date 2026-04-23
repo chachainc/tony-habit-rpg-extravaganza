@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { useFocusStore, TARGET_FOCUS_SECONDS, TARGET_ADVANCED_FOCUS_SECONDS, TARGET_MYTHIC_FOCUS_SECONDS } from '../../store/useFocusStore';
 import { usePetStore } from '../../store/usePetStore';
 import { useToastStore } from '../../components/ui/Toast';
+import bgVideo from '../../assets/cows_grazing.mp4';
 import './FocusRoom.css';
 
 const ZEN_DIALOGUE = [
@@ -40,6 +41,7 @@ export const FocusRoom: React.FC = () => {
     const [wakeLock, setWakeLock] = useState<any | null>(null);
     const [dialogue, setDialogue] = useState<string | null>(null);
 
+    const videoRef = useRef<HTMLVideoElement>(null);
     const startTimestampRef = useRef<number | null>(null);
     const frameRef = useRef<number | undefined>(undefined);
     const lastProgressRef = useRef<number>(-1);
@@ -121,17 +123,22 @@ export const FocusRoom: React.FC = () => {
     // ── Visibility Auto-Exit ──
     useEffect(() => {
         const handleVisibilityChange = () => {
-            if (document.hidden && isActive) {
-                const finalElapsed = elapsed;
-                
-                setIsActive(false);
-                startTimestampRef.current = null;
-                releaseWakeLock();
+            if (document.hidden) {
+                videoRef.current?.pause();
+                if (isActive) {
+                    const finalElapsed = elapsed;
+                    
+                    setIsActive(false);
+                    startTimestampRef.current = null;
+                    releaseWakeLock();
 
-                if (finalElapsed > 0) {
-                    store.addFocusTime(finalElapsed, tier);
-                    addToast({ message: `Focus Interrupted! +${formatTime(finalElapsed)} added (No bonuses across exits).`, type: 'warning' });
+                    if (finalElapsed > 0) {
+                        store.addFocusTime(finalElapsed, tier);
+                        addToast({ message: `Focus Interrupted! +${formatTime(finalElapsed)} added (No bonuses across exits).`, type: 'warning' });
+                    }
                 }
+            } else {
+                videoRef.current?.play().catch(() => {});
             }
         };
 
@@ -268,6 +275,20 @@ export const FocusRoom: React.FC = () => {
 
     return (
         <motion.div className="focus-room" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+            {/* Background Video Layer */}
+            <div className="focus-room__bg-wrapper">
+                <video 
+                    ref={videoRef}
+                    src={bgVideo} 
+                    className="focus-room__bg-video" 
+                    autoPlay 
+                    loop 
+                    muted 
+                    playsInline 
+                />
+                <div className="focus-room__bg-overlay" />
+            </div>
+
             <div className="focus-room__header">
                 <h1 style={{ color: titleColor }}>{roomTitle}</h1>
                 <p>{roomSubtitle}</p>
@@ -352,6 +373,9 @@ export const FocusRoom: React.FC = () => {
                     ✨ The Cosmic Tortoise floats freely through the infinite void. ✨
                 </div>
             )}
+
+            {/* Mobile Navigation Safety Spacer */}
+            <div style={{ height: 'calc(var(--bottom-nav-height, 60px) + env(safe-area-inset-bottom, 0px) + 20px)', flexShrink: 0, width: '100%' }} className="focus-room-spacer" />
         </motion.div>
     );
 };
