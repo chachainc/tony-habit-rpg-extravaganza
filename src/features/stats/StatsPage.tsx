@@ -10,6 +10,7 @@ import { DonationShrine } from '../shrine/DonationShrine';
 import { useEconomyBalanceStore, PRESTIGE_REQUIRED_LEVEL, PRESTIGE_COST } from '../../store/useEconomyBalanceStore';
 import { useCurrencyStore } from '../../store/useCurrencyStore';
 import { YourAffinitiesPanel } from './YourAffinitiesPanel';
+import { CurrencyIcon } from '../../components/ui/CurrencyIcon';
 import './StatsPage.css';
 
 const SKILL_ICONS: Record<SkillName, string> = {
@@ -285,7 +286,7 @@ export const StatsPage = () => {
                                                                 }
                                                             }}
                                                         >
-                                                            <RotateCcw size={12} /> Prestige ({PRESTIGE_COST.toLocaleString()} 🪙)
+                                                            <RotateCcw size={12} /> Prestige ({PRESTIGE_COST.toLocaleString()} <span style={{display: 'inline-flex', verticalAlign: 'middle'}}><CurrencyIcon currencyType="gold" size={12} /></span>)
                                                         </button>
                                                     )}
                                                 </>

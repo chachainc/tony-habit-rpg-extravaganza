@@ -1,16 +1,17 @@
 import { useNavigate } from 'react-router-dom';
 import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Heart, ChevronLeft, Shield, LogOut, Zap } from 'lucide-react';
+import { Heart, ChevronLeft, Shield, Zap } from 'lucide-react';
 import { useBattleStore } from '../../store/useBattleStore';
 import { useConquestStore } from '../../store/useConquestStore';
 import { useMagicStore } from '../../store/useMagicStore';
 import { useGameStore } from '../../store/useGameStore';
 import { usePlayerAvatar } from '../../hooks/usePlayerAvatar';
-import { useProfileStore } from '../../store/useProfileStore';
+
 import { CONQUEST_ENEMIES, CONQUEST_ELEMENT_ICONS, type ConquestElement } from '../../data/conquest';
 import bgMap from '../../assets/backgrounds/infernal_citadel.png';
 import { useInventoryStore } from '../../store/useInventoryStore';
+import { getEnemyDefeatGoldReward } from '../../utils/enemyRewards';
 import './Conquest.css';
 
 export const ConquestBattle = () => {
@@ -18,7 +19,7 @@ export const ConquestBattle = () => {
     const conquest = useConquestStore();
     const battle = useBattleStore();
     const heroImage = usePlayerAvatar();
-    const classType = useProfileStore(s => s.classType);
+
     const getMagicAttack = useGameStore(s => s.getMagicAttack);
     const getOwnedSpells = useMagicStore(s => s.getOwnedSpells);
 
@@ -126,6 +127,8 @@ export const ConquestBattle = () => {
         }
     }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
+    const initialPhaseRef = useRef(battle.phase);
+
     // Guard: auto-redirect if no active battle state
     useEffect(() => {
         if (!battle.player || !battle.enemy) {
@@ -135,7 +138,14 @@ export const ConquestBattle = () => {
 
     // Watch for battle phase changes
     useEffect(() => {
+        if (battle.phase === 'prep') {
+            battle.startBattle();
+        }
         if (battle.phase === 'victory') {
+            if (initialPhaseRef.current === 'victory') {
+                navigate('/conquest', { replace: true });
+                return;
+            }
             if (battle.player && initialPlayerHpRef.current !== null) {
                 const hpLost = Math.max(0, initialPlayerHpRef.current - battle.player.hp);
                 if (hpLost > 0) {
@@ -144,6 +154,13 @@ export const ConquestBattle = () => {
                 }
             }
             conquest.incrementEnemiesDefeated();
+            useConquestStore.setState(s => ({ runStats: { ...s.runStats, nodesVisited: s.runStats.nodesVisited + 1 } }));
+
+            const isBossOrElite = isBossNode || isVaultNode || (conquestEnemyDef?.tiers && Math.max(...conquestEnemyDef.tiers) >= 3);
+            const killGold = getEnemyDefeatGoldReward(!!isBossOrElite);
+            import('../../store/useCurrencyStore').then(({ useCurrencyStore }) => {
+                 useCurrencyStore.getState().addGold(killGold, { exact: true });
+            });
 
             if (conquestEnemyDef?.special === 'drops_balloons') {
                 const balloonDrop = 2 + Math.floor(Math.random() * 3);
@@ -189,24 +206,17 @@ export const ConquestBattle = () => {
             setShowVictoryModal(true);
         }
         if (battle.phase === 'defeat' || battle.phase === 'escaped') {
+            if (initialPhaseRef.current === battle.phase) {
+                navigate('/conquest', { replace: true });
+                return;
+            }
             conquest.completeRun(false);
             setShowDefeatModal(true);
         }
     }, [battle.phase]); // eslint-disable-line react-hooks/exhaustive-deps
 
 
-    const handleFlee = () => {
-        const fleeCost = Math.floor(conquest.runMaxHP * 0.15);
-        conquest.takeDamage(fleeCost);
 
-        if (conquest.runHP - fleeCost <= 0) {
-            conquest.completeRun(false);
-            setShowDefeatModal(true);
-        } else {
-            battle.resetBattle();
-            navigate('/conquest');
-        }
-    };
 
     const isBossNode = battle.conquestContext === 'conquest_boss';
     const isVaultNode = battle.conquestContext === 'conquest_vault';
@@ -250,13 +260,7 @@ export const ConquestBattle = () => {
             <div className="cq-bg-layer" style={{ backgroundImage: `url(${battleBg})` }} />
             <div className="bg-overlay" />
 
-            {/* ── DEV DEBUG BANNER ───────────────────────────────────── */}
-            <div style={{ position: 'absolute', top: 0, left: 0, right: 0, zIndex: 9999, backgroundColor: 'rgba(220, 38, 38, 0.9)', color: 'white', fontSize: '0.75rem', padding: '4px 8px', fontFamily: 'monospace', display: 'flex', flexWrap: 'wrap', gap: '8px', justifyContent: 'center', pointerEvents: 'none' }}>
-                <span>Node: {conquestEnemyDef?.name || enemy.name}</span>
-                <span>Type: Combat</span>
-                <span>Comp: ConquestBattle.tsx</span>
-                <span>ID: {enemy.id}</span>
-            </div>
+
 
             {/* ── Header ──────────────────────────────────────────────── */}
             <div className="cq-battle-header">
@@ -348,29 +352,13 @@ export const ConquestBattle = () => {
                 {battle.combatLog.slice(-2).reverse().map((entry, i) => (
                     <div key={i} className={`cq-log-entry cq-log-${entry.type}`}>{entry.message}</div>
                 ))}
-                <div className="cq-info-summary" style={{ justifyContent: 'center', backgroundColor: 'rgba(30, 41, 59, 0.7)' }}>
-                    <span className="cq-info-summary-text" style={{ fontSize: '0.9rem', color: '#94a3b8' }}>
-                        Class: <strong style={{ color: '#a78bfa' }}>{classType || 'Warrior'}</strong>
-                    </span>
-                </div>
-
-                <button className="cq-action-btn primary cq-start-btn" onClick={() => battle.startBattle()}>
-                    ⚔️ Start Battle
-                </button>
             </div>
 
 
             {/* ── Action Panel ──────────────────────────────────────── */}
             <div className="cq-action-panel">
-                {battle.phase === 'prep' ? (
-                    /* ── Prep state: collapsible info + start button ── */
-                    <div className="cq-prep-section">
-                        <button className="cq-action-btn primary cq-start-btn" onClick={() => battle.startBattle()}>
-                            ⚔️ Start Battle
-                        </button>
-                    </div>
-                ) : (
-                    /* ── Battle state ── */
+                {/* ── Battle state ── */
+                 battle.phase !== 'prep' && (
                     <>
                         <AnimatePresence>
                             {(isRolling || isHeavyRolling) && (
@@ -569,17 +557,6 @@ export const ConquestBattle = () => {
                                 );
                             })()}
 
-                            {/* Flee (not vs boss) */}
-                            {!isBossNode && (
-                                <button
-                                    className="cq-action-btn flee"
-                                    disabled={!isPlayerTurn || isExecuting}
-                                    onClick={handleFlee}
-                                >
-                                    <div className="cq-btn-top"><LogOut size={14} style={{ display: 'inline', verticalAlign: 'middle' }} /> Flee</div>
-                                    <div className="cq-btn-bot">Costs 15% HP</div>
-                                </button>
-                            )}
                         </div>
                     </>
                 )}

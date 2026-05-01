@@ -3,6 +3,7 @@ import { motion } from 'framer-motion';
 import { X, Sparkles } from 'lucide-react';
 import { useCurrencyStore } from '../../store/useCurrencyStore';
 import { useEconomyBalanceStore, SHRINE_TIERS } from '../../store/useEconomyBalanceStore';
+import { CurrencyIcon } from '../../components/ui/CurrencyIcon';
 import './DonationShrine.css';
 
 interface Props {
@@ -45,7 +46,7 @@ export const DonationShrine = ({ onClose }: Props) => {
                     <button className="shrine-close" onClick={onClose}><X size={18} /></button>
                 </div>
 
-                <div className="shrine-balance">🪙 {gold} Gold</div>
+                <div className="shrine-balance"><span style={{display: 'inline-flex', verticalAlign: 'middle', marginRight: '4px'}}><CurrencyIcon currencyType="gold" size={16} /></span> {gold} Gold</div>
 
                 {/* Donation Stats */}
                 <div className="shrine-stats-row">
@@ -93,7 +94,7 @@ export const DonationShrine = ({ onClose }: Props) => {
                                     </div>
                                 </div>
                                 <div className="shrine-tier-cost">
-                                    {tier.cost.toLocaleString()} 🪙
+                                    {tier.cost.toLocaleString()} <span style={{display: 'inline-flex', verticalAlign: 'middle'}}><CurrencyIcon currencyType="gold" size={14} /></span>
                                 </div>
                             </motion.button>
                         );

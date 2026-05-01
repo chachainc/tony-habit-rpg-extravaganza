@@ -4,6 +4,7 @@ import { PERSIST_REGISTRY } from '../data/persistRegistry';
 import { useCurrencyStore } from './useCurrencyStore';
 import { useArenaStatsStore } from './useArenaStatsStore';
 import { usePetStore } from './usePetStore';
+import { getEnemyDefeatGoldReward } from '../utils/enemyRewards';
 
 // ── Castle / Base Health Tuning ───────────────────────────────────────────
 export const BASE_MAX_HP = 100;
@@ -194,6 +195,7 @@ export interface StormState {
     projectiles: Projectile[];
     enemiesToSpawn: Enemy[];
     spawnTimer: number;
+    sessionKills: number; // For the every 3rd kill rule
 
     defenderInventory: Record<DefenderType, number>;
     obstacleInventory: Record<string, number>;
@@ -305,6 +307,7 @@ export const useStormStore = create<StormState>()(
     damagePopups: [],
     enemiesToSpawn: [],
     spawnTimer: 0,
+    sessionKills: 0,
     defenderInventory: { cow: 0, swordsman: 0, shield: 0, archer: 0, medic: 0 },
     obstacleInventory: { barbed_wire: 0, barricade: 0 },
     hasBoughtFirstCow: localStorage.getItem('stf-free-cow-claimed') === 'true',
@@ -1057,32 +1060,39 @@ export const useStormStore = create<StormState>()(
                     arenaStats.recordCombo();
                 }
 
-                const goldAmount = e.goldReward + comboBonus;
+                const baseGold = getEnemyDefeatGoldReward(!!isBoss || !!e.isElite);
+                const goldAmount = baseGold + comboBonus;
 
                 // Grant gold for all kills
                 useCurrencyStore.getState().addGold(goldAmount, { exact: true });
+                
+                // Track session kills for Shmeckles rule: every 3rd kill = +1 Shmeckle
+                let earnedShmeckle = false;
+                const newSessionKills = (get().sessionKills || 0) + 1;
+                if (newSessionKills % 3 === 0) {
+                    useCurrencyStore.getState().addShmeckles(1);
+                    earnedShmeckle = true;
+                    damagePopups.push({
+                        id: `dpop-shmeckle-${now}-${e.id}`,
+                        x: e.x, y: e.y - 8,
+                        value: 1, isCrit: false, age: 0, icon: '🐌',
+                    });
+                }
+                set({ sessionKills: newSessionKills });
 
-                // Boss extra rewards
+                // Boss popup indicator
                 if (isBoss) {
-                    useCurrencyStore.getState().addShmeckles(5);
-                    useCurrencyStore.getState().addDiamonds(1);
-                    // Boss popup
                     damagePopups.push({
                         id: `dpop-boss-${now}`,
-                        x: e.x, y: e.y - 8,
-                        value: 1, isCrit: true, age: 0, icon: '💎',
-                    });
-                    damagePopups.push({
-                        id: `dpop-boss2-${now}`,
-                        x: e.x, y: e.y,
-                        value: 5, isCrit: false, age: 0, icon: '🐌',
+                        x: e.x, y: e.y - 16,
+                        value: 0, isCrit: true, age: 0, icon: '👑',
                     });
                 }
 
                 // Gold popup
                 damagePopups.push({
                     id: `dpop-${now}-${e.id}`,
-                    x: e.x, y: e.y + (isBoss ? 8 : 0),
+                    x: e.x, y: e.y + (earnedShmeckle ? 8 : 0),
                     value: goldAmount, isCrit: !!e.isElite, age: 0, icon: '🪙',
                 });
 

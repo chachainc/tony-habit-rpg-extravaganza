@@ -735,7 +735,7 @@
     padding: 1rem 0.75rem; /* Increased vertical and horizontal tap area */
     margin: -1rem 0 -1rem -0.5rem; /* Offset margin so it doesn't artificially inflate row height */
     color: rgba(255,255,255,0.3);
-    touch-action: pan-y; /* Provides a hint to the browser to allow vertical scrolling initially */
+    touch-action: none; /* Crucial for custom pointer events to handle dragging without browser intervention */
 }
 
 .drag-handle:active {

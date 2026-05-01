@@ -1,6 +1,6 @@
 import { motion } from 'framer-motion';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { Coins, TrendingUp, Heart, Sword, Shield, Sparkles, Home, Store, BookOpen } from 'lucide-react';
+import { TrendingUp, Heart, Sword, Shield, Sparkles, Home, Store, BookOpen } from 'lucide-react';
 import { useGameStore } from '../../store/useGameStore';
 import { useCheckInStore } from '../../store/useCheckInStore';
 import { useMonopolyStore } from '../../store/useMonopolyStore';
@@ -11,6 +11,7 @@ import { useCurrencyStore } from '../../store/useCurrencyStore';
 import { useTitleStore } from '../../store/useTitleStore';
 import { useActiveBuffs } from '../../hooks/useActiveBuffs';
 import { useState, useEffect } from 'react';
+import { CurrencyIcon } from '../ui/CurrencyIcon';
 import './TopBar.css';
 
 // Stat display helper component
@@ -152,7 +153,7 @@ export const TopBar = () => {
                     title="Go to Marketplace"
                 >
                     <div className="top-bar__icon">
-                        <Coins size={18} />
+                        <CurrencyIcon currencyType="gold" size={18} />
                     </div>
                     <div className="top-bar__content">
                         <span className="top-bar__value">{gold.toLocaleString()}</span>

@@ -14,6 +14,7 @@ import {
 } from './tileConfig';
 import { useCurrencyStore } from '../../store/useCurrencyStore';
 import { useToastStore } from '../../components/ui/Toast';
+import { CurrencyIcon } from '../../components/ui/CurrencyIcon';
 import './ConquestTiles.css';
 
 interface ConquestTilesProps {
@@ -176,7 +177,7 @@ export const ConquestTiles = ({ onComplete, onClose }: ConquestTilesProps) => {
             return;
         }
         if (!currency.spendGold(cost)) {
-            addToast({ message: `Need ${cost}🪙`, type: 'error' });
+            addToast({ message: `Need ${cost} Gold`, type: 'error' });
             return;
         }
         setUsed(usedCount + 1);
@@ -379,8 +380,8 @@ export const ConquestTiles = ({ onComplete, onClose }: ConquestTilesProps) => {
             <div className="tiles-topbar">
                 <span className="tiles-topbar-label">🎴 TILE GAME</span>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.8rem' }}>
-                    <span className={`tiles-topbar-score ${isAnimatingRewards && goldReward > 0 ? 'anim-glow-pulse' : ''}`} style={{ color: '#fbbf24', transition: 'color 0.2s' }}>
-                        🪙 {localGold}
+                    <span className={`tiles-topbar-score ${isAnimatingRewards && goldReward > 0 ? 'anim-glow-pulse' : ''}`} style={{ color: '#fbbf24', transition: 'color 0.2s', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                        <CurrencyIcon currencyType="gold" size={16} /> {localGold}
                     </span>
                     <span className={`tiles-topbar-score ${isAnimatingRewards && gemReward > 0 ? 'anim-glow-pulse' : ''}`} style={{ color: '#ec4899', transition: 'color 0.2s' }}>
                         💎 {localGem}

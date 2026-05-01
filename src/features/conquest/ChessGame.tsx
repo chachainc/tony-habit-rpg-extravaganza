@@ -239,7 +239,7 @@ export const ChessGame = ({ onComplete, onClose, canPlay, isBossMode }: ChessGam
                         <button className="chess-close-btn" onClick={onClose}>×</button>
                     </div>
                     <div className="chess-unavailable">
-                        You've already played your daily chess game today.<br />Come back tomorrow for more Strategy XP!
+                        You've already played your daily chess game today.<br />Come back tomorrow for more Intelligence XP!
                     </div>
                 </motion.div>
             </motion.div>
@@ -322,7 +322,7 @@ export const ChessGame = ({ onComplete, onClose, canPlay, isBossMode }: ChessGam
                             className="chess-action-btn chess-complete-btn"
                             onClick={() => onComplete(gameOver === 'resigned' ? 'loss' : gameOver, isBossMode ? 3 : difficulty)}
                         >
-                            Claim {getXP(gameOver)} Strategy XP
+                            Claim {getXP(gameOver)} Intelligence XP
                         </button>
                     )}
                 </div>

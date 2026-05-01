@@ -6,6 +6,7 @@ import {
 import type { Board, Move } from './chessUtils';
 import { PIECE_UNICODE } from './chessUtils';
 import type { GoongiePuzzle } from '../../data/goongiePuzzles';
+import { CurrencyIcon } from '../../components/ui/CurrencyIcon';
 import './GoongieChallenge.css';
 
 interface GoongieChallengeProps {
@@ -422,7 +423,7 @@ export const GoongieChallenge = ({ puzzle, onComplete, onClose }: GoongieChallen
                 <div className="goongie-actions">
                     {status === 'playing' && (
                         <button className="goongie-btn goongie-btn-secondary" onClick={onClose}>
-                            Flee
+                            Leave
                         </button>
                     )}
                     {status === 'wrong' && (
@@ -438,7 +439,7 @@ export const GoongieChallenge = ({ puzzle, onComplete, onClose }: GoongieChallen
                     {status === 'success' && (
                         <div className="goongie-reward-block">
                             <div className="goongie-reward-row">
-                                <span className="goongie-reward-item">🪙 +{puzzle.reward.gold} Gold</span>
+                                <span className="goongie-reward-item"><span style={{display: 'inline-flex', verticalAlign: 'middle', marginRight: '4px'}}><CurrencyIcon currencyType="gold" size={14} /></span> +{puzzle.reward.gold} Gold</span>
                                 {puzzle.reward.sigils && puzzle.reward.sigils > 0 && (
                                     <span className="goongie-reward-item">💠 +{puzzle.reward.sigils} Sigils</span>
                                 )}

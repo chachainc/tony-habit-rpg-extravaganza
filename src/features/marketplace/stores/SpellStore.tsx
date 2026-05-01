@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Sparkles, Check, Coins } from 'lucide-react';
+import { Sparkles, Check } from 'lucide-react';
+import { CurrencyIcon } from '../../../components/ui/CurrencyIcon';
 import { StoreLayout } from './StoreLayout';
 import { useMagicStore, SPELL_DB, type Spell } from '../../../store/useMagicStore';
 import { useCurrencyStore } from '../../../store/useCurrencyStore';
@@ -93,7 +94,7 @@ const SpellCard = ({ spell, isOwned, canAfford, onBuy }: {
                         onClick={onBuy}
                         disabled={!canAfford}
                     >
-                        <Coins size={16} />
+                        <CurrencyIcon currencyType="gold" size={16} />
                         {spell.goldCost.toLocaleString()}g
                     </button>
                 )}
@@ -157,7 +158,7 @@ export const SpellStore = ({ onClose }: Props) => {
                     <span className="stat-value">{getMaxMP()}</span>
                 </div>
                 <div className="magic-stat">
-                    <span className="stat-icon">💰</span>
+                    <span className="stat-icon"><CurrencyIcon currencyType="gold" size={16} /></span>
                     <span className="stat-label">Gold</span>
                     <span className="stat-value">{gold.toLocaleString()}</span>
                 </div>

@@ -13,6 +13,7 @@ import {
     type ConquestNodeData, type ResourceTileData,
 } from '../../data/conquest';
 import { usePlayerAvatar } from '../../hooks/usePlayerAvatar';
+import { CurrencyIcon } from '../../components/ui/CurrencyIcon';
 import { ConquestStoreUI } from './ConquestStore';
 import { GoongieChallenge } from './GoongieChallenge';
 import { ChessGame } from './ChessGame';
@@ -154,10 +155,11 @@ export const Conquest = () => {
             window.removeEventListener('resize', recalculateLines);
             if (observer) observer.disconnect();
         };
-    }, [conquest.currentNodeId, conquest.completedNodes, reachableNodes]);
+    }, [conquest.currentNodeId, conquest.completedNodes.length, JSON.stringify(reachableNodes)]);
 
     const handleNodeClick = (node: ConquestNodeData) => {
         if (!reachableNodes.includes(node.id)) return;
+        if (useConquestStore.getState().completedNodes.includes(node.id)) return; // Prevent double-tap exploits
         conquest.movePlayer(node.id);
 
         switch (node.type) {
@@ -405,7 +407,7 @@ export const Conquest = () => {
                             🏛️×{conquest.treasureVaultsCompleted}
                         </div>
                     )}
-                    <div className="hud-stat gold"><Coins size={14} /> {currency.gold}</div>
+                    <div className="hud-stat gold"><CurrencyIcon currencyType="gold" size={14} /> {currency.gold}</div>
                     <div className="hud-stat sigils"><Crown size={14} /> {conquest.sigils}</div>
                     {conquest.balloons > 0 && <div className="hud-stat" style={{ color: '#60a5fa' }}>🎈 {conquest.balloons}</div>}
                     {conquest.shmeckles > 0 && <div className="hud-stat" style={{ color: '#a78bfa' }}>🐌 {conquest.shmeckles}</div>}
@@ -424,15 +426,7 @@ export const Conquest = () => {
                 </div>
             </div>
 
-            {/* ── DEV DEBUG BANNER ───────────────────────────────────── */}
-            {conquest.currentNodeId && (
-                <div style={{ position: 'absolute', top: 60, left: 0, right: 0, zIndex: 9999, backgroundColor: 'rgba(220, 38, 38, 0.9)', color: 'white', fontSize: '0.75rem', padding: '4px 8px', fontFamily: 'monospace', display: 'flex', flexWrap: 'wrap', gap: '8px', justifyContent: 'center', pointerEvents: 'none' }}>
-                    <span>Node: {conquest.generatedMap.find(n => n.id === conquest.currentNodeId)?.label || conquest.currentNodeId}</span>
-                    <span>Type: {conquest.generatedMap.find(n => n.id === conquest.currentNodeId)?.type}</span>
-                    <span>Comp: Conquest.tsx</span>
-                    {conquest.activeConquestEnemyId && <span>ID: {conquest.activeConquestEnemyId}</span>}
-                </div>
-            )}
+
 
             {/* Main Viewport Map */}
             <div className="spire-map-viewport" ref={mapContainerRef}>
@@ -452,7 +446,7 @@ export const Conquest = () => {
             </div>
 
             {/* Footer */}
-            <div className="spire-footer">
+            <div className="spire-footer" style={{ paddingBottom: '90px' }}>
                 <div className="dice-status" style={{ textAlign: 'center', width: '100%' }}>
                     <span className="active-roll">
                         {hoveredNode && hoveredNode.type === 'boss'
@@ -544,7 +538,7 @@ export const Conquest = () => {
                                                 ❤️ Heal {activeResourceTile.healChoice}% Max HP
                                             </button>
                                             <button onClick={() => applyResourceReward([], activeResourceTile.goldChoice)}>
-                                                <Coins size={14} style={{ display: 'inline', position: 'relative', top: '2px', marginRight: '4px' }}/>+{activeResourceTile.goldChoice} Gold
+                                                <CurrencyIcon currencyType="gold" size={14} style={{ display: 'inline', position: 'relative', top: '2px', marginRight: '4px' }}/>+{activeResourceTile.goldChoice} Gold
                                             </button>
                                         </div>
                                     )}
@@ -559,7 +553,7 @@ export const Conquest = () => {
                                             ))}
                                             {activeResourceTile.goldChoice && (
                                                 <button onClick={() => applyResourceReward([], activeResourceTile.goldChoice)}>
-                                                    <Coins size={14} style={{ display: 'inline', position: 'relative', top: '2px', marginRight: '4px' }}/>+{activeResourceTile.goldChoice} Gold
+                                                    <CurrencyIcon currencyType="gold" size={14} style={{ display: 'inline', position: 'relative', top: '2px', marginRight: '4px' }}/>+{activeResourceTile.goldChoice} Gold
                                                 </button>
                                             )}
                                         </div>

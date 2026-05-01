@@ -16,7 +16,7 @@ import { WeaponEquipWidget } from './WeaponEquipWidget';
 import { useXpWeaponStore } from '../../store/useXpWeaponStore';
 import { useInventoryStore } from '../../store/useInventoryStore';
 import { Panel } from '../../components/ui/Panel';
-
+import { CurrencyIcon } from '../../components/ui/CurrencyIcon';
 import { GachaButton } from '../../components/ui/GachaButton';
 import './Arena.css';
 
@@ -603,8 +603,9 @@ export const Arena = ({ onClose }: { onClose: () => void }) => {
                             {/* Rewards Row */}
                             {!isLocked && (
                                 <div className="floor-rewards">
-                                    <span>🪙 {enemyDef.goldReward}</span>
-                                    <span>⭐ {enemyDef.xpReward} XP</span>
+                                    <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                        <CurrencyIcon currencyType="gold" size={14} /> {enemyDef.goldReward}
+                                    </span>
                                 </div>
                             )}
                         </div>
@@ -1211,15 +1212,11 @@ export const Arena = ({ onClose }: { onClose: () => void }) => {
                                         <div className="victory-title">VICTORY</div>
                                         <div className="result-rewards">
                                             <div className="reward-row">
-                                                <span>Gold</span>
+                                                <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                                    <CurrencyIcon currencyType="gold" size={16} /> Gold
+                                                </span>
                                                 <span>
                                                     +{Math.floor((ENEMY_DB[enemy!.id].goldReward + getPassiveBonuses().gold_bonus) * (1.0 + Math.min(useCampaignStore.getState().currentStreak, 10) * 0.05))}
-                                                </span>
-                                            </div>
-                                            <div className="reward-row">
-                                                <span>XP</span>
-                                                <span>
-                                                    +{Math.floor(ENEMY_DB[enemy!.id].xpReward * (1.0 + Math.min(useCampaignStore.getState().currentStreak, 10) * 0.05))}
                                                 </span>
                                             </div>
                                         </div>

@@ -4,7 +4,7 @@ import { X, Lock, Unlock } from 'lucide-react';
 import { SEEDS, useGardenStore } from '../../../store/useGardenStore';
 import { useCurrencyStore } from '../../../store/useCurrencyStore';
 import { useSoundStore } from '../../../store/useSoundStore';
-import { Coins } from 'lucide-react';
+import { CurrencyIcon } from '../../../components/ui/CurrencyIcon';
 import { PurchaseSuccessOverlay } from '../../../components/ui/PurchaseSuccessOverlay';
 import './SeedShopModal.css';
 
@@ -65,7 +65,7 @@ export const SeedShopModal = ({ onClose, focusedSeedId }: Props) => {
                 </div>
                 
                 <div className="seed-shop-balance">
-                    <Coins size={16} color="#fbbf24" style={{verticalAlign: 'text-bottom', marginRight: '4px'}}/>
+                    <CurrencyIcon currencyType="gold" size={16} className="text-amber-400" style={{verticalAlign: 'text-bottom', marginRight: '4px'}}/>
                     <strong>{gold.toLocaleString()} Gold</strong>
                 </div>
 

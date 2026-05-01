@@ -129,7 +129,8 @@ export const LoadoutPanel = ({ onClose }: { onClose: () => void }) => {
             }
             case 'pet': {
                 const petDef = petStore.equippedPetId ? PET_DATABASE[petStore.equippedPetId] : null;
-                return { icon: petDef?.icon || '', name: petDef?.name || '', emptyIcon: '🐾' };
+                // Use image if available, otherwise fall back to emoji
+                return { icon: petDef?.image || petDef?.icon || '', name: petDef?.name || '', emptyIcon: '🐾' };
             }
             case 'book': {
                 const book = invStore.equipped.book ? getItemById(invStore.equipped.book) : null;
@@ -337,7 +338,7 @@ export const LoadoutPanel = ({ onClose }: { onClose: () => void }) => {
                 list = Object.values(PET_DATABASE).map(p => ({
                     id: p.id,
                     name: p.name,
-                    icon: p.icon,
+                    icon: p.image || p.icon,
                     desc: `${p.passive.name} · ${p.passive.description}`,
                     isLocked: !petStore.ownedPets.includes(p.id),
                 }));
@@ -449,6 +450,8 @@ export const LoadoutPanel = ({ onClose }: { onClose: () => void }) => {
         setActiveSlot(null);
     };
 
+    const isImageUrl = (s: string) => s.startsWith('/') || s.startsWith('http');
+
     const renderSlot = (id: RadialSlotId, cssClass: string) => {
         const data = getSlotData(id);
         const isEmpty = !data.icon;
@@ -460,6 +463,8 @@ export const LoadoutPanel = ({ onClose }: { onClose: () => void }) => {
             >
                 {isEmpty ? (
                     <span className="slot-placeholder">{data.emptyIcon}</span>
+                ) : isImageUrl(data.icon) ? (
+                    <img src={data.icon} alt={data.name} style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '6px' }} />
                 ) : (
                     <span className="loadout-slot-icon">{data.icon}</span>
                 )}
@@ -626,7 +631,11 @@ export const LoadoutPanel = ({ onClose }: { onClose: () => void }) => {
                                     disabled={item.isLocked}
                                     style={{ opacity: item.isLocked ? 0.5 : 1, filter: item.isLocked ? 'grayscale(100%)' : 'none', cursor: item.isLocked ? 'not-allowed' : 'pointer', position: 'relative' }}
                                 >
-                                    <span className="ls-item-icon">{item.icon}</span>
+                                    <span className="ls-item-icon">
+                                        {(item.icon.startsWith('/') || item.icon.startsWith('http')) ? (
+                                            <img src={item.icon} alt={item.name} style={{ width: '36px', height: '36px', objectFit: 'cover', borderRadius: '6px', display: 'block' }} />
+                                        ) : item.icon}
+                                    </span>
                                     <div className="ls-item-details" style={{ display: 'flex', flexDirection: 'column', flex: 1 }}>
                                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                                             <span className="ls-item-name">{item.name}</span>

@@ -7,6 +7,7 @@ import { useCurrencyStore } from './useCurrencyStore';
 import { useArenaStatsStore } from './useArenaStatsStore';
 import type { TowerType, EnemyType, MapModifierType, WaveModifierType } from '../data/towerDefense';
 import { TD_PATH, TD_TOWERS, TD_ENEMIES, TD_SPECIALIZATIONS, getWaveComposition, rollMapModifier, rollWaveModifier } from '../data/towerDefense';
+import { getEnemyDefeatGoldReward } from '../utils/enemyRewards';
 
 export interface PlacedTower {
     id: string;
@@ -575,11 +576,10 @@ export const useTowerDefenseStore = create<TowerDefenseState>()(
                 const arenaStats = useArenaStatsStore.getState();
                 newEnemies = newEnemies.filter(e => {
                     if (e.hp <= 0 && e.pathIndex < TD_PATH.length - 1) {
-                        // Per-kill reward
+                        // Per-kill reward clamped using shared helper
                         const enemyDef = TD_ENEMIES[e.type];
-                        const rewardMul = e.isElite ? 2 : 1;
-                        const originalKillGold = 10 * rewardMul;
-                        const killGold = Math.max(1, Math.floor(originalKillGold / 10));
+                        const isBossOrElite = enemyDef.isBoss || !!e.isElite;
+                        const killGold = getEnemyDefeatGoldReward(isBossOrElite);
                         
                         useCurrencyStore.getState().addGold(killGold, { exact: true });
                         goldThisTick += killGold;

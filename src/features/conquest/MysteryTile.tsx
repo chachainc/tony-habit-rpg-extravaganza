@@ -1,9 +1,10 @@
 import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Sparkles, Coins, Diamond } from 'lucide-react';
+import { X, Sparkles, Diamond } from 'lucide-react';
 import { useConquestStore } from '../../store/useConquestStore';
 import { useCurrencyStore } from '../../store/useCurrencyStore';
 import { CONQUEST_RELICS, type ConquestRelicDef } from '../../data/conquest';
+import { CurrencyIcon } from '../../components/ui/CurrencyIcon';
 
 type Outcome = 'trap' | 'treasure' | 'npc';
 
@@ -243,7 +244,7 @@ export const MysteryTile = ({ onClose }: MysteryTileProps) => {
                                                     style={{ background: '#b45309', flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}
                                                     onClick={handleTreasureGold}
                                                 >
-                                                    <Coins size={18} color="#fbbf24" /> +20 Gold
+                                                    <CurrencyIcon currencyType="gold" size={18} /> +20 Gold
                                                 </button>
                                                 <button
                                                     className="continue-btn"
@@ -257,7 +258,7 @@ export const MysteryTile = ({ onClose }: MysteryTileProps) => {
                                     ) : (
                                         <>
                                             <p style={{ color: '#fbbf24', fontSize: '1.2rem', fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
-                                                {treasureChoice === 'gold' ? <><Coins size={22} color="#fbbf24" /> +20 Gold!</> : <><Diamond size={22} color="#60a5fa" /> +1 Gem!</>}
+                                                {treasureChoice === 'gold' ? <><CurrencyIcon currencyType="gold" size={22} /> +20 Gold!</> : <><Diamond size={22} color="#60a5fa" /> +1 Gem!</>}
                                             </p>
                                             <button className="continue-btn" onClick={onClose}>Continue</button>
                                         </>
@@ -314,7 +315,7 @@ export const MysteryTile = ({ onClose }: MysteryTileProps) => {
                                                                 whiteSpace: 'nowrap',
                                                             }}
                                                         >
-                                                            <Coins size={12} style={{ display: 'inline', position: 'relative', top: '2px', marginRight: '2px' }} /> {relic.cost}g
+                                                            <CurrencyIcon currencyType="gold" size={12} style={{ display: 'inline', position: 'relative', top: '2px', marginRight: '2px' }} /> {relic.cost}g
                                                         </button>
                                                     )}
                                                 </div>

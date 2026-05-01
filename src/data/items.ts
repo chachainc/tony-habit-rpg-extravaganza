@@ -856,8 +856,8 @@ const PET_ITEMS: Item[] = [
         rarity: 'epic' },
     {
         id: 'pet_porcupine',
-        name: 'Elephant',
-        description: 'Mighty legend',
+        name: 'Porcupine',
+        description: 'A spiky companion with sharp quills.',
         icon: '🦔',
         image: petPorcupineImg,
         type: 'pet',
@@ -879,8 +879,8 @@ const PET_ITEMS: Item[] = [
         rarity: 'uncommon' },
     {
         id: 'pet_giraffe',
-        name: 'Otter',
-        description: 'A playful Water companion that adapts to anything.',
+        name: 'Giraffe',
+        description: 'A tall and graceful companion with a long neck.',
         icon: '🦒',
         image: petGiraffeImg,
         type: 'pet',
@@ -890,8 +890,8 @@ const PET_ITEMS: Item[] = [
         rarity: 'rare' },
     {
         id: 'pet_raven',
-        name: 'Rhino',
-        description: 'A swift Shadow bird.',
+        name: 'Raven',
+        description: 'A swift shadow bird of ill omen.',
         icon: '🐦‍⬛',
         image: petRavenImg,
         type: 'pet',
@@ -901,8 +901,8 @@ const PET_ITEMS: Item[] = [
         rarity: 'rare' },
     {
         id: 'pet_elephant',
-        name: 'Raven',
-        description: 'An ancient Earth behemoth.',
+        name: 'Elephant',
+        description: 'An ancient Earth behemoth with a powerful memory.',
         icon: '🐘',
         image: petElephantImg,
         type: 'pet',
@@ -912,8 +912,8 @@ const PET_ITEMS: Item[] = [
         rarity: 'epic' },
     {
         id: 'pet_rhino',
-        name: 'Giraffe',
-        description: 'A massive Earth juggernaut.',
+        name: 'Rhino',
+        description: 'A massive armored juggernaut that charges down enemies.',
         icon: '🦏',
         image: petRhinoImg,
         type: 'pet',
@@ -945,7 +945,7 @@ const PET_ITEMS: Item[] = [
         rarity: 'uncommon' },
     {
         id: 'pixel_cat', // Was pet_cat
-        name: 'Pixel Cat',
+        name: 'Cat',
         description: 'A nimble feline with sharp claws',
         icon: '🐱',
         type: 'pet',

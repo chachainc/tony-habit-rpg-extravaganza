@@ -39,6 +39,18 @@ export const FurnitureStore = ({ onClose }: Props) => {
     const handlePurchaseClick = (itemId: string) => {
         const item = ITEM_DATABASE[itemId];
         if (!item) return;
+        
+        const playerState = { skills, defense: 0, attack: 0, ownedItems: marketplaceOwned };
+        const purchaseCheck = canPurchaseItem(item, playerState, currencyStore, discountMult);
+        
+        console.log("Furniture purchase tapped", itemId, "Gold:", currencyStore.gold);
+        
+        if (purchaseCheck.missingCurrency.length > 0) {
+            console.log("Purchase failed: Not enough currency", purchaseCheck.missingCurrency);
+            useSoundStore.getState().playErrorSound?.();
+            // Could add a toast here if we imported toastStore, but button is disabled anyway
+        }
+
         setConfirmItem(item);
     };
 
@@ -48,6 +60,7 @@ export const FurnitureStore = ({ onClose }: Props) => {
         const success = purchaseMarketplaceItem(confirmItem.id);
 
         if (success) {
+            console.log("Purchase successful", confirmItem.id);
             playPurchaseSound();
             if (confirmItem.rarity === 'rare' || confirmItem.rarity === 'epic' || confirmItem.rarity === 'legendary') {
                 playUnlockSound();
@@ -55,6 +68,8 @@ export const FurnitureStore = ({ onClose }: Props) => {
 
             setSuccessItem(confirmItem);
             setShowSuccess(true);
+        } else {
+            console.log("Purchase failed during confirm", confirmItem.id);
         }
 
         setConfirmItem(null);

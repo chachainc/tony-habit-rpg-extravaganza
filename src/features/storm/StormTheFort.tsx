@@ -11,6 +11,7 @@ import {
 } from '../../store/useStormStore';
 import type { StormEnemyType, DefenderType } from '../../store/useStormStore';
 import { useCurrencyStore } from '../../store/useCurrencyStore';
+import { CurrencyIcon } from '../../components/ui/CurrencyIcon';
 import './StormTheFort.css';
 
 // Full stats for purchase confirmation modal
@@ -289,7 +290,7 @@ export const StormTheFort = () => {
                 <div className="storm-hud-right">
                     <div className="storm-currencies">
                         <span className="storm-currency">🐌 {shmeckles}</span>
-                        <span className="storm-currency">🪙 {gold}</span>
+                        <span className="storm-currency"><span style={{display: 'inline-flex', verticalAlign: 'middle'}}><CurrencyIcon currencyType="gold" size={16} /></span> {gold}</span>
                     </div>
                     {gameState === 'playing' ? (
                         <button className="storm-btn icon" onClick={pauseGame}><Pause size={18} /></button>
@@ -379,7 +380,7 @@ export const StormTheFort = () => {
                         }}
                     >
                         <span className="combo-count">x{popup.count} COMBO!</span>
-                        <span className="combo-bonus">+{popup.bonus} 🪙</span>
+                        <span className="combo-bonus">+{popup.bonus} <span style={{display: 'inline-flex', verticalAlign: 'middle'}}><CurrencyIcon currencyType="gold" size={14} /></span></span>
                     </div>
                 ))}
 
@@ -559,7 +560,7 @@ export const StormTheFort = () => {
                         {lastWaveRewards && (
                             <div className="storm-rewards">
                                 <span>+{lastWaveRewards.shmeckles} 🐌</span>
-                                <span>+{lastWaveRewards.gold} 🪙</span>
+                                <span>+{lastWaveRewards.gold} <span style={{display: 'inline-flex', verticalAlign: 'middle'}}><CurrencyIcon currencyType="gold" size={14} /></span></span>
                                 {lastWaveRewards.diamonds ? <span>+{lastWaveRewards.diamonds} 💎</span> : null}
                             </div>
                         )}

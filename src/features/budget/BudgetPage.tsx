@@ -4,6 +4,7 @@ import { DollarSign, History, PlusCircle, Trash2, TrendingDown, Flame, Clock } f
 import { Panel } from '../../components/ui/Panel';
 import { useBudgetStore, BUDGET_CATEGORIES, type Transaction, type BudgetCategory } from '../../store/useBudgetStore';
 import { useToastStore } from '../../components/ui/Toast';
+import budgetBg from '../../assets/budget_bg.jpg';
 import './BudgetPage.css';
 
 export const BudgetPage: React.FC = () => {
@@ -104,7 +105,7 @@ export const BudgetPage: React.FC = () => {
 
     return (
         <div className="budget-tab-wrapper">
-            <div className="budget-bg-layer" />
+            <div className="budget-bg-layer" style={{ backgroundImage: `url(${budgetBg})` }} />
             <div className="budget-bg-overlay" />
             
             <div className="budget-page-container fade-in" style={{ position: 'relative', zIndex: 1 }}>

@@ -63,11 +63,28 @@ export const ShopModal = ({ category, onClose }: Props) => {
 
     const handleBuy = (item: ItemDef) => {
         const cost = Math.max(1, Math.floor(item.price * discountMult));
+        
+        if (item.type === 'furniture') {
+            console.log("Furniture purchase tapped");
+            console.log("Item ID:", item.id);
+            console.log("Current gold:", currency);
+        }
+
         if (currency >= cost) {
             addCurrency(-cost);
             addItem(item.id);
             loyalty.recordPurchase(storeId);
+            
+            if (item.type === 'furniture') {
+                console.log("Success reason: Enough gold, purchase successful.");
+                import('../../store/useRoomStore').then(({ useRoomStore }) => {
+                    useRoomStore.getState().purchaseRoomFurniture(item.id);
+                });
+            }
         } else {
+            if (item.type === 'furniture') {
+                console.log("Fail reason: Not enough gold.");
+            }
             alert("Not enough coins!");
         }
     };
@@ -197,9 +214,8 @@ export const ShopModal = ({ category, onClose }: Props) => {
                                         </div>
                                         <div className="item-actions">
                                             <button
-                                                className="buy-btn"
+                                                className={`buy-btn ${currency < Math.max(1, Math.floor(item.price * discountMult)) ? 'cannot-afford' : ''}`}
                                                 onClick={() => handleBuy(item)}
-                                                disabled={currency < Math.max(1, Math.floor(item.price * discountMult))}
                                             >
                                                 {discountPercent > 0 ? (
                                                     <div className="discounted-price-container">
@@ -222,9 +238,8 @@ export const ShopModal = ({ category, onClose }: Props) => {
                                             </button>
                                             {(item.type === 'weapon' || item.type === 'armor') && (
                                                 <button
-                                                    className="equip-btn"
+                                                    className={`equip-btn ${currency < Math.max(1, Math.floor(item.price * discountMult)) ? 'cannot-afford' : ''}`}
                                                     onClick={() => handleBuyAndEquip(item)}
-                                                    disabled={currency < Math.max(1, Math.floor(item.price * discountMult))}
                                                 >
                                                     Buy & Equip
                                                 </button>
