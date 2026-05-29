@@ -36,6 +36,8 @@ interface DisplayItem {
     itemDef?: ItemDef | null;
 }
 
+const isImageUrl = (s: string) => s && (s.startsWith('/') || s.startsWith('http') || s.startsWith('data:image/'));
+
 export const EquipmentPanel = () => {
     const inventory = useInventoryStore();
     const petStore = usePetStore();
@@ -66,7 +68,7 @@ export const EquipmentPanel = () => {
             return allPets.map(id => ({
                 id,
                 name: PET_DATABASE[id]?.name || 'Unknown Pet',
-                icon: PET_DATABASE[id]?.icon || '🐾',
+                icon: PET_DATABASE[id]?.image || PET_DATABASE[id]?.icon || '🐾',
                 rarity: PET_DATABASE[id]?.rarity || 'common',
                 effectText: `Passive: ${PET_DATABASE[id]?.passive?.name || 'none'} — ${PET_DATABASE[id]?.passive?.description || ''}`,
                 description: undefined,
@@ -99,7 +101,7 @@ export const EquipmentPanel = () => {
             return {
                 id,
                 name: item.name,
-                icon: item.icon,
+                icon: item.image || item.icon,
                 rarity: item.rarity,
                 effectText,
                 description: item.description,
@@ -121,7 +123,7 @@ export const EquipmentPanel = () => {
             return {
                 id: petId,
                 name: pet.name,
-                icon: pet.icon,
+                icon: pet.image || pet.icon,
                 rarity: pet.rarity,
                 effectText: `Passive: ${pet.passive?.name || 'none'} — ${pet.passive?.description || ''}`,
                 description: undefined,
@@ -137,7 +139,7 @@ export const EquipmentPanel = () => {
         return {
             id: equippedId,
             name: item.name,
-            icon: item.icon,
+            icon: item.image || item.icon,
             rarity: item.rarity,
             effectText,
             description: item.description,
@@ -190,7 +192,13 @@ export const EquipmentPanel = () => {
                 <div className="slot-content">
                     {displayItem ? (
                         <>
-                            <div className="slot-icon">{displayItem.icon}</div>
+                            <div className="slot-icon">
+                                {isImageUrl(displayItem.icon) ? (
+                                    <img src={displayItem.icon} alt={displayItem.name} style={{ width: '40px', height: '40px', objectFit: 'cover', borderRadius: '6px' }} />
+                                ) : (
+                                    displayItem.icon
+                                )}
+                            </div>
                             <div className="slot-name">{displayItem.name}</div>
                             {displayItem.effectText && (
                                 <div className="slot-bonus-summary">{displayItem.effectText}</div>
@@ -246,7 +254,13 @@ export const EquipmentPanel = () => {
                                         disabled={isLocked}
                                         style={{ opacity: isLocked ? 0.5 : 1, filter: isLocked ? 'grayscale(100%)' : 'none', cursor: isLocked ? 'not-allowed' : 'pointer' }}
                                     >
-                                        <div className="item-icon-wrapper">{item.icon}</div>
+                                        <div className="item-icon-wrapper">
+                                            {isImageUrl(item.icon) ? (
+                                                <img src={item.icon} alt={item.name} style={{ width: '30px', height: '30px', objectFit: 'cover', borderRadius: '4px' }} />
+                                            ) : (
+                                                item.icon
+                                            )}
+                                        </div>
                                         <div className="item-info">
                                             <div className="item-header-row">
                                                 <span className="item-name">{item.name}</span>

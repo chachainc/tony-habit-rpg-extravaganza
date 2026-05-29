@@ -5,6 +5,7 @@ import { useCurrencyStore } from './useCurrencyStore';
 import { useArenaStatsStore } from './useArenaStatsStore';
 import { usePetStore } from './usePetStore';
 import { getEnemyDefeatGoldReward } from '../utils/enemyRewards';
+import { enableStormFort } from '../utils/featureFlags';
 
 // ── Castle / Base Health Tuning ───────────────────────────────────────────
 export const BASE_MAX_HP = 100;
@@ -17,7 +18,7 @@ export const WIRE_ZONE_X_MAX = 75; // left of barricade
 // ── Lane definitions ──────────────────────────────────────────────────────
 const LANE_Y = [25, 50, 75]; // 3 lanes
 
-// ── Enemy type definitions — gold rewards ONLY (no shmeckles per kill) ────
+// ── Enemy type definitions — gold rewards ONLY ────
 export type StormEnemyType = 'goblin' | 'orc' | 'skeleton' | 'bat_swarm' | 'dark_knight' | 'golem' | 'boss_slime';
 
 export const STORM_ENEMY_DEFS: Record<StormEnemyType, {
@@ -143,7 +144,7 @@ export interface StormDamagePopup {
     value: number;
     isCrit: boolean;
     age: number;
-    icon: string;   // '🪙' for gold, '🐌' for shmeckle, '💎' for diamond
+    icon: string;   // '🪙' for gold, '💎' for gem
 }
 
 export interface Defender extends CombatEntity {
@@ -210,10 +211,10 @@ export interface StormState {
         wireStrengthLevel: number;
         trapDamageLevel: number;
         trapDurabilityLevel: number;
-        shmeckleWaveBonusLevel: number;
-        shmeckleKillBonusLevel: number;
+        goldWaveBonusLevel: number;
+        goldKillBonusLevel: number;
     };
-    lastWaveRewards: { shmeckles: number; gold: number; diamonds?: number } | null;
+    lastWaveRewards: { gold: number; gems?: number } | null;
 
     comboCount: number;
     comboTimer: number;
@@ -322,8 +323,8 @@ export const useStormStore = create<StormState>()(
         wireStrengthLevel: 0,
         trapDamageLevel: 0,
         trapDurabilityLevel: 0,
-        shmeckleWaveBonusLevel: 0,
-        shmeckleKillBonusLevel: 0,
+        goldWaveBonusLevel: 0,
+        goldKillBonusLevel: 0,
     },
     lastWaveRewards: null,
 
@@ -563,11 +564,11 @@ export const useStormStore = create<StormState>()(
         const isFree = type === 'cow' && !state.hasBoughtFirstCow;
         const owned = state.defenderInventory[type] || 0;
 
-        if (owned > 0 || isFree || store.shmeckles >= cost) {
+        if (owned > 0 || isFree || store.gold >= cost) {
             if (owned > 0) {
                 set(s => ({ defenderInventory: { ...s.defenderInventory, [type]: owned - 1 } }));
             } else {
-                if (!isFree) store.spendShmeckles(cost);
+                if (!isFree) store.spendGold(cost);
                 if (type === 'cow' && !state.hasBoughtFirstCow) {
                     set({ hasBoughtFirstCow: true });
                     localStorage.setItem('stf-free-cow-claimed', 'true');
@@ -612,11 +613,11 @@ export const useStormStore = create<StormState>()(
         const state = get();
         const owned = state.obstacleInventory[type] || 0;
 
-        if (owned > 0 || store.shmeckles >= cost) {
+        if (owned > 0 || store.gold >= cost) {
             if (owned > 0) {
                 set(s => ({ obstacleInventory: { ...s.obstacleInventory, [type]: owned - 1 } }));
             } else {
-                store.spendShmeckles(cost);
+                store.spendGold(cost);
             }
 
             const durabilityBonus = state.upgrades.trapDurabilityLevel * 20;
@@ -669,8 +670,8 @@ export const useStormStore = create<StormState>()(
         cost = Math.floor(cost * (1 - (petStats.costDiscount / 100)));
 
         const store = useCurrencyStore.getState();
-        if (store.shmeckles >= cost) {
-            store.spendShmeckles(cost);
+        if (store.gold >= cost) {
+            store.spendGold(cost);
             set(state => {
                 const newUpgrades = { ...state.upgrades, [upgradeKey]: currentLevel + 1 };
                 let newMaxHp = state.maxFortHp;
@@ -690,6 +691,7 @@ export const useStormStore = create<StormState>()(
 
     // ── End game ──────────────────────────────────────────────────────────
     endGame: (victory) => {
+        if (!enableStormFort) return;
         set(state => {
             const petStats = getPetFortStats();
             const baseHp = BASE_MAX_HP + (state.upgrades.fortHealthLevel * 50);
@@ -707,25 +709,24 @@ export const useStormStore = create<StormState>()(
             };
 
             if (victory) {
-                // Wave shmeckles (kept as wave bonus — not per kill)
-                const waveShmeckles = state.wave * 5 + (state.upgrades.shmeckleWaveBonusLevel * 5);
-                // Early game shmeckle bonus (waves 1-3)
-                const earlyBonus = state.wave <= 3 ? state.wave : 0;
-                const totalShmeckles = waveShmeckles + earlyBonus;
+                // Wave gold bonus (converted from shmeckles ×5)
+                const waveGoldBonus = (state.wave * 5 + (state.upgrades.goldWaveBonusLevel * 5)) * 5;
+                // Early game bonus (waves 1-3)
+                const earlyBonus = state.wave <= 3 ? state.wave * 5 : 0;
+                const totalWaveGold = waveGoldBonus + earlyBonus;
                 const waveGold = Math.min(state.wave * 5, 50);
-                // Boss wave diamonds
-                const waveDiamonds = isBossWave ? 1 : 0;
+                const combinedGold = totalWaveGold + waveGold;
+                // Boss wave gems
+                const waveGems = isBossWave ? 1 : 0;
 
                 newState.lastWaveRewards = {
-                    shmeckles: totalShmeckles,
-                    gold: waveGold,
-                    diamonds: waveDiamonds,
+                    gold: combinedGold,
+                    gems: waveGems,
                 };
 
                 const arenaStats = useArenaStatsStore.getState();
                 arenaStats.recordWaveSurvived();
-                arenaStats.recordGold(waveGold);
-                arenaStats.recordShmeckles(totalShmeckles);
+                arenaStats.recordGold(combinedGold);
                 arenaStats.updateStormBest(state.wave);
 
                 // Grant XP, rank defenders
@@ -746,9 +747,8 @@ export const useStormStore = create<StormState>()(
                 });
 
                 import('./useCurrencyStore').then(({ useCurrencyStore: cs }) => {
-                    cs.getState().addShmeckles(totalShmeckles);
-                    cs.getState().addGold(waveGold);
-                    if (waveDiamonds > 0) cs.getState().addDiamonds(waveDiamonds);
+                    cs.getState().addGold(combinedGold, { exact: true });
+                    if (waveGems > 0) cs.getState().addGems(waveGems);
                 });
 
                 const finalWave = state.wave;
@@ -1037,7 +1037,7 @@ export const useStormStore = create<StormState>()(
             }
         }
 
-        // ── Kill processing — gold only, boss gives shmeckles + diamonds ──
+        // ── Kill processing — gold only, boss gives gems ──
         const arenaStats = useArenaStatsStore.getState();
         const damagePopups: StormDamagePopup[] = [];
 
@@ -1066,16 +1066,16 @@ export const useStormStore = create<StormState>()(
                 // Grant gold for all kills
                 useCurrencyStore.getState().addGold(goldAmount, { exact: true });
                 
-                // Track session kills for Shmeckles rule: every 3rd kill = +1 Shmeckle
-                let earnedShmeckle = false;
+                // Track session kills for bonus gold: every 3rd kill = +5 gold
+                let earnedBonusGold = false;
                 const newSessionKills = (get().sessionKills || 0) + 1;
                 if (newSessionKills % 3 === 0) {
-                    useCurrencyStore.getState().addShmeckles(1);
-                    earnedShmeckle = true;
+                    useCurrencyStore.getState().addGold(5, { exact: true });
+                    earnedBonusGold = true;
                     damagePopups.push({
-                        id: `dpop-shmeckle-${now}-${e.id}`,
+                        id: `dpop-bonus-${now}-${e.id}`,
                         x: e.x, y: e.y - 8,
-                        value: 1, isCrit: false, age: 0, icon: '🐌',
+                        value: 5, isCrit: false, age: 0, icon: '🪙',
                     });
                 }
                 set({ sessionKills: newSessionKills });
@@ -1092,7 +1092,7 @@ export const useStormStore = create<StormState>()(
                 // Gold popup
                 damagePopups.push({
                     id: `dpop-${now}-${e.id}`,
-                    x: e.x, y: e.y + (earnedShmeckle ? 8 : 0),
+                    x: e.x, y: e.y + (earnedBonusGold ? 8 : 0),
                     value: goldAmount, isCrit: !!e.isElite, age: 0, icon: '🪙',
                 });
 

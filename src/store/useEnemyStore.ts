@@ -454,12 +454,12 @@ export const ENEMY_DB: Record<string, EnemyDef> = {
         requiredAtk: 5, requiredDef: 3, goldReward: 20, xpReward: 20, abilities: [DEFAULT_ABILITIES.basic_attack],
         behaviorHint: 'Fast and attacks twice in its logic.', personalityTag: 'The Quick', weaknessSkill: 'Cardio', affinitySkill: 'Sleep', thresholdLevel: 5, openingLine: 'SCREEECH!', isBoss: false, unlocks: [],
     },
-    'sigil_leech': {
-        id: 'sigil_leech', name: 'Sigil Leech', icon: '🩸', element: 'shadow',
-        description: 'Steals resources.', rarity: 'rare', floor: 2,
+    'gold_leech': {
+        id: 'gold_leech', name: 'Gold Leech', icon: '🩸', element: 'shadow',
+        description: 'Steals gold.', rarity: 'rare', floor: 2,
         baseHp: 100, baseAtk: 20, baseDef: 20, baseSpd: 50, critRate: 0.05, critDmg: 1.5,
         requiredAtk: 5, requiredDef: 3, goldReward: 20, xpReward: 20, abilities: [DEFAULT_ABILITIES.basic_attack],
-        behaviorHint: 'Steals sigils.', personalityTag: 'The Thief', weaknessSkill: 'Strength', affinitySkill: 'Flexibility', thresholdLevel: 5, openingLine: 'Give me your power...', isBoss: false, unlocks: [],
+        behaviorHint: 'Steals gold.', personalityTag: 'The Thief', weaknessSkill: 'Strength', affinitySkill: 'Flexibility', thresholdLevel: 5, openingLine: 'Give me your power...', isBoss: false, unlocks: [],
     },
     'iron_husk': {
         id: 'iron_husk', name: 'Iron Husk', icon: '🛡️', element: 'neutral',
@@ -468,12 +468,12 @@ export const ENEMY_DB: Record<string, EnemyDef> = {
         requiredAtk: 5, requiredDef: 3, goldReward: 20, xpReward: 20, abilities: [DEFAULT_ABILITIES.basic_attack],
         behaviorHint: 'Very fortified.', personalityTag: 'The Husk', weaknessSkill: 'Intelligence', affinitySkill: 'Hygiene', thresholdLevel: 5, openingLine: '...', isBoss: false, unlocks: [],
     },
-    'balloon_goblin': {
-        id: 'balloon_goblin', name: 'Balloon Goblin', icon: '🎈', element: 'nature',
-        description: 'Drops extra balloons.', rarity: 'common', floor: 4,
+    'gold_goblin': {
+        id: 'gold_goblin', name: 'Gold Goblin', icon: '🪙', element: 'nature',
+        description: 'Drops extra gold.', rarity: 'common', floor: 4,
         baseHp: 90, baseAtk: 20, baseDef: 10, baseSpd: 60, critRate: 0.05, critDmg: 1.5,
         requiredAtk: 5, requiredDef: 3, goldReward: 20, xpReward: 20, abilities: [DEFAULT_ABILITIES.basic_attack],
-        behaviorHint: 'Drops balloons.', personalityTag: 'The Hoarder', weaknessSkill: 'Habit', affinitySkill: 'Social', thresholdLevel: 5, openingLine: 'Mine!', isBoss: false, unlocks: [],
+        behaviorHint: 'Drops extra gold.', personalityTag: 'The Hoarder', weaknessSkill: 'Habit', affinitySkill: 'Social', thresholdLevel: 5, openingLine: 'Mine!', isBoss: false, unlocks: [],
     },
     'gem_cultist': {
         id: 'gem_cultist', name: 'Gem Cultist', icon: '💎', element: 'ice',

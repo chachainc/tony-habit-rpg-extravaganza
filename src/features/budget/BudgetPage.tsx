@@ -21,6 +21,7 @@ export const BudgetPage: React.FC = () => {
         processDailyLogin,
         creditCardResetDay,
         setCreditCardResetDay,
+        weeklyGiftType,
     } = useBudgetStore();
 
     const { addToast } = useToastStore();
@@ -134,6 +135,60 @@ export const BudgetPage: React.FC = () => {
                             <DollarSign size={22} className="budget-title-icon" />
                             Weekly Budget
                         </h1>
+                    </div>
+
+                    {/* ══ WEEKLY PROGRESS SUMMARY ═══════════════════════════ */}
+                    <div className="bp-card bp-progress-card-main" style={{ marginBottom: '1.25rem' }}>
+                        <div className="bp-card-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <div className="bp-card-title">
+                                <TrendingDown size={16} className="bp-card-icon" />
+                                Spending Progress
+                            </div>
+                            {weeklyStreak > 0 && (
+                                <div className="bp-streak-badge" style={{ display: 'flex', alignItems: 'center', gap: '4px', background: 'rgba(239, 68, 68, 0.15)', color: '#ef4444', padding: '0.25rem 0.6rem', borderRadius: '99px', fontSize: '0.75rem', fontWeight: 700 }}>
+                                    <Flame size={12} fill="currentColor" /> {weeklyStreak} Week Streak
+                                </div>
+                            )}
+                        </div>
+
+                        <div className="bp-progress-stats" style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '0.85rem', margin: '1rem 0' }}>
+                            <div className="bp-stat-item" style={{ background: 'rgba(255,255,255,0.02)', padding: '0.65rem', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.04)' }}>
+                                <div style={{ fontSize: '0.7rem', color: '#94a3b8', textTransform: 'uppercase', fontWeight: 600 }}>Spent</div>
+                                <div style={{ fontSize: '1.15rem', fontWeight: 800, color: '#f8fafc', marginTop: '2px' }}>${totalSpent.toFixed(2)}</div>
+                            </div>
+                            <div className="bp-stat-item" style={{ background: 'rgba(255,255,255,0.02)', padding: '0.65rem', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.04)' }}>
+                                <div style={{ fontSize: '0.7rem', color: '#94a3b8', textTransform: 'uppercase', fontWeight: 600 }}>Remaining</div>
+                                <div style={{ fontSize: '1.15rem', fontWeight: 800, color: remaining === 0 && totalSpent > budget.amount ? '#ef4444' : '#10b981', marginTop: '2px' }}>${remaining.toFixed(2)}</div>
+                            </div>
+                            <div className="bp-stat-item" style={{ background: 'rgba(255,255,255,0.02)', padding: '0.65rem', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.04)' }}>
+                                <div style={{ fontSize: '0.7rem', color: '#94a3b8', textTransform: 'uppercase', fontWeight: 600 }}>Limit</div>
+                                <div style={{ fontSize: '1.15rem', fontWeight: 800, color: '#94a3b8', marginTop: '2px' }}>${budget.amount.toFixed(2)}</div>
+                            </div>
+                            <div className="bp-stat-item" style={{ background: 'rgba(255,255,255,0.02)', padding: '0.65rem', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.04)' }}>
+                                <div style={{ fontSize: '0.7rem', color: '#94a3b8', textTransform: 'uppercase', fontWeight: 600 }}>Reward Active</div>
+                                <div style={{ fontSize: '0.85rem', fontWeight: 800, color: '#fbbf24', marginTop: '4px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                                    {weeklyGiftType?.replace('_', ' ')}
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="bp-progress-track" style={{ height: '8px', background: 'rgba(255,255,255,0.06)', borderRadius: '99px', overflow: 'hidden', margin: '0.75rem 0 0.5rem 0' }}>
+                            <motion.div
+                                className={`bp-progress-fill bp-fill-${progressClass}`}
+                                style={{ height: '100%', borderRadius: '99px' }}
+                                initial={{ width: 0 }}
+                                animate={{ width: `${progressPercent}%` }}
+                                transition={{ duration: 1.1, ease: 'easeOut' }}
+                            />
+                        </div>
+                        <div className="bp-progress-meta" style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', color: '#94a3b8' }}>
+                            <span>{progressPercent.toFixed(0)}% used</span>
+                            {totalSpent > budget.amount ? (
+                                <span style={{ color: '#ef4444', fontWeight: 700 }}>Over limit by ${(totalSpent - budget.amount).toFixed(2)}!</span>
+                            ) : (
+                                <span style={{ color: '#10b981', fontWeight: 700 }}>On track</span>
+                            )}
+                        </div>
                     </div>
 
                     {/* ══ CREDIT CARD RESET DAY ═══════════════════════════ */}

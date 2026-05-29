@@ -5,7 +5,6 @@ import { useGameStore } from '../../store/useGameStore';
 import { useCheckInStore } from '../../store/useCheckInStore';
 import { useMonopolyStore } from '../../store/useMonopolyStore';
 import { useBattleStore } from '../../store/useBattleStore';
-import { useConquestStore } from '../../store/useConquestStore';
 import { useProfileStore } from '../../store/useProfileStore';
 import { useCurrencyStore } from '../../store/useCurrencyStore';
 import { useTitleStore } from '../../store/useTitleStore';
@@ -81,13 +80,11 @@ export const TopBar = () => {
     const navigate = useNavigate();
     const location = useLocation();
     const { globalXp, getGlobalLevel, getAttack, getDefense, getMagicAttack, getMaxMP } = useGameStore();
-    const { gold, diamonds } = useCurrencyStore();
+    const { gold, gems } = useCurrencyStore();
     const { streakCount } = useCheckInStore();
     const { dailyTickets } = useMonopolyStore();
     const { player, currentMP } = useBattleStore();
-    const { sigils } = useConquestStore();
     const { profileName, playerTitle, activeBannerId } = useProfileStore();
-    const { shmeckles } = useCurrencyStore();
     const { activeTitle, getUnlockedTitleDefs } = useTitleStore();
 
     const titleDefs = getUnlockedTitleDefs();
@@ -230,20 +227,6 @@ export const TopBar = () => {
                 {isCombatRoute && (
                     <>
                         <div
-                            className="top-bar__stat top-bar__stat--sigil top-bar__stat--clickable"
-                            onClick={() => navigate('/conquest')}
-                            title="Sigils"
-                        >
-                            <span>🔱 {sigils}</span>
-                        </div>
-                        <div
-                            className="top-bar__stat top-bar__stat--shmeckles top-bar__stat--clickable"
-                            onClick={() => navigate('/storm')}
-                            title="Shmeckles"
-                        >
-                            <span>🐌 {shmeckles}</span>
-                        </div>
-                        <div
                             className="top-bar__stat top-bar__stat--mp"
                             title="Mana"
                         >
@@ -280,11 +263,11 @@ export const TopBar = () => {
                 <div
                     className="top-bar__item top-bar__item--clickable top-bar__item--gems"
                     onClick={() => navigate('/marketplace')}
-                    title="Diamonds"
+                    title="Gems"
                 >
                     <div className="top-bar__icon">💎</div>
                     <div className="top-bar__content">
-                        <span className="top-bar__value">{diamonds}</span>
+                        <span className="top-bar__value">{gems}</span>
                     </div>
                 </div>
 

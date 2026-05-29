@@ -1420,4 +1420,120 @@
 .wl-day-card__load-btn:hover {
     filter: brightness(1.1);
     box-shadow: 0 4px 16px rgba(16, 185, 129, 0.4);
+}
+
+/* ── 7-Day Split Templates Section ──────────────────────────── */
+.gym-hub-container {
+    padding-bottom: 100px; /* Safe padding for bottom navigation */
+}
+
+.gym-section-title {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--text-strong, #e2e8f0);
+    margin: 1.5rem 0 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.gym-divider {
+    height: 1px;
+    background: rgba(255, 255, 255, 0.08);
+    margin: 2rem 0 1rem;
+}
+
+.gym-template-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 0.75rem;
+}
+
+@media (min-width: 600px) {
+    .gym-template-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+.gym-template-card {
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-radius: 16px;
+    padding: 1.25rem;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    gap: 1rem;
+    transition: all 0.25s ease;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
+    backdrop-filter: blur(10px);
+}
+
+.gym-template-card:hover {
+    background: rgba(255, 255, 255, 0.05);
+    border-color: rgba(255, 255, 255, 0.1);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.4);
+}
+
+.gym-template-card__header {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.75rem;
+}
+
+.gym-template-card__icon {
+    font-size: 1.8rem;
+    background: rgba(255, 255, 255, 0.05);
+    padding: 0.5rem;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    height: 44px;
+}
+
+.gym-template-card__details {
+    flex: 1;
+}
+
+.gym-template-card__title {
+    margin: 0 0 0.25rem 0;
+    font-size: 1rem;
+    font-weight: 700;
+    color: #f8fafc;
+}
+
+.gym-template-card__subtitle {
+    margin: 0;
+    font-size: 0.8rem;
+    color: #94a3b8;
+    line-height: 1.4;
+}
+
+.gym-template-card__start-btn {
+    border: none;
+    border-radius: 12px;
+    color: white;
+    padding: 0.65rem 1rem;
+    font-size: 0.85rem;
+    font-weight: 700;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+    width: 100%;
+    min-height: 40px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.gym-template-card__start-btn:hover {
+    filter: brightness(1.15);
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.35);
+    transform: translateY(-1px);
+}
+
+.gym-template-card__start-btn:active {
+    transform: translateY(0);
 }

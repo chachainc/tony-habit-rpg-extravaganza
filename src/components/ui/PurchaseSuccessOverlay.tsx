@@ -1,6 +1,7 @@
 import { motion, AnimatePresence } from 'framer-motion';
 import { useEffect } from 'react';
 import type { Item } from '../../data/items';
+import { PET_DATABASE } from '../../data/pets';
 import './PurchaseSuccessOverlay.css';
 
 interface Props {
@@ -29,6 +30,8 @@ export const PurchaseSuccessOverlay = ({ item, isVisible, onComplete }: Props) =
 
     const isRare = item.rarity === 'rare' || item.rarity === 'epic' || item.rarity === 'legendary';
     const glowColor = rarityColors[item.rarity || 'common'];
+    const resolvedImage = item.type === 'pet' && PET_DATABASE[item.id]?.image ? PET_DATABASE[item.id].image : item.image;
+    const isImage = resolvedImage && (resolvedImage.startsWith('/') || resolvedImage.startsWith('http') || resolvedImage.startsWith('data:image/'));
 
     return (
         <AnimatePresence>
@@ -92,7 +95,13 @@ export const PurchaseSuccessOverlay = ({ item, isVisible, onComplete }: Props) =
                             delay: 0.2,
                         }}
                     >
-                        <div className="item-icon-reveal">{item.icon}</div>
+                        <div className="item-icon-reveal" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                            {isImage ? (
+                                <img src={resolvedImage} alt={item.name} className="item-reveal-image" style={{ width: '90px', height: '90px', objectFit: 'cover', borderRadius: '12px' }} />
+                            ) : (
+                                item.icon
+                            )}
+                        </div>
                     </motion.div>
 
                     {/* Success text */}

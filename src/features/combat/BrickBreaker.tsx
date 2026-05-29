@@ -3,7 +3,6 @@ import { motion } from 'framer-motion';
 import { X, ChevronLeft, ChevronRight, Heart } from 'lucide-react';
 import { useMiniGameStore } from '../../store/useMiniGameStore';
 import { useCurrencyStore } from '../../store/useCurrencyStore';
-import { useConquestStore } from '../../store/useConquestStore';
 import './BrickBreaker.css';
 
 // ═══════════════════════════════════════════════════════════════
@@ -202,8 +201,7 @@ export const BrickBreaker = ({ onClose }: { onClose: () => void }) => {
     const containerRef = useRef<HTMLDivElement>(null);
     const animRef = useRef<number>(0);
     const { canPlayBreaker, recordBreakerPlay, recordBreakerWin, breakerHighScore, highestBreakerLevel, unlockNextLevel } = useMiniGameStore();
-    const { addGold, addShmeckles, addDiamonds } = useCurrencyStore();
-    const { addSigils } = useConquestStore();
+    const { addGold, addGems } = useCurrencyStore();
 
     const [score, setScore] = useState(0);
     const [, setLives] = useState(3);
@@ -213,7 +211,7 @@ export const BrickBreaker = ({ onClose }: { onClose: () => void }) => {
     const [, setActiveEffectLabels] = useState<string[]>([]);
     const [gameStarted, setGameStarted] = useState(false);
     const [canPlay] = useState(canPlayBreaker());
-    const [selectedLevel, setSelectedLevel] = useState(1);
+    const [selectedLevel, setSelectedLevel] = useState(highestBreakerLevel);
 
     const activeLevelRef = useRef(1);
 
@@ -775,10 +773,9 @@ export const BrickBreaker = ({ onClose }: { onClose: () => void }) => {
                 const hitStreak = recordBreakerWin(finalScore);
                 setGotGemBonus(hitStreak);
                 
-                addShmeckles(1);
-                addSigils(1);
+                addGold(10);
                 if (hitStreak) {
-                    addDiamonds(1);
+                    addGems(1);
                 }
 
                 const goldBonus = isBossLevel(activeLevelRef.current) ? activeLevelRef.current : 0;
@@ -852,7 +849,7 @@ export const BrickBreaker = ({ onClose }: { onClose: () => void }) => {
         
     }, 0); // End of setTimeout deferral
 
-    }, [canPlay, selectedLevel, addGold, recordBreakerPlay, recordBreakerWin, addShmeckles, addSigils, addDiamonds, unlockNextLevel, spawnParticles, triggerShake, tryDropPowerUp, applyPowerUp]);
+    }, [canPlay, selectedLevel, addGold, recordBreakerPlay, recordBreakerWin, addGems, unlockNextLevel, spawnParticles, triggerShake, tryDropPowerUp, applyPowerUp]);
 
     const playsRemaining = Math.max(0, 3 - (useMiniGameStore.getState().breakerPlaysToday));
     const showIdleScreen = !gameStarted && !gameOver && !won;
@@ -961,7 +958,7 @@ export const BrickBreaker = ({ onClose }: { onClose: () => void }) => {
                         <div className="breaker-result-score">Score: <strong>{score}</strong></div>
                         {won && (
                             <div className="breaker-reward-summary" style={{ textAlign: 'center', margin: '8px 0', fontSize: '14px', color: '#cbd5e1' }}>
-                                <div style={{ marginBottom: '4px' }}>+1 Shmeckle &nbsp; +1 Sigil &nbsp; +1 Balloon</div>
+                                <div style={{ marginBottom: '4px' }}>+10 Gold</div>
                                 {gotGemBonus && (
                                     <div style={{ color: '#ec4899', fontWeight: 'bold' }}>3/3 Streak Bonus: +1 Gem</div>
                                 )}

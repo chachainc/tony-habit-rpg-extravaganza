@@ -1,7 +1,7 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
-import { BookOpen, Film, Lightbulb, ArrowLeft } from 'lucide-react';
+import { BookOpen, Film, Lightbulb, BookMarked, ArrowLeft } from 'lucide-react';
 import { useJournalStore } from '../../store/useJournalStore';
 import './Journal.css';
 import cowBg from '../../assets/magical_cows_library.png';
@@ -14,6 +14,17 @@ export const JournalHub: React.FC = () => {
     const personalCount = store.getEntriesByCategory('personal').length;
     const movieCount = store.getEntriesByCategory('movie').length;
     const bookCount = store.getEntriesByCategory('book').length;
+    const readingLogCount = (store.readingLogs || []).length;
+
+    // Generate random offsets for embers once
+    const embers = useMemo(() => {
+        return [...Array(8)].map((_, i) => ({
+            id: i,
+            left: `${Math.random() * 90 + 5}%`,
+            delay: `${Math.random() * 8}s`,
+            duration: `${10 + Math.random() * 8}s`,
+        }));
+    }, []);
 
     return (
         <motion.div 
@@ -27,58 +38,100 @@ export const JournalHub: React.FC = () => {
                 <div className="journal-bg-overlay" />
             </div>
 
-            <div className="journal-header journal-header--hub">
+            {/* Magical Floating Library Embers */}
+            <div className="journal-embers">
+                {embers.map((ember) => (
+                    <div
+                        key={ember.id}
+                        className="journal-ember"
+                        style={{
+                            left: ember.left,
+                            animationDelay: ember.delay,
+                            animationDuration: ember.duration
+                        }}
+                    />
+                ))}
+            </div>
+
+            <div className="journal-header">
                 <button className="journal-btn-icon" onClick={() => navigate('/room')}>
-                    <ArrowLeft size={24} />
+                    <ArrowLeft size={20} />
                 </button>
                 <h1>Journal</h1>
-                <div style={{ width: 24 }} /> {/* balancer */}
+                <div style={{ width: 36 }} /> {/* balancer */}
             </div>
 
             <div className="journal-hub-grid">
                 <motion.button 
                     className="journal-hub-card card-personal"
-                    whileHover={{ scale: 1.02 }}
-                    whileTap={{ scale: 0.98 }}
-                    transition={{ type: "spring", stiffness: 400, damping: 25 }}
+                    whileHover={{ scale: 1.03 }}
+                    whileTap={{ scale: 0.97 }}
                     onClick={() => navigate('/journal/personal')}
                 >
                     <div className="journal-hub-icon-wrapper personal-glow">
-                        <BookOpen size={48} className="journal-hub-icon" />
+                        <BookOpen size={28} />
                     </div>
-                    <h2>Personal</h2>
-                    <p>Thoughts & daily notes</p>
-                    <div className="journal-hub-badge personal-badge">{personalCount} {personalCount === 1 ? 'entry' : 'entries'}</div>
+                    <div>
+                        <h2>Personal</h2>
+                        <p>Thoughts & notes</p>
+                    </div>
+                    <div className="journal-hub-badge personal-badge">
+                        {personalCount} {personalCount === 1 ? 'entry' : 'entries'}
+                    </div>
                 </motion.button>
 
                 <motion.button 
                     className="journal-hub-card card-movie"
-                    whileHover={{ scale: 1.02 }}
-                    whileTap={{ scale: 0.98 }}
-                    transition={{ type: "spring", stiffness: 400, damping: 25 }}
+                    whileHover={{ scale: 1.03 }}
+                    whileTap={{ scale: 0.97 }}
                     onClick={() => navigate('/journal/movie')}
                 >
                     <div className="journal-hub-icon-wrapper movie-glow">
-                        <Film size={48} className="journal-hub-icon" />
+                        <Film size={28} />
                     </div>
-                    <h2>Movie Log</h2>
-                    <p>Movies watched & reactions</p>
-                    <div className="journal-hub-badge movie-badge">{movieCount} {movieCount === 1 ? 'log' : 'logs'}</div>
+                    <div>
+                        <h2>Movie Log</h2>
+                        <p>Watched & reviews</p>
+                    </div>
+                    <div className="journal-hub-badge movie-badge">
+                        {movieCount} {movieCount === 1 ? 'log' : 'logs'}
+                    </div>
+                </motion.button>
+
+                <motion.button 
+                    className="journal-hub-card card-reading"
+                    whileHover={{ scale: 1.03 }}
+                    whileTap={{ scale: 0.97 }}
+                    onClick={() => navigate('/journal/reading-log')}
+                >
+                    <div className="journal-hub-icon-wrapper reading-glow">
+                        <BookMarked size={28} />
+                    </div>
+                    <div>
+                        <h2>Reading Log</h2>
+                        <p>Daily reading records</p>
+                    </div>
+                    <div className="journal-hub-badge reading-badge">
+                        {readingLogCount} {readingLogCount === 1 ? 'entry' : 'entries'}
+                    </div>
                 </motion.button>
 
                 <motion.button 
                     className="journal-hub-card card-book"
-                    whileHover={{ scale: 1.02 }}
-                    whileTap={{ scale: 0.98 }}
-                    transition={{ type: "spring", stiffness: 400, damping: 25 }}
+                    whileHover={{ scale: 1.03 }}
+                    whileTap={{ scale: 0.97 }}
                     onClick={() => navigate('/journal/book')}
                 >
                     <div className="journal-hub-icon-wrapper book-glow">
-                        <Lightbulb size={48} className="journal-hub-icon" />
+                        <Lightbulb size={28} />
                     </div>
-                    <h2>My Book Ideas</h2>
-                    <p>Story ideas & concepts</p>
-                    <div className="journal-hub-badge book-badge">{bookCount} {bookCount === 1 ? 'idea' : 'ideas'}</div>
+                    <div>
+                        <h2>My Book Ideas</h2>
+                        <p>Story ideas & concepts</p>
+                    </div>
+                    <div className="journal-hub-badge book-badge">
+                        {bookCount} {bookCount === 1 ? 'idea' : 'ideas'}
+                    </div>
                 </motion.button>
             </div>
         </motion.div>

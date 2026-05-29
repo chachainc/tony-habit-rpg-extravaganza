@@ -1,6 +1,34 @@
 import type { AffinityType } from './affinities';
 
 // ── Pet image assets (imported here so PET_DATABASE is the single truth source) ──
+import etherealCowImg from '../assets/pets/ethereal_cow.png';
+import wizardCowImg from '../assets/pets/wizard_cow.jpg';
+import archerCowImg from '../assets/pets/archer_cow.jpg';
+import warCowImg from '../assets/pets/war_cow.jpg';
+import cowKingImg from '../assets/pets/cow_king.png';
+import petChickenImg from '../assets/pets/pet_chicken_spin.jpg';
+import petGooseImg from '../assets/pets/pet_goose_spin.jpg';
+import petPigImg from '../assets/pets/pet_pig_spin.jpg';
+import petSheepImg from '../assets/pets/pet_sheep_spin.jpg';
+import petDogImg from '../assets/pets/pet_dog_spin.jpg';
+import pixelCatImg from '../assets/pets/pet_cat_spin.jpg';
+import petRabbitImg from '../assets/pets/pet_rabbit_spin.jpg';
+import petPorcupineImg from '../assets/pets/pet_porcupine.jpg';
+import petPlatypusImg from '../assets/pets/pet_platypus.jpg';
+import petGiraffeImg from '../assets/pets/pet_giraffe.jpg';
+import petRavenImg from '../assets/pets/pet_raven.jpg';
+import petRhinoImg from '../assets/pets/pet_rhino.jpg';
+import petElephantImg from '../assets/pets/pet_elephant.jpg';
+import petBearImg from '../assets/pets/pet_bear.jpg';
+import tankCowImg from '../assets/pets/tank_cow.jpg';
+import treasureCowImg from '../assets/pets/treasure_cow.jpg';
+import blazehornCowImg from '../assets/pets/blazehorn_cow.jpg';
+import frostgrazerCowImg from '../assets/pets/frostgrazer_cow.jpg';
+import shadowhoofCowImg from '../assets/pets/shadowhoof_cow.jpg';
+import infernohornCowImg from '../assets/pets/infernohorn_cow.jpg';
+import glacierhoofCowImg from '../assets/pets/glacierhoof_cow.jpg';
+import jackpotCowImg from '../assets/pets/jackpot_cow.jpg';
+import commanderCowImg from '../assets/pets/commander_cow.jpg';
 
 export interface PetPassive {
     name: string;
@@ -32,62 +60,62 @@ export const PET_DATABASE: Record<string, PetDefinition> = {
         passive: { name: 'Novice Greed', description: '+2% gold earned', type: 'gold_percent', value: 2 }
     },
     'ethereal_cow': {
-        id: 'ethereal_cow', name: 'Ethereal Cow', icon: '🌌', image: '/assets/pets/ethereal_cow.png?v=2',
+        id: 'ethereal_cow', name: 'Ethereal Cow', icon: '🌌', image: etherealCowImg,
         rarity: 'legendary', obtainMethod: 'jackpot',
         passive: { name: 'Cosmic Blessing', description: '+20% daily rewards', type: 'daily_rewards', value: 20 }
     },
     'wizard_cow': {
-        id: 'wizard_cow', name: 'Wizard Cow', icon: '🧙🐮', image: '/assets/pets/wizard_cow.jpg?v=2',
+        id: 'wizard_cow', name: 'Wizard Cow', icon: '🧙🐮', image: wizardCowImg,
         rarity: 'rare', obtainMethod: 'shop_purchase',
         passive: { name: 'Arcane Sight', description: '+10% drop chance', type: 'drop_chance', value: 10 }
     },
     'highland_archer_cow': {
-        id: 'highland_archer_cow', name: 'Highland Archer Cow', icon: '🏹🐮', image: '/assets/pets/archer_cow.jpg?v=2',
+        id: 'highland_archer_cow', name: 'Highland Archer Cow', icon: '🏹🐮', image: archerCowImg,
         rarity: 'rare', obtainMethod: 'shop_purchase',
         passive: { name: 'Keen Eye', description: '+5% drop chance', type: 'drop_chance', value: 5 }
     },
     'meditating_war_cow': {
-        id: 'meditating_war_cow', name: 'Meditating War Cow', icon: '🧘🐮', image: '/assets/pets/war_cow.jpg?v=2',
+        id: 'meditating_war_cow', name: 'Meditating War Cow', icon: '🧘🐮', image: warCowImg,
         rarity: 'epic', obtainMethod: 'shop_purchase',
         passive: { name: 'Savage Strike', description: '+10 Attack', type: 'flat_atk', value: 10 }
     },
     'cow_king': {
-        id: 'cow_king', name: 'Cow King', icon: '👑🐮', image: '/assets/pets/cow_king.png?v=2',
+        id: 'cow_king', name: 'Cow King', icon: '👑🐮', image: cowKingImg,
         rarity: 'legendary', obtainMethod: 'other',
         passive: { name: "Warlord's Aura", description: '+10% all combat stats', type: 'combat_all', value: 10 }
     },
     'pet_chicken': {
-        id: 'pet_chicken', name: 'Chicken', icon: '🐔', image: '/assets/pets/pet_chicken_spin.jpg?v=2',
+        id: 'pet_chicken', name: 'Chicken', icon: '🐔', image: petChickenImg,
         rarity: 'common', obtainMethod: 'board_drop',
         passive: { name: 'Novice Greed', description: '+2% gold earned', type: 'gold_percent', value: 2 }
     },
     'pet_goose': {
-        id: 'pet_goose', name: 'Goose', icon: '🪿', image: '/assets/pets/pet_goose_spin.jpg?v=2',
+        id: 'pet_goose', name: 'Goose', icon: '🪿', image: petGooseImg,
         rarity: 'rare', obtainMethod: 'board_drop',
         passive: { name: 'Keen Eye', description: '+5% drop chance', type: 'drop_chance', value: 5 }
     },
     'pet_pig': {
-        id: 'pet_pig', name: 'Pig', icon: '🐷', image: '/assets/pets/pet_pig_spin.jpg?v=2',
+        id: 'pet_pig', name: 'Pig', icon: '🐷', image: petPigImg,
         rarity: 'common', obtainMethod: 'board_drop',
         passive: { name: 'Novice Greed', description: '+2% gold earned', type: 'gold_percent', value: 2 }
     },
     'pet_sheep': {
-        id: 'pet_sheep', name: 'Sheep', icon: '🐑', image: '/assets/pets/pet_sheep_spin.jpg?v=2',
+        id: 'pet_sheep', name: 'Sheep', icon: '🐑', image: petSheepImg,
         rarity: 'common', obtainMethod: 'board_drop',
         passive: { name: 'Novice Greed', description: '+2% gold earned', type: 'gold_percent', value: 2 }
     },
     'pet_dog': {
-        id: 'pet_dog', name: 'Dog', icon: '🐕', image: '/assets/pets/pet_dog_spin.jpg?v=2',
+        id: 'pet_dog', name: 'Dog', icon: '🐕', image: petDogImg,
         rarity: 'uncommon', obtainMethod: 'shop_purchase',
         passive: { name: 'Adept Greed', description: '+4% gold earned', type: 'gold_percent', value: 4 }
     },
     'pixel_cat': {
-        id: 'pixel_cat', name: 'Cat', icon: '🐱', image: '/assets/pets/pet_cat_spin.jpg?v=2',
+        id: 'pixel_cat', name: 'Cat', icon: '🐱', image: pixelCatImg,
         rarity: 'rare', obtainMethod: 'daily_spin',
         passive: { name: 'Keen Eye', description: '+5% drop chance', type: 'drop_chance', value: 5 }
     },
     'pet_rabbit': {
-        id: 'pet_rabbit', name: 'Rabbit', icon: '🐇', image: '/assets/pets/pet_rabbit_spin.jpg?v=2',
+        id: 'pet_rabbit', name: 'Rabbit', icon: '🐇', image: petRabbitImg,
         rarity: 'uncommon', obtainMethod: 'board_drop',
         passive: { name: 'Adept Greed', description: '+4% gold earned', type: 'gold_percent', value: 4 }
     },
@@ -112,37 +140,37 @@ export const PET_DATABASE: Record<string, PetDefinition> = {
         passive: { name: 'Keen Eye', description: '+5% drop chance', type: 'drop_chance', value: 5 }
     },
     'pet_porcupine': {
-        id: 'pet_porcupine', name: 'Porcupine', icon: '🦔', image: '/assets/pets/pet_porcupine.jpg?v=2',
+        id: 'pet_porcupine', name: 'Porcupine', icon: '🦔', image: petPorcupineImg,
         rarity: 'uncommon', obtainMethod: 'shop_purchase',
         passive: { name: 'Adept Greed', description: '+4% gold earned', type: 'gold_percent', value: 4 }
     },
     'pet_platypus': {
-        id: 'pet_platypus', name: 'Platypus', icon: '🦆', image: '/assets/pets/pet_platypus.jpg?v=2',
+        id: 'pet_platypus', name: 'Platypus', icon: '🦆', image: petPlatypusImg,
         rarity: 'uncommon', obtainMethod: 'shop_purchase',
         passive: { name: 'Adept Greed', description: '+4% gold earned', type: 'gold_percent', value: 4 }
     },
     'pet_giraffe': {
-        id: 'pet_giraffe', name: 'Giraffe', icon: '🦒', image: '/assets/pets/pet_giraffe.jpg?v=2',
+        id: 'pet_giraffe', name: 'Giraffe', icon: '🦒', image: petGiraffeImg,
         rarity: 'rare', obtainMethod: 'shop_purchase',
         passive: { name: 'Keen Eye', description: '+5% drop chance', type: 'drop_chance', value: 5 }
     },
     'pet_raven': {
-        id: 'pet_raven', name: 'Raven', icon: '🐦‍⬛', image: '/assets/pets/pet_raven.jpg?v=2',
+        id: 'pet_raven', name: 'Raven', icon: '🐦‍⬛', image: petRavenImg,
         rarity: 'rare', obtainMethod: 'shop_purchase',
         passive: { name: 'Keen Eye', description: '+5% drop chance', type: 'drop_chance', value: 5 }
     },
     'pet_rhino': {
-        id: 'pet_rhino', name: 'Rhino', icon: '🦏', image: '/assets/pets/pet_rhino.jpg?v=2',
+        id: 'pet_rhino', name: 'Rhino', icon: '🦏', image: petRhinoImg,
         rarity: 'epic', obtainMethod: 'shop_purchase',
         passive: { name: 'Savage Strike', description: '+10 Attack', type: 'flat_atk', value: 10 }
     },
     'pet_elephant': {
-        id: 'pet_elephant', name: 'Elephant', icon: '🐘', image: '/assets/pets/pet_elephant.jpg?v=2',
+        id: 'pet_elephant', name: 'Elephant', icon: '🐘', image: petElephantImg,
         rarity: 'epic', obtainMethod: 'shop_purchase',
         passive: { name: "Master's Greed", description: '+12% gold earned', type: 'gold_percent', value: 12 }
     },
     'pet_bear': {
-        id: 'pet_bear', name: 'Bear', icon: '🐻', image: '/assets/pets/pet_bear.jpg?v=2',
+        id: 'pet_bear', name: 'Bear', icon: '🐻', image: petBearImg,
         rarity: 'rare', obtainMethod: 'shop_purchase',
         passive: { name: 'Keen Eye', description: '+5% drop chance', type: 'drop_chance', value: 5 }
     },
@@ -207,54 +235,54 @@ export const PET_DATABASE: Record<string, PetDefinition> = {
         passive: { name: 'Lucky Hoof', description: '15% chance to double gold rewards.', type: 'gold_double_chance', value: 15 }
     },
     'tank_cow': {
-        id: 'tank_cow', name: 'Tank Cow', icon: '🐮🧱', image: '/assets/pets/tank_cow.jpg?v=2',
+        id: 'tank_cow', name: 'Tank Cow', icon: '🐮🧱', image: tankCowImg,
         rarity: 'rare', obtainMethod: 'shop_purchase',
         passive: { name: 'Storm Wall', description: 'Gain +12% Defense. Walls start with +25% HP and upgrades cost 10% less.', type: 'tank_storm', value: { defense: 12, fortHpPercent: 25, fortCostDiscount: 10 } }
     },
     'treasure_cow': {
-        id: 'treasure_cow', name: 'Treasure Hoof Cow', icon: '🐮🏴‍☠️', image: '/assets/pets/treasure_cow.jpg?v=2',
+        id: 'treasure_cow', name: 'Treasure Hoof Cow', icon: '🐮🏴‍☠️', image: treasureCowImg,
         rarity: 'rare', obtainMethod: 'shop_purchase',
-        passive: { name: 'Pirate Hoard', description: 'Gain +15% gold, +1 bonus gold per reward, and a 10% chance for extra sigils or shmeckles.', type: 'treasure_hoof', value: { goldPct: 15, flatGold: 1, chanceExtraCurrency: 10 } },
+        passive: { name: 'Pirate Hoard', description: 'Gain +15% gold and +1 bonus gold per reward.', type: 'treasure_hoof', value: { goldPct: 15, flatGold: 1 } },
         affinity: 'economy'
     },
     'blazehorn_cow': {
-        id: 'blazehorn_cow', name: 'Blazehorn Cow', icon: '🐮🔥', image: '/assets/pets/blazehorn_cow.jpg?v=2',
+        id: 'blazehorn_cow', name: 'Blazehorn Cow', icon: '🐮🔥', image: blazehornCowImg,
         rarity: 'uncommon', obtainMethod: 'shop_purchase',
         passive: { name: 'Blazing Hooves', description: '+10% damage. Applies Burn (2% max HP per turn for 3 turns) when attacking.', type: 'blazehorn_burn', value: { atkPct: 10, burnTurnPct: 2 } },
         affinity: 'fire'
     },
     'frostgrazer_cow': {
-        id: 'frostgrazer_cow', name: 'Frostgrazer Cow', icon: '🐮❄️', image: '/assets/pets/frostgrazer_cow.jpg?v=2',
+        id: 'frostgrazer_cow', name: 'Frostgrazer Cow', icon: '🐮❄️', image: frostgrazerCowImg,
         rarity: 'uncommon', obtainMethod: 'shop_purchase',
         passive: { name: 'Glacial Presence', description: '+8% defense. Attacks have a 20% chance to Slow enemies for 2 turns.', type: 'frostgrazer_slow', value: { defPct: 8, slowChancePct: 20, slowTurns: 2 } },
         affinity: 'ice'
     },
     'shadowhoof_cow': {
-        id: 'shadowhoof_cow', name: 'Shadowhoof Cow', icon: '🐮🌑', image: '/assets/pets/shadowhoof_cow.jpg?v=2',
+        id: 'shadowhoof_cow', name: 'Shadowhoof Cow', icon: '🐮🌑', image: shadowhoofCowImg,
         rarity: 'uncommon', obtainMethod: 'shop_purchase',
         passive: { name: 'Vampiric Aura', description: '+5% crit chance. Heal 3% of damage dealt.', type: 'shadowhoof_lifesteal', value: { critPct: 5, lifestealPct: 3 } },
         affinity: 'shadow'
     },
     'infernohorn_cow': {
-        id: 'infernohorn_cow', name: 'Infernohorn Cow', icon: '🐮🔥', image: '/assets/pets/infernohorn_cow.jpg?v=2',
+        id: 'infernohorn_cow', name: 'Infernohorn Cow', icon: '🐮🔥', image: infernohornCowImg,
         rarity: 'rare', obtainMethod: 'shop_purchase',
         passive: { name: 'Living Inferno', description: '+15% damage. Applies Burn (3% max HP per turn). Burn spreads on kill.', type: 'infernohorn_burn', value: { atkPct: 15, burnTurnPct: 3, spreads: true } },
         affinity: 'fire'
     },
     'glacierhoof_cow': {
-        id: 'glacierhoof_cow', name: 'Glacierhoof Cow', icon: '🐮❄️', image: '/assets/pets/glacierhoof_cow.jpg?v=2',
+        id: 'glacierhoof_cow', name: 'Glacierhoof Cow', icon: '🐮❄️', image: glacierhoofCowImg,
         rarity: 'rare', obtainMethod: 'shop_purchase',
         passive: { name: 'Deep Freeze', description: '+12% defense. Attacks have a 25% chance to Freeze enemies for 1 turn.', type: 'glacierhoof_freeze', value: { defPct: 12, freezeChancePct: 25, freezeTurns: 1 } },
         affinity: 'ice'
     },
     'jackpot_cow': {
-        id: 'jackpot_cow', name: 'Jackpot Cow', icon: '🐮🎰', image: '/assets/pets/jackpot_cow.jpg?v=2',
+        id: 'jackpot_cow', name: 'Jackpot Cow', icon: '🐮🎰', image: jackpotCowImg,
         rarity: 'epic', obtainMethod: 'shop_purchase',
         passive: { name: 'Triple 7s', description: '+8% crit chance. 12% chance to TRIPLE all rewards!', type: 'jackpot_multiplier', value: { critPct: 8, rewardMultiplierChance: 12, rewardMultiplier: 3 } },
         affinity: 'luck'
     },
     'commander_cow': {
-        id: 'commander_cow', name: 'Commander Cow', icon: '🐮🎖️', image: '/assets/pets/commander_cow.jpg?v=2',
+        id: 'commander_cow', name: 'Commander Cow', icon: '🐮🎖️', image: commanderCowImg,
         rarity: 'rare', obtainMethod: 'shop_purchase',
         passive: { name: 'Tactical Command', description: '+8% Attack, +8% Defense, +5% Speed. +1 Bonus Soldier in Conquest.', type: 'commander_cow_neutral', value: { atkPct: 8, defPct: 8, spdPct: 5, bonusSoldier: 1 } },
         affinity: 'neutral'

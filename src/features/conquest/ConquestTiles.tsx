@@ -102,15 +102,15 @@ export const ConquestTiles = ({ onComplete, onClose }: ConquestTilesProps) => {
     
     // Local display states for animated increment
     const [localGold, setLocalGold] = useState(currency.gold);
-    const [localGem, setLocalGem]   = useState(currency.diamonds);
+    const [localGem, setLocalGem]   = useState(currency.gems);
 
     // Keep synced while not animating
     useEffect(() => {
         if (!isAnimatingRewards) {
             setLocalGold(currency.gold);
-            setLocalGem(currency.diamonds);
+            setLocalGem(currency.gems);
         }
-    }, [currency.gold, currency.diamonds, isAnimatingRewards]);
+    }, [currency.gold, currency.gems, isAnimatingRewards]);
 
     // ─── INIT ──────────────────────────────────────────
     useEffect(() => {
@@ -277,7 +277,7 @@ export const ConquestTiles = ({ onComplete, onClose }: ConquestTilesProps) => {
             if (gdReward <= 0) return finish();
             currentD += gdReward;
             setLocalGem(currentD);
-            currency.addDiamonds(gdReward);
+            currency.addGems(gdReward);
             setTimeout(finish, 600);
         };
 

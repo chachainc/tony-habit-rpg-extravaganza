@@ -464,11 +464,7 @@
     flex-shrink: 0;
 }
 
-/* Sigil stat */
-.top-bar__stat--sigil {
-    color: #d4af37;
-    border-color: rgba(212, 175, 55, 0.2);
-}
+
 
 /* ==================== QUICK NAV BUTTONS ==================== */
 .top-bar__nav-buttons {

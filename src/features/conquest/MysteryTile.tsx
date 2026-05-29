@@ -83,7 +83,7 @@ export const MysteryTile = ({ onClose }: MysteryTileProps) => {
 
     // ─── Trap Resolve ────────────────────────────────────────────────────────
     const handleTrapResolve = () => {
-        // Traps deal Run HP damage — they never remove gold/sigils/resources
+        // Traps deal Run HP damage - they never remove gold or resources
         const hpLost = Math.floor(Math.random() * 10) + 5; // 5-14 HP damage
         conquest.takeDamage(hpLost);
         setResultText(`Lost ${hpLost} Run HP! (No gold was taken)`);

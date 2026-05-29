@@ -2,11 +2,15 @@ import { useState } from 'react';
 import React from 'react';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Calendar, Flame, Trophy } from 'lucide-react';
+import { Calendar, Flame, Trophy, Coins } from 'lucide-react';
 import { useCheckInStore } from '../../store/useCheckInStore';
 import { getStreakReward } from '../../store/useCheckInStore';
 import './CheckInModal.css';
 import './CheckInModalTapHint.css';
+
+const GoldIcon = ({ size = 16 }: { size?: number }) => (
+    <Coins size={size} color="#fbbf24" style={{ display: 'inline', verticalAlign: 'text-bottom' }} />
+);
 
 export const CheckInModal = ({ onClose }: { onClose: () => void }) => {
     const { currentStreak, longestStreak, checkIn, getStreakStatus, validateStreak } = useCheckInStore();
@@ -77,11 +81,10 @@ export const CheckInModal = ({ onClose }: { onClose: () => void }) => {
                             >
                                 <div className="day-number">Day {day}</div>
                                 <div className="day-icon">
-                                    {isPastDay ? '✓' : reward.gems ? '💎' : reward.dailyTickets ? '🎫' : '🎁'}
+                                    {isPastDay ? '✓' : reward.gems ? '💎' : '🎁'}
                                 </div>
                                 <div className="day-rewards">
                                     <span>💰 {reward.gold}</span>
-                                    {reward.dailyTickets && <span>🎫 {reward.dailyTickets}</span>}
                                     {reward.gems ? <span className="gem-badge">💎 +{reward.gems}</span> : null}
                                     {reward.buffType && <span className="buff-badge">+Buff</span>}
                                 </div>
@@ -149,7 +152,6 @@ export const CheckInModal = ({ onClose }: { onClose: () => void }) => {
                                 </div>
                                 <div className="day-rewards">
                                     <span>💰 {reward.gold}</span>
-                                    {reward.dailyTickets && <span>🎫 {reward.dailyTickets}</span>}
                                     {reward.gems ? <span className="gem-badge">💎 +{reward.gems}</span> : null}
                                 </div>
                                 {isCurrentDay && canCheckIn && (
@@ -203,7 +205,6 @@ export const CheckInModal = ({ onClose }: { onClose: () => void }) => {
                         <div className="fire-day-label">🔥 Day {todayStreakDay} in a row</div>
                         <div className="day-rewards" style={{ gap: '0.5rem', marginTop: '0.5rem' }}>
                             <span>💰 {reward.gold}</span>
-                            <span>🎫 {reward.dailyTickets}</span>
                             {reward.gems ? <span className="gem-badge">💎 +{reward.gems}</span> : null}
                         </div>
                         {canCheckIn && <div className="tap-hint">Tap to claim!</div>}
@@ -251,30 +252,24 @@ export const CheckInModal = ({ onClose }: { onClose: () => void }) => {
                                 <div className="reward-glow" />
                                 <h3>🎉 Reward Claimed!</h3>
                                 <div className="reward-list">
-                                    <div className="reward-item">
-                                        <span>💰 Gold:</span>
-                                        <span className="reward-value">+{lastReward.gold ?? '?'}</span>
+                                    <div className="reward-item" style={{ background: 'rgba(251, 191, 36, 0.1)', border: '1px solid rgba(251, 191, 36, 0.2)', padding: '12px', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                                        <span style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '1.2rem', fontWeight: 600 }}><GoldIcon size={24} /> Gold:</span>
+                                        <span className="reward-value" style={{ fontSize: '1.5rem', color: '#fbbf24', fontWeight: 'bold', textShadow: '0 0 10px rgba(251,191,36,0.3)' }}>+{lastReward.gold ?? '?'}</span>
                                     </div>
-                                    {lastReward.dailyTickets && (
-                                        <div className="reward-item special">
-                                            <span>🎫 Tickets:</span>
-                                            <span className="reward-value">+{lastReward.dailyTickets}</span>
-                                        </div>
-                                    )}
                                     {lastReward.gems > 0 && (
-                                        <div className="reward-item special">
-                                            <span>💎 Gems:</span>
-                                            <span className="reward-value">+{lastReward.gems}</span>
+                                        <div className="reward-item special" style={{ background: 'rgba(56, 189, 248, 0.1)', border: '1px solid rgba(56, 189, 248, 0.2)', padding: '12px', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: '10px' }}>
+                                            <span style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '1.2rem', fontWeight: 600 }}>💎 Gems:</span>
+                                            <span className="reward-value" style={{ fontSize: '1.5rem', color: '#38bdf8', fontWeight: 'bold', textShadow: '0 0 10px rgba(56,189,248,0.3)' }}>+{lastReward.gems}</span>
                                         </div>
                                     )}
                                     {lastReward.habitXp && (
-                                        <div className="reward-item">
+                                        <div className="reward-item" style={{ padding: '10px 12px', display: 'flex', justifyContent: 'space-between', marginTop: '8px', opacity: 0.8 }}>
                                             <span>✨ Habit XP:</span>
                                             <span className="reward-value">+{lastReward.habitXp}</span>
                                         </div>
                                     )}
                                     {lastReward.buffType && (
-                                        <div className="reward-item">
+                                        <div className="reward-item" style={{ padding: '10px 12px', display: 'flex', justifyContent: 'space-between', marginTop: '8px', opacity: 0.8 }}>
                                             <span>🔥 Buff:</span>
                                             <span className="reward-value">
                                                 {lastReward.buffType === 'xp_boost' && '+5% XP'}

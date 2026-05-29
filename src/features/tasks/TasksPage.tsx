@@ -10,6 +10,8 @@ import { useCalendarStore } from '../../store/useCalendarStore';
 import { useTodoStore, type TimeOfDay, type Recurrence, TIME_OF_DAY_LABELS } from '../../store/useTodoStore';
 import { WeightInput } from '../../components/WeightInput/WeightInput';
 import { TrainingInput } from './TrainingInput';
+import { ReadingInput } from '../../components/ReadingInput/ReadingInput';
+import { useJournalStore } from '../../store/useJournalStore';
 import { DailyChest } from './DailyChest';
 import { EditTaskModal } from './EditTaskModal';
 import { useNavigate } from 'react-router-dom';
@@ -167,6 +169,8 @@ export const TasksPage = () => {
     // Input Modals
     const [showWeightInput, setShowWeightInput] = useState(false);
     const [showTrainingInput, setShowTrainingInput] = useState(false);
+    const [showReadingInput, setShowReadingInput] = useState(false);
+    const { addReadingLog } = useJournalStore();
 
     // Category filter
     const [activeCategoryFilter, setActiveCategoryFilter] = useState<TaskCategory | 'all'>('all');
@@ -181,6 +185,8 @@ export const TasksPage = () => {
 
     // Drag state — pointer-based for mobile touch support
     const [dragState, setDragState] = useState<{ taskId: string; bundle: BundleType; index: number; startY: number; mode: 'waiting' | 'ready' | 'dragging' } | null>(null);
+    const dragStateRef = useRef(dragState);
+    dragStateRef.current = dragState;
     const dragOverItem = useRef<{ bundle: BundleType; index: number } | null>(null);
     const holdTimerRef = useRef<NodeJS.Timeout | null>(null);
     const DRAG_THRESHOLD = 8;
@@ -373,38 +379,38 @@ export const TasksPage = () => {
 
     useEffect(() => {
         const handleMove = (e: PointerEvent) => {
-            if (!dragState) return;
+            const ds = dragStateRef.current;
+            if (!ds) return;
 
-            if (dragState.mode === 'waiting') {
-                if (Math.abs(e.clientY - dragState.startY) > DRAG_THRESHOLD) {
+            if (ds.mode === 'waiting') {
+                if (Math.abs(e.clientY - ds.startY) > DRAG_THRESHOLD) {
                     if (holdTimerRef.current) clearTimeout(holdTimerRef.current);
                     setDragState(null);
                 }
-            } else if (dragState.mode === 'ready' || dragState.mode === 'dragging') {
+            } else if (ds.mode === 'ready' || ds.mode === 'dragging') {
                 e.preventDefault();
                 
-                if (dragState.mode === 'ready') {
-                    if (Math.abs(e.clientY - dragState.startY) > DRAG_THRESHOLD) {
+                if (ds.mode === 'ready') {
+                    if (Math.abs(e.clientY - ds.startY) > DRAG_THRESHOLD) {
                         setDragState(prev => prev ? { ...prev, mode: 'dragging' } : null);
                     }
                 }
 
-                if (dragState.mode === 'dragging' || dragState.mode === 'ready') {
-                    const el = document.elementFromPoint(e.clientX, e.clientY);
-                    const taskEl = el?.closest('.recurring-task') as HTMLElement | null;
-                    if (taskEl) {
-                        const idx = parseInt(taskEl.dataset.dragIndex || '0', 10);
-                        const bundle = (taskEl.dataset.dragBundle || dragState.bundle) as BundleType;
-                        dragOverItem.current = { bundle, index: idx };
-                    } else {
-                        const placeholderEl = el?.closest('.bundle-empty-placeholder') as HTMLElement | null;
-                        const listEl = el?.closest('.recurring-tasks-list') as HTMLElement | null;
-                        const target = placeholderEl || listEl;
-                        if (target) {
-                            const bundle = (target.dataset.dragBundle) as BundleType | undefined;
-                            if (bundle) {
-                                dragOverItem.current = { bundle, index: 0 };
-                            }
+                // Always update the drag-over target while in ready or dragging mode
+                const el = document.elementFromPoint(e.clientX, e.clientY);
+                const taskEl = el?.closest('.recurring-task') as HTMLElement | null;
+                if (taskEl) {
+                    const idx = parseInt(taskEl.dataset.dragIndex || '0', 10);
+                    const bundle = (taskEl.dataset.dragBundle || ds.bundle) as BundleType;
+                    dragOverItem.current = { bundle, index: idx };
+                } else {
+                    const placeholderEl = el?.closest('.bundle-empty-placeholder') as HTMLElement | null;
+                    const listEl = el?.closest('.recurring-tasks-list') as HTMLElement | null;
+                    const target = placeholderEl || listEl;
+                    if (target) {
+                        const bundle = (target.dataset.dragBundle) as BundleType | undefined;
+                        if (bundle) {
+                            dragOverItem.current = { bundle, index: 0 };
                         }
                     }
                 }
@@ -415,8 +421,9 @@ export const TasksPage = () => {
             if (holdTimerRef.current) clearTimeout(holdTimerRef.current);
             document.body.style.overflow = '';
 
-            if (dragState?.mode === 'dragging' && dragOverItem.current) {
-                moveDailyTask(dragState.taskId, dragOverItem.current.bundle, dragOverItem.current.index);
+            const ds = dragStateRef.current;
+            if (ds?.mode === 'dragging' && dragOverItem.current) {
+                moveDailyTask(ds.taskId, dragOverItem.current.bundle, dragOverItem.current.index);
             }
             setDragState(null);
             dragOverItem.current = null;
@@ -424,7 +431,8 @@ export const TasksPage = () => {
 
         const handleTouchMove = (e: TouchEvent) => {
             // Required for iOS Safari to lock scroll during active drag
-            if (dragState?.mode === 'ready' || dragState?.mode === 'dragging') {
+            const ds = dragStateRef.current;
+            if (ds?.mode === 'ready' || ds?.mode === 'dragging') {
                 e.preventDefault();
             }
         };
@@ -605,6 +613,9 @@ export const TasksPage = () => {
                                                 setShowTrainingInput(true);
                                             } else {
                                                 completeTask(task.id);
+                                                if (task.id === 'read_10_min') {
+                                                    setShowReadingInput(true);
+                                                }
                                             }
                                         }
                                     }}
@@ -1087,6 +1098,12 @@ export const TasksPage = () => {
                     isOpen={showTrainingInput}
                     onClose={() => setShowTrainingInput(false)}
                     onSubmit={(selections) => completeTask('training_session', { trainingSelections: selections })}
+                />
+
+                <ReadingInput
+                    isOpen={showReadingInput}
+                    onClose={() => setShowReadingInput(false)}
+                    onSubmit={(text) => addReadingLog(text, 'Read 30 minutes')}
                 />
 
                 {/* Daily Chest */}

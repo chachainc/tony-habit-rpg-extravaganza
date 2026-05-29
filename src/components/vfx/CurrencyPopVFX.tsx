@@ -5,14 +5,13 @@ import './CurrencyPopVFX.css';
 interface CurrencyPop {
     id: string;
     amount: number;
-    type: 'gold' | 'xp' | 'tickets' | 'sigils' | 'gems';
+    type: 'gold' | 'xp' | 'tickets' | 'gems';
 }
 
 const CURRENCY_CONFIG: Record<string, { icon: string; color: string; label: string }> = {
     gold: { icon: '💰', color: '#fbbf24', label: 'Gold' },
     xp: { icon: '✨', color: '#60a5fa', label: 'XP' },
     tickets: { icon: '🎫', color: '#c084fc', label: 'Tickets' },
-    sigils: { icon: '🔱', color: '#34d399', label: 'Sigils' },
     gems: { icon: '💎', color: '#f472b6', label: 'Gems' },
 };
 

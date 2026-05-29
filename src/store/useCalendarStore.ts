@@ -200,7 +200,7 @@ export const useCalendarStore = create<CalendarState>()(
                 // Award Logic (simplified duplication of checkMonthlyBonus)
                 import('./useCurrencyStore').then(({ useCurrencyStore }) => {
                     useCurrencyStore.getState().addGold(500, { exact: true });
-                    useCurrencyStore.getState().addDiamonds(5);
+                    useCurrencyStore.getState().addGems(5);
                 });
 
                 set((state) => ({

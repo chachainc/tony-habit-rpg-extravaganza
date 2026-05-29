@@ -260,17 +260,6 @@
         0 2px 6px rgba(0, 0, 0, 0.4);
 }
 
-/* ---- Tile Type: Shmeckles ---- */
-.path-tile.shmeckles {
-    background:
-        radial-gradient(circle at center, rgba(148, 163, 184, 0.15) 0%, transparent 70%),
-        linear-gradient(145deg, #1e2630 0%, #141a22 100%);
-    border-color: rgba(148, 163, 184, 0.5);
-    box-shadow:
-        inset 0 0 10px rgba(148, 163, 184, 0.08),
-        0 0 10px rgba(148, 163, 184, 0.1),
-        0 2px 4px rgba(0, 0, 0, 0.4);
-}
 
 /* ---- Tile Type: Ticket (Mysterious) ---- */
 .path-tile.ticket {
@@ -1030,20 +1019,12 @@
     border: 1px solid rgba(251, 191, 36, 0.2);
 }
 
-.reward-line.shmeckles {
-    background: rgba(148, 163, 184, 0.08);
-    border: 1px solid rgba(148, 163, 184, 0.2);
-}
 
 .reward-line.tickets {
     background: rgba(139, 92, 246, 0.08);
     border: 1px solid rgba(139, 92, 246, 0.25);
 }
 
-.reward-line.sigils {
-    background: rgba(56, 189, 248, 0.08);
-    border: 1px solid rgba(56, 189, 248, 0.2);
-}
 
 .reward-val {
     font-weight: 800;

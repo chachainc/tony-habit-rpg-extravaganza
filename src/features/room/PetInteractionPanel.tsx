@@ -2,7 +2,6 @@ import { useState, useMemo, useCallback } from 'react';
 import { X, Heart, Gift, Sparkles } from 'lucide-react';
 import { usePetStore, PET_DATABASE } from '../../store/usePetStore';
 import { useCurrencyStore } from '../../store/useCurrencyStore';
-import { useConquestStore } from '../../store/useConquestStore';
 import { Panel } from '../../components/ui/Panel';
 import './RoomPanels.css';
 
@@ -54,18 +53,15 @@ export const PetInteractionPanel = ({ onClose }: { onClose: () => void }) => {
         if (gold < FEED_COST || lastFed === getTodayStr()) return;
         useCurrencyStore.getState().spendGold(FEED_COST);
 
-        // Give 1 random rare resource instead of gold
+        // Give Gold or Gems
         const roll = Math.random();
         let rewardLabel = '';
-        if (roll < 0.33) {
-            useConquestStore.getState().addSigils(1);
-            rewardLabel = '🔱 +1 Sigil!';
-        } else if (roll < 0.66) {
-            useCurrencyStore.getState().addBalloons(1);
-            rewardLabel = '🎈 +1 Balloon!';
+        if (roll < 0.90) {
+            useCurrencyStore.getState().addGold(15, { exact: true });
+            rewardLabel = '🪙 +15 Gold!';
         } else {
-            useCurrencyStore.getState().addShmeckles(1);
-            rewardLabel = '🐌 +1 Shmeckle!';
+            useCurrencyStore.getState().addGems(1);
+            rewardLabel = '💎 +1 Gem!';
         }
 
         setLastFed(getTodayStr());

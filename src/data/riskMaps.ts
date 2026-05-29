@@ -27,7 +27,7 @@ export const ALL_REGIONS: Record<RegionId, RegionDef> = {
     ashlands:       { id: 'ashlands',       name: 'Ashlands',         bonusDescription: '+10% Gold',       mapId: 'map1' },
     iron_highlands: { id: 'iron_highlands', name: 'Iron Highlands',   bonusDescription: '+10% DEF',        mapId: 'map1' },
     verdant_plains: { id: 'verdant_plains', name: 'Verdant Plains',   bonusDescription: '+5% ATK',         mapId: 'map1' },
-    crystal_coast:  { id: 'crystal_coast',  name: 'Crystal Coast',    bonusDescription: '+1 Sigil Per Win', mapId: 'map1' },
+    crystal_coast:  { id: 'crystal_coast',  name: 'Crystal Coast',    bonusDescription: '+10 Gold Per Win', mapId: 'map1' },
     frozen_north:   { id: 'frozen_north',   name: 'Frozen North',     bonusDescription: '+10% XP',         mapId: 'map1' },
     sunken_expanse: { id: 'sunken_expanse', name: 'Sunken Expanse',   bonusDescription: '+5 Max HP',       mapId: 'map1' },
 
@@ -37,7 +37,7 @@ export const ALL_REGIONS: Record<RegionId, RegionDef> = {
     ember_wastes:   { id: 'ember_wastes',   name: 'Ember Wastes',     bonusDescription: '+10 Max HP',      mapId: 'map2' },
     shadow_rift:    { id: 'shadow_rift',    name: 'Shadow Rift',      bonusDescription: '+20% DEF',        mapId: 'map2' },
     cursed_tundra:  { id: 'cursed_tundra',  name: 'Cursed Tundra',    bonusDescription: '+15% XP',         mapId: 'map2' },
-    void_abyss:     { id: 'void_abyss',     name: 'Void Abyss',       bonusDescription: '+2 Sigils Per Win', mapId: 'map2' },
+    void_abyss:     { id: 'void_abyss',     name: 'Void Abyss',       bonusDescription: '+20 Gold Per Win', mapId: 'map2' },
 };
 
 // ═══════════════════════════════════════════

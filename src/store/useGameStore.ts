@@ -3,6 +3,7 @@ import { persist } from 'zustand/middleware';
 import { useBookTrophyStore } from './useBookTrophyStore';
 import { getPassiveBonuses } from './usePassiveEffects';
 import { PERSIST_REGISTRY } from '../data/persistRegistry';
+import { useBudgetStore } from './useBudgetStore';
 
 export type SkillName =
     | 'Sleep'
@@ -233,8 +234,8 @@ export const useGameStore = create<GameState>()(
             addGems: (amount) => {
                 import('./useCurrencyStore').then(({ useCurrencyStore }) => {
                     // Forward positive gains/losses to the modern currency store
-                    if (amount > 0) useCurrencyStore.getState().addDiamonds(amount);
-                    if (amount < 0) useCurrencyStore.getState().spendDiamonds(Math.abs(amount));
+                    if (amount > 0) useCurrencyStore.getState().addGems(amount);
+                    if (amount < 0) useCurrencyStore.getState().spendGems(Math.abs(amount));
                 });
                 set((state) => ({
                     gems: Math.max(0, state.gems + amount)
@@ -340,6 +341,16 @@ export const useGameStore = create<GameState>()(
                         finalAmount *= prestigeMult;
                     } else {
                         import('./useEconomyBalanceStore').then(m => { (globalThis as any).__useEconomyBalanceStore = m.useEconomyBalanceStore; });
+                    }
+                } catch {}
+
+                // 6. Weekly Budget Discipline Buff (+10% task XP)
+                try {
+                    const bStore = useBudgetStore.getState();
+                    const spent = bStore.getTotalSpent();
+                    const limit = bStore.budget?.amount ?? 0;
+                    if (bStore.weeklyGiftType === 'discipline_buff' && spent <= limit && limit > 0) {
+                        finalAmount *= 1.10;
                     }
                 } catch {}
 

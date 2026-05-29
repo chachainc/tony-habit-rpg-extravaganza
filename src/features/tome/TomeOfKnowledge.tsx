@@ -487,10 +487,6 @@ export const TomeOfKnowledge = () => {
                         <span>♟️ Chess</span>
                         <span>Daily game → Strategy XP. Win: 50, Draw: 25, Loss: 10. Lv10→+1 Recon</span>
                     </div>
-                    <div className="connection-row">
-                        <span>🔱 Sigils</span>
-                        <span>Conquest-only currency. Earned from nodes/bosses. Spent in Conquest Store</span>
-                    </div>
                 </div>
             </motion.section>
         </div>

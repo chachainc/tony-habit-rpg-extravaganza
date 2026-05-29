@@ -150,7 +150,7 @@ export const ItemCard = ({
                                 )
                             )}
                             {(item.cost.tickets ?? 0) > 0 && <span className="cost-item">🎫 {item.cost.tickets}</span>}
-                            {(item.cost.diamonds ?? 0) > 0 && <span className="cost-item">💎 {item.cost.diamonds}</span>}
+                            {(item.cost.gems ?? 0) > 0 && <span className="cost-item">💎 {item.cost.gems}</span>}
                             {item.cost.tokens && Object.entries(item.cost.tokens).map(([skill, amount]) => (
                                 <span key={skill} className="cost-item">🎖️ {amount} {skill}</span>
                             ))}
@@ -182,7 +182,7 @@ export const ItemCard = ({
                             <strong>Missing:</strong>
                             {missingCurrency.map((curr, i) => (
                                 <div key={i}>
-                                    {curr.includes('Gold') ? '💰' : curr.includes('Diamond') ? '💎' : '🎖️'} {curr}
+                                    {curr.includes('Gold') ? '💰' : curr.includes('Gem') ? '💎' : '🎖️'} {curr}
                                 </div>
                             ))}
                         </div>

@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import { usePetStore, PET_DATABASE } from '../../store/usePetStore';
 import { useInventoryStore, ITEM_DB } from '../../store/useInventoryStore';
 import { useCurrencyStore } from '../../store/useCurrencyStore';
-import { useConquestStore } from '../../store/useConquestStore';
 import { Heart, Zap, Gamepad2, Utensils, Gift, Sparkles } from 'lucide-react';
 import { Card } from '../../components/ui/Card';
 import { SharedFusionPanel } from '../fusion/SharedFusionPanel';
@@ -200,15 +199,12 @@ export const PetPage = () => {
         useCurrencyStore.getState().spendGold(FEED_COST);
         const roll = Math.random();
         let rewardLabel = '';
-        if (roll < 0.33) {
-            useConquestStore.getState().addSigils(1);
-            rewardLabel = '🔱 +1 Sigil!';
-        } else if (roll < 0.66) {
-            useCurrencyStore.getState().addBalloons(1);
-            rewardLabel = '🎈 +1 Balloon!';
+        if (roll < 0.90) {
+            useCurrencyStore.getState().addGold(15, { exact: true });
+            rewardLabel = '🪙 +15 Gold!';
         } else {
-            useCurrencyStore.getState().addShmeckles(1);
-            rewardLabel = '🐌 +1 Shmeckle!';
+            useCurrencyStore.getState().addGems(1);
+            rewardLabel = '💎 +1 Gem!';
         }
         setLastFed(getTodayStr());
         setFeedAnim(true);

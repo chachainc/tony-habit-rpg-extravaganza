@@ -11,19 +11,30 @@ export interface JournalEntry {
     timestamp: number;
 }
 
+export interface ReadingLogEntry {
+    id: string;
+    date: string; // format: May 26, 2026
+    text: string;
+    taskName: string;
+    timestamp: number;
+}
+
 interface JournalState {
     entries: JournalEntry[];
+    readingLogs: ReadingLogEntry[];
 
     // Actions
     upsertEntry: (id: string, category: JournalCategory, content: string) => void;
     deleteEmptyEntries: () => void;
     getEntriesByCategory: (category: JournalCategory) => JournalEntry[];
+    addReadingLog: (text: string, taskName: string) => void;
 }
 
 export const useJournalStore = create<JournalState>()(
     persist(
         (set, get) => ({
             entries: [],
+            readingLogs: [],
 
             upsertEntry: (id, category, content) => {
                 set((state) => {
@@ -49,6 +60,25 @@ export const useJournalStore = create<JournalState>()(
                 return get().entries
                     .filter(e => e.category === category)
                     .sort((a, b) => b.timestamp - a.timestamp); // latest first
+            },
+
+            addReadingLog: (text, taskName) => {
+                const now = new Date();
+                const dateStr = now.toLocaleDateString('en-US', {
+                    month: 'short',
+                    day: 'numeric',
+                    year: 'numeric'
+                });
+                const newLog: ReadingLogEntry = {
+                    id: crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).substring(2, 9),
+                    date: dateStr,
+                    text,
+                    taskName,
+                    timestamp: now.getTime()
+                };
+                set((state) => ({
+                    readingLogs: [newLog, ...(state.readingLogs || [])]
+                }));
             }
         }),
         {

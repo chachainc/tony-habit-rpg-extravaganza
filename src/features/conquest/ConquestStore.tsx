@@ -2,6 +2,7 @@ import { motion } from 'framer-motion';
 import { Crown, Swords } from 'lucide-react';
 import { useConquestStore } from '../../store/useConquestStore';
 import { useCurrencyStore } from '../../store/useCurrencyStore';
+import { CurrencyIcon } from '../../components/ui/CurrencyIcon';
 import { SoldierCard } from './SoldierCard';
 
 
@@ -32,7 +33,7 @@ export const ConquestStoreUI = ({ onClose }: ConquestStoreUIProps) => {
                 <div className="cq-store-header">
                     <h2><Crown size={20} /> Conquest Store</h2>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                        <span style={{ color: '#f59e0b', fontWeight: 700 }}>{conquest.sigils} Sigils</span>
+                        <span style={{ color: '#fbbf24', fontWeight: 700 }}><CurrencyIcon currencyType="gold" size={14} /> {currency.gold} Gold</span>
                         <button className="cq-store-close" onClick={onClose}>×</button>
                     </div>
                 </div>
@@ -77,9 +78,9 @@ export const ConquestStoreUI = ({ onClose }: ConquestStoreUIProps) => {
                                 <button
                                     className="cq-store-buy-btn"
                                     onClick={() => conquest.upgradeMaxTeamSize()}
-                                    disabled={conquest.sigils < [0, 100, 200, 400, 700, 1200][conquest.maxTeamSize]}
+                                    disabled={currency.gold < [0, 1000, 2000, 4000, 7000, 12000][conquest.maxTeamSize]}
                                 >
-                                    🔱 {[0, 100, 200, 400, 700, 1200][conquest.maxTeamSize]} Sigils
+                                    🪙 {[0, 1000, 2000, 4000, 7000, 12000][conquest.maxTeamSize]} Gold
                                 </button>
                             </div>
                         </div>
@@ -98,9 +99,9 @@ export const ConquestStoreUI = ({ onClose }: ConquestStoreUIProps) => {
                                 <button
                                     className="cq-store-buy-btn"
                                     onClick={() => conquest.upgradeBarracks()}
-                                    disabled={conquest.sigils < [150, 300, 500][conquest.barracksLevel]}
+                                    disabled={currency.gold < [1500, 3000, 5000][conquest.barracksLevel]}
                                 >
-                                    🔱 {[150, 300, 500][conquest.barracksLevel]} Sigils
+                                    🪙 {[1500, 3000, 5000][conquest.barracksLevel]} Gold
                                 </button>
                             </div>
                         )}
@@ -114,9 +115,9 @@ export const ConquestStoreUI = ({ onClose }: ConquestStoreUIProps) => {
                                 <button
                                     className="cq-store-buy-btn"
                                     onClick={() => conquest.upgradeScoutTower()}
-                                    disabled={conquest.sigils < [100, 250, 500][conquest.scoutTowerLevel]}
+                                    disabled={currency.gold < [1000, 2500, 5000][conquest.scoutTowerLevel]}
                                 >
-                                    🔱 {[100, 250, 500][conquest.scoutTowerLevel]} Sigils
+                                    🪙 {[1000, 2500, 5000][conquest.scoutTowerLevel]} Gold
                                 </button>
                             </div>
                         )}
@@ -130,9 +131,9 @@ export const ConquestStoreUI = ({ onClose }: ConquestStoreUIProps) => {
                                 <button
                                     className="cq-store-buy-btn"
                                     onClick={() => conquest.upgradeShrine()}
-                                    disabled={conquest.sigils < [100, 200, 400][conquest.shrineLevel]}
+                                    disabled={currency.gold < [1000, 2000, 4000][conquest.shrineLevel]}
                                 >
-                                    🔱 {[100, 200, 400][conquest.shrineLevel]} Sigils
+                                    🪙 {[1000, 2000, 4000][conquest.shrineLevel]} Gold
                                 </button>
                             </div>
                         )}
@@ -154,9 +155,9 @@ export const ConquestStoreUI = ({ onClose }: ConquestStoreUIProps) => {
                                     <button
                                         className="cq-store-buy-btn"
                                         onClick={() => conquest.upgradeDice()}
-                                        disabled={conquest.sigils < diceUpgradeCost}
+                                        disabled={currency.gold < diceUpgradeCost * 10}
                                     >
-                                        🔱 {diceUpgradeCost} Sigils
+                                        🪙 {diceUpgradeCost * 10} Gold
                                     </button>
                                 </div>
                             </div>
@@ -179,8 +180,8 @@ export const ConquestStoreUI = ({ onClose }: ConquestStoreUIProps) => {
                                             soldier={soldier}
                                             isStoreView={false}
                                             onAction={() => conquest.upgradeSoldierRank(soldier.id)}
-                                            actionLabel={`🔱 ${cost} Promote`}
-                                            actionDisabled={conquest.sigils < cost}
+                                            actionLabel={`🪙 ${cost * 10} Promote`}
+                                            actionDisabled={currency.gold < cost * 10}
                                         />
                                     );
                                 })}

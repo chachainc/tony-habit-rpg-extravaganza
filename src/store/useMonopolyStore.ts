@@ -1,14 +1,11 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { PERSIST_REGISTRY } from '../data/persistRegistry';
-import { useBoardCollectionStore } from './useBoardCollectionStore';
-import { usePetStore } from './usePetStore';
 
 // ── Tile Types ─────────────────────────────────────────────────
 export type BoardSpaceType =
     | 'go'
     | 'gold'
-    | 'shmeckles'
     | 'mystery'
     | 'ticket'
     | 'empty';
@@ -17,9 +14,8 @@ export type BoardRarity = 'common' | 'uncommon' | 'rare' | 'epic' | 'ultra_rare'
 
 export interface BoardReward {
     gold?: number;
-    shmeckles?: number;
     tickets?: number;
-    sigils?: number;
+    gems?: number;
     // Trophies / cosmetics specific to the board theme
     petId?: string;
     cosmeticId?: string;
@@ -53,7 +49,7 @@ export const PROPERTY_UPGRADE_COSTS: Record<number, import('./useCurrencyStore')
     2: { gold: 100 },
     3: { gold: 250 },
     4: { gold: 500 },
-    5: { gold: 2000, diamonds: 5 },
+    5: { gold: 2000, gems: 5 },
 };
 
 export const getPropertyMultiplier = (level: number): number => {
@@ -144,14 +140,14 @@ const createBoard = (): BoardSpace[] => {
             };
         }
 
-        // Shmeckles Tiles (2 tiles)
+        // Gold Bonus Tiles (2 tiles)
         if (i === 8 || i === 20) {
             space = {
                 id: i,
-                type: 'shmeckles',
-                name: 'Small Shmeckle',
-                icon: '🐌',
-                baseReward: { shmeckles: Math.floor(Math.random() * 3) + 1 }, // 1–3 base
+                type: 'gold',
+                name: 'Gold Stash',
+                icon: '',
+                baseReward: { gold: (Math.floor(Math.random() * 3) + 1) * 5 }, // 5–15 base
             };
         }
 
@@ -357,7 +353,7 @@ export const useMonopolyStore = create<MonopolyState>()(
                 return 25 + state.lapCount + bonus;
             },
 
-            // ── Property Ownership ────────────────────────────────
+             // ── Property Ownership ────────────────────────────────
             getBuyCost: () => {
                 return PROPERTY_UPGRADE_COSTS[1];
             },
@@ -384,7 +380,6 @@ export const useMonopolyStore = create<MonopolyState>()(
             buyTile: (tileId) => {
                 const state = get();
                 if (!state.canBuyTile(tileId)) return false;
-                // Actual gold deduction handled by caller (MonopolyBoard.tsx via useCurrencyStore)
                 set(s => ({
                     ownedTiles: { ...s.ownedTiles, [tileId]: { level: 1 } },
                 }));
@@ -394,7 +389,6 @@ export const useMonopolyStore = create<MonopolyState>()(
             upgradeTile: (tileId) => {
                 const state = get();
                 if (!state.canUpgradeTile(tileId)) return false;
-                // Actual shmeckle deduction handled by caller
                 set(s => ({
                     ownedTiles: {
                         ...s.ownedTiles,
@@ -404,103 +398,62 @@ export const useMonopolyStore = create<MonopolyState>()(
                 return true;
             },
 
-            // ── Themed Board Mystery Roll Logic ───────────────────
             rollMysteryBox: (): MysteryRollResult => {
-                const roll = Math.random();
-                let rarity: BoardRarity = 'common';
-                
-                // Determine Rarities based on BOARD_ODDS
-                if (roll < BOARD_ODDS.ultra_rare) rarity = 'ultra_rare';
-                else if (roll < BOARD_ODDS.ultra_rare + BOARD_ODDS.epic) rarity = 'epic';
-                else if (roll < BOARD_ODDS.ultra_rare + BOARD_ODDS.epic + BOARD_ODDS.rare) rarity = 'rare';
-                else if (roll < BOARD_ODDS.ultra_rare + BOARD_ODDS.epic + BOARD_ODDS.rare + BOARD_ODDS.uncommon) rarity = 'uncommon';
+                const roll = Math.random() * 100;
                 
                 let result: MysteryRollResult = {
-                    rarity,
+                    rarity: 'common',
                     reward: {},
-                    message: '',
-                    isDuplicate: false
+                    message: ''
                 };
 
-                const boardCol = useBoardCollectionStore.getState();
+                // Probability breakdown:
+                // - 25 Gold: 25% (0 <= roll < 25)
+                // - 50 Gold: 25% (25 <= roll < 50)
+                // - 75 Gold: 20% (50 <= roll < 70)
+                // - 100 Gold: 12% (70 <= roll < 82)
+                // - 150 Gold: 6% (82 <= roll < 88)
+                // - 250 Gold: 5% (88 <= roll < 93)
+                // - 1 Gem: 4% (93 <= roll < 97)
+                // - 3 Gems: 2.5% (97 <= roll < 99.5)
+                // - 5 Gems (Jackpot): 0.5% (99.5 <= roll <= 100)
 
-                if (rarity === 'common') {
-                    // 1-9 Gold, OR 1 Shmeckle, OR 1 Sigil
-                    const pick = Math.floor(Math.random() * 3);
-                    if (pick === 0) {
-                        result.reward.gold = Math.floor(Math.random() * 9) + 1;
-                        result.message = `Found a small pouch of gold! (+${result.reward.gold} Gold)`;
-                    } else if (pick === 1) {
-                        result.reward.shmeckles = 1;
-                        result.message = `Found a tiny Schmeckle! (+1 Schmeckle)`;
-                    } else {
-                        result.reward.sigils = 1;
-                        result.message = `A Sigil appeared! (+1 Sigil)`;
-                    }
-                } 
-                else if (rarity === 'uncommon') {
-                    // 2–3 Sigils, 2–3 Schmeckles, or 10–15 Gold
-                    const pick = Math.floor(Math.random() * 3);
-                    if (pick === 0) {
-                        result.reward.sigils = Math.floor(Math.random() * 2) + 2;
-                        result.message = `Found a Sigil cache! (+${result.reward.sigils} Sigils)`;
-                    } else if (pick === 1) {
-                        result.reward.shmeckles = Math.floor(Math.random() * 2) + 2;
-                        result.message = `A handful of Schmeckles! (+${result.reward.shmeckles} Schmeckles)`;
-                    } else {
-                        result.reward.gold = Math.floor(Math.random() * 6) + 10;
-                        result.message = `Found a muddy coin purse! (+${result.reward.gold} Gold)`;
-                    }
-                }
-                else if (rarity === 'rare') {
-                    // Common pet tier
-                    const rareItems = ['pet_cow', 'pet_chicken', 'pet_pig', 'pet_sheep'];
-                    const drop = rareItems[Math.floor(Math.random() * rareItems.length)];
-                    result.reward.petId = drop;
-                    
-                    const displayName = drop.replace('pet_', '').charAt(0).toUpperCase() + drop.replace('pet_', '').slice(1);
-                    
-                    result.message = `Found a stray ${displayName}!`;
-                    usePetStore.getState().addPet(drop);
-                    result.isDuplicate = (usePetStore.getState().petQuantities[drop] || 0) > 1;
-                }
-                else if (rarity === 'epic') {
-                    // Uncommon / Rare pet tier
-                    const epicItems = ['pet_dog', 'pet_rabbit', 'pet_cat', 'pet_goose', 'straw_hat', 'farmer_title'];
-                    const drop = epicItems[Math.floor(Math.random() * epicItems.length)];
-
-                    if (drop === 'straw_hat') {
-                        result.reward.cosmeticId = 'board_farm_straw_hat';
-                        result.message = `Found a nice Straw Hat!`;
-                        if (boardCol.ownedCosmetics.includes(result.reward.cosmeticId)) {
-                            result.isDuplicate = true;
-                            result.reward.gold = 20;
-                        } else {
-                            boardCol.unlockCosmetic(result.reward.cosmeticId);
-                        }
-                    } else if (drop === 'farmer_title') {
-                        result.reward.titleId = 'board_farm_title';
-                        result.message = `Unlocked the "The Farmer" Title!`;
-                        if (boardCol.ownedTitles.includes(result.reward.titleId)) {
-                            result.isDuplicate = true;
-                            result.reward.gold = 20;
-                        } else {
-                            boardCol.unlockTitle(result.reward.titleId);
-                        }
-                    } else {
-                        result.reward.petId = drop;
-                        const displayName = drop.replace('pet_', '').charAt(0).toUpperCase() + drop.replace('pet_', '').slice(1);
-                        result.message = `Found a rare ${displayName}!`;
-                        usePetStore.getState().addPet(drop);
-                        result.isDuplicate = (usePetStore.getState().petQuantities[drop] || 0) > 1;
-                    }
-                }
-                else if (rarity === 'ultra_rare') {
-                    // Always Ethereal Cow — 1 in 100,000
-                    result.reward.petId = 'ethereal_cow';
-                    result.message = `🌌✨ UNIVERSE LUCK! Unlocked the ETHEREAL COW! (1 in 100,000)`;
-                    usePetStore.getState().addPet('ethereal_cow');
-                    result.isDuplicate = (usePetStore.getState().petQuantities['ethereal_cow'] || 0) > 1;
+                if (roll < 25) {
+                    result.rarity = 'common';
+                    result.reward.gold = 25;
+                    result.message = 'Found a bag of gold! (+25 Gold)';
+                } else if (roll < 50) {
+                    result.rarity = 'common';
+                    result.reward.gold = 50;
+                    result.message = 'Found a treasure pouch! (+50 Gold)';
+                } else if (roll < 70) {
+                    result.rarity = 'common';
+                    result.reward.gold = 75;
+                    result.message = 'Discovered a chest of gold! (+75 Gold)';
+                } else if (roll < 82) {
+                    result.rarity = 'common';
+                    result.reward.gold = 100;
+                    result.message = 'Unearthed a massive gold stash! (+100 Gold)';
+                } else if (roll < 88) {
+                    result.rarity = 'uncommon';
+                    result.reward.gold = 150;
+                    result.message = 'Rich harvest! A heavy chest of gold! (+150 Gold)';
+                } else if (roll < 93) {
+                    result.rarity = 'uncommon';
+                    result.reward.gold = 250;
+                    result.message = 'Incredible fortune! A massive stack of coins! (+250 Gold)';
+                } else if (roll < 97) {
+                    result.rarity = 'rare';
+                    result.reward.gems = 1;
+                    result.message = 'A rare discovery! You found a Gem! (+1 Gem)';
+                } else if (roll < 99.5) {
+                    result.rarity = 'epic';
+                    result.reward.gems = 3;
+                    result.message = 'Incredible fortune! Found a cluster of Gems! (+3 Gems)';
+                } else {
+                    result.rarity = 'ultra_rare';
+                    result.reward.gems = 5;
+                    result.message = '🌌 JACKPOT! Found a flawless Gem hoard! (+5 Gems)';
                 }
 
                 set({ lastLuckRoll: result });

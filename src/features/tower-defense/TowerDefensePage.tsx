@@ -71,7 +71,7 @@ export const TowerDefensePage = () => {
                 if (prev.isValid && prev.gridX >= 0 && prev.gridY >= 0) {
                     const cost = TD_TOWERS[prev.towerType!].cost;
                     const owned = td.towerInventory[prev.towerType!] ?? 0;
-                    if (owned > 0 || (currStore.balloons ?? 0) >= cost) {
+                    if (owned > 0 || (currStore.gold ?? 0) >= cost) {
                         td.buildTower(prev.towerType!, prev.gridX, prev.gridY);
                     }
                 }
@@ -87,7 +87,7 @@ export const TowerDefensePage = () => {
             window.removeEventListener('pointermove', handlePointerMove);
             window.removeEventListener('pointerup', handlePointerUp);
         };
-    }, [dragState.isDragging, dragState.towerType, td.towers, currStore.balloons]);
+    }, [dragState.isDragging, dragState.towerType, td.towers, currStore.gold]);
 
     const handleTileClick = (x: number, y: number) => {
         if (isPath(x, y)) return;
@@ -105,7 +105,7 @@ export const TowerDefensePage = () => {
         
         const cost = TD_TOWERS[type].cost;
         const ownedCount = td.towerInventory[type] ?? 0;
-        if (ownedCount === 0 && (currStore.balloons ?? 0) < cost) return;
+        if (ownedCount === 0 && (currStore.gold ?? 0) < cost) return;
 
         setDragState({
             isDragging: true,
@@ -209,7 +209,7 @@ export const TowerDefensePage = () => {
     const getTowerCostLabel = (type: TowerType): string => {
         const owned = td.towerInventory[type] ?? 0;
         if (owned > 0) return `Owned: ${owned}`;
-        return `🎈 ${TD_TOWERS[type].cost}`;
+        return `🪙 ${TD_TOWERS[type].cost}`;
     };
 
     return (
@@ -224,7 +224,7 @@ export const TowerDefensePage = () => {
                     🏰 Tower Defense
                 </span>
                 <div className="td-header-chips">
-                    <span className="td-chip mana">🎈 {currStore.balloons ?? 0}</span>
+                    <span className="td-chip mana">🪙 {currStore.gold ?? 0}</span>
                     <span className="td-chip wave">Wave {td.currentWave}</span>
                     <span className="td-chip hp">❤️ {td.baseHealth}</span>
                     {/* Speed toggle */}
@@ -470,7 +470,7 @@ export const TowerDefensePage = () => {
                     <div className="td-shop-scroll">
                         {(Object.values(TD_TOWERS) as TowerDef[]).map(def => {
                             const ownedCount = td.towerInventory[def.type] ?? 0;
-                            const canAfford = (currStore.balloons ?? 0) >= def.cost;
+                            const canAfford = (currStore.gold ?? 0) >= def.cost;
                             const canDrag = ownedCount > 0 || canAfford;
                             return (
                                 <div 
@@ -505,7 +505,7 @@ export const TowerDefensePage = () => {
                 {selectedTower && (() => {
                     const def = TD_TOWERS[selectedTower.type];
                     const upgCost = Math.floor(def.cost * Math.pow(1.5, selectedTower.level));
-                    const canUpgrade = selectedTower.level < 3 && (currStore.balloons ?? 0) >= upgCost;
+                    const canUpgrade = selectedTower.level < 3 && (currStore.gold ?? 0) >= upgCost;
                     const specs = TD_SPECIALIZATIONS[selectedTower.type];
                     const canSpecialize = selectedTower.level >= 2 && !selectedTower.specializationBranch && specs;
                     const currentSpec = selectedTower.specializationBranch && specs
@@ -551,7 +551,7 @@ export const TowerDefensePage = () => {
                                         disabled={!canUpgrade}
                                         onClick={handleUpgrade}
                                     >
-                                        Upgrade <br/>(🎈 {upgCost})
+                                        Upgrade <br/>(🪙 {upgCost})
                                     </button>
                                 ) : (
                                     <button className="action-btn upgrade" disabled>Max Level Reached</button>
@@ -603,9 +603,9 @@ export const TowerDefensePage = () => {
                                     <span className="td-stat-label">Gold</span>
                                 </div>
                                 <div className="td-stat-item">
-                                    <span className="td-stat-icon">🎈</span>
-                                    <span className="td-stat-val">+{td.waveStats.shmecklesEarned}</span>
-                                    <span className="td-stat-label">Balloons</span>
+                                    <span className="td-stat-icon">🪙</span>
+                                    <span className="td-stat-val">+{td.waveStats.goldBonusEarned}</span>
+                                    <span className="td-stat-label">Bonus Gold</span>
                                 </div>
                                 <div className="td-stat-item">
                                     <span className="td-stat-icon">🌊</span>

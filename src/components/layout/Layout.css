@@ -17,6 +17,7 @@
     flex-direction: column;
     overflow: hidden;
     position: relative;
+    padding-bottom: 0;
 }
 
 .content-area {
@@ -46,10 +47,16 @@
 @media (max-width: 768px) and (orientation: portrait) {
     .app-layout {
         flex-direction: column;
+        height: 100dvh;
+    }
+
+    .main-wrapper {
+        height: calc(100dvh - var(--bottom-nav-height) - env(safe-area-inset-bottom, 0px));
+        margin-bottom: calc(var(--bottom-nav-height) + env(safe-area-inset-bottom, 0px));
     }
 
     .content-area {
-        padding: var(--space-4) var(--space-3) var(--mobile-bottom-clearance);
+        padding: var(--space-4) var(--space-3) 24px;
     }
 }
 

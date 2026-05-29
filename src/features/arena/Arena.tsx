@@ -370,15 +370,13 @@ export const Arena = ({ onClose }: { onClose: () => void }) => {
 
                 if (isConquest) {
                     // Conquest specific rewards
-                    const sigils = Math.floor(Math.random() * 3) + passives.sigil_bonus; // 0-2
-                    if (sigils > 0) {
-                        import('../../store/useConquestStore').then(({ useConquestStore: cs }) => {
-                            cs.getState().addSigils(sigils);
-                        });
+                    const victoryGold = (Math.floor(Math.random() * 3) + passives.gold_bonus) * 10;
+                    if (victoryGold > 0) {
+                        useCurrencyStore.getState().addGold(victoryGold, { exact: true });
                         import('../../components/ui/Toast').then(({ useToastStore }) => {
                             useToastStore.getState().addToast({
                                 type: 'success',
-                                message: `Conquest Victory! Found ${sigils} Sigil${sigils > 1 ? 's' : ''}!`,
+                                message: `Conquest Victory! Found ${victoryGold} Gold!`,
                                 duration: 5000,
                             });
                         }).catch(() => { });
@@ -465,13 +463,11 @@ export const Arena = ({ onClose }: { onClose: () => void }) => {
                         }).catch(() => { });
                     }
 
-                    // Arena victory sigil (0-1) - reduced base chance
-                    const sigilRoll = Math.random();
-                    const sigils = (sigilRoll < 0.25 ? 1 : 0) + passives.sigil_bonus;
-                    if (sigils > 0) {
-                        import('../../store/useConquestStore').then(({ useConquestStore: cs }) => {
-                            cs.getState().addSigils(sigils);
-                        });
+                    // Arena victory gold (0-10) - reduced base chance
+                    const goldRoll = Math.random();
+                    const victoryGold = ((goldRoll < 0.25 ? 1 : 0) + passives.gold_bonus) * 10;
+                    if (victoryGold > 0) {
+                        useCurrencyStore.getState().addGold(victoryGold, { exact: true });
                     }
 
                     // Native Equipment drop chance (20%)

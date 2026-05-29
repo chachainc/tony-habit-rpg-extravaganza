@@ -53,13 +53,14 @@ export const LoadoutPanel = ({ onClose }: { onClose: () => void }) => {
     // ── Computed Current Equipment Data ──
     // Maps each slot ID to its actual display data from the unified DB stores
     // Helper: get owned marketplace armor items for a specific slot
+    // Helper: get owned marketplace armor items for a specific slot
     const getOwnedArmorForSlot = (slotName: string) =>
         Object.values(ITEM_DATABASE)
             .filter(i => i?.type === 'armor' && i?.slot === slotName && invStore.marketplaceOwned.includes(i.id))
             .map(i => ({
                 id: i.id,
                 name: i.name,
-                icon: i.icon,
+                icon: i.image || i.icon,
                 desc: [
                     i.stats?.defense ? `DEF +${i.stats.defense}` : '',
                     i.stats?.attack ? `ATK +${i.stats.attack}` : '',
@@ -75,7 +76,7 @@ export const LoadoutPanel = ({ onClose }: { onClose: () => void }) => {
             case 'helm': {
                 // Priority: stat armor from invStore.head > cosmetic from charStore.head
                 const armorHelm = invStore.equipped.head ? getItemById(invStore.equipped.head) : null;
-                if (armorHelm) return { icon: armorHelm.icon || '⛑️', name: armorHelm.name, emptyIcon: '⛑️' };
+                if (armorHelm) return { icon: armorHelm.image || armorHelm.icon || '⛑️', name: armorHelm.name, emptyIcon: '⛑️' };
                 const cosHelm = charStore.equipped.head ? COSMETICS_DB[charStore.equipped.head] : null;
                 return { icon: cosHelm ? '🪖' : '', name: cosHelm?.name || '', emptyIcon: '⛑️' };
             }
@@ -86,46 +87,46 @@ export const LoadoutPanel = ({ onClose }: { onClose: () => void }) => {
             case 'cape': {
                 // Priority: cloak armor > aura
                 const armorCloak = invStore.equipped.cloak ? getItemById(invStore.equipped.cloak) : null;
-                if (armorCloak) return { icon: armorCloak.icon || '🧥', name: armorCloak.name, emptyIcon: '✨' };
+                if (armorCloak) return { icon: armorCloak.image || armorCloak.icon || '🧥', name: armorCloak.name, emptyIcon: '✨' };
                 const aura = activeAuraId !== 'none' ? AURAS.find(a => a.id === auraStore.activeAuraId) : null;
                 return { icon: aura ? aura.icon : '', name: aura?.name || '', emptyIcon: '✨' };
             }
             case 'weapon': {
                 const wep = invStore.equipped.weapon ? getItemById(invStore.equipped.weapon) : null;
-                return { icon: wep?.icon || '', name: wep?.name || '', emptyIcon: '⚔️' };
+                return { icon: wep?.image || wep?.icon || '', name: wep?.name || '', emptyIcon: '⚔️' };
             }
             case 'body': {
                 // Priority: armor chest > cosmetic body
                 const armorChest = invStore.equipped.chest ? getItemById(invStore.equipped.chest) : null;
-                if (armorChest) return { icon: armorChest.icon || '🦺', name: armorChest.name, emptyIcon: '🦺' };
+                if (armorChest) return { icon: armorChest.image || armorChest.icon || '🦺', name: armorChest.name, emptyIcon: '🦺' };
                 const cosBody = charStore.equipped.body ? COSMETICS_DB[charStore.equipped.body] : null;
                 return { icon: cosBody ? '👕' : '', name: cosBody?.name || '', emptyIcon: '🦺' };
             }
             case 'shield': {
                 const shield = invStore.equipped.armor ? getItemById(invStore.equipped.armor) : null;
-                return { icon: shield?.icon || '', name: shield?.name || '', emptyIcon: '🛡️' };
+                return { icon: shield?.image || shield?.icon || '', name: shield?.name || '', emptyIcon: '🛡️' };
             }
             case 'legs': {
                 // Priority: armor legs > cosmetic legs
                 const armorLegs = invStore.equipped.legs ? getItemById(invStore.equipped.legs) : null;
-                if (armorLegs) return { icon: armorLegs.icon || '👖', name: armorLegs.name, emptyIcon: '🩳' };
+                if (armorLegs) return { icon: armorLegs.image || armorLegs.icon || '👖', name: armorLegs.name, emptyIcon: '🩳' };
                 const cosLegs = charStore.equipped.legs ? COSMETICS_DB[charStore.equipped.legs] : null;
                 return { icon: cosLegs ? '👖' : '', name: cosLegs?.name || '', emptyIcon: '🩳' };
             }
             case 'gloves': {
                 const armorHands = invStore.equipped.hands ? getItemById(invStore.equipped.hands) : null;
-                return { icon: armorHands?.icon || '', name: armorHands?.name || '', emptyIcon: '🧤' };
+                return { icon: armorHands?.image || armorHands?.icon || '', name: armorHands?.name || '', emptyIcon: '🧤' };
             }
             case 'boots': {
                 // Priority: armor feet > cosmetic feet
                 const armorFeet = invStore.equipped.feet ? getItemById(invStore.equipped.feet) : null;
-                if (armorFeet) return { icon: armorFeet.icon || '👢', name: armorFeet.name, emptyIcon: '👢' };
+                if (armorFeet) return { icon: armorFeet.image || armorFeet.icon || '👢', name: armorFeet.name, emptyIcon: '👢' };
                 const cosBoots = charStore.equipped.feet ? COSMETICS_DB[charStore.equipped.feet] : null;
                 return { icon: cosBoots ? '👟' : '', name: cosBoots?.name || '', emptyIcon: '👢' };
             }
             case 'ring': {
                 const ring = invStore.equipped.jewelry ? getItemById(invStore.equipped.jewelry) : null;
-                return { icon: ring?.icon || '', name: ring?.name || '', emptyIcon: '💍' };
+                return { icon: ring?.image || ring?.icon || '', name: ring?.name || '', emptyIcon: '💍' };
             }
             case 'pet': {
                 const petDef = petStore.equippedPetId ? PET_DATABASE[petStore.equippedPetId] : null;
@@ -134,19 +135,19 @@ export const LoadoutPanel = ({ onClose }: { onClose: () => void }) => {
             }
             case 'book': {
                 const book = invStore.equipped.book ? getItemById(invStore.equipped.book) : null;
-                return { icon: book?.icon || '', name: book?.name || '', emptyIcon: '📚' };
+                return { icon: book?.image || book?.icon || '', name: book?.name || '', emptyIcon: '📚' };
             }
             case 'artifact': {
                 const artifact = invStore.equipped.artifact ? getItemById(invStore.equipped.artifact) : null;
-                return { icon: artifact?.icon || '', name: artifact?.name || '', emptyIcon: '🔮' };
+                return { icon: artifact?.image || artifact?.icon || '', name: artifact?.name || '', emptyIcon: '🔮' };
             }
             case 'relic': {
                 const relic = invStore.equipped.relic ? getItemById(invStore.equipped.relic) : null;
-                return { icon: relic?.icon || '', name: relic?.name || '', emptyIcon: '🏺' };
+                return { icon: relic?.image || relic?.icon || '', name: relic?.name || '', emptyIcon: '🏺' };
             }
             case 'pet_accessory': {
                 const pAcc = invStore.equipped.pet_accessory ? getItemById(invStore.equipped.pet_accessory) : null;
-                return { icon: pAcc?.icon || '', name: pAcc?.name || '', emptyIcon: '🎀' };
+                return { icon: pAcc?.image || pAcc?.icon || '', name: pAcc?.name || '', emptyIcon: '🎀' };
             }
             case 'spell': {
                 const spelling = magicStore.equippedSpell ? SPELL_DB[magicStore.equippedSpell] : null;
@@ -319,19 +320,19 @@ export const LoadoutPanel = ({ onClose }: { onClose: () => void }) => {
                 list = Object.keys(invStore.items)
                     .map(id => getItemById(id))
                     .filter(i => i && i.type === 'weapon')
-                    .map(e => ({ id: e.id, name: e.name, icon: e.icon, desc: `ATK +${e.stats?.attack || e.statBonuses?.attack || e.value || 0}`, isLocked: false }));
+                    .map(e => ({ id: e.id, name: e.name, icon: e.image || e.icon, desc: `ATK +${e.stats?.attack || e.statBonuses?.attack || e.value || 0}`, isLocked: false }));
                 break;
             case 'shield':
                 list = Object.keys(invStore.items)
                     .map(id => getItemById(id))
                     .filter(i => i && i.type === 'armor')
-                    .map(i => ({ id: i.id, name: i.name, icon: i.icon, desc: `DEF +${i.stats?.defense || i.statBonuses?.defense || i.value || 0}`, isLocked: false }));
+                    .map(i => ({ id: i.id, name: i.name, icon: i.image || i.icon, desc: `DEF +${i.stats?.defense || i.statBonuses?.defense || i.value || 0}`, isLocked: false }));
                 break;
             case 'ring':
                 list = Object.keys(invStore.items)
                     .map(id => getItemById(id))
                     .filter(i => i && i.type === 'jewelry')
-                    .map(e => ({ id: e.id, name: e.name, icon: e.icon, desc: `ATK +${e.stats?.attack || e.statBonuses?.attack || 0} DEF +${e.stats?.defense || e.statBonuses?.defense || 0}`, isLocked: false }));
+                    .map(e => ({ id: e.id, name: e.name, icon: e.image || e.icon, desc: `ATK +${e.stats?.attack || e.statBonuses?.attack || 0} DEF +${e.stats?.defense || e.statBonuses?.defense || 0}`, isLocked: false }));
                 break;
             case 'pet':
                 // List ALL pets from PET_DATABASE — full collection
@@ -347,25 +348,25 @@ export const LoadoutPanel = ({ onClose }: { onClose: () => void }) => {
                 list = Object.keys(invStore.items)
                     .map(id => getItemById(id))
                     .filter(i => i && (i.type === 'pet_accessory' || i.type === 'pet_gear'))
-                    .map(i => ({ id: i.id, name: i.name, icon: i.icon, desc: 'Pet Accessory', isLocked: false }));
+                    .map(i => ({ id: i.id, name: i.name, icon: i.image || i.icon, desc: 'Pet Accessory', isLocked: false }));
                 break;
             case 'book':
                 list = Object.keys(invStore.items)
                     .map(id => getItemById(id))
                     .filter(i => i && i.type === 'book')
-                    .map(i => ({ id: i.id, name: i.name, icon: i.icon, desc: i.effect || '', isLocked: false }));
+                    .map(i => ({ id: i.id, name: i.name, icon: i.image || i.icon, desc: i.effect || '', isLocked: false }));
                 break;
             case 'artifact':
                 list = Object.keys(invStore.items)
                     .map(id => getItemById(id))
                     .filter(i => i && i.type === 'artifact')
-                    .map(i => ({ id: i.id, name: i.name, icon: i.icon, desc: i.effect || '', isLocked: false }));
+                    .map(i => ({ id: i.id, name: i.name, icon: i.image || i.icon, desc: i.effect || '', isLocked: false }));
                 break;
             case 'relic':
                 list = Object.keys(invStore.items)
                     .map(id => getItemById(id))
                     .filter(i => i && i.type === 'relic')
-                    .map(i => ({ id: i.id, name: i.name, icon: i.icon, desc: i.effect || '', isLocked: false }));
+                    .map(i => ({ id: i.id, name: i.name, icon: i.image || i.icon, desc: i.effect || '', isLocked: false }));
                 break;
             case 'spell':
                 list = magicStore.ownedSpells.map(id => {
@@ -450,7 +451,7 @@ export const LoadoutPanel = ({ onClose }: { onClose: () => void }) => {
         setActiveSlot(null);
     };
 
-    const isImageUrl = (s: string) => s.startsWith('/') || s.startsWith('http');
+    const isImageUrl = (s: string) => s.startsWith('/') || s.startsWith('http') || s.startsWith('data:image/');
 
     const renderSlot = (id: RadialSlotId, cssClass: string) => {
         const data = getSlotData(id);
@@ -632,7 +633,7 @@ export const LoadoutPanel = ({ onClose }: { onClose: () => void }) => {
                                     style={{ opacity: item.isLocked ? 0.5 : 1, filter: item.isLocked ? 'grayscale(100%)' : 'none', cursor: item.isLocked ? 'not-allowed' : 'pointer', position: 'relative' }}
                                 >
                                     <span className="ls-item-icon">
-                                        {(item.icon.startsWith('/') || item.icon.startsWith('http')) ? (
+                                        {isImageUrl(item.icon) ? (
                                             <img src={item.icon} alt={item.name} style={{ width: '36px', height: '36px', objectFit: 'cover', borderRadius: '6px', display: 'block' }} />
                                         ) : item.icon}
                                     </span>

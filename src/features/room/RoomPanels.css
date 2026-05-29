@@ -1067,3 +1067,9 @@
 }
 .workshop-discovery-stat { font-size: 0.85rem; color: rgba(255,255,255,0.8); font-weight: 600; }
 .workshop-discovery-hint { font-size: 0.75rem; color: rgba(255,255,255,0.5); font-style: italic; }
+
+@media (max-width: 768px) {
+    .sleep-panel .panel-content-scrollable {
+        padding-bottom: 120px;
+    }
+}

@@ -15,28 +15,36 @@ type RewardOption = {
 
 const REWARD_OPTIONS: RewardOption[] = [
     {
-        id: 'shmeckles',
-        icon: '🐌',
-        label: 'Shmeckles',
-        sublabel: 'Storm the Fort currency',
-        color: '#a78bfa',
-        glow: 'rgba(167, 139, 250, 0.25)',
-    },
-    {
-        id: 'balloons',
-        icon: '🎈',
-        label: 'Balloons',
-        sublabel: 'Conquest run resource',
-        color: '#60a5fa',
-        glow: 'rgba(96, 165, 250, 0.25)',
-    },
-    {
-        id: 'sigils',
-        icon: '🔱',
-        label: 'Sigils',
-        sublabel: 'Conquest meta currency',
+        id: 'gold_bonus',
+        icon: '🪙',
+        label: 'Gold Bonus',
+        sublabel: 'Earn +20% more Gold rewards this week',
         color: '#fbbf24',
         glow: 'rgba(251, 191, 36, 0.25)',
+    },
+    {
+        id: 'gem_chance',
+        icon: '💎',
+        label: 'Gem Chance',
+        sublabel: 'Extra Gems from daily rewards',
+        color: '#10b981',
+        glow: 'rgba(16, 185, 129, 0.25)',
+    },
+    {
+        id: 'combat_buff',
+        icon: '⚔️',
+        label: 'Combat Buff',
+        sublabel: 'Gain +10% Arena Power this week',
+        color: '#ef4444',
+        glow: 'rgba(239, 68, 68, 0.25)',
+    },
+    {
+        id: 'discipline_buff',
+        icon: '📜',
+        label: 'Discipline Buff',
+        sublabel: 'Extra XP from tasks this week',
+        color: '#a855f7',
+        glow: 'rgba(168, 85, 247, 0.25)',
     },
 ];
 

@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ArrowLeft, Dumbbell, Plus, RotateCcw, ClipboardList, Activity } from 'lucide-react';
+import { ArrowLeft, Dumbbell, Plus, RotateCcw, ClipboardList, Activity, Play } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import {
     type MuscleGroup,
@@ -16,6 +16,7 @@ import { DateNavigator } from './DateNavigator';
 import { WorkoutLog } from './WorkoutLog';
 import { TemplateWorkoutLog } from './TemplateWorkoutLog';
 import { CardioWorkoutLog } from './CardioWorkoutLog';
+import { WORKOUT_TEMPLATES } from '../../data/workoutTemplates';
 import './GymTracker.css';
 
 type View = 'hub' | 'track' | 'track-muscle' | 'load-preview' | 'log' | 'template' | 'cardio';
@@ -357,7 +358,7 @@ export const GymTracker = () => {
     ];
 
     return (
-        <div className="gym-tracker">
+        <div className="gym-tracker gym-hub-container">
             <div className="gym-header">
                 <button className="gym-back-btn" onClick={() => navigate(-1)}>
                     <ArrowLeft size={20} />
@@ -367,14 +368,52 @@ export const GymTracker = () => {
                     <h2>Gym Progress Tracker</h2>
                 </div>
             </div>
-            <p className="gym-subtitle">What would you like to do?</p>
 
+            {/* NEW 7-DAY SPLIT WORKOUT TEMPLATES AT THE TOP */}
+            <div className="gym-templates-section">
+                <h3 className="gym-section-title">My 7-Day Split</h3>
+                <div className="gym-template-grid">
+                    {Object.values(WORKOUT_TEMPLATES).map((template, i) => (
+                        <motion.div
+                            key={template.id}
+                            className="gym-template-card"
+                            style={{ borderLeft: `4px solid ${template.color}` }}
+                            initial={{ opacity: 0, y: 15 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ delay: i * 0.05 }}
+                        >
+                            <div className="gym-template-card__header">
+                                <span className="gym-template-card__icon">{template.icon}</span>
+                                <div className="gym-template-card__details">
+                                    <h4 className="gym-template-card__title">{template.name}</h4>
+                                    <p className="gym-template-card__subtitle">{template.description}</p>
+                                </div>
+                            </div>
+                            <button
+                                className="gym-template-card__start-btn"
+                                style={{ backgroundColor: template.color }}
+                                onClick={() => {
+                                    initializeTemplateWorkout(template.id);
+                                    setView('template');
+                                }}
+                            >
+                                <Play size={12} fill="currentColor" style={{ marginRight: '6px' }} /> Start Workout
+                            </button>
+                        </motion.div>
+                    ))}
+                </div>
+            </div>
+
+            <div className="gym-divider" />
+
+            {/* UTILITY ACTIONS & HISTORY BELOW TEMPLATES */}
+            <h3 className="gym-section-title" style={{ marginTop: '1.5rem' }}>Tools & History</h3>
             <div className="gym-hub-cards">
                 {HUB_CARDS.map((card, i) => (
                     <motion.button
                         key={card.id}
                         className="gym-hub-card"
-                        style={{ background: card.gradient, boxShadow: `0 6px 28px ${card.shadow}` }}
+                        style={{ background: card.gradient, boxShadow: `0 6px 20px ${card.shadow}` }}
                         onClick={card.onClick}
                         initial={{ opacity: 0, y: 24 }}
                         animate={{ opacity: 1, y: 0 }}
@@ -389,53 +428,6 @@ export const GymTracker = () => {
                         </div>
                     </motion.button>
                 ))}
-            </div>
-
-            <div className="gym-templates-section" style={{ marginTop: '2rem' }}>
-                <h3 style={{ marginBottom: '1rem', color: 'var(--text-strong)' }}>Active Templates</h3>
-                <div className="gym-hub-cards">
-                    <motion.button
-                        className="gym-hub-card"
-                        style={{ background: 'linear-gradient(135deg, #ef4444, #b91c1c)', boxShadow: `0 6px 28px rgba(239,68,68,0.35)` }}
-                        onClick={() => initializeTemplateWorkout('day1')}
-                        whileHover={{ scale: 1.025, y: -2 }}
-                        whileTap={{ scale: 0.97 }}
-                    >
-                        <div className="gym-hub-card__icon">🟥</div>
-                        <div className="gym-hub-card__text">
-                            <span className="gym-hub-card__label">Workout Template Day 1</span>
-                            <span className="gym-hub-card__sub">Push Focus (Chest/Shoulders/Triceps)</span>
-                        </div>
-                    </motion.button>
-
-                    <motion.button
-                        className="gym-hub-card"
-                        style={{ background: 'linear-gradient(135deg, #3b82f6, #1d4ed8)', boxShadow: `0 6px 28px rgba(59,130,246,0.35)` }}
-                        onClick={() => initializeTemplateWorkout('day2')}
-                        whileHover={{ scale: 1.025, y: -2 }}
-                        whileTap={{ scale: 0.97 }}
-                    >
-                        <div className="gym-hub-card__icon">🟦</div>
-                        <div className="gym-hub-card__text">
-                            <span className="gym-hub-card__label">Workout Template Day 2</span>
-                            <span className="gym-hub-card__sub">Pull Focus (Back/Biceps)</span>
-                        </div>
-                    </motion.button>
-
-                    <motion.button
-                        className="gym-hub-card"
-                        style={{ background: 'linear-gradient(135deg, #22c55e, #15803d)', boxShadow: `0 6px 28px rgba(34,197,94,0.35)` }}
-                        onClick={() => initializeTemplateWorkout('day3')}
-                        whileHover={{ scale: 1.025, y: -2 }}
-                        whileTap={{ scale: 0.97 }}
-                    >
-                        <div className="gym-hub-card__icon">🟩</div>
-                        <div className="gym-hub-card__text">
-                            <span className="gym-hub-card__label">Workout Template Day 3</span>
-                            <span className="gym-hub-card__sub">Lower + Core</span>
-                        </div>
-                    </motion.button>
-                </div>
             </div>
         </div>
     );

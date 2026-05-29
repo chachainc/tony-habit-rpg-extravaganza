@@ -1,0 +1,165 @@
+/* ReadingInput — compact bottom-sheet modal */
+
+/* ── Backdrop ───────────────────────────── */
+.ri-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(4px);
+    z-index: 900;
+    animation: ri-fade-in 0.2s ease;
+}
+
+@keyframes ri-fade-in {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
+/* ── Sheet ──────────────────────────────── */
+.ri-sheet {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: linear-gradient(180deg, #1e1b4b 0%, #0f172a 100%); /* Deep indigo to slate */
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 20px 20px 0 0;
+    z-index: 901;
+    padding: 0 1.25rem calc(2rem + var(--sab, 0px)); /* Safe area bottom support */
+    max-height: 75vh;
+    overflow-y: auto;
+    animation: ri-slide-up 0.28s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@keyframes ri-slide-up {
+    from {
+        transform: translateY(100%);
+    }
+    to {
+        transform: translateY(0);
+    }
+}
+
+/* ── Drag handle ────────────────────────── */
+.ri-handle {
+    width: 40px;
+    height: 4px;
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 99px;
+    margin: 0.75rem auto 0;
+}
+
+/* ── Header ─────────────────────────────── */
+.ri-header {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    padding: 1rem 0 0.75rem;
+}
+
+.ri-book-icon {
+    color: #818cf8; /* Indigo accent */
+}
+
+.ri-title {
+    flex: 1;
+    font-size: 1.1rem;
+    font-weight: 800;
+    color: #fff;
+}
+
+.ri-close {
+    background: rgba(255, 255, 255, 0.08);
+    border: none;
+    border-radius: 8px;
+    color: rgba(255, 255, 255, 0.6);
+    padding: 0.35rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.15s;
+}
+
+.ri-close:hover {
+    background: rgba(255, 255, 255, 0.15);
+}
+
+/* ── Input form ─────────────────────────── */
+.ri-form {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    padding-top: 0.25rem;
+}
+
+.ri-input-row {
+    display: flex;
+    flex-direction: column;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1.5px solid rgba(255, 255, 255, 0.08);
+    border-radius: 12px;
+    padding: 0.75rem;
+}
+
+.ri-textarea {
+    background: transparent;
+    border: none;
+    outline: none;
+    font-size: 1.05rem;
+    font-weight: 500;
+    color: #fff;
+    width: 100%;
+    resize: none;
+    line-height: 1.5;
+    font-family: inherit;
+}
+
+.ri-textarea::placeholder {
+    color: rgba(255, 255, 255, 0.25);
+}
+
+.ri-actions {
+    display: flex;
+    gap: 0.75rem;
+}
+
+.ri-btn {
+    flex: 1;
+    padding: 0.75rem;
+    border-radius: 10px;
+    border: none;
+    font-size: 0.95rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: transform 0.15s, opacity 0.15s;
+}
+
+.ri-btn:active {
+    transform: scale(0.97);
+}
+
+.ri-btn--skip {
+    background: rgba(255, 255, 255, 0.08);
+    color: rgba(255, 255, 255, 0.7);
+}
+
+.ri-btn--save {
+    background: linear-gradient(135deg, #6366f1, #4f46e5); /* Indigo gradient */
+    color: #fff;
+}
+
+.ri-btn--save:disabled {
+    opacity: 0.35;
+    cursor: not-allowed;
+}
+
+@media (max-width: 600px) {
+    .ri-sheet {
+        padding-bottom: calc(90px + var(--sab, 0px)); /* Safe padding for bottom nav on mobile */
+    }
+}

@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { PERSIST_REGISTRY } from '../data/persistRegistry';
-import { useConquestStore } from './useConquestStore';
+
 import { useCurrencyStore } from './useCurrencyStore';
 import { RISK_CAMPAIGNS, ALL_REGIONS, CAMPAIGN_ORDER, type RegionId, type RiskCampaignDef } from '../data/riskMaps';
 
@@ -11,7 +11,7 @@ export type { RegionId } from '../data/riskMaps';
 
 export type RiskCardId =
     | 'blitz' | 'iron_discipline' | 'medic' | 'war_banner'
-    | 'treasurer' | 'recruiter' | 'warlord_sigil' | 'tank_tactics'
+    | 'treasurer' | 'recruiter' | 'warlord_coin' | 'tank_tactics'
     | 'iron_will' | 'treasure_sense' | 'arcane_edge';
 
 export interface RiskCardDef {
@@ -21,21 +21,21 @@ export interface RiskCardDef {
     effect: string;
     category: string;
     cost: number;
-    currency: 'sigils' | 'gold' | 'shmeckles';
+    currency: 'gold' | 'gems';
 }
 
 export const RISK_CARDS: Record<RiskCardId, RiskCardDef> = {
-    blitz:          { id: 'blitz',          icon: '⚡', name: 'Blitz',            effect: 'First die roll gets +1',                               category: 'Offense',  cost: 75,   currency: 'gold'   },
-    iron_discipline:{ id: 'iron_discipline', icon: '🛡️', name: 'Iron Discipline',  effect: 'Tied dice comparisons count as player wins',           category: 'Defense',  cost: 2000, currency: 'gold'   },
-    medic:          { id: 'medic',          icon: '💊', name: 'Medic Corps',      effect: 'Recover 1 soldier after any victory',                  category: 'Survival', cost: 100,  currency: 'sigils' },
-    war_banner:     { id: 'war_banner',     icon: '🚩', name: 'War Banner',       effect: '+1 die when attacking a Captain or Boss node',         category: 'Offense',  cost: 250,  currency: 'gold'   },
-    treasurer:      { id: 'treasurer',      icon: '💰', name: 'Treasurer',        effect: '+1 Shmeckle per game mode victory',                    category: 'Economy',  cost: 500,  currency: 'sigils' },
-    recruiter:      { id: 'recruiter',      icon: '📜', name: 'Recruiter',        effect: '+1 Sigil per territory captured',                      category: 'Economy',  cost: 500,  currency: 'sigils' },
-    warlord_sigil:  { id: 'warlord_sigil',  icon: '🏺', name: "Warlord's Sigil",  effect: '+1 Sigil per wave cleared (Tower/Storm)',              category: 'Economy',  cost: 500,  currency: 'sigils' },
-    tank_tactics:   { id: 'tank_tactics',   icon: '🪖', name: 'Tank Tactics',     effect: 'Your army does 15% more effective damage each battle', category: 'Offense',  cost: 100,  currency: 'sigils' },
-    iron_will:      { id: 'iron_will',      icon: '🛡️', name: 'Iron Will',         effect: '+10% defense in Risk battles',                         category: 'Defense',  cost: 100,  currency: 'sigils' },
-    treasure_sense: { id: 'treasure_sense', icon: '🗺️', name: 'Treasure Sense',    effect: '+20% gold from treasure nodes',                        category: 'Economy',  cost: 200,  currency: 'sigils' },
-    arcane_edge:    { id: 'arcane_edge',    icon: '🔮', name: 'Arcane Edge',        effect: '+15% magic damage in Risk battles',                    category: 'Offense',  cost: 100,  currency: 'sigils' },
+    blitz:          { id: 'blitz',          icon: '⚡', name: 'Blitz',            effect: 'First die roll gets +1',                               category: 'Offense',  cost: 75,   currency: 'gold' },
+    iron_discipline:{ id: 'iron_discipline', icon: '🛡️', name: 'Iron Discipline',  effect: 'Tied dice comparisons count as player wins',           category: 'Defense',  cost: 2000, currency: 'gold' },
+    medic:          { id: 'medic',          icon: '💊', name: 'Medic Corps',      effect: 'Recover 1 soldier after any victory',                  category: 'Survival', cost: 1000, currency: 'gold' },
+    war_banner:     { id: 'war_banner',     icon: '🚩', name: 'War Banner',       effect: '+1 die when attacking a Captain or Boss node',         category: 'Offense',  cost: 250,  currency: 'gold' },
+    treasurer:      { id: 'treasurer',      icon: '💰', name: 'Treasurer',        effect: '+10 Gold per game mode victory',                       category: 'Economy',  cost: 5000, currency: 'gold' },
+    recruiter:      { id: 'recruiter',      icon: '📜', name: 'Recruiter',        effect: '+10 Gold per territory captured',                      category: 'Economy',  cost: 5000, currency: 'gold' },
+    warlord_coin:   { id: 'warlord_coin',   icon: '🏺', name: "Warlord's Coin",   effect: '+10 Gold per wave cleared (Tower/Storm)',              category: 'Economy',  cost: 5000, currency: 'gold' },
+    tank_tactics:   { id: 'tank_tactics',   icon: '🪖', name: 'Tank Tactics',     effect: 'Your army does 15% more effective damage each battle', category: 'Offense',  cost: 1000, currency: 'gold' },
+    iron_will:      { id: 'iron_will',      icon: '🛡️', name: 'Iron Will',         effect: '+10% defense in Risk battles',                         category: 'Defense',  cost: 1000, currency: 'gold' },
+    treasure_sense: { id: 'treasure_sense', icon: '🗺️', name: 'Treasure Sense',    effect: '+20% gold from treasure nodes',                        category: 'Economy',  cost: 2000, currency: 'gold' },
+    arcane_edge:    { id: 'arcane_edge',    icon: '🔮', name: 'Arcane Edge',        effect: '+15% magic damage in Risk battles',                    category: 'Offense',  cost: 1000, currency: 'gold' },
 };
 
 export interface RegionDef {
@@ -83,8 +83,8 @@ export interface RiskBattleResult {
     retreatedSoldiers: number;
     triggeredEffects: string[];
     fortifiedEnemyNodes: string[];
-    reward?: 'sigil' | 'card';
-    extraSigils?: number;
+    reward?: 'gold' | 'card';
+    extraGold?: number;
 }
 
 export interface RiskState {
@@ -226,9 +226,7 @@ export const useRiskStore = create<RiskState>()(
             },
 
             buySoldier: () => {
-                const cs = useConquestStore.getState();
-                if (cs.sigils < 10) return false;
-                cs.addSigils(-10);
+                if (!useCurrencyStore.getState().spendGold(10)) return false;
                 set(s => ({ playerSoldiers: s.playerSoldiers + 1 }));
                 return true;
             },
@@ -262,16 +260,10 @@ export const useRiskStore = create<RiskState>()(
                 const cost = cardDef.cost;
                 const currency = cardDef.currency;
 
-                if (currency === 'sigils') {
-                    const cs = useConquestStore.getState();
-                    if (cs.sigils < cost) return false;
-                    cs.addSigils(-cost);
-                } else if (currency === 'gold') {
-                    const curr = useCurrencyStore.getState();
-                    if (!curr.spendGold(cost)) return false;
-                } else if (currency === 'shmeckles') {
-                    const curr = useCurrencyStore.getState();
-                    if (!curr.spendShmeckles(cost)) return false;
+                if (currency === 'gold') {
+                    if (!useCurrencyStore.getState().spendGold(cost)) return false;
+                } else if (currency === 'gems') {
+                    if (!useCurrencyStore.getState().spendGems(cost)) return false;
                 } else {
                     return false;
                 }
@@ -332,7 +324,7 @@ export const useRiskStore = create<RiskState>()(
                 let defenderPool = Math.max(1, targetNode.soldierCount);
                 const rounds: RiskBattleRound[] = [];
                 let totalSoldiersLost = 0;
-                let extraSigils = 0;
+                let extraGold = 0;
 
                 for (let roundNum = 1; roundNum <= 2; roundNum++) {
                     if (attackerPool <= 0 || defenderPool <= 0) break;
@@ -418,10 +410,20 @@ export const useRiskStore = create<RiskState>()(
                         }));
                         triggeredEffects.push('Medic Corps: +1 soldier recovered to source');
                     }
-                    if (equipped.includes('recruiter')) {
-                        extraSigils += 1;
-                        triggeredEffects.push('Recruiter: +1 Sigil');
+                    // Base gold reward for victory is 15 Gold
+                    let victoryGold = 15;
+
+                    if (targetNode.trait === 'resource') {
+                        victoryGold += 35; // resource node bonus
+                        triggeredEffects.push('Resource Capture: +35 Gold');
                     }
+
+                    if (equipped.includes('recruiter')) {
+                        extraGold += 10;
+                        triggeredEffects.push('Recruiter: +10 Gold');
+                    }
+
+                    const totalAwarded = victoryGold + extraGold;
 
                     set(s => ({
                         mapStates: {
@@ -433,9 +435,10 @@ export const useRiskStore = create<RiskState>()(
                         }
                     }));
 
-                    if (extraSigils > 0) {
-                        import('./useConquestStore').then(({ useConquestStore: cs }) => cs.getState().addSigils(extraSigils));
+                    if (totalAwarded > 0) {
+                        useCurrencyStore.getState().addGold(totalAwarded, { exact: true });
                     }
+                    extraGold = totalAwarded; // populate extraGold so UI can read it
                 } else {
                     retreatedSoldiers = attackerPool;
                     set(s => ({
@@ -464,7 +467,7 @@ export const useRiskStore = create<RiskState>()(
                 });
 
                 const reward: RiskBattleResult['reward'] = success
-                    ? (targetNode.trait === 'resource' ? 'sigil' : targetNode.trait === 'mystic' && Math.random() > 0.5 ? 'card' : undefined)
+                    ? (targetNode.trait === 'resource' ? 'gold' : targetNode.trait === 'mystic' && Math.random() > 0.5 ? 'card' : undefined)
                     : undefined;
 
                 return {
@@ -478,7 +481,7 @@ export const useRiskStore = create<RiskState>()(
                     triggeredEffects,
                     fortifiedEnemyNodes,
                     reward,
-                    extraSigils
+                    extraGold
                 };
             },
 

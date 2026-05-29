@@ -34,7 +34,7 @@ export interface GoongiePuzzle {
     playerSide: 'w' | 'b';
     reward: {
         gold: number;
-        sigils?: number;
+        
     };
     hint?: string;               // Optional hint shown after wrong move
 }
@@ -60,7 +60,7 @@ export const GOONGIE_PUZZLES: GoongiePuzzle[] = [
         fen: '6k1/5ppp/8/8/8/8/8/4R1K1 w - - 0 1',
         solution: ['e1e8'],
         playerSide: 'w',
-        reward: { gold: 25, sigils: 2 },
+        reward: { gold: 45 },
         hint: 'The rook can slide all the way to the 8th rank.',
     },
     {
@@ -73,7 +73,7 @@ export const GOONGIE_PUZZLES: GoongiePuzzle[] = [
         fen: '7k/8/6Q1/4K3/8/8/8/8 w - - 0 1',
         solution: ['g6g7'],
         playerSide: 'w',
-        reward: { gold: 25, sigils: 2 },
+        reward: { gold: 45 },
         hint: 'Drive the king into the corner.',
     },
     {
@@ -86,7 +86,7 @@ export const GOONGIE_PUZZLES: GoongiePuzzle[] = [
         fen: '7k/1R6/8/8/8/8/8/R5K1 w - - 0 1',
         solution: ['b7b8'],
         playerSide: 'w',
-        reward: { gold: 25, sigils: 2 },
+        reward: { gold: 45 },
         hint: 'Bring the rook to the 8th rank for checkmate.',
     },
     {
@@ -99,7 +99,7 @@ export const GOONGIE_PUZZLES: GoongiePuzzle[] = [
         fen: '4k3/8/5K2/7Q/8/8/8/8 w - - 0 1',
         solution: ['h5e8'],
         playerSide: 'w',
-        reward: { gold: 25, sigils: 2 },
+        reward: { gold: 45 },
         hint: 'The queen attacks along the diagonal.',
     },
 
@@ -115,7 +115,7 @@ export const GOONGIE_PUZZLES: GoongiePuzzle[] = [
         fen: '6kr/5p1r/8/5N2/8/8/8/6K1 w - - 0 1',
         solution: ['f5h6'],
         playerSide: 'w',
-        reward: { gold: 35, sigils: 3 },
+        reward: { gold: 65 },
         hint: 'The knight can give check and the king has no escape.',
     },
     {
@@ -131,7 +131,7 @@ export const GOONGIE_PUZZLES: GoongiePuzzle[] = [
         fen: '8/3q3k/8/8/6N1/8/8/6K1 w - - 0 1',
         solution: ['g4f6'],
         playerSide: 'w',
-        reward: { gold: 35, sigils: 3 },
+        reward: { gold: 65 },
         hint: 'One knight move attacks two pieces at once.',
     },
     {
@@ -144,7 +144,7 @@ export const GOONGIE_PUZZLES: GoongiePuzzle[] = [
         fen: '8/8/8/8/r3k3/2N5/8/6K1 w - - 0 1',
         solution: ['c3d5'],
         playerSide: 'w',
-        reward: { gold: 35, sigils: 3 },
+        reward: { gold: 65 },
         hint: 'The knight can threaten both the king and rook in one move.',
     },
     {
@@ -160,7 +160,7 @@ export const GOONGIE_PUZZLES: GoongiePuzzle[] = [
         fen: '8/3q4/8/8/1b6/8/8/3K4 w - - 0 1',
         solution: ['d1e1'],
         playerSide: 'w',
-        reward: { gold: 30, sigils: 2 },
+        reward: { gold: 50 },
         hint: 'Move away from the queen\'s line of attack.',
     },
 
@@ -175,7 +175,7 @@ export const GOONGIE_PUZZLES: GoongiePuzzle[] = [
         fen: '6k1/5p2/8/8/3Q4/8/8/4K1R1 w - - 0 1',
         solution: ['d4h8', 'g8f7', 'g1g7'],
         playerSide: 'w',
-        reward: { gold: 50, sigils: 5 },
+        reward: { gold: 100 },
         hint: 'Force the king to move, then deliver the final blow.',
     },
     {
@@ -191,7 +191,7 @@ export const GOONGIE_PUZZLES: GoongiePuzzle[] = [
         fen: '4r3/8/4n3/8/3N4/1B5k/8/1K6 w - - 0 1',
         solution: ['d4e6'],
         playerSide: 'w',
-        reward: { gold: 45, sigils: 4 },
+        reward: { gold: 85 },
         hint: 'Attack the piece that cannot defend itself.',
     },
     {
@@ -206,7 +206,7 @@ export const GOONGIE_PUZZLES: GoongiePuzzle[] = [
         fen: 'k7/8/8/r7/8/8/8/R5K1 w - - 0 1',
         solution: ['a1a6'],
         playerSide: 'w',
-        reward: { gold: 45, sigils: 4 },
+        reward: { gold: 85 },
         hint: 'Attack the more valuable piece to win the less valuable one behind it.',
     },
     {
@@ -220,7 +220,7 @@ export const GOONGIE_PUZZLES: GoongiePuzzle[] = [
         fen: '4k3/3q4/8/8/8/3B4/8/3RK3 w - - 0 1',
         solution: ['d3c4'],
         playerSide: 'w',
-        reward: { gold: 45, sigils: 4 },
+        reward: { gold: 85 },
         hint: 'Move a piece to reveal the attack of a piece behind it.',
     },
 
@@ -236,7 +236,7 @@ export const GOONGIE_PUZZLES: GoongiePuzzle[] = [
         fen: '6rk/6pp/8/7Q/8/8/8/4K1R1 w - - 0 1',
         solution: ['h5h7', 'h8g8', 'g1g8'],
         playerSide: 'w',
-        reward: { gold: 70, sigils: 7 },
+        reward: { gold: 140 },
         hint: 'Sometimes giving up your queen leads to instant checkmate.',
     },
     {
@@ -262,7 +262,7 @@ export const GOONGIE_PUZZLES: GoongiePuzzle[] = [
         fen: '6rk/5P2/6K1/8/8/8/8/8 w - - 0 1',
         solution: ['f7g8'],
         playerSide: 'w',
-        reward: { gold: 70, sigils: 7 },
+        reward: { gold: 140 },
         hint: 'Promote by capturing — the promoted piece delivers checkmate immediately.',
     },
     {
@@ -282,7 +282,7 @@ export const GOONGIE_PUZZLES: GoongiePuzzle[] = [
         fen: '6rk/7p/5N2/8/8/8/8/3QK3 w - - 0 1',
         solution: ['f6h7', 'h8g8', 'd1d8', 'g8f7', 'd8f8'],
         playerSide: 'w',
-        reward: { gold: 70, sigils: 7 },
+        reward: { gold: 140 },
         hint: 'Check first, then look for a double threat that forces the win.',
     },
 
@@ -309,7 +309,7 @@ export const GOONGIE_PUZZLES: GoongiePuzzle[] = [
         fen: '8/8/3p1p2/4k3/8/3Q4/8/2B1K3 w - - 0 1',
         solution: ['d3f5', 'e5e4', 'f5d5'],
         playerSide: 'w',
-        reward: { gold: 100, sigils: 10 },
+        reward: { gold: 200 },
         hint: 'Force the king into the open, then close the net.',
     },
     {
@@ -323,7 +323,7 @@ export const GOONGIE_PUZZLES: GoongiePuzzle[] = [
         fen: '4k3/3q1p2/8/8/8/4Q3/8/4R2R w - - 0 1',
         solution: ['e3e7', 'd7e7', 'e1e7', 'e8d8', 'h1h8'],
         playerSide: 'w',
-        reward: { gold: 100, sigils: 10 },
+        reward: { gold: 200 },
         hint: 'Sacrifice to open lines, then deliver the back rank mate.',
     },
 
@@ -341,7 +341,7 @@ export const GOONGIE_PUZZLES: GoongiePuzzle[] = [
         fen: '8/1Q3p2/5B2/8/4K3/8/8/8 w - - 0 1',
         solution: ['b7b8'],
         playerSide: 'w',
-        reward: { gold: 25, sigils: 2 },
+        reward: { gold: 45 },
         hint: 'The queen and bishop work together to seal all escape squares.',
     },
     {
@@ -360,7 +360,7 @@ export const GOONGIE_PUZZLES: GoongiePuzzle[] = [
         fen: '8/8/4k3/8/8/1Q5r/8/6K1 w - - 0 1',
         solution: ['b3b7'],
         playerSide: 'w',
-        reward: { gold: 35, sigils: 3 },
+        reward: { gold: 65 },
         hint: 'Find the square where the queen attacks two pieces simultaneously.',
     },
     {
@@ -379,7 +379,7 @@ export const GOONGIE_PUZZLES: GoongiePuzzle[] = [
         fen: '7k/8/5n2/3N2B1/8/8/8/6K1 w - - 0 1',
         solution: ['d5f6'],
         playerSide: 'w',
-        reward: { gold: 45, sigils: 4 },
+        reward: { gold: 85 },
         hint: 'The knight is pinned and cannot recapture.',
     },
     {
@@ -406,7 +406,7 @@ export const GOONGIE_PUZZLES: GoongiePuzzle[] = [
         fen: 'k7/p7/2K5/8/8/8/8/3Q4 w - - 0 1',
         solution: ['d1d7', 'a8b8', 'd7b7'],
         playerSide: 'w',
-        reward: { gold: 70, sigils: 7 },
+        reward: { gold: 140 },
         hint: 'Force Black into a position where every move leads to disaster.',
     },
     {
@@ -425,7 +425,7 @@ export const GOONGIE_PUZZLES: GoongiePuzzle[] = [
         fen: '4r3/8/8/8/8/8/3P1P2/4K3 b - - 0 1',
         solution: ['e8e1'],
         playerSide: 'b',
-        reward: { gold: 30, sigils: 3 },
+        reward: { gold: 60 },
         hint: 'The rook can slide straight down the e-file.',
     },
 ];

@@ -1,6 +1,8 @@
 import { motion } from 'framer-motion';
-import { Crown, Heart, Swords, Ticket, TrendingUp, X } from 'lucide-react';
+import { Heart, Swords, Ticket, TrendingUp, X } from 'lucide-react';
 import { useConquestStore } from '../../store/useConquestStore';
+import { useCurrencyStore } from '../../store/useCurrencyStore';
+import { CurrencyIcon } from '../../components/ui/CurrencyIcon';
 import './Conquest.css';
 
 interface ConquestMetaProps {
@@ -9,12 +11,13 @@ interface ConquestMetaProps {
 
 export const ConquestMeta = ({ onClose }: ConquestMetaProps) => {
     const conquest = useConquestStore();
-    const { metaUpgrades, sigils, dailyTickets, runHistory } = conquest;
+    const { metaUpgrades, dailyTickets, runHistory } = conquest;
+    const gold = useCurrencyStore(s => s.gold);
 
     // Cost formulas (match store logic)
-    const hpCost = (metaUpgrades.maxHpBonus / 10 + 1) * 50;
-    const atkCost = (metaUpgrades.startingAtkBonus + 1) * 75;
-    const ticketCost = 100;
+    const hpCost = (metaUpgrades.maxHpBonus / 10 + 1) * 500;
+    const atkCost = (metaUpgrades.startingAtkBonus + 1) * 750;
+    const ticketCost = 1000;
 
     return (
         <motion.div
@@ -39,15 +42,15 @@ export const ConquestMeta = ({ onClose }: ConquestMetaProps) => {
                     </button>
                 </div>
 
-                {/* Sigil Balance */}
+                {/* Gold Balance */}
                 <div style={{
                     display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem',
-                    padding: '0.5rem', marginBottom: '1rem', background: 'rgba(167,139,250,0.1)',
-                    borderRadius: 8, border: '1px solid rgba(167,139,250,0.2)',
+                    padding: '0.5rem', marginBottom: '1rem', background: 'rgba(251,191,36,0.1)',
+                    borderRadius: 8, border: '1px solid rgba(251,191,36,0.2)',
                 }}>
-                    <Crown size={16} color="#a78bfa" />
-                    <span style={{ color: '#a78bfa', fontWeight: 800, fontSize: '1.1rem' }}>{sigils}</span>
-                    <span style={{ color: '#94a3b8', fontSize: '0.85rem' }}>Sigils Available</span>
+                    <CurrencyIcon currencyType="gold" size={16} />
+                    <span style={{ color: '#fbbf24', fontWeight: 800, fontSize: '1.1rem' }}>{gold}</span>
+                    <span style={{ color: '#94a3b8', fontSize: '0.85rem' }}>Gold Available</span>
                 </div>
 
                 {/* Upgrades */}
@@ -65,10 +68,10 @@ export const ConquestMeta = ({ onClose }: ConquestMetaProps) => {
                         </div>
                         <button
                             className="meta-buy-btn"
-                            disabled={sigils < hpCost}
-                            onClick={() => conquest.buyMetaMaxHp()}
+                            disabled={gold < hpCost}
+                            onClick={() => { if (useCurrencyStore.getState().spendGold(hpCost)) conquest.buyMetaMaxHp(); }}
                         >
-                            <Crown size={12} /> {hpCost}
+                            🪙 {hpCost}
                         </button>
                     </div>
 
@@ -85,10 +88,10 @@ export const ConquestMeta = ({ onClose }: ConquestMetaProps) => {
                         </div>
                         <button
                             className="meta-buy-btn"
-                            disabled={sigils < atkCost}
-                            onClick={() => conquest.buyMetaAtk()}
+                            disabled={gold < atkCost}
+                            onClick={() => { if (useCurrencyStore.getState().spendGold(atkCost)) conquest.buyMetaAtk(); }}
                         >
-                            <Crown size={12} /> {atkCost}
+                            🪙 {atkCost}
                         </button>
                     </div>
 
@@ -105,10 +108,10 @@ export const ConquestMeta = ({ onClose }: ConquestMetaProps) => {
                         </div>
                         <button
                             className="meta-buy-btn"
-                            disabled={sigils < ticketCost}
-                            onClick={() => conquest.buyMetaTicket()}
+                            disabled={gold < ticketCost}
+                            onClick={() => { if (useCurrencyStore.getState().spendGold(ticketCost)) conquest.buyMetaTicket(); }}
                         >
-                            <Crown size={12} /> {ticketCost}
+                            🪙 {ticketCost}
                         </button>
                     </div>
                 </div>

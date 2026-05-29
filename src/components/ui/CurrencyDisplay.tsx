@@ -10,7 +10,7 @@ interface Props {
 }
 
 export const CurrencyDisplay = ({ compact = false }: Props) => {
-    const { gold, tickets, diamonds } = useCurrencyStore();
+    const { gold, tickets, gems } = useCurrencyStore();
     const { getAttack, getDefense } = useGameStore();
     const { playerCurrentHP, playerMaxHP } = useDayStore();
     const roomBonuses = useRoomStore((s) => s.getRoomCombatBonuses());
@@ -52,8 +52,8 @@ export const CurrencyDisplay = ({ compact = false }: Props) => {
                         <span className="currency-value">{tickets}</span>
                     </div>
                     <div className="currency-item">
-                        <Diamond size={18} className="currency-icon currency-icon--diamonds" />
-                        <span className="currency-value">{diamonds}</span>
+                        <Diamond size={18} className="currency-icon currency-icon--gems" />
+                        <span className="currency-value">{gems}</span>
                     </div>
                 </div>
             </div>
@@ -109,10 +109,10 @@ export const CurrencyDisplay = ({ compact = false }: Props) => {
                     </div>
                 </div>
                 <div className="currency-item currency-item--large">
-                    <Diamond size={24} className="currency-icon currency-icon--diamonds" />
+                    <Diamond size={24} className="currency-icon currency-icon--gems" />
                     <div className="currency-info">
-                        <span className="currency-label">Diamonds</span>
-                        <span className="currency-value">{diamonds}</span>
+                        <span className="currency-label">Gems</span>
+                        <span className="currency-value">{gems}</span>
                     </div>
                 </div>
             </div>

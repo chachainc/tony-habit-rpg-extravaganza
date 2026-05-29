@@ -98,9 +98,7 @@ export const ConquestBattle = () => {
             if (conquestEnemyDef.special) {
                 const specialLabels: Record<string, string> = {
                     attacks_twice: '⚡ Attacks Twice',
-                    steals_sigils: '🩸 Steals Sigils',
                     very_high_def: '🛡️ Fortified',
-                    drops_balloons: '🎈 Drops Balloons',
                     drops_gem: '💎 Drops Gem',
                     mirrors_atk: '🪞 Mirrors ATK',
                     atk_increases: '📈 ATK Grows',
@@ -162,10 +160,7 @@ export const ConquestBattle = () => {
                  useCurrencyStore.getState().addGold(killGold, { exact: true });
             });
 
-            if (conquestEnemyDef?.special === 'drops_balloons') {
-                const balloonDrop = 2 + Math.floor(Math.random() * 3);
-                conquest.addBalloons(balloonDrop);
-            }
+            // drops_balloons removed — old currency
             if (conquestEnemyDef?.special === 'drops_gem') {
                 import('../../store/useGameStore').then(({ useGameStore }) => {
                     useGameStore.getState().addGems(1);
@@ -582,9 +577,7 @@ export const ConquestBattle = () => {
                                 Run HP: <strong style={{ color: '#22c55e' }}>{Math.floor(conquest.runHP)}</strong>
                                 <br />
                                 <small style={{ color: '#475569', fontSize: '0.75rem' }}>⚠️ HP persists — visit a Campfire to restore</small>
-                                {conquestEnemyDef?.special === 'drops_balloons' && (
-                                    <div style={{ color: '#22c55e', marginTop: '0.5rem' }}>🎈 Bonus: Balloons dropped!</div>
-                                )}
+
                                 {conquestEnemyDef?.special === 'drops_gem' && (
                                     <div style={{ color: '#22c55e', marginTop: '0.5rem' }}>💎 Bonus: +1 Gem!</div>
                                 )}

@@ -47,12 +47,15 @@ import { FocusRoom } from './features/focus/FocusRoom';
 import { JournalHub } from './features/room/JournalHub';
 import { JournalEditor } from './features/room/JournalEditor';
 import { JournalHistory } from './features/room/JournalHistory';
+import { ReadingLogHistory } from './features/room/ReadingLogHistory';
 import { useDayStore } from './store/useDayStore';
 import { useGameStore } from './store/useGameStore';
 import { useProfileStore, triggerAutoSync } from './store/useProfileStore';
 import { useBudgetStore } from './store/useBudgetStore';
 import { WelcomeTutorialModal } from './features/onboarding/WelcomeTutorialModal';
 import { UltimateVideoOverlay } from './components/ui/UltimateVideoOverlay';
+import { enableChessAcademy, enableConquest, enableStormFort, enableTowerDefense } from './utils/featureFlags';
+import { Navigate } from 'react-router-dom';
 
 // Town Hub wrapper to handle navigation
 const TownHubPage = () => {
@@ -215,19 +218,20 @@ function App() {
           <Route path="library" element={<Library />} />
           <Route path="gym" element={<GymTracker />} />
           <Route path="health" element={<HealthTracker />} />
-          <Route path="conquest" element={<Conquest />} />
-          <Route path="conquest/battle" element={<ErrorBoundary><ConquestBattle /></ErrorBoundary>} />
-          <Route path="conquest/caravan" element={<ErrorBoundary><CaravanEncounter /></ErrorBoundary>} />
+          <Route path="conquest" element={enableConquest ? <Conquest /> : <Navigate to="/combat" replace />} />
+          <Route path="conquest/battle" element={enableConquest ? <ErrorBoundary><ConquestBattle /></ErrorBoundary> : <Navigate to="/combat" replace />} />
+          <Route path="conquest/caravan" element={enableConquest ? <ErrorBoundary><CaravanEncounter /></ErrorBoundary> : <Navigate to="/combat" replace />} />
           <Route path="focus" element={<FocusRoom />} />
           <Route path="journal" element={<JournalHub />} />
+          <Route path="journal/reading-log" element={<ReadingLogHistory />} />
           <Route path="journal/:category" element={<JournalEditor />} />
           <Route path="journal/:category/history" element={<JournalHistory />} />
           <Route path="combat" element={<CombatPage />} />
-          <Route path="combat/chess" element={<ChessDashboard />} />
+          <Route path="combat/chess" element={enableChessAcademy ? <ChessDashboard /> : <Navigate to="/combat" replace />} />
           <Route path="risk" element={<RiskPage />} />
-          <Route path="tower-defense" element={<TowerDefensePage />} />
+          <Route path="tower-defense" element={enableTowerDefense ? <TowerDefensePage /> : <Navigate to="/combat" replace />} />
           <Route path="budget" element={<BudgetPage />} />
-          <Route path="storm" element={<StormTheFort />} />
+          <Route path="storm" element={enableStormFort ? <StormTheFort /> : <Navigate to="/combat" replace />} />
           <Route path="shop" element={<ShopModal category="general" onClose={() => window.history.back()} />} />
           <Route path="room" element={<RoomLobbyPage />} />
           <Route path="room/2d" element={<PlayerRoomPage />} />

@@ -25,7 +25,6 @@ export const WarJournal = ({ onClose }: { onClose: () => void }) => {
 
     const currencyStats = [
         { icon: <Coins size={16} color="#fbbf24" style={{ display: 'inline', verticalAlign: 'text-bottom' }} />, label: 'Gold Earned (Lifetime)', value: formatNumber(stats.totalGoldEarned) },
-        { icon: '🐌', label: 'Shmeckles Earned (Lifetime)', value: formatNumber(stats.totalShmecklesEarned) },
     ];
 
     return (

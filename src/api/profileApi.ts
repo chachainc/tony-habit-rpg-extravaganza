@@ -106,8 +106,8 @@ export interface ChessRewardResponse {
 export interface ConquestNodeResponse {
     success: boolean;
     won: boolean;
-    sigilReward: number;
-    newSigils: number;
+    goldReward: number;
+    newGold: number;
 }
 
 export interface PurchaseResponse {
@@ -128,6 +128,6 @@ export const rewardApi = {
     conquestNode: (code: string, nodeId: string, won: boolean) =>
         apiRequest<ConquestNodeResponse>('POST', '/reward/conquest-node', { code, nodeId, won }),
 
-    purchase: (code: string, currency: 'gold' | 'sigils' | 'diamonds', amount: number, itemId: string) =>
+    purchase: (code: string, currency: 'gold' | 'gems', amount: number, itemId: string) =>
         apiRequest<PurchaseResponse>('POST', '/reward/purchase', { code, currency, amount, itemId }),
 };

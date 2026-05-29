@@ -264,7 +264,7 @@ const TrapsView = () => {
     if (activeTrap) {
         return <TrapEngine trap={activeTrap} onBack={() => setActiveTrap(null)} onSolve={() => {
             store.masterTrap(activeTrap.id);
-            currency.addShmeckles(3);
+            currency.addGold(15, { exact: true });
             gameStore.addSkillXp('Intelligence', 15);
             gameStore.addGlobalXp(10);
             setActiveTrap(null);

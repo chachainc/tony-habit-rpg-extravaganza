@@ -12,7 +12,7 @@ export interface ArenaStats {
     totalElitesKilled: number;
     totalBossesKilled: number;
     totalGoldEarned: number;
-    totalShmecklesEarned: number;
+
 
     // Per-mode best
     tdBestWave: number;
@@ -28,7 +28,7 @@ export interface ArenaStats {
     recordEliteKill: () => void;
     recordBossKill: () => void;
     recordGold: (amount: number) => void;
-    recordShmeckles: (amount: number) => void;
+
     updateTdBest: (wave: number) => void;
     updateStormBest: (wave: number) => void;
 }
@@ -45,7 +45,7 @@ export const useArenaStatsStore = create<ArenaStats>()(
             totalElitesKilled: 0,
             totalBossesKilled: 0,
             totalGoldEarned: 0,
-            totalShmecklesEarned: 0,
+
             tdBestWave: 0,
             stormBestWave: 0,
 
@@ -58,7 +58,7 @@ export const useArenaStatsStore = create<ArenaStats>()(
             recordEliteKill: () => set(s => ({ totalElitesKilled: s.totalElitesKilled + 1 })),
             recordBossKill: () => set(s => ({ totalBossesKilled: s.totalBossesKilled + 1 })),
             recordGold: (amount) => set(s => ({ totalGoldEarned: s.totalGoldEarned + amount })),
-            recordShmeckles: (amount) => set(s => ({ totalShmecklesEarned: s.totalShmecklesEarned + amount })),
+
             updateTdBest: (wave) => set(s => ({ tdBestWave: Math.max(s.tdBestWave, wave) })),
             updateStormBest: (wave) => set(s => ({ stormBestWave: Math.max(s.stormBestWave, wave) })),
         }),

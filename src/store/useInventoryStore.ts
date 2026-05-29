@@ -39,6 +39,7 @@ export interface ItemDef {
     critChance?: number; // For weapons: 0.05 = 5%
     price: number;
     icon: string;
+    image?: string;
     description?: string;
     requiredEnemy?: string; // Enemy ID that must be defeated to unlock
     flavorText?: string;    // Lore text for display

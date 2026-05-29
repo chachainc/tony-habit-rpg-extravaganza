@@ -70,7 +70,7 @@ export function canPurchaseItem(
     currencyState: {
         gold: number;
         tickets: number;
-        diamonds: number;
+        gems: number;
         tokens: Record<SkillName, number>;
     },
     discountMult: number = 1
@@ -94,8 +94,8 @@ export function canPurchaseItem(
     if (item.cost.tickets && currencyState.tickets < item.cost.tickets) {
         missingCurrency.push(`${item.cost.tickets - currencyState.tickets} Tickets`);
     }
-    if (item.cost.diamonds && currencyState.diamonds < item.cost.diamonds) {
-        missingCurrency.push(`${item.cost.diamonds - currencyState.diamonds} Diamonds`);
+    if (item.cost.gems && currencyState.gems < item.cost.gems) {
+        missingCurrency.push(`${item.cost.gems - currencyState.gems} Gems`);
     }
     if (item.cost.tokens) {
         for (const [skill, amount] of Object.entries(item.cost.tokens)) {

@@ -8,6 +8,7 @@ import { useArenaStatsStore } from './useArenaStatsStore';
 import type { TowerType, EnemyType, MapModifierType, WaveModifierType } from '../data/towerDefense';
 import { TD_PATH, TD_TOWERS, TD_ENEMIES, TD_SPECIALIZATIONS, getWaveComposition, rollMapModifier, rollWaveModifier } from '../data/towerDefense';
 import { getEnemyDefeatGoldReward } from '../utils/enemyRewards';
+import { enableTowerDefense } from '../utils/featureFlags';
 
 export interface PlacedTower {
     id: string;
@@ -54,7 +55,7 @@ export interface WaveStats {
     damageDealt: number;
     towersPlaced: number;
     goldEarned: number;
-    shmecklesEarned: number;
+    goldBonusEarned: number;
 }
 
 export interface TowerDefenseState {
@@ -122,7 +123,7 @@ export const useTowerDefenseStore = create<TowerDefenseState>()(
             currentWaveModifier: 'none' as WaveModifierType,
             totalWaveEnemies: 0,
 
-            waveStats: { kills: 0, damageDealt: 0, towersPlaced: 0, goldEarned: 0, shmecklesEarned: 0 },
+            waveStats: { kills: 0, damageDealt: 0, towersPlaced: 0, goldEarned: 0, goldBonusEarned: 0 },
             showStats: false,
             screenShake: false,
 
@@ -153,8 +154,8 @@ export const useTowerDefenseStore = create<TowerDefenseState>()(
                 } else {
                     // Purchase new tower
                     const currStore = useCurrencyStore.getState();
-                    if ((currStore.balloons ?? 0) < finalCost) return false;
-                    currStore.spendBalloons(finalCost);
+                    if ((currStore.gold ?? 0) < finalCost) return false;
+                    currStore.spendGold(finalCost);
                     set(s => ({
                         towers: [...s.towers, {
                             id: `tower_${Date.now()}_${x}_${y}`,
@@ -203,9 +204,9 @@ export const useTowerDefenseStore = create<TowerDefenseState>()(
                 const cost = Math.floor(def.cost * Math.pow(1.5, tower.level)); // 50 -> 75 -> 112
                 
                 const currStore = useCurrencyStore.getState();
-                if ((currStore.balloons ?? 0) < cost) return false;
+                if ((currStore.gold ?? 0) < cost) return false;
 
-                currStore.spendBalloons(cost);
+                currStore.spendGold(cost);
                 set({
                     towers: state.towers.map(t => 
                         t.id === id ? { ...t, level: t.level + 1, upgradeLevel: t.upgradeLevel + 1 } : t
@@ -231,6 +232,7 @@ export const useTowerDefenseStore = create<TowerDefenseState>()(
             },
 
             startNextWave: () => {
+                if (!enableTowerDefense) return;
                 const state = get();
                 if (state.isWaveActive) return;
 
@@ -254,12 +256,13 @@ export const useTowerDefenseStore = create<TowerDefenseState>()(
                     lastSpawnTime: Date.now(),
                     currentWaveModifier: nextWaveModifier,
                     totalWaveEnemies: queue.length,
-                    waveStats: { kills: 0, damageDealt: 0, towersPlaced: state.waveStats.towersPlaced, goldEarned: 0, shmecklesEarned: 0 },
+                    waveStats: { kills: 0, damageDealt: 0, towersPlaced: state.waveStats.towersPlaced, goldEarned: 0, goldBonusEarned: 0 },
                     showStats: false,
                 });
             },
 
             engineTick: (now) => {
+                if (!enableTowerDefense) return;
                 const state = get();
                 if (!state.isWaveActive && state.enemies.length === 0) return;
 
@@ -274,7 +277,7 @@ export const useTowerDefenseStore = create<TowerDefenseState>()(
                 let killsThisTick = 0;
                 let damageThisTick = 0;
                 let goldThisTick = 0;
-                let shmecklesThisTick = 0;
+                let goldBonusThisTick = 0;
 
                 // 1. Spawning (speed-scaled interval)
                 const spawnInterval = Math.max(400, 1200 / speedMul);
@@ -621,20 +624,16 @@ export const useTowerDefenseStore = create<TowerDefenseState>()(
                     
                     // Wave Complete Rewards (Global)
                     const passives = getPassiveBonuses();
-                    const sigils = Math.floor(state.currentWave / 2) + 1 + passives.sigil_bonus;
+                    const bonusGold = (Math.floor(state.currentWave / 2) + 1 + passives.gold_bonus) * 10;
                     const originalGold = (state.currentWave * 5) + passives.gold_bonus;
                     const gold = Math.max(1, Math.floor(originalGold / 10));
-                    const shmeckles = (state.currentWave * 5) + passives.gold_bonus;
+                    const waveGoldBonus = (state.currentWave * 5) + passives.gold_bonus;
 
-                    goldThisTick += gold;
-                    shmecklesThisTick += shmeckles;
+                    goldThisTick += gold + bonusGold;
+                    goldBonusThisTick += waveGoldBonus;
                     
-                    import('./useConquestStore').then(({ useConquestStore: cs }) => {
-                        cs.getState().addSigils(sigils);
-                    });
                     import('./useCurrencyStore').then(({ useCurrencyStore: curr }) => {
-                        curr.getState().addGold(gold);
-                        curr.getState().addShmeckles(shmeckles);
+                        curr.getState().addGold(gold + bonusGold + waveGoldBonus, { exact: true });
                     });
                 }
 
@@ -665,7 +664,7 @@ export const useTowerDefenseStore = create<TowerDefenseState>()(
                         damageDealt: state.waveStats.damageDealt + damageThisTick,
                         towersPlaced: state.waveStats.towersPlaced,
                         goldEarned: state.waveStats.goldEarned + goldThisTick,
-                        shmecklesEarned: state.waveStats.shmecklesEarned + shmecklesThisTick,
+                        goldBonusEarned: state.waveStats.goldBonusEarned + goldBonusThisTick,
                     }
                 });
             },
@@ -684,7 +683,7 @@ export const useTowerDefenseStore = create<TowerDefenseState>()(
                     currentMapModifier: rollMapModifier(),
                     currentWaveModifier: 'none',
                     totalWaveEnemies: 0,
-                    waveStats: { kills: 0, damageDealt: 0, towersPlaced: 0, goldEarned: 0, shmecklesEarned: 0 },
+                    waveStats: { kills: 0, damageDealt: 0, towersPlaced: 0, goldEarned: 0, goldBonusEarned: 0 },
                     showStats: false,
                     gameSpeed: 1,
                 });

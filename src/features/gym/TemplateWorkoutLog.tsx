@@ -15,7 +15,7 @@ import { ExerciseHistory } from './ExerciseHistory';
 import { WORKOUT_TEMPLATES } from '../../data/workoutTemplates';
 
 interface Props {
-    templateId: 'day1' | 'day2' | 'day3';
+    templateId: string;
     onClose: () => void;
 }
 

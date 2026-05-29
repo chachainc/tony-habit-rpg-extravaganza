@@ -202,24 +202,14 @@ export const GardenPanel = ({ onClose }: { onClose: () => void }) => {
                             const roll = Math.random();
                             let rewardAmount = 1;
                             let emoji = '';
-                            if (roll < 0.30) {
-                                rewardAmount = Math.random() < 0.5 ? 1 : 2;
-                                emoji = '🐌'; // Shmeckles
-                                useCurrencyStore.getState().addShmeckles(rewardAmount);
-                            } else if (roll < 0.60) {
-                                rewardAmount = Math.random() < 0.5 ? 1 : 2;
-                                emoji = '🎈'; // Balloons
-                                useCurrencyStore.getState().addBalloons(rewardAmount);
-                            } else if (roll < 0.90) {
-                                rewardAmount = Math.random() < 0.5 ? 1 : 2;
-                                emoji = '🔱'; // Sigils
-                                import('../../store/useConquestStore').then(({ useConquestStore }) => {
-                                    useConquestStore.getState().addSigils(rewardAmount);
-                                });
+                            if (roll < 0.90) {
+                                rewardAmount = 10 + Math.floor(Math.random() * 5) * 5; // 10, 15, 20, 25, 30
+                                emoji = '🪙';
+                                useCurrencyStore.getState().addGold(rewardAmount, { exact: true });
                             } else {
                                 rewardAmount = 1;
                                 emoji = '💎'; // Gem
-                                useCurrencyStore.getState().addDiamonds(rewardAmount);
+                                useCurrencyStore.getState().addGems(rewardAmount);
                             }
                             addFloat(`+${rewardAmount} ${emoji}`, 'reward_box', plotIdx);
                         }, i * 300);

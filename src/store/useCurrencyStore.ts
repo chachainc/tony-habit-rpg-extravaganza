@@ -10,14 +10,8 @@ export interface CurrencyState {
     // Uncommon - for gacha pulls and special items
     tickets: number;
 
-    // Rare - only from daily/weekly completion
-    diamonds: number;
-
-    // Combat minigames
-    shmeckles: number;
-
-    // Balloon - mirrors shmeckles every time shmeckles are earned
-    balloons: number;
+    // Rare/Premium - only from daily/weekly completion
+    gems: number;
 
     // Skill-bound tokens - earned by leveling skills
     tokens: Record<SkillName, number>;
@@ -25,16 +19,12 @@ export interface CurrencyState {
     // Actions
     addGold: (amount: number, options?: { exact?: boolean }) => void;
     addTickets: (amount: number) => void;
-    addDiamonds: (amount: number) => void;
-    addShmeckles: (amount: number) => void;
-    addBalloons: (amount: number) => void;
+    addGems: (amount: number) => void;
     addToken: (skill: SkillName, amount: number) => void;
 
     spendGold: (amount: number) => boolean;
     spendTickets: (amount: number) => boolean;
-    spendDiamonds: (amount: number) => boolean;
-    spendShmeckles: (amount: number) => boolean;
-    spendBalloons: (amount: number) => boolean;
+    spendGems: (amount: number) => boolean;
     spendToken: (skill: SkillName, amount: number) => boolean;
 
     canAfford: (cost: CurrencyCost) => boolean;
@@ -44,9 +34,7 @@ export interface CurrencyState {
 export interface CurrencyCost {
     gold?: number;
     tickets?: number;
-    diamonds?: number;
-    shmeckles?: number;
-    balloons?: number;
+    gems?: number;
     tokens?: Partial<Record<SkillName, number>>;
 }
 
@@ -55,9 +43,7 @@ export const useCurrencyStore = create<CurrencyState>()(
         (set, get) => ({
             gold: 0,
             tickets: 0,
-            diamonds: 0,
-            shmeckles: 0,
-            balloons: 0,
+            gems: 0,
             tokens: {
                 'Sleep': 0,
                 'Hygiene': 0,
@@ -75,7 +61,10 @@ export const useCurrencyStore = create<CurrencyState>()(
 
             addGold: (amount, options) => {
                 const processGoldAddition = (finalGold: number) => {
-                    import('./usePetStore').then(({ usePetStore }) => {
+                    Promise.all([
+                        import('./usePetStore'),
+                        import('./useBudgetStore')
+                    ]).then(([{ usePetStore }, { useBudgetStore }]) => {
                         let totalAmount = finalGold;
                         if (amount > 0) {
                             const petStore = usePetStore.getState();
@@ -106,6 +95,14 @@ export const useCurrencyStore = create<CurrencyState>()(
                             if (petDef?.passive?.type === 'treasure_hoof' && typeof petDef.passive.value === 'object') {
                                 const goldBonusPercent = (petDef.passive.value.goldPct || 0) / 100;
                                 totalAmount += Math.floor(amount * goldBonusPercent) + (petDef.passive.value.flatGold || 0);
+                            }
+
+                            // Weekly Budget Gold Bonus (+20%)
+                            const bState = useBudgetStore.getState();
+                            const spent = bState.getTotalSpent();
+                            const limit = bState.budget?.amount ?? 0;
+                            if (bState.weeklyGiftType === 'gold_bonus' && spent <= limit && limit > 0) {
+                                totalAmount += Math.floor(amount * 0.20);
                             }
                         }
 
@@ -159,36 +156,7 @@ export const useCurrencyStore = create<CurrencyState>()(
                 });
             },
             addTickets: (amount) => set((state) => ({ tickets: state.tickets + amount })),
-            addDiamonds: (amount) => set((state) => ({ diamonds: state.diamonds + amount })),
-            // addShmeckles: also grants same amount of Balloons (mirrored)
-            addShmeckles: (amount) => {
-                if (amount > 0) {
-                    import('./usePetStore').then(({ usePetStore }) => {
-                        let total = amount;
-                        const petDef = usePetStore.getState().getEquippedPetDef();
-                        if (petDef?.passive?.type === 'jackpot_multiplier' && typeof petDef.passive.value === 'object') {
-                            const chance = petDef.passive.value.rewardMultiplierChance || 12;
-                            if (Math.random() * 100 < chance) {
-                                total *= (petDef.passive.value.rewardMultiplier || 3);
-                                import('../components/ui/Toast').then(({ useToastStore }) => {
-                                    useToastStore.getState().addToast({ message: '🎰 JACKPOT! Shmeckles MULTIPLIED!', type: 'success' });
-                                });
-                            }
-                        }
-                        if (petDef?.passive?.type === 'treasure_hoof' && typeof petDef.passive.value === 'object') {
-                            if (Math.random() < ((petDef.passive.value.chanceExtraCurrency || 0) / 100)) {
-                                total += 1;
-                            }
-                        }
-                        set((state) => ({ shmeckles: state.shmeckles + total, balloons: state.balloons + total }));
-                    }).catch(() => {
-                        set((state) => ({ shmeckles: state.shmeckles + amount, balloons: state.balloons + amount }));
-                    });
-                } else {
-                    set((state) => ({ shmeckles: state.shmeckles + amount, balloons: state.balloons + amount }));
-                }
-            },
-            addBalloons: (amount) => set((state) => ({ balloons: state.balloons + amount })),
+            addGems: (amount) => set((state) => ({ gems: state.gems + amount })),
             addToken: (skill, amount) => set((state) => ({
                 tokens: {
                     ...state.tokens,
@@ -214,28 +182,10 @@ export const useCurrencyStore = create<CurrencyState>()(
                 return false;
             },
 
-            spendDiamonds: (amount) => {
+            spendGems: (amount) => {
                 const state = get();
-                if (state.diamonds >= amount) {
-                    set({ diamonds: state.diamonds - amount });
-                    return true;
-                }
-                return false;
-            },
-
-            spendShmeckles: (amount) => {
-                const state = get();
-                if (state.shmeckles >= amount) {
-                    set({ shmeckles: state.shmeckles - amount });
-                    return true;
-                }
-                return false;
-            },
-
-            spendBalloons: (amount) => {
-                const state = get();
-                if ((state.balloons ?? 0) >= amount) {
-                    set({ balloons: (state.balloons ?? 0) - amount });
+                if (state.gems >= amount) {
+                    set({ gems: state.gems - amount });
                     return true;
                 }
                 return false;
@@ -260,9 +210,7 @@ export const useCurrencyStore = create<CurrencyState>()(
 
                 if (cost.gold && state.gold < cost.gold) return false;
                 if (cost.tickets && state.tickets < cost.tickets) return false;
-                if (cost.diamonds && state.diamonds < cost.diamonds) return false;
-                if (cost.shmeckles && state.shmeckles < cost.shmeckles) return false;
-                if (cost.balloons && (state.balloons ?? 0) < cost.balloons) return false;
+                if (cost.gems && state.gems < cost.gems) return false;
 
                 if (cost.tokens) {
                     for (const [skill, amount] of Object.entries(cost.tokens)) {
@@ -278,9 +226,7 @@ export const useCurrencyStore = create<CurrencyState>()(
 
                 if (cost.gold) get().spendGold(cost.gold);
                 if (cost.tickets) get().spendTickets(cost.tickets);
-                if (cost.diamonds) get().spendDiamonds(cost.diamonds);
-                if (cost.shmeckles) get().spendShmeckles(cost.shmeckles);
-                if (cost.balloons) get().spendBalloons(cost.balloons);
+                if (cost.gems) get().spendGems(cost.gems);
 
                 if (cost.tokens) {
                     for (const [skill, amount] of Object.entries(cost.tokens)) {
@@ -292,7 +238,27 @@ export const useCurrencyStore = create<CurrencyState>()(
             },
         }),
         {
-            name: PERSIST_REGISTRY.currency.persistKey, // Reset for economy overhaul
+            name: PERSIST_REGISTRY.currency.persistKey,
+            version: 3,
+            migrate: (persistedState: any, fromVersion: number) => {
+                if (fromVersion < 3) {
+                    // Migration: convert removed currencies to gold, rename diamonds → gems
+                    const oldShmeckles = persistedState.shmeckles ?? 0;
+                    const oldBalloons = persistedState.balloons ?? 0;
+                    const oldDiamonds = persistedState.diamonds ?? 0;
+                    const oldGems = persistedState.gems ?? 0;
+                    return {
+                        ...persistedState,
+                        gold: (persistedState.gold ?? 0) + (oldShmeckles * 5) + (oldBalloons * 5),
+                        gems: oldGems + oldDiamonds,
+                        // Remove old fields
+                        shmeckles: undefined,
+                        balloons: undefined,
+                        diamonds: undefined,
+                    };
+                }
+                return persistedState;
+            },
         }
     )
 );

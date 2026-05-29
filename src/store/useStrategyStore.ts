@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { PERSIST_REGISTRY } from '../data/persistRegistry';
+import { enableTilesGame, enableConquest } from '../utils/featureFlags';
 
 // ─── TYPES ────────────────────────────────────
 
@@ -84,15 +85,15 @@ export const useStrategyStore = create<StrategyState>()(
 
                 const XP_MULT: Record<number, number> = { 1: 1, 2: 1.5, 3: 2.5 };
                 let baseXp = 0;
-                let baseSigils = 0;
+                let baseGoldBonus = 0;
                 switch (result) {
-                    case 'win': baseXp = 50; baseSigils = 15; break;
-                    case 'draw': baseXp = 25; baseSigils = 8; break;
-                    case 'loss': baseXp = 10; baseSigils = 3; break;
+                    case 'win': baseXp = 50; baseGoldBonus = 150; break;
+                    case 'draw': baseXp = 25; baseGoldBonus = 80; break;
+                    case 'loss': baseXp = 10; baseGoldBonus = 30; break;
                 }
                 const mult = XP_MULT[difficulty] ?? 1;
                 const xpGain = Math.round(baseXp * mult);
-                const sigilGain = Math.round(baseSigils * mult);
+                const goldReward = Math.round(baseGoldBonus * mult);
 
                 let newXp = state.strategyXp + xpGain;
                 let newLevel = state.strategyLevel;
@@ -112,10 +113,10 @@ export const useStrategyStore = create<StrategyState>()(
                     chessPlayed: true,
                 });
 
-                // Grant sigils from chess
-                if (sigilGain > 0) {
-                    import('./useConquestStore').then(({ useConquestStore }) => {
-                        useConquestStore.getState().addSigils(sigilGain);
+                // Grant gold from chess
+                if (goldReward > 0) {
+                    import('./useCurrencyStore').then(({ useCurrencyStore }) => {
+                        useCurrencyStore.getState().addGold(goldReward, { exact: true });
                     }).catch(() => { });
                 }
             },
@@ -128,22 +129,23 @@ export const useStrategyStore = create<StrategyState>()(
 
             // ─── TILES ────────────────────────────────
             recordTilesResult: (result, difficulty) => {
+                if (!enableTilesGame) return;
                 const today = getEasternDateString();
                 const state = get();
                 const runsToday = state.lastTilesDate === today ? (state.tilesRunsToday || 0) : 0;
                 if (runsToday >= 3) return; // 3 runs per day limit
 
-                // Same sigil rates as chess
+                // Same gold rates as chess
                 const XP_MULT: Record<number, number> = { 1: 1, 2: 1.5, 3: 2.5, 4: 3 };
                 let baseXp = 0;
-                let baseSigils = 0;
+                let baseGoldBonus = 0;
                 switch (result) {
-                    case 'win': baseXp = 50; baseSigils = 15; break;
-                    case 'loss': baseXp = 10; baseSigils = 3; break;
+                    case 'win': baseXp = 50; baseGoldBonus = 150; break;
+                    case 'loss': baseXp = 10; baseGoldBonus = 30; break;
                 }
                 const mult = XP_MULT[difficulty] ?? 1;
                 const xpGain = Math.round(baseXp * mult);
-                const sigilGain = Math.round(baseSigils * mult);
+                const goldReward = Math.round(baseGoldBonus * mult);
 
                 let newXp = state.strategyXp + xpGain;
                 let newLevel = state.strategyLevel;
@@ -169,15 +171,16 @@ export const useStrategyStore = create<StrategyState>()(
                     tilesHardWins: newHardWins,
                 });
 
-                // Grant sigils
-                if (sigilGain > 0) {
-                    import('./useConquestStore').then(({ useConquestStore }) => {
-                        useConquestStore.getState().addSigils(sigilGain);
+                // Grant gold
+                if (goldReward > 0) {
+                    import('./useCurrencyStore').then(({ useCurrencyStore }) => {
+                         useCurrencyStore.getState().addGold(goldReward, { exact: true });
                     }).catch(() => { });
                 }
             },
 
             canPlayTilesToday: () => {
+                if (!enableTilesGame) return false;
                 const state = get();
                 const today = getEasternDateString();
                 const runsToday = state.lastTilesDate === today ? (state.tilesRunsToday || 0) : 0;
@@ -185,10 +188,12 @@ export const useStrategyStore = create<StrategyState>()(
             },
 
             canPlayImpossible: () => {
+                if (!enableTilesGame) return false;
                 return get().tilesHardWins >= 3;
             },
 
             getReconBonus: () => {
+                if (!enableConquest) return 0;
                 const { strategyLevel } = get();
                 if (strategyLevel >= 20) return 2;
                 if (strategyLevel >= 10) return 1;
@@ -196,6 +201,7 @@ export const useStrategyStore = create<StrategyState>()(
             },
 
             getMoralCapBonus: () => {
+                if (!enableConquest) return 0;
                 const { strategyLevel } = get();
                 if (strategyLevel >= 15) return 1;
                 return 0;

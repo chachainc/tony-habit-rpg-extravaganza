@@ -1,7 +1,6 @@
 import { useNavigate } from 'react-router-dom';
 import { useEffect, useRef, useState } from 'react';
 import { useRiskStore, RISK_CARDS, REGIONS, type TerritoryNode, type RegionId, type RiskBattleResult, type RiskCardId } from '../../store/useRiskStore';
-import { useConquestStore } from '../../store/useConquestStore';
 import { useCurrencyStore } from '../../store/useCurrencyStore';
 import { RISK_CAMPAIGNS, CAMPAIGN_ORDER, ALL_REGIONS } from '../../data/riskMaps';
 import { Map as MapIcon, ArrowLeft, Swords, TrendingUp, X, ShoppingCart, HelpCircle, Coins } from 'lucide-react';
@@ -25,7 +24,6 @@ const NODE_TYPE_STYLE: Record<string, { border: string; glow: string; icon: stri
 export const RiskPage = () => {
     const navigate = useNavigate();
     const risk = useRiskStore();
-    const conquest = useConquestStore();
     const currency = useCurrencyStore();
 
     // Pannable map state
@@ -314,7 +312,7 @@ export const RiskPage = () => {
                 </button>
                 <span className="risk-title-compact"><MapIcon size={16} /> Risk Mode</span>
                 <div className="risk-header-right">
-                    <span className="risk-stat-chip">🔱 {conquest.sigils}</span>
+                    <span className="risk-stat-chip">🪙 {currency.gold} Gold</span>
                     <span className="risk-stat-chip">⚔️ {risk.playerSoldiers} soldiers</span>
                     {activeRegions.length > 0 && (
                         <span className="risk-stat-chip" style={{ color: '#10b981' }}>✨ {activeRegions.length} Region{activeRegions.length > 1 ? 's' : ''}</span>
@@ -346,10 +344,10 @@ export const RiskPage = () => {
                     </div>
                     <button
                         className="hire-btn"
-                        onClick={() => { if (!risk.buySoldier()) alert('Need 10 Sigils to hire a soldier'); }}
-                        disabled={conquest.sigils < 10}
+                        onClick={() => { if (!risk.buySoldier()) alert('Need 10 Gold to hire a soldier'); }}
+                        disabled={currency.gold < 10}
                     >
-                        + Hire (10 🔱)
+                        + Hire (10 🪙)
                     </button>
                 </div>
 
@@ -453,28 +451,28 @@ export const RiskPage = () => {
                                         <div style={{ marginTop: '0.75rem' }}>
                                             <button className="hire-btn" style={{ fontSize: '0.85rem', padding: '0.5rem 1rem', opacity: 0.8 }}
                                                 onClick={() => {
-                                                    useConquestStore.getState().addSigils(10 + ascLevel * 5);
+                                                    useCurrencyStore.getState().addGold(100 + ascLevel * 50);
                                                     risk.resetAndAscendMap();
                                                     setBattleResult(null);
                                                     setSelectedNode(null);
                                                 }}>
                                                 <TrendingUp size={16} style={{ display: 'inline', verticalAlign: 'middle', marginRight: 6 }} />
-                                                Or Ascend ({10 + ascLevel * 5} 🔱)
+                                                Or Ascend ({100 + ascLevel * 50} 🪙)
                                             </button>
                                         </div>
                                     </>
                                 ) : (
                                     <>
-                                        <p>Ascend to reset the map with harder enemies and gain Sigils.</p>
+                                        <p>Ascend to reset the map with harder enemies and gain Gold.</p>
                                         <button className="hire-btn" style={{ fontSize: '1rem', padding: '0.75rem 1.5rem' }}
                                             onClick={() => {
-                                                useConquestStore.getState().addSigils(10 + ascLevel * 5);
+                                                useCurrencyStore.getState().addGold(100 + ascLevel * 50);
                                                 risk.resetAndAscendMap();
                                                 setBattleResult(null);
                                                 setSelectedNode(null);
                                             }}>
                                             <TrendingUp size={20} style={{ display: 'inline', verticalAlign: 'middle', marginRight: 8 }} />
-                                            Ascend (Gain {10 + ascLevel * 5} 🔱)
+                                            Ascend (Gain {100 + ascLevel * 50} 🪙)
                                         </button>
                                     </>
                                 )}
@@ -547,7 +545,7 @@ export const RiskPage = () => {
 
                     {risk.ownedCards.length === 0 && (
                         <p className="cards-empty-hint" style={{ marginTop: '0.5rem' }}>
-                            No cards yet. Buy Command Cards for 100 🔱 in the shop.
+                            No cards yet. Buy Command Cards in the shop.
                         </p>
                     )}
                 </div>
@@ -764,9 +762,10 @@ export const RiskPage = () => {
                                         </div>
                                     )}
                                     
-                                    {battleResult.success && battleResult.reward && (
-                                        <div className="battle-reward">
-                                            {battleResult.reward === 'sigil' ? '🔱 +1 Sigil from resource node' : '🃏 Mystic reward granted'}
+                                    {battleResult.success && (
+                                        <div className="battle-reward gold-glow" style={{ fontSize: '1.2rem', color: '#fbbf24', textShadow: '0 0 10px rgba(251,191,36,0.5)', margin: '0.6rem 0', display: 'flex', alignItems: 'center', gap: '0.4rem', justifyContent: 'center' }}>
+                                            <span>🪙</span>
+                                            <span>+{battleResult.extraGold || 15} Gold Earned!</span>
                                         </div>
                                     )}
                                     
@@ -807,12 +806,11 @@ export const RiskPage = () => {
                                 const owned = risk.ownedCards.includes(def.id);
                                 let canBuy = !owned;
                                 if (!owned) {
-                                    if (def.currency === 'sigils') canBuy = conquest.sigils >= def.cost;
                                     if (def.currency === 'gold') canBuy = currency.gold >= def.cost;
-                                    if (def.currency === 'shmeckles') canBuy = currency.shmeckles >= def.cost;
+                                    else if (def.currency === 'gems') canBuy = currency.gems >= def.cost;
                                 }
-                                const cIcon = def.currency === 'sigils' ? '🔱' : def.currency === 'gold' ? <Coins size={14} style={{ display: 'inline', position: 'relative', top: '2px' }} /> : '🐌';
-                                const cLabel = def.currency === 'sigils' ? 'Sigils' : def.currency === 'gold' ? 'Gold' : 'Shmeckles';
+                                const cIcon = def.currency === 'gold' ? <Coins size={14} style={{ display: 'inline', position: 'relative', top: '2px' }} /> : '💎';
+                                const cLabel = def.currency === 'gold' ? 'Gold' : 'Gems';
                                 return (
                                     <div key={def.id} className={`card-item-rich rarity-common ${owned ? 'owned-card-row' : ''}`} style={{ borderLeftColor: owned ? '#10b981' : '#60a5fa' }}>
                                         <span className="card-icon-lg">{def.icon}</span>
@@ -847,7 +845,7 @@ export const RiskPage = () => {
                         <h3 style={{ color: '#f59e0b', marginBottom: '1rem' }}>How Cards & Army Work</h3>
                         <ul className="card-help-list">
                             <li><strong>Soldiers</strong> — each soldier is one die in battle. More soldiers = more dice.</li>
-                            <li><strong>Hire soldiers</strong> for 10 Sigils each. Buy sigils by winning Chess, Tiles, Tower Defense waves, and Risk conquests.</li>
+                            <li><strong>Hire soldiers</strong> for 10 Gold each. Earn Gold by winning battles, completing check-ins, and conquering territories.</li>
                             <li><strong>Battle</strong> — you and the enemy each roll your soldier dice. Highest vs highest wins comparisons. Most wins takes the node.</li>
                             <li><strong>Enemy scaling</strong> — Skirmish (1) → Patrol (2) → Guard (3) → Garrison (4) → Captain (5+) → Boss (10+) → Warlord (15+) → Legendary (20+).</li>
                             <li><strong>Cards</strong> cost varying resources depending on power, and are permanently in your collection.</li>

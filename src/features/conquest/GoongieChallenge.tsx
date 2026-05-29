@@ -440,9 +440,6 @@ export const GoongieChallenge = ({ puzzle, onComplete, onClose }: GoongieChallen
                         <div className="goongie-reward-block">
                             <div className="goongie-reward-row">
                                 <span className="goongie-reward-item"><span style={{display: 'inline-flex', verticalAlign: 'middle', marginRight: '4px'}}><CurrencyIcon currencyType="gold" size={14} /></span> +{puzzle.reward.gold} Gold</span>
-                                {puzzle.reward.sigils && puzzle.reward.sigils > 0 && (
-                                    <span className="goongie-reward-item">💠 +{puzzle.reward.sigils} Sigils</span>
-                                )}
                             </div>
                             <button
                                 className="goongie-btn goongie-btn-success"

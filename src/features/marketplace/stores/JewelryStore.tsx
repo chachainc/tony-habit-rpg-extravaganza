@@ -18,7 +18,7 @@ interface Props {
 }
 
 export const JewelryStore = ({ onClose }: Props) => {
-    const { diamonds, spendDiamonds } = useCurrencyStore();
+    const { gems, spendGems } = useCurrencyStore();
     const invStore = useInventoryStore();
     const [filter, setFilter] = useState<'all' | 'hero' | 'pet'>('all');
 
@@ -29,9 +29,9 @@ export const JewelryStore = ({ onClose }: Props) => {
         : JEWELRY_ITEMS.filter(item => filter === 'hero' ? item.type === 'jewelry' : item.type === 'pet_accessory');
 
     const handleBuy = (item: Item) => {
-        const cost = item.cost.diamonds || 0;
-        if (diamonds < cost || invStore.ownsMarketplaceItem(item.id)) return;
-        spendDiamonds(cost);
+        const cost = item.cost.gems || 0;
+        if (gems < cost || invStore.ownsMarketplaceItem(item.id)) return;
+        spendGems(cost);
         invStore.purchaseMarketplaceItem(item.id);
     };
 
@@ -62,7 +62,7 @@ export const JewelryStore = ({ onClose }: Props) => {
                     <Gem size={18} style={{ color: '#e879f9' }} />
                     Your Gems
                 </div>
-                <span style={{ color: '#e879f9', fontWeight: 700, fontSize: '1.1rem' }}>💎 {diamonds}</span>
+                <span style={{ color: '#e879f9', fontWeight: 700, fontSize: '1.1rem' }}>💎 {gems}</span>
             </div>
 
             {/* Filter Tabs */}
@@ -104,8 +104,8 @@ export const JewelryStore = ({ onClose }: Props) => {
             }}>
                 {filteredItems.map(item => {
                     const owned = invStore.ownsMarketplaceItem(item.id);
-                    const cost = item.cost.diamonds || 0;
-                    const canAfford = diamonds >= cost;
+                    const cost = item.cost.gems || 0;
+                    const canAfford = gems >= cost;
                     const rarityColor = RARITY_COLORS[item.rarity || 'common'];
 
                     return (

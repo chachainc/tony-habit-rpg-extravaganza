@@ -77,7 +77,7 @@ export const Conquest = () => {
     const [showResource, setShowResource] = useState(false);
     const [activeResourceTile, setActiveResourceTile] = useState<ResourceTileData | null>(null);
     const [resourceChosen, setResourceChosen] = useState(false);
-    const [rewardModal, setRewardModal] = useState<{ gold: number; sigils: number; item?: ItemDef } | null>(null);
+    const [rewardModal, setRewardModal] = useState<{ gold: number; gems: number; item?: ItemDef } | null>(null);
     const [hasBounced, setHasBounced] = useState(false);
     const [hoveredNode, setHoveredNode] = useState<ConquestNodeData | null>(null);
 
@@ -223,8 +223,8 @@ export const Conquest = () => {
             case 'treasure': {
                 const passives = getPassiveBonuses();
                 const gold = Math.floor(Math.random() * 10) + 5 + passives.gold_bonus;
-                const sigils = Math.floor(Math.random() * 2) + 1 + passives.sigil_bonus;
-                conquest.grantSpireReward(gold, sigils);
+                const gems = Math.random() < 0.15 ? 1 : 0;
+                conquest.grantSpireReward(gold, gems);
 
                 let droppedItem: ItemDef | undefined;
                 if (Math.random() < 0.15) {
@@ -239,7 +239,7 @@ export const Conquest = () => {
                         });
                     }
                 }
-                setRewardModal({ gold, sigils, item: droppedItem });
+                setRewardModal({ gold, gems, item: droppedItem });
                 break;
             }
             case 'mystery':
@@ -301,9 +301,8 @@ export const Conquest = () => {
         const amp = conquest.rewardAmplifierActive ? 1 : 0;
         rewards.forEach(r => {
             const total = r.amount + amp;
-            if (r.type === 'sigil') conquest.addSigils(total);
-            else if (r.type === 'balloon') conquest.addBalloons(total);
-            else if (r.type === 'shmeckle') conquest.addShmeckles(total);
+            // All old currencies now map to gold
+            currency.addGold(total * 10);
         });
         if (goldBonus) currency.addGold(goldBonus);
         if (healBonus) conquest.healHP(Math.floor(conquest.runMaxHP * (healBonus / 100)));
@@ -408,9 +407,7 @@ export const Conquest = () => {
                         </div>
                     )}
                     <div className="hud-stat gold"><CurrencyIcon currencyType="gold" size={14} /> {currency.gold}</div>
-                    <div className="hud-stat sigils"><Crown size={14} /> {conquest.sigils}</div>
-                    {conquest.balloons > 0 && <div className="hud-stat" style={{ color: '#60a5fa' }}>🎈 {conquest.balloons}</div>}
-                    {conquest.shmeckles > 0 && <div className="hud-stat" style={{ color: '#a78bfa' }}>🐌 {conquest.shmeckles}</div>}
+                    <div className="hud-stat gems"><CurrencyIcon currencyType="gems" size={14} /> {currency.gems}</div>
                     <button
                         onClick={() => setShowMeta(true)}
                         style={{
@@ -471,7 +468,6 @@ export const Conquest = () => {
                             <h2>{conquest.runComplete === 'victory' ? 'VICTORY Achieved!' : 'Run Failed'}</h2>
                             <p>You {conquest.runComplete === 'victory' ? 'conquered the map' : 'fell in battle'} on Floor {conquest.runFloor}.</p>
                             <div className="run-stats">
-                                <div>Sigils Earned: {conquest.memoryLog.mostSigilsInRun}</div>
                                 <div>Best Floor: {conquest.bestFloor}</div>
                                 <div>Runs Completed: {conquest.runsCompleted}</div>
                             </div>
@@ -548,7 +544,7 @@ export const Conquest = () => {
                                         <div className="event-options">
                                             {activeResourceTile.rewards.map((r, i) => (
                                                 <button key={i} onClick={() => applyResourceReward([r])}>
-                                                    {r.type === 'sigil' ? '🔱' : r.type === 'balloon' ? '🎈' : '🐌'} +{r.amount} {r.type.charAt(0).toUpperCase() + r.type.slice(1)}s
+                                                    🪙 +{r.amount * 10} Gold
                                                 </button>
                                             ))}
                                             {activeResourceTile.goldChoice && (
@@ -565,7 +561,7 @@ export const Conquest = () => {
                                             <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', marginBottom: '1rem' }}>
                                                 {activeResourceTile.rewards.map((r, i) => (
                                                     <span key={i} style={{ background: '#1e3a5f', border: '1px solid #3b82f6', borderRadius: 8, padding: '0.3rem 0.7rem', fontSize: '0.85rem', color: '#93c5fd' }}>
-                                                        {r.type === 'sigil' ? '🔱' : r.type === 'balloon' ? '🎈' : '🐌'} +{r.amount}
+                                                        🪙 +{r.amount * 10} Gold
                                                     </span>
                                                 ))}
                                                 {conquest.rewardAmplifierActive && (
@@ -624,8 +620,8 @@ export const Conquest = () => {
                                     {CONQUEST_EVENT_TABLE[activeEvent].options.map((opt, i) => (
                                         <button key={i} onClick={() => {
                                             if (opt.effect.type === 'gold') conquest.grantSpireReward(opt.effect.gold || 0, 0);
-                                            if (opt.effect.type === 'hp_and_sigils') {
-                                                conquest.grantSpireReward(0, opt.effect.sigils || 0);
+                                            if (opt.effect.type === 'hp_and_gold') {
+                                                conquest.grantSpireReward(opt.effect.gold || 0, 0);
                                                 if (opt.effect.hp < 0) conquest.takeDamage(-opt.effect.hp);
                                                 else conquest.healHP(opt.effect.hp);
                                             }
@@ -718,10 +714,10 @@ export const Conquest = () => {
                             <div className="event-options">
                                 <button onClick={() => {
                                     conquest.takeDamage(20);
-                                    conquest.grantSpireReward(100, 20);
+                                    conquest.grantSpireReward(100, 1);
                                     setShowCursed(false);
                                 }}>
-                                    Sacrifice Blood (-20 HP, +100 Gold, +20 Sigils)
+                                    Sacrifice Blood (-20 HP, +100 Gold, +1 Gem)
                                 </button>
                                 <button onClick={() => setShowCursed(false)}>Leave it be</button>
                             </div>
@@ -738,7 +734,7 @@ export const Conquest = () => {
                             <h2>Chest Opened!</h2>
                             <div className="loot-display">
                                 <span className="loot-item gold">+{rewardModal.gold} Gold</span>
-                                <span className="loot-item sigils">+{rewardModal.sigils} Sigils</span>
+                                {rewardModal.gems > 0 && <span className="loot-item gems">+{rewardModal.gems} Gems</span>}
                                 {rewardModal.item && (
                                     <span className={`loot-item item-drop rarity-${rewardModal.item.rarity}`}>
                                         Found: {rewardModal.item.icon} {rewardModal.item.name}
@@ -771,9 +767,6 @@ export const Conquest = () => {
                     onComplete={(success) => {
                         if (success && activePuzzle) {
                             currency.addGold(activePuzzle.reward.gold);
-                            if (activePuzzle.reward.sigils && activePuzzle.reward.sigils > 0) {
-                                conquest.addSigils(activePuzzle.reward.sigils);
-                            }
                         } else if (!success) {
                             // Fail penalty: small HP damage
                             conquest.takeDamage(Math.floor(conquest.runMaxHP * 0.08));

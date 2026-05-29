@@ -27,7 +27,7 @@ export interface EnemyDef {
     image?: string;
     baseHp: number;
     speed: number;      // Grid tiles per second
-    reward: number;     // Shmeckles rewarded on kill
+    reward: number;     // Gold rewarded on kill
     useVideo?: boolean; // if true, render as video sprite instead of emoji
     healsNearby?: boolean; // necromancer trait
     isBoss?: boolean;   // boss health bar treatment

@@ -1,6 +1,7 @@
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Check, AlertCircle } from 'lucide-react';
 import type { Item } from '../../data/items';
+import { PET_DATABASE } from '../../data/pets';
 import './PurchaseConfirmModal.css';
 
 interface Props {
@@ -22,6 +23,8 @@ export const PurchaseConfirmModal = ({ item, isOpen, onConfirm, onCancel }: Prop
     };
 
     const borderColor = rarityColors[item.rarity || 'common'];
+    const resolvedImage = item.type === 'pet' && PET_DATABASE[item.id]?.image ? PET_DATABASE[item.id].image : item.image;
+    const isImage = resolvedImage && (resolvedImage.startsWith('/') || resolvedImage.startsWith('http') || resolvedImage.startsWith('data:image/'));
 
     return (
         <AnimatePresence>
@@ -48,7 +51,13 @@ export const PurchaseConfirmModal = ({ item, isOpen, onConfirm, onCancel }: Prop
 
                     {/* Item Preview */}
                     <div className="item-preview">
-                        <div className="item-icon-large">{item.icon}</div>
+                        <div className="item-icon-large">
+                            {isImage ? (
+                                <img src={resolvedImage} alt={item.name} className="item-preview-image" style={{ width: '80px', height: '80px', objectFit: 'cover', borderRadius: '8px', margin: '0 auto' }} />
+                            ) : (
+                                item.icon
+                            )}
+                        </div>
                         <h2 className="item-name-large">{item.name}</h2>
                         <span className={`rarity-badge rarity-${item.rarity || 'common'}`}>
                             {item.rarity?.toUpperCase() || 'COMMON'}
@@ -86,8 +95,8 @@ export const PurchaseConfirmModal = ({ item, isOpen, onConfirm, onCancel }: Prop
                             {(item.cost.tickets ?? 0) > 0 && (
                                 <span className="cost-badge cost-tickets">🎫 {item.cost.tickets} Tickets</span>
                             )}
-                            {(item.cost.diamonds ?? 0) > 0 && (
-                                <span className="cost-badge cost-diamonds">💎 {item.cost.diamonds} Diamonds</span>
+                            {(item.cost.gems ?? 0) > 0 && (
+                                <span className="cost-badge cost-gems">💎 {item.cost.gems} Gems</span>
                             )}
                             {item.cost.tokens && Object.entries(item.cost.tokens).map(([skill, amount]) => (
                                 <span key={skill} className="cost-badge cost-tokens">🎖️ {amount} {skill} Tokens</span>

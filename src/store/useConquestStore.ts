@@ -1,6 +1,8 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { useStrategyStore } from './useStrategyStore';
+import { useCurrencyStore } from './useCurrencyStore';
+import { enableConquest } from '../utils/featureFlags';
 import { CONQUEST_MAP_NODES, CONQUEST_ARTIFACTS, CONQUEST_BOSS_POOL, type ConquestNodeData } from '../data/conquest';
 import { generateConquestMap } from '../data/conquestMapGen';
 import { PERSIST_REGISTRY } from '../data/persistRegistry';
@@ -38,7 +40,7 @@ export interface MemoryLog {
     highestRegionCleared: number;
     fastestConquest: number | null;   // turns
     leastTroopLoss: number | null;
-    mostSigilsInRun: number;
+
 }
 
 export type RunBuffType = 
@@ -64,10 +66,6 @@ export interface RunBuff {
 }
 
 export interface ConquestState {
-    // Currency
-    sigils: number;
-    addSigils: (amount: number) => void;
-    spendSigils: (amount: number) => boolean;
 
     // Conquest Map (Phase 1)
     act: number;
@@ -94,7 +92,7 @@ export interface ConquestState {
     rollMapDice: () => number | null;
     getReachableNodes: () => string[];
     movePlayer: (nodeId: string) => void;
-    grantSpireReward: (gold: number, sigils: number, gems?: number) => void;
+    grantSpireReward: (gold: number, gems?: number) => void;
 
     // Run State (Slay the Spire style)
     runHP: number;
@@ -105,9 +103,7 @@ export interface ConquestState {
     lastRunDate: string | null;
     currentRunStartDate: string | null;
 
-    // NEW — run resources
-    balloons: number;
-    shmeckles: number;
+
 
     // NEW — run progression tracking
     treasureVaultsCompleted: number;
@@ -154,8 +150,6 @@ export interface ConquestState {
     resetRun: () => void;
 
     // NEW run resource actions
-    addBalloons: (n: number) => void;
-    addShmeckles: (n: number) => void;
     completeTreasureVault: () => void;
     addRunArtifact: (id: string) => void;
     addRunRelic: (id: string) => void;
@@ -211,7 +205,7 @@ export interface ConquestState {
 // Legacy Combat results struct
 export interface ConquestCombatResult {
     won: boolean;
-    sigilsEarned: number;
+
     goldEarned: number;
     gemsEarned: number;
     troopsLost: number;
@@ -307,7 +301,7 @@ function findExactDistanceNodes(startId: string | null, distance: number, allNod
 export const useConquestStore = create<ConquestState>()(
     persist(
         (set, get) => ({
-            sigils: 0,
+
 
             // Map State
             act: 1,
@@ -329,7 +323,6 @@ export const useConquestStore = create<ConquestState>()(
                 highestRegionCleared: 0,
                 fastestConquest: null,
                 leastTroopLoss: null,
-                mostSigilsInRun: 0,
             },
 
             // Run State
@@ -341,9 +334,7 @@ export const useConquestStore = create<ConquestState>()(
             lastRunDate: null,
             currentRunStartDate: null,
 
-            // NEW — run resources
-            balloons: 0,
-            shmeckles: 0,
+
 
             // NEW — run progression
             treasureVaultsCompleted: 0,
@@ -373,42 +364,7 @@ export const useConquestStore = create<ConquestState>()(
             runHistory: [],
             dailyTickets: 0,
 
-            addSigils: (amount) => {
-                if (amount > 0) {
-                    import('./usePetStore').then(({ usePetStore }) => {
-                        let total = amount;
-                        const petDef = usePetStore.getState().getEquippedPetDef();
-                        
-                        if (petDef?.passive?.type === 'jackpot_multiplier' && typeof petDef.passive.value === 'object') {
-                            const chance = petDef.passive.value.rewardMultiplierChance || 12;
-                            if (Math.random() * 100 < chance) {
-                                total *= (petDef.passive.value.rewardMultiplier || 3);
-                                import('../components/ui/Toast').then(({ useToastStore }) => {
-                                    useToastStore.getState().addToast({ message: '🎰 JACKPOT! Sigils MULTIPLIED!', type: 'success' });
-                                });
-                            }
-                        }
 
-                        if (petDef?.passive?.type === 'treasure_hoof' && typeof petDef.passive.value === 'object') {
-                            if (Math.random() < ((petDef.passive.value.chanceExtraCurrency || 0) / 100)) {
-                                total += 1;
-                            }
-                        }
-                        set(s => ({ sigils: s.sigils + total }));
-                    }).catch(() => {
-                        set(s => ({ sigils: s.sigils + amount }));
-                    });
-                } else {
-                    set(s => ({ sigils: s.sigils + amount }));
-                }
-            },
-
-            spendSigils: (amount) => {
-                const { sigils } = get();
-                if (sigils < amount) return false;
-                set({ sigils: sigils - amount });
-                return true;
-            },
 
             initMap: () => {
                 const state = get();
@@ -445,6 +401,7 @@ export const useConquestStore = create<ConquestState>()(
             },
             
             isDailyRunLocked: () => {
+                if (!enableConquest) return true;
                 const state = get();
                 if (!state.lastRunDate) return false;
                 const todayISO = getEasternDateString();
@@ -472,13 +429,13 @@ export const useConquestStore = create<ConquestState>()(
                 }
             },
 
-            grantSpireReward: (gold: number, sigils: number, gems: number = 0) => {
+            grantSpireReward: (gold: number, gems: number = 0) => {
+                if (!enableConquest) return;
                 // Apply artifact bonuses
                 const effects = get().getArtifactEffects();
                 const amplifier = get().rewardAmplifierActive ? 1 : 0;
                 
                 let finalGold = gold;
-                let finalSigils = sigils + amplifier;
                 let finalGems = gems + amplifier;
 
                 // Gold bonus from Merchant's Coin artifact
@@ -486,25 +443,19 @@ export const useConquestStore = create<ConquestState>()(
                     finalGold = Math.floor(finalGold * (1 + effects.goldBonusPct / 100));
                 }
 
-                // Double resource chance from Amplifier Sigil artifact
+                // Double resource chance from Amplifier Charm artifact
                 if (effects.doubleResourceChance > 0 && Math.random() < effects.doubleResourceChance / 100) {
                     finalGold *= 2;
-                    finalSigils *= 2;
                     finalGems *= 2;
                 }
 
                 if (finalGold > 0) {
-                    import('./useCurrencyStore').then(({ useCurrencyStore }) => {
-                        useCurrencyStore.getState().addGold(finalGold);
-                    }).catch(() => { });
+                    useCurrencyStore.getState().addGold(finalGold);
                 }
                 if (finalGems > 0) {
                     import('./useGameStore').then(({ useGameStore }) => {
                         useGameStore.getState().addGems(finalGems);
                     }).catch(() => { });
-                }
-                if (finalSigils > 0) {
-                    get().addSigils(finalSigils);
                 }
 
                 // Gem on next kill artifact (consumed after one use)
@@ -519,7 +470,7 @@ export const useConquestStore = create<ConquestState>()(
                 // 25% chance to drop a Risk card as connective progression
                 if (Math.random() < 0.25) {
                     import('./useRiskStore').then(({ useRiskStore }) => {
-                        const cards = ['blitz', 'iron_discipline', 'medic', 'war_banner', 'treasurer', 'recruiter', 'warlord_sigil', 'tank_tactics'] as const;
+                        const cards = ['blitz', 'iron_discipline', 'medic', 'war_banner', 'treasurer', 'recruiter', 'warlord_coin', 'tank_tactics'] as const;
                         const drop = cards[Math.floor(Math.random() * cards.length)];
                         useRiskStore.getState().gainCard(drop);
                     }).catch(() => {});
@@ -528,6 +479,7 @@ export const useConquestStore = create<ConquestState>()(
 
             // ─── RUN ACTIONS ───
             startRun: () => {
+                if (!enableConquest) return;
                 const state = get();
                 
                 // If locked, consume a ticket
@@ -562,8 +514,6 @@ export const useConquestStore = create<ConquestState>()(
                     generatedMap: map,
                     mapSeed: seed,
                     runBossId: runBoss.id,
-                    balloons: 0,
-                    shmeckles: 0,
                     treasureVaultsCompleted: 0,
                     runArtifacts: [],
                     runRelics: [],
@@ -604,8 +554,7 @@ export const useConquestStore = create<ConquestState>()(
             },
 
             // ─── NEW RUN ACTIONS ───
-            addBalloons: (n: number) => set(s => ({ balloons: s.balloons + n })),
-            addShmeckles: (n: number) => set(s => ({ shmeckles: s.shmeckles + n })),
+
 
             completeTreasureVault: () => set(s => ({ treasureVaultsCompleted: s.treasureVaultsCompleted + 1 })),
 
@@ -678,19 +627,19 @@ export const useConquestStore = create<ConquestState>()(
             // ─── META-SHOP ───
             buyMetaMaxHp: () => {
                 const cost = (get().metaUpgrades.maxHpBonus / 10 + 1) * 50; // 50, 100, 150...
-                if (!get().spendSigils(cost)) return false;
+                if (!useCurrencyStore.getState().spendGold(cost * 10)) return false;
                 set(s => ({ metaUpgrades: { ...s.metaUpgrades, maxHpBonus: s.metaUpgrades.maxHpBonus + 10 } }));
                 return true;
             },
             buyMetaAtk: () => {
                 const cost = (get().metaUpgrades.startingAtkBonus + 1) * 75; // 75, 150, 225...
-                if (!get().spendSigils(cost)) return false;
+                if (!useCurrencyStore.getState().spendGold(cost * 10)) return false;
                 set(s => ({ metaUpgrades: { ...s.metaUpgrades, startingAtkBonus: s.metaUpgrades.startingAtkBonus + 1 } }));
                 return true;
             },
             buyMetaTicket: () => {
                 const cost = 100;
-                if (!get().spendSigils(cost)) return false;
+                if (!useCurrencyStore.getState().spendGold(cost * 10)) return false;
                 set(s => ({ dailyTickets: s.dailyTickets + 1 }));
                 return true;
             },
@@ -704,7 +653,7 @@ export const useConquestStore = create<ConquestState>()(
                 const state = get();
                 if (state.soldiers.length >= state.maxTeamSize) return false;
                 const cost = 30;
-                if (!get().spendSigils(cost)) return false;
+                if (!useCurrencyStore.getState().spendGold(cost * 10)) return false;
 
                 const newSoldier: Soldier = {
                     id: `soldier_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
@@ -728,7 +677,7 @@ export const useConquestStore = create<ConquestState>()(
                 if (rankIdx >= RANK_ORDER.length - 1) return false; // Already max rank
 
                 const cost = RANK_UPGRADE_COST[soldier.rank];
-                if (!get().spendSigils(cost)) return false;
+                if (!useCurrencyStore.getState().spendGold(cost * 10)) return false;
 
                 const newRank = RANK_ORDER[rankIdx + 1];
                 const mult = RANK_MULTIPLIERS[newRank];
@@ -746,7 +695,7 @@ export const useConquestStore = create<ConquestState>()(
                 const state = get();
                 if (state.maxTeamSize >= 6) return false;
                 const cost = TEAM_SIZE_COSTS[state.maxTeamSize]; // cost for next slot
-                if (!cost || !get().spendSigils(cost)) return false;
+                if (!cost || !useCurrencyStore.getState().spendGold(cost * 10)) return false;
                 set({ maxTeamSize: state.maxTeamSize + 1 });
                 return true;
             },
@@ -755,7 +704,7 @@ export const useConquestStore = create<ConquestState>()(
                 const state = get();
                 if (state.barracksLevel >= BARRACKS_COST.length) return false;
                 const cost = BARRACKS_COST[state.barracksLevel];
-                if (!get().spendSigils(cost)) return false;
+                if (!useCurrencyStore.getState().spendGold(cost * 10)) return false;
                 set({ barracksLevel: state.barracksLevel + 1 });
                 return true;
             },
@@ -764,7 +713,7 @@ export const useConquestStore = create<ConquestState>()(
                 const state = get();
                 if (state.scoutTowerLevel >= SCOUT_COST.length) return false;
                 const cost = SCOUT_COST[state.scoutTowerLevel];
-                if (!get().spendSigils(cost)) return false;
+                if (!useCurrencyStore.getState().spendGold(cost * 10)) return false;
                 set({ scoutTowerLevel: state.scoutTowerLevel + 1 });
                 return true;
             },
@@ -773,7 +722,7 @@ export const useConquestStore = create<ConquestState>()(
                 const state = get();
                 if (state.shrineLevel >= SHRINE_COST.length) return false;
                 const cost = SHRINE_COST[state.shrineLevel];
-                if (!get().spendSigils(cost)) return false;
+                if (!useCurrencyStore.getState().spendGold(cost * 10)) return false;
                 set({ shrineLevel: state.shrineLevel + 1 });
                 return true;
             },
@@ -783,7 +732,7 @@ export const useConquestStore = create<ConquestState>()(
                 const upgradeIdx = state.diceCount - 2; // 0 = 2->3, 1 = 3->4
                 if (upgradeIdx >= DICE_UPGRADE_COST.length) return false;
                 const cost = DICE_UPGRADE_COST[upgradeIdx];
-                if (!get().spendSigils(cost)) return false;
+                if (!useCurrencyStore.getState().spendGold(cost * 10)) return false;
                 set({ diceCount: state.diceCount + 1 });
                 return true;
             },
@@ -846,7 +795,7 @@ export const useConquestStore = create<ConquestState>()(
             // Stubs for removed old features to prevent UI compile crashes
             isSupplyConnected: () => true,
             initRegions: () => { },
-            conquestAttack: () => ({ won: false, sigilsEarned: 0, goldEarned: 0, gemsEarned: 0, troopsLost: 0, moraleChange: 0, rolls: { attacker: 0, defender: 0, attackerDice: [], defenderDice: [] }, modifiers: { force: 0, terrain: 0, morale: 0, recon: 0 } }),
+            conquestAttack: () => ({ won: false, goldEarned: 0, gemsEarned: 0, troopsLost: 0, moraleChange: 0, rolls: { attacker: 0, defender: 0, attackerDice: [], defenderDice: [] }, modifiers: { force: 0, terrain: 0, morale: 0, recon: 0 } }),
         }),
         {
             name: PERSIST_REGISTRY.conquest.persistKey,

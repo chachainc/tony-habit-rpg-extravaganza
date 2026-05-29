@@ -82,7 +82,7 @@ export const getBestSet = (ex: Exercise): ExerciseSet | null => {
 interface GymState {
     exercises: Exercise[];
     isTemplateSession?: boolean;
-    activeTemplateId?: 'day1' | 'day2' | 'day3' | null;
+    activeTemplateId?: string | null;
 
     // CRUD
     addExercise: (ex: Omit<Exercise, 'id'>) => string;
@@ -98,7 +98,7 @@ interface GymState {
     getAllExerciseNames: () => string[];
 
     // Templates
-    initializeTemplateWorkout: (dayId: 'day1' | 'day2' | 'day3') => void;
+    initializeTemplateWorkout: (dayId: string) => void;
     completeWorkout: () => void;
 }
 

@@ -3,7 +3,7 @@ import { persist } from 'zustand/middleware';
 import { PERSIST_REGISTRY } from '../data/persistRegistry';
 import { safeUUID } from '../utils/safeUUID';
 
-export type GiftCurrency = 'shmeckles' | 'balloons' | 'sigils';
+export type GiftCurrency = 'gold_bonus' | 'gem_chance' | 'combat_buff' | 'discipline_buff';
 
 // ── Spending Categories ──
 export type BudgetCategory = 'food' | 'fun' | 'bills' | 'shopping' | 'coffee' | 'transport' | 'health' | 'other';
@@ -237,34 +237,33 @@ export const useBudgetStore = create<BudgetState>()(
                         if (giftType) {
                             // Streak multiplier: 1 + streak * 0.5 (capped at 4x)
                             const streakMul = Math.min(4, 1 + newStreak * 0.5);
-                            const baseAmount = spent <= (budget.amount / 2) ? 20 : 10;
-                            let amount = Math.floor(baseAmount * streakMul);
-
-                            if (giftType === 'sigils') {
-                                // Scale sigils linearly but much smaller: week 1 = 1, week 2+ = 2 to 3 max
-                                // Apply hard clamp protection
-                                const scaledSigils = newStreak === 1 ? 1 : Math.min(3, newStreak);
-                                amount = Math.min(scaledSigils, 3);
-                            }
-
+                            
                             import('./useCurrencyStore').then(({ useCurrencyStore }) => {
                                 const cs = useCurrencyStore.getState();
-                                if (giftType === 'shmeckles') cs.addShmeckles(amount);
-                                if (giftType === 'balloons') cs.addBalloons(amount);
-                                if (giftType === 'sigils') {
-                                    import('./useConquestStore').then(({ useConquestStore }) => {
-                                        useConquestStore.getState().addSigils(amount);
-                                    });
+                                if (giftType === 'gem_chance') {
+                                    const gemBase = spent <= (budget.amount / 2) ? 4 : 2;
+                                    const gemAmount = Math.max(1, Math.floor(gemBase * streakMul));
+                                    cs.addGems(gemAmount);
+                                    import('../components/ui/Toast').then(({ useToastStore }) => {
+                                        useToastStore.getState().addToast({
+                                            type: 'success',
+                                            message: `🔥 Weekly Streak Complete! Streak x${newStreak}! Reward: +${gemAmount} Gems`,
+                                            duration: 5000,
+                                        });
+                                    }).catch(() => {});
+                                } else {
+                                    const goldBase = spent <= (budget.amount / 2) ? 100 : 50;
+                                    const goldAmount = Math.floor(goldBase * streakMul);
+                                    cs.addGold(goldAmount, { exact: true });
+                                    import('../components/ui/Toast').then(({ useToastStore }) => {
+                                        useToastStore.getState().addToast({
+                                            type: 'success',
+                                            message: `🔥 Weekly Streak Complete! Streak x${newStreak}! Reward: +${goldAmount} Gold`,
+                                            duration: 5000,
+                                        });
+                                    }).catch(() => {});
                                 }
                             });
-
-                            import('../components/ui/Toast').then(({ useToastStore }) => {
-                                useToastStore.getState().addToast({
-                                    type: 'success',
-                                    message: `🔥 Weekly Streak Complete! Streak x${newStreak}! Reward: +${amount} ${giftType}`,
-                                    duration: 5000,
-                                });
-                            }).catch(() => {});
                         }
                     }
 
@@ -291,27 +290,28 @@ export const useBudgetStore = create<BudgetState>()(
 
                 const tierInfo = get().getDailyGiftTier();
                 if (tierInfo && tierInfo.giftAmount > 0) {
-                    let amount = tierInfo.giftAmount;
-                    if (weeklyGiftType === 'sigils') {
-                        // Hard clamp for daily sigil delivery
-                        amount = Math.min(Math.floor(amount / 2) || 1, 3);
-                    }
+                    const amount = tierInfo.giftAmount;
 
-                    if (weeklyGiftType === 'shmeckles') {
-                        import('./useCurrencyStore').then(m => m.useCurrencyStore.getState().addShmeckles(amount));
-                    } else if (weeklyGiftType === 'balloons') {
-                        import('./useCurrencyStore').then(m => m.useCurrencyStore.getState().addBalloons(amount));
-                    } else if (weeklyGiftType === 'sigils') {
-                        import('./useConquestStore').then(m => m.useConquestStore.getState().addSigils(amount));
-                    }
-
-                    import('../components/ui/Toast').then(({ useToastStore }) => {
-                        useToastStore.getState().addToast({
-                            type: 'success',
-                            message: `Budget Reward: +${amount} ${weeklyGiftType} for staying disciplined!`,
-                            duration: 4000
+                    if (weeklyGiftType === 'gem_chance') {
+                        import('./useCurrencyStore').then(m => m.useCurrencyStore.getState().addGems(amount));
+                        import('../components/ui/Toast').then(({ useToastStore }) => {
+                            useToastStore.getState().addToast({
+                                type: 'success',
+                                message: `Budget Reward: +${amount} Gems for staying disciplined!`,
+                                duration: 4000
+                            });
                         });
-                    });
+                    } else {
+                        const goldAmount = amount * 10;
+                        import('./useCurrencyStore').then(m => m.useCurrencyStore.getState().addGold(goldAmount, { exact: true }));
+                        import('../components/ui/Toast').then(({ useToastStore }) => {
+                            useToastStore.getState().addToast({
+                                type: 'success',
+                                message: `Budget Reward: +${goldAmount} Gold for staying disciplined!`,
+                                duration: 4000
+                            });
+                        });
+                    }
                 }
 
                 set({ lastBudgetGiftClaimDate: today, lastLoginDate: today });
@@ -334,13 +334,17 @@ export const useBudgetStore = create<BudgetState>()(
             },
 
             getPowerMultiplier: () => {
-                const { budget } = get();
+                const { budget, weeklyGiftType } = get();
                 if (!budget) return 1.0;
 
                 const spent = get().getTotalSpent();
                 let multiplier = 1.5 - (spent / budget.amount);
                 
-                return Math.max(0.75, Math.min(1.5, multiplier));
+                if (weeklyGiftType === 'combat_buff') {
+                    multiplier += 0.10;
+                }
+
+                return Math.max(0.75, Math.min(1.6, multiplier));
             },
 
             getStreakMultiplier: () => {
@@ -407,6 +411,20 @@ export const useBudgetStore = create<BudgetState>()(
         }),
         {
             name: PERSIST_REGISTRY.budget.persistKey,
+            version: 2,
+            migrate: (persistedState: any, fromVersion: number) => {
+                if (fromVersion < 2) {
+                    const oldGift = persistedState?.weeklyGiftType;
+                    let newGift: 'gold' | 'gems' | null = null;
+                    if (oldGift === 'shmeckles' || oldGift === 'balloons' || oldGift === 'sigils') {
+                        newGift = 'gold';
+                    } else if (oldGift === 'gold' || oldGift === 'gems') {
+                        newGift = oldGift;
+                    }
+                    return { ...persistedState, weeklyGiftType: newGift };
+                }
+                return persistedState;
+            },
         }
     )
 );

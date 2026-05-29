@@ -8,6 +8,7 @@ import { useTitleStore } from './useTitleStore';
 import { useChessStore } from './useChessStore';
 import { useFocusStore } from './useFocusStore';
 import { CHESS_OPENINGS } from '../data/chessOpenings';
+import { enableChessAcademy, enableStormFort } from '../utils/featureFlags';
 
 export interface PassiveBonuses {
     attack_bonus: number;
@@ -15,7 +16,6 @@ export interface PassiveBonuses {
     max_hp_bonus: number;
     crit_bonus: number;
     gold_bonus: number;
-    sigil_bonus: number;
     intelligence_bonus: number;
     strategy_bonus: number;
     magic_attack_bonus: number;
@@ -44,7 +44,6 @@ const parseEffectString = (effectStr: string, bonuses: PassiveBonuses) => {
         if (lowerPart.includes('hp')) bonuses.max_hp_bonus += value;
         if (lowerPart.includes('crit')) bonuses.crit_bonus += value;
         if (lowerPart.includes('gold')) bonuses.gold_bonus += value;
-        if (lowerPart.includes('sigil')) bonuses.sigil_bonus += value;
         if (lowerPart.includes('intelligence')) bonuses.intelligence_bonus += value;
         if (lowerPart.includes('strategy')) bonuses.strategy_bonus += value;
     });
@@ -72,7 +71,6 @@ export const getPassiveBonuses = (): PassiveBonuses => {
         max_hp_bonus: 0,
         crit_bonus: 0,
         gold_bonus: 0,
-        sigil_bonus: 0,
         intelligence_bonus: 0,
         strategy_bonus: 0,
         magic_attack_bonus: 0,
@@ -151,7 +149,7 @@ export const getPassiveBonuses = (): PassiveBonuses => {
                 if (value.defense) bonuses.defense_bonus += Math.floor(bonuses.defense_bonus * (value.defense / 100)) || value.defense;
                 if (value.hp) bonuses.max_hp_bonus += Math.floor(bonuses.max_hp_bonus * (value.hp / 100)) || value.hp;
             }
-            if (type === 'tank_storm' && typeof value === 'object' && value.defense) {
+            if (enableStormFort && type === 'tank_storm' && typeof value === 'object' && value.defense) {
                 bonuses.defense_bonus += Math.floor(bonuses.defense_bonus * (value.defense / 100)) || value.defense;
             }
             if (type === 'combat_all' && typeof value === 'number') {
@@ -237,39 +235,41 @@ export const getPassiveBonuses = (): PassiveBonuses => {
         if (type === 'speed') bonuses.strategy_bonus += value * 100; // proxy speed
     }
 
-    // Process Chess Mastery Buffs
-    const chessStore = useChessStore.getState();
-    chessStore.openingsMastered.forEach(id => {
-        const opening = CHESS_OPENINGS.find(o => o.id === id);
-        if (opening?.combatBuff) {
-            if (opening.combatBuff.attack) bonuses.attack_bonus += opening.combatBuff.attack;
-            if (opening.combatBuff.defense) bonuses.defense_bonus += opening.combatBuff.defense;
-            if (opening.combatBuff.crit) bonuses.crit_bonus += opening.combatBuff.crit;
-            if (opening.combatBuff.goldMultiplier) bonuses.gold_multiplier += opening.combatBuff.goldMultiplier;
-            if (opening.combatBuff.magicAttack) bonuses.magic_attack_bonus += opening.combatBuff.magicAttack;
-        }
-    });
+    if (enableChessAcademy) {
+        // Process Chess Mastery Buffs
+        const chessStore = useChessStore.getState();
+        chessStore.openingsMastered.forEach(id => {
+            const opening = CHESS_OPENINGS.find(o => o.id === id);
+            if (opening?.combatBuff) {
+                if (opening.combatBuff.attack) bonuses.attack_bonus += opening.combatBuff.attack;
+                if (opening.combatBuff.defense) bonuses.defense_bonus += opening.combatBuff.defense;
+                if (opening.combatBuff.crit) bonuses.crit_bonus += opening.combatBuff.crit;
+                if (opening.combatBuff.goldMultiplier) bonuses.gold_multiplier += opening.combatBuff.goldMultiplier;
+                if (opening.combatBuff.magicAttack) bonuses.magic_attack_bonus += opening.combatBuff.magicAttack;
+            }
+        });
 
-    // Process Chess Ladder Boss Wins
-    if (chessStore.ladderWins.includes('boss_1')) {
-        bonuses.defense_bonus += Math.max(5, Math.floor(bonuses.defense_bonus * 0.05)); // +5% defense
-    }
-    if (chessStore.ladderWins.includes('boss_2')) {
-        bonuses.crit_bonus += 5; // +5% crit chance
-    }
-    if (chessStore.ladderWins.includes('boss_3')) {
-        bonuses.attack_bonus += Math.max(10, Math.floor(bonuses.attack_bonus * 0.10)); // +10% scaling bonus
-        bonuses.max_hp_bonus += Math.max(10, Math.floor(bonuses.max_hp_bonus * 0.10)); 
-    }
-    if (chessStore.ladderWins.includes('boss_4')) {
-        bonuses.defense_bonus += Math.max(5, Math.floor(bonuses.defense_bonus * 0.05)); // +5% defense
-    }
-    if (chessStore.ladderWins.includes('boss_5')) {
-        bonuses.crit_bonus += 5; // +5% crit chance (The Demon)
-    }
-    if (chessStore.ladderWins.includes('boss_6')) {
-        bonuses.attack_bonus += Math.max(10, Math.floor(bonuses.attack_bonus * 0.10)); // +10% scaling bonus
-        bonuses.max_hp_bonus += Math.max(10, Math.floor(bonuses.max_hp_bonus * 0.10)); 
+        // Process Chess Ladder Boss Wins
+        if (chessStore.ladderWins.includes('boss_1')) {
+            bonuses.defense_bonus += Math.max(5, Math.floor(bonuses.defense_bonus * 0.05)); // +5% defense
+        }
+        if (chessStore.ladderWins.includes('boss_2')) {
+            bonuses.crit_bonus += 5; // +5% crit chance
+        }
+        if (chessStore.ladderWins.includes('boss_3')) {
+            bonuses.attack_bonus += Math.max(10, Math.floor(bonuses.attack_bonus * 0.10)); // +10% scaling bonus
+            bonuses.max_hp_bonus += Math.max(10, Math.floor(bonuses.max_hp_bonus * 0.10)); 
+        }
+        if (chessStore.ladderWins.includes('boss_4')) {
+            bonuses.defense_bonus += Math.max(5, Math.floor(bonuses.defense_bonus * 0.05)); // +5% defense
+        }
+        if (chessStore.ladderWins.includes('boss_5')) {
+            bonuses.crit_bonus += 5; // +5% crit chance (The Demon)
+        }
+        if (chessStore.ladderWins.includes('boss_6')) {
+            bonuses.attack_bonus += Math.max(10, Math.floor(bonuses.attack_bonus * 0.10)); // +10% scaling bonus
+            bonuses.max_hp_bonus += Math.max(10, Math.floor(bonuses.max_hp_bonus * 0.10)); 
+        }
     }
 
     return bonuses;

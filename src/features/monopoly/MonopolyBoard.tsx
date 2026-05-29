@@ -1,33 +1,10 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Info, ChevronDown, ChevronUp, X, RefreshCw, Play, Square, Coins } from 'lucide-react';
-import { useMonopolyStore, getBoard, BOARD_ODDS, OWNERSHIP_TIERS, getPropertyMultiplier, getPropertyMultiplierPool, type BoardSpace, type MysteryRollResult } from '../../store/useMonopolyStore';
+import { useMonopolyStore, getBoard, OWNERSHIP_TIERS, getPropertyMultiplier, getPropertyMultiplierPool, type BoardSpace, type MysteryRollResult } from '../../store/useMonopolyStore';
 import { useCurrencyStore } from '../../store/useCurrencyStore';
-import { useConquestStore } from '../../store/useConquestStore';
 import { usePlayerAvatar } from '../../hooks/usePlayerAvatar';
 import './MonopolyBoard.css';
-
-import petCowSpin from '../../assets/pets/pet_cow_spin.jpg';
-import petChickenSpin from '../../assets/pets/pet_chicken_spin.jpg';
-import petPigSpin from '../../assets/pets/pet_pig_spin.jpg';
-import petSheepSpin from '../../assets/pets/pet_sheep_spin.jpg';
-import petDogSpin from '../../assets/pets/pet_dog_spin.jpg';
-import petRabbitSpin from '../../assets/pets/pet_rabbit_spin.jpg';
-import petCatSpin from '../../assets/pets/pet_cat_spin.jpg';
-import petGooseSpin from '../../assets/pets/pet_goose_spin.jpg';
-import etherealCowImg from '../../assets/pets/ethereal_cow.png';
-
-const SPIN_IMAGES: Record<string, string> = {
-    'pet_cow': petCowSpin,
-    'pet_chicken': petChickenSpin,
-    'pet_pig': petPigSpin,
-    'pet_sheep': petSheepSpin,
-    'pet_dog': petDogSpin,
-    'pet_rabbit': petRabbitSpin,
-    'pet_cat': petCatSpin,
-    'pet_goose': petGooseSpin,
-    'ethereal_cow': etherealCowImg
-};
 
 // ── 24-space path on a 7×7 grid (perimeter, clockwise from top-left) ──
 // Top-left = GO (0,0). Path goes: top row L→R, right col T→B, bottom row R→L, left col B→T
@@ -51,85 +28,78 @@ const GoldIcon = ({ size = 16 }: { size?: number }) => (
 );
 
 const MYSTERY_SHUFFLE_ITEMS = [
-    { type: 'gold',     icon: <GoldIcon size={48} />, label: 'Small Fortune' },
-    { type: 'shmeckle', icon: <span style={{fontSize: '3rem'}}>🐌</span>,   label: 'Schmeckles' },
-    { type: 'sigil',    icon: <span style={{fontSize: '3rem'}}>🔱</span>,   label: 'Sigils Cache' },
-    { type: 'hat',      icon: <span style={{fontSize: '3rem'}}>🌾</span>,   label: 'Straw Hat' },
-    { type: 'pet_cow',     img: petCowSpin,     label: 'Stray Cow' },
-    { type: 'pet_chicken', img: petChickenSpin, label: 'Stray Chicken' },
-    { type: 'pet_sheep',   img: petSheepSpin,   label: 'Stray Sheep' },
-    { type: 'pet_pig',     img: petPigSpin,     label: 'Stray Pig' },
-    { type: 'pet_dog',     img: petDogSpin,     label: 'Rare Dog' },
-    { type: 'pet_rabbit',  img: petRabbitSpin,  label: 'Rare Rabbit' },
-    { type: 'pet_cat',     img: petCatSpin,     label: 'Rare Cat' },
-    { type: 'pet_goose',   img: petGooseSpin,   label: 'Rare Goose' },
-    { type: 'ethereal_cow', img: etherealCowImg, label: '🌌 Ethereal Cow' },
+    { type: 'gold_25',   icon: <GoldIcon size={48} />, label: '25 Gold' },
+    { type: 'gold_50',   icon: <GoldIcon size={48} />, label: '50 Gold' },
+    { type: 'gold_75',   icon: <GoldIcon size={48} />, label: '75 Gold' },
+    { type: 'gold_100',  icon: <GoldIcon size={48} />, label: '100 Gold' },
+    { type: 'gold_150',  icon: <GoldIcon size={48} />, label: '150 Gold' },
+    { type: 'gold_250',  icon: <GoldIcon size={48} />, label: '250 Gold' },
+    { type: 'gem_1',     icon: <span style={{fontSize: '3rem', filter: 'drop-shadow(0 0 10px rgba(56, 189, 248, 0.6))'}}>💎</span>, label: '1 Gem' },
+    { type: 'gem_3',     icon: <span style={{fontSize: '3rem', filter: 'drop-shadow(0 0 15px rgba(192, 132, 252, 0.7))'}}>💎💎</span>, label: '3 Gems' },
+    { type: 'gem_5',     icon: <span style={{fontSize: '3.5rem', filter: 'drop-shadow(0 0 25px rgba(245, 158, 11, 0.9))'}}>👑💎 Hoard</span>, label: 'Jackpot: 5 Gems' },
 ];
 
 /** Map a resolved MysteryRollResult to the correct MYSTERY_SHUFFLE_ITEMS index so the
  *  carousel always lands on the icon that matches the awarded reward. */
 const resolveWinningIndex = (mystery: import('../../store/useMonopolyStore').MysteryRollResult): number => {
     const reward = mystery.reward;
-    if (reward.petId) {
-        const idx = MYSTERY_SHUFFLE_ITEMS.findIndex(it => it.type === reward.petId);
-        return idx >= 0 ? idx : 0;
+    if (reward.gems) {
+        if (reward.gems === 5) return 8;
+        if (reward.gems === 3) return 7;
+        return 6;
     }
-    if (reward.cosmeticId) {
-        // cosmetic = straw hat
-        return MYSTERY_SHUFFLE_ITEMS.findIndex(it => it.type === 'hat');
+    if (reward.gold) {
+        if (reward.gold === 250) return 5;
+        if (reward.gold === 150) return 4;
+        if (reward.gold === 100) return 3;
+        if (reward.gold === 75) return 2;
+        if (reward.gold === 50) return 1;
+        return 0;
     }
-    if (reward.titleId) {
-        // title treated as 'hat' slot (same visual bucket)
-        return MYSTERY_SHUFFLE_ITEMS.findIndex(it => it.type === 'hat');
-    }
-    if (reward.gold)     return MYSTERY_SHUFFLE_ITEMS.findIndex(it => it.type === 'gold');
-    if (reward.shmeckles) return MYSTERY_SHUFFLE_ITEMS.findIndex(it => it.type === 'shmeckle');
-    if ((reward as any).sigils) return MYSTERY_SHUFFLE_ITEMS.findIndex(it => it.type === 'sigil');
     return 0;
 };
 
 // Flow phases
 type Phase = 'idle' | 'dice-spin' | 'dice-reveal' | 'moving' | 'result' | 'go-result' | 'mystery-spin' | 'mystery-result' | 'hazard-result' | 'property-spin';
 
-// Build live odds rows from BOARD_ODDS
+// Build live odds rows from the new Daily Spin table
 const ODDS_ROWS = [
     {
-        label: 'Ultra Rare',
-        pct: `${(BOARD_ODDS.ultra_rare * 100).toFixed(4)}%`,
-        color: '#38bdf8',
-        items: 'Ethereal Cow 🌌',
+        label: 'Jackpot',
+        pct: '0.5%',
+        color: '#fbbf24',
+        items: '5 Gems 👑',
     },
     {
         label: 'Epic',
-        pct: `${(BOARD_ODDS.epic * 100).toFixed(1)}%`,
+        pct: '2.5%',
         color: '#c084fc',
-        items: 'Goat / Duck Pets • Straw Hat • "The Farmer" Title',
+        items: '3 Gems 💎',
     },
     {
         label: 'Rare',
-        pct: `${(BOARD_ODDS.rare * 100).toFixed(1)}%`,
+        pct: '4.0%',
         color: '#60a5fa',
-        items: 'Cow / Sheep / Pig / Chicken Pets',
+        items: '1 Gem 💎',
     },
     {
         label: 'Uncommon',
-        pct: `${(BOARD_ODDS.uncommon * 100).toFixed(0)}%`,
+        pct: '11.0%',
         color: '#a3e635',
-        items: '2–3 Sigils • 2–3 Schmeckles • 10–15 Gold',
+        items: '150 or 250 Gold 💰',
     },
     {
         label: 'Common',
-        pct: `${(BOARD_ODDS.common * 100).toFixed(2)}%`,
+        pct: '82.0%',
         color: '#94a3b8',
-        items: '1–9 Gold • 1 Schmeckle • 1 Sigil',
+        items: '25, 50, 75, or 100 Gold 💰',
     },
 ];
 
 // Also show base tile rewards
 const BASE_REWARDS = [
     { icon: '🏠', label: 'GO tile', note: '+25 Gold (scales +1 per lap)' },
-    { icon: <GoldIcon size={18} />, label: 'Gold tiles', note: '+3–7 Gold' },
-    { icon: '🐌', label: 'Shmeckle tiles', note: '+1–3 Schmeckles (×2 Owned, ×3 Hotel · max 9)' },
+    { icon: <GoldIcon size={18} />, label: 'Gold tiles', note: '+3–15 Gold' },
     { icon: '🎁', label: 'Mystery Crop tiles', note: 'Opens drop table above' },
     { icon: '🎫', label: 'Lost Ticket', note: '+1 Roll' },
 ];
@@ -142,12 +112,8 @@ export const MonopolyBoard = ({ onClose }: { onClose: () => void }) => {
         ownedTiles, buyTile, upgradeTile,
         canBuyTile, canUpgradeTile, getBuyCost, getUpgradeCost,
     } = useMonopolyStore();
-    const { addGold, addShmeckles, addTickets, gold, spendCurrency, canAfford } = useCurrencyStore();
+    const { addGold, addTickets, gold, spendCurrency, canAfford } = useCurrencyStore();
     const heroImage = usePlayerAvatar();
-
-    const addSigils = (n: number) => {
-        try { useConquestStore.getState().addSigils(n); } catch {}
-    };
 
     // Derive player token from classType image
     const playerToken = heroImage
@@ -257,15 +223,7 @@ export const MonopolyBoard = ({ onClose }: { onClose: () => void }) => {
 
                                 const processFinalRewards = (multiplier: number) => {
                                     if (space.baseReward.gold) addGold(Math.floor(space.baseReward.gold * multiplier));
-                                    if (space.baseReward.shmeckles) {
-                                        // Hard cap: base 1–3, multiplied by ownership (1x/2x/3x).
-                                        // Max possible = 3 base × 3x hotel = 9. Never exceed that.
-                                        const raw = Math.floor(space.baseReward.shmeckles * multiplier);
-                                        const cap = multiplier === 3 ? 9 : 6; // hotel cap 9, else 6
-                                        addShmeckles(Math.min(raw, cap));
-                                    }
                                     if (space.baseReward.tickets) addTickets(space.baseReward.tickets);
-                                    if ((space.baseReward as any).sigils) addSigils((space.baseReward as any).sigils);
 
                                     if (space.type === 'mystery') {
                                         const mystery = rollMysteryBox();
@@ -288,8 +246,10 @@ export const MonopolyBoard = ({ onClose }: { onClose: () => void }) => {
                                                 setDisplayedRng(winningIdx);
                                                 setFinalRng(winningIdx);
                                                 if (mystery.reward.gold) addGold(mystery.reward.gold);
-                                                if (mystery.reward.shmeckles) addShmeckles(mystery.reward.shmeckles);
-                                                if ((mystery.reward as any).sigils) addSigils((mystery.reward as any).sigils);
+                                                if (mystery.reward.gems) {
+                                                    const { addGems } = useCurrencyStore.getState();
+                                                    addGems(mystery.reward.gems);
+                                                }
 
                                                 setTimeout(() => {
                                                     setPhase('mystery-result');
@@ -444,9 +404,7 @@ export const MonopolyBoard = ({ onClose }: { onClose: () => void }) => {
 
     const hasReward = landedSpace && (
         landedSpace.baseReward.gold ||
-        landedSpace.baseReward.shmeckles ||
-        landedSpace.baseReward.tickets ||
-        (landedSpace.baseReward as any).sigils
+        landedSpace.baseReward.tickets
     );
 
     const terrainIcons = ['🌿', '🪨', '🌾', '·', '🍃', '·', '🌱', '·', '·', '🌻'];
@@ -601,11 +559,7 @@ export const MonopolyBoard = ({ onClose }: { onClose: () => void }) => {
                                     {MYSTERY_SHUFFLE_ITEMS[displayedRng] && (
                                         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px' }}>
                                             <div style={{ height: '70px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                                {MYSTERY_SHUFFLE_ITEMS[displayedRng].img ? (
-                                                    <img src={MYSTERY_SHUFFLE_ITEMS[displayedRng].img} alt="item" style={{ width: '64px', height: '64px', borderRadius: '12px', border: '2px solid #fbbf24' }} />
-                                                ) : (
-                                                    MYSTERY_SHUFFLE_ITEMS[displayedRng].icon
-                                                )}
+                                                {MYSTERY_SHUFFLE_ITEMS[displayedRng].icon}
                                             </div>
                                             <span style={{ fontSize: '1.1rem', fontWeight: 700, color: '#fff' }}>
                                                 {MYSTERY_SHUFFLE_ITEMS[displayedRng].label}
@@ -728,27 +682,19 @@ export const MonopolyBoard = ({ onClose }: { onClose: () => void }) => {
                             ))}
 
                             {/* Overall pet odds callout */}
-                            {(() => {
+                             {(() => {
                                 const board = getBoard();
                                 const mysteryCropCount = board.filter(t => t.type === 'mystery').length;
                                 const totalTiles = board.length;
-                                // Combined pet odds = P(land on mystery) × P(pet drop | mystery)
-                                // Pet drops: rare (1%) + epic pets (0.5% × 2 of 4 options = 0.25%) + ultra_rare (0.001%)
-                                const petOddsOnMystery = BOARD_ODDS.rare + (BOARD_ODDS.epic * 0.5) + BOARD_ODDS.ultra_rare;
-                                const overallPetOdds = (mysteryCropCount / totalTiles) * petOddsOnMystery * 100;
                                 return (
-                                    <div className="odds-pet-callout">
+                                    <div className="odds-pet-callout" style={{ borderLeftColor: '#38bdf8' }}>
                                         <div className="odds-pet-line">
-                                            <span>🐾 Pet chance on Mystery Crop tile:</span>
-                                            <span style={{ color: '#c084fc', fontWeight: 700 }}>{(petOddsOnMystery * 100).toFixed(2)}%</span>
+                                            <span>💎 Gem chance on Mystery Crop tile:</span>
+                                            <span style={{ color: '#38bdf8', fontWeight: 700 }}>7.00%</span>
                                         </div>
                                         <div className="odds-pet-line">
-                                            <span>🍀 Overall pet chance per roll:</span>
-                                            <span style={{ color: '#60a5fa', fontWeight: 700 }}>{overallPetOdds.toFixed(3)}%</span>
-                                        </div>
-                                        <div className="odds-pet-note">
-                                            Pets only drop from Mystery Crop tiles ({mysteryCropCount}/{totalTiles} tiles).
-                                            Overall odds = landing chance × drop rate.
+                                            <span>🍀 Overall Gem chance per roll:</span>
+                                            <span style={{ color: '#60a5fa', fontWeight: 700 }}>{((mysteryCropCount / totalTiles) * 7.0).toFixed(2)}%</span>
                                         </div>
                                     </div>
                                 );
@@ -844,42 +790,20 @@ export const MonopolyBoard = ({ onClose }: { onClose: () => void }) => {
                                 </h2>
                                 <p className="luck-message">{mysteryEvent.message}</p>
                                 <div className="luck-rewards">
-                                    <div className="luck-xp">
-                                        {mysteryEvent.reward.gold && <span>+{mysteryEvent.reward.gold} <GoldIcon />  Gold</span>}
-                                        {mysteryEvent.reward.shmeckles && <span>+{mysteryEvent.reward.shmeckles} 🐌 Schmeckles</span>}
-                                        {(mysteryEvent.reward as any).sigils && <span>+{(mysteryEvent.reward as any).sigils} 🔱 Sigils</span>}
+                                    <div className="luck-xp" style={{ display: 'flex', flexDirection: 'column', gap: '0.8rem', alignItems: 'center' }}>
+                                        {mysteryEvent.reward.gold && (
+                                            <div className="reward-line gold-glow" style={{ fontSize: '1.8rem', fontWeight: 'bold', textShadow: '0 0 10px rgba(251, 191, 36, 0.5)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                                <GoldIcon size={32} />
+                                                <span>+{mysteryEvent.reward.gold} Gold</span>
+                                            </div>
+                                        )}
+                                        {mysteryEvent.reward.gems && (
+                                            <div className="reward-line gem-glow" style={{ fontSize: '1.8rem', fontWeight: 'bold', color: '#38bdf8', textShadow: '0 0 15px rgba(56, 189, 248, 0.7)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                                <span>💎</span>
+                                                <span>+{mysteryEvent.reward.gems} {mysteryEvent.reward.gems === 1 ? 'Gem' : 'Gems'}</span>
+                                            </div>
+                                        )}
                                     </div>
-                                    {(mysteryEvent.reward.petId || mysteryEvent.reward.cosmeticId || mysteryEvent.reward.titleId) && (
-                                        <div className="pet-unlock">
-                                            {mysteryEvent.reward.petId && SPIN_IMAGES[mysteryEvent.reward.petId] ? (
-                                                <div style={{ textAlign: 'center', marginTop: '1rem' }}>
-                                                    <motion.img 
-                                                        src={SPIN_IMAGES[mysteryEvent.reward.petId]} 
-                                                        alt="Pet Reward"
-                                                        initial={{ scale: 0.5, opacity: 0 }}
-                                                        animate={{ scale: 1, opacity: 1 }}
-                                                        transition={{ type: "spring", stiffness: 200, damping: 15 }}
-                                                        style={{ 
-                                                            width: '120px', 
-                                                            height: '120px', 
-                                                            objectFit: 'cover', 
-                                                            borderRadius: '16px', 
-                                                            border: '3px solid #fef08a',
-                                                            boxShadow: '0 10px 25px rgba(0,0,0,0.5)',
-                                                            margin: '0 auto'
-                                                        }} 
-                                                    />
-                                                    {mysteryEvent.isDuplicate && (
-                                                        <div style={{ marginTop: '0.5rem', fontSize: '0.8rem', color: '#fcd34d' }}>
-                                                            Duplicate Tracked
-                                                        </div>
-                                                    )}
-                                                </div>
-                                            ) : (
-                                                <div className="pet-preview">{mysteryEvent.isDuplicate ? <div style={{display: 'flex', justifyContent: 'center'}}><GoldIcon size={32} /></div> : '🆕'}</div>
-                                            )}
-                                        </div>
-                                    )}
                                 </div>
                                 <div className="reward-action-row">
                                     {canRoll() && !autoRollActive && (
@@ -929,35 +853,10 @@ export const MonopolyBoard = ({ onClose }: { onClose: () => void }) => {
                                                     <span className="reward-val">+{Math.floor(landedSpace.baseReward.gold * propertyMultiplierResult)}</span>
                                                 </div>
                                             )}
-                                            {landedSpace.baseReward.shmeckles && (() => {
-                                                const base = landedSpace.baseReward.shmeckles;
-                                                const mul  = propertyMultiplierResult;
-                                                const cap  = mul === 3 ? 9 : 6;
-                                                const final = Math.min(Math.floor(base * mul), cap);
-                                                return (
-                                                    <div className="reward-line shmeckles">
-                                                        <span>🐌 Schmeckles</span>
-                                                        <div style={{ textAlign: 'right' }}>
-                                                            <span className="reward-val">+{final}</span>
-                                                            {mul > 1 && (
-                                                                <div style={{ fontSize: '0.65rem', color: '#86efac', marginTop: '1px', opacity: 0.85 }}>
-                                                                    {base} base × {mul}x = {final}{final === cap ? ' (capped)' : ''}
-                                                                </div>
-                                                            )}
-                                                        </div>
-                                                    </div>
-                                                );
-                                            })()}
                                             {landedSpace.baseReward.tickets && (
                                                 <div className="reward-line tickets">
                                                     <span>🎫 Rolls</span>
                                                     <span className="reward-val">+{landedSpace.baseReward.tickets}</span>
-                                                </div>
-                                            )}
-                                            {(landedSpace.baseReward as any).sigils && (
-                                                <div className="reward-line sigils">
-                                                    <span>🔱 Sigils</span>
-                                                    <span className="reward-val">+{(landedSpace.baseReward as any).sigils}</span>
                                                 </div>
                                             )}
                                             {ownedTiles[landedSpace.id] && propertyMultiplierResult > 1 && (
@@ -1018,7 +917,7 @@ export const MonopolyBoard = ({ onClose }: { onClose: () => void }) => {
                                                 <span>⬆️ Upgrade</span>
                                                 <span style={{display: 'flex', alignItems: 'center', gap: '4px', background: 'rgba(0,0,0,0.2)', padding: '2px 8px', borderRadius: '12px'}}>
                                                     ({costObj?.gold && <>{costObj.gold}<GoldIcon size={14} /></>}
-                                                    {costObj?.diamonds && <> + {costObj.diamonds}💎</>})
+                                                    {costObj?.gems && <> + {costObj.gems}💎</>})
                                                 </span>
                                             </div>
                                         </button>

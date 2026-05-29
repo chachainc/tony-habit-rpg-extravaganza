@@ -427,7 +427,7 @@ export const DAILY_TASKS_TEMPLATE: Omit<RecurringTask, 'completed'>[] = [
     },
     {
         id: 'read_10_min',
-        title: 'Read 10 Minutes',
+        title: 'Read 30 Minutes',
         bundle: 'night',
         recurrenceType: 'daily',
         type: 'daily',
@@ -586,17 +586,17 @@ export const useRecurringTasksStore = create<RecurringTasksState>()(
                                 }).catch(() => {});
                             }
 
-                            // Training session reward: +5 board tickets, +2 shmeckles (+2 balloons auto-mirrored)
+                            // Training session reward: +5 board tickets, +5 gold
                             import('./useMonopolyStore').then(({ useMonopolyStore }) => {
                                 useMonopolyStore.getState().addDailyTickets(5);
                             });
                             import('./useCurrencyStore').then(({ useCurrencyStore }) => {
-                                useCurrencyStore.getState().addShmeckles(2);
+                                useCurrencyStore.getState().addGold(5, { exact: true });
                             });
                             import('../components/ui/Toast').then(({ useToastStore }) => {
                                 useToastStore.getState().addToast({
                                     type: 'success',
-                                    message: '🏋️ Training Complete! +5 🎫 Tickets | +2 🐌 Shmeckles | +2 🎈 Balloons',
+                                    message: '🏋️ Training Complete! +5 🎫 Tickets | +5 🪙 Gold',
                                     duration: 4000,
                                 });
                             }).catch(() => {});
@@ -635,27 +635,12 @@ export const useRecurringTasksStore = create<RecurringTasksState>()(
                                 
                                 if (newStreak > 0 && newStreak % 7 === 0) {
                                     // 7-day streak reward!
-                                    const giftType = bState.weeklyGiftType;
+                                    const msg = `7-Day Finance Tracking Streak!`;
                                     import('./useCurrencyStore').then(({ useCurrencyStore }) => {
-                                        const msg = `7-Day Finance Tracking Streak!`;
-                                        if (giftType === 'shmeckles') {
-                                            useCurrencyStore.getState().addShmeckles(3);
-                                            import('../components/ui/Toast').then(({ useToastStore }) => {
-                                                useToastStore.getState().addToast({ type: 'success', message: `${msg} +3 Shmeckles`, duration: 4000 });
-                                            });
-                                        } else if (giftType === 'balloons') {
-                                            useCurrencyStore.getState().addBalloons(10);
-                                            import('../components/ui/Toast').then(({ useToastStore }) => {
-                                                useToastStore.getState().addToast({ type: 'success', message: `${msg} +10 Balloons`, duration: 4000 });
-                                            });
-                                        } else if (giftType === 'sigils') {
-                                            import('./useConquestStore').then(({ useConquestStore }) => {
-                                                useConquestStore.getState().addSigils(1);
-                                                import('../components/ui/Toast').then(({ useToastStore }) => {
-                                                    useToastStore.getState().addToast({ type: 'success', message: `${msg} +1 Sigil`, duration: 4000 });
-                                                });
-                                            });
-                                        }
+                                        useCurrencyStore.getState().addGold(15, { exact: true });
+                                    });
+                                    import('../components/ui/Toast').then(({ useToastStore }) => {
+                                        useToastStore.getState().addToast({ type: 'success', message: `${msg} +15 🪙 Gold`, duration: 4000 });
                                     });
                                 }
                             });
@@ -910,14 +895,29 @@ export const useRecurringTasksStore = create<RecurringTasksState>()(
                     const taskToMove = state.dailyTasks.find(t => t.id === taskId);
                     if (!taskToMove) return {};
 
-                    const newDailyTasks = state.dailyTasks.filter(t => t.id !== taskId);
-                    const targetTasks = newDailyTasks.filter(t => t.bundle === targetBundle);
-                    const otherTasks = newDailyTasks.filter(t => t.bundle !== targetBundle);
+                    // Remove the task from its current position
+                    const remaining = state.dailyTasks.filter(t => t.id !== taskId);
 
+                    // Group remaining tasks by bundle
+                    const bundled: Record<BundleType, RecurringTask[]> = {
+                        morning: [],
+                        midday: [],
+                        afternoon: [],
+                        night: []
+                    };
+                    remaining.forEach(t => {
+                        if (t.bundle) bundled[t.bundle].push(t);
+                    });
+
+                    // Insert the moved task into the target bundle at the specified index
                     const updatedTask = { ...taskToMove, bundle: targetBundle };
-                    targetTasks.splice(toIndex, 0, updatedTask);
+                    bundled[targetBundle].splice(toIndex, 0, updatedTask);
 
-                    const finalDailyTasks = [...otherTasks, ...targetTasks];
+                    // Reconstruct in canonical bundle order
+                    const finalDailyTasks: RecurringTask[] = [];
+                    (['morning', 'midday', 'afternoon', 'night'] as BundleType[]).forEach(b => {
+                        finalDailyTasks.push(...bundled[b]);
+                    });
 
                     // Update overrides
                     const newOverrides = { ...state.taskOverrides };
@@ -926,7 +926,7 @@ export const useRecurringTasksStore = create<RecurringTasksState>()(
                         bundle: targetBundle 
                     };
 
-                    targetTasks.forEach((t, idx) => {
+                    bundled[targetBundle].forEach((t, idx) => {
                         newOverrides[t.id] = {
                             ...newOverrides[t.id],
                             index: idx
@@ -1028,12 +1028,8 @@ export const useRecurringTasksStore = create<RecurringTasksState>()(
                 if (isComplete && !state.weeklyBonusClaimed) {
                     import('./useCurrencyStore').then(({ useCurrencyStore }) => {
                         const currency = useCurrencyStore.getState();
-                        currency.addGold(200, { exact: true });
-                        currency.addShmeckles(3);
-                        currency.addDiamonds(1);
-                    });
-                    import('./useConquestStore').then(({ useConquestStore }) => {
-                        useConquestStore.getState().addSigils(3);
+                        currency.addGold(250, { exact: true });
+                        currency.addGems(1);
                     });
                     set({ weeklyBonusClaimed: true });
                 }

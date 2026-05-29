@@ -94,7 +94,7 @@ export const StormTheFort = () => {
         resetToIdle,
     } = useStormStore();
 
-    const { shmeckles, gold } = useCurrencyStore();
+    const { gold } = useCurrencyStore();
     const [activeTab, setActiveTab] = useState<'deploy' | 'obstacles' | 'upgrades'>('deploy');
     const [showWavePreview, setShowWavePreview] = useState(false);
     const [pendingPurchase, setPendingPurchase] = useState<PendingPurchase | null>(null);
@@ -289,7 +289,6 @@ export const StormTheFort = () => {
 
                 <div className="storm-hud-right">
                     <div className="storm-currencies">
-                        <span className="storm-currency">🐌 {shmeckles}</span>
                         <span className="storm-currency"><span style={{display: 'inline-flex', verticalAlign: 'middle'}}><CurrencyIcon currencyType="gold" size={16} /></span> {gold}</span>
                     </div>
                     {gameState === 'playing' ? (
@@ -559,9 +558,8 @@ export const StormTheFort = () => {
                         <p>Prepare for the next assault.</p>
                         {lastWaveRewards && (
                             <div className="storm-rewards">
-                                <span>+{lastWaveRewards.shmeckles} 🐌</span>
-                                <span>+{lastWaveRewards.gold} <span style={{display: 'inline-flex', verticalAlign: 'middle'}}><CurrencyIcon currencyType="gold" size={14} /></span></span>
-                                {lastWaveRewards.diamonds ? <span>+{lastWaveRewards.diamonds} 💎</span> : null}
+                                <span>+{lastWaveRewards.gold} <span style={{display: 'inline-flex', verticalAlign: 'middle'}}><CurrencyIcon currencyType="gold" size={14} /></span> Gold</span>
+                                {lastWaveRewards.gems ? <span>+{lastWaveRewards.gems} 💎 Gems</span> : null}
                             </div>
                         )}
                         {defenders.some(d => d.rank > 0) && (
@@ -603,7 +601,7 @@ export const StormTheFort = () => {
                                 const cost = DEFENDER_COSTS[type];
                                 const owned = defenderInventory[type] || 0;
                                 const isFreeFirstCow = type === 'cow' && !hasBoughtFirstCow;
-                                const canAfford = shmeckles >= cost || isFreeFirstCow || owned > 0;
+                                const canAfford = gold >= cost || isFreeFirstCow || owned > 0;
 
                                 return (
                                     <button
@@ -634,7 +632,7 @@ export const StormTheFort = () => {
                                                 <span>⏱{CARD_MINI_STATS[type].cd}</span>
                                                 <span>📏{CARD_MINI_STATS[type].rng}</span>
                                             </div>
-                                            <span>{owned > 0 ? `Owned: ${owned}` : isFreeFirstCow ? 'FREE' : `🐌 ${cost}`}</span>
+                                                                           <span>{owned > 0 ? `Owned: ${owned}` : isFreeFirstCow ? 'FREE' : `🪙 ${cost}`}</span>
                                         </div>
                                         {owned > 0 ? (
                                             <div className="cost owned">Place</div>
@@ -667,8 +665,8 @@ export const StormTheFort = () => {
                             {(['barbed_wire', 'barricade'] as const).map(type => {
                                 const costs = { barbed_wire: 10, barricade: 30 };
                                 const cost = costs[type];
-                                const owned = obstacleInventory[type] || 0;
-                                const canAfford = shmeckles >= cost || owned > 0;
+                                        const owned = obstacleInventory[type] || 0;
+                                        const canAfford = gold >= cost || owned > 0;
                                 const icon = type === 'barbed_wire' ? '〰️' : '🧱';
                                 const label = type === 'barbed_wire' ? 'Barbed Wire' : 'Barricade';
 
@@ -697,7 +695,7 @@ export const StormTheFort = () => {
                                                     {type === 'barricade' ? '🧱 Wall' : '〰️ Trap'}
                                                 </span>
                                             </div>
-                                            <span>{owned > 0 ? `Owned: ${owned}` : `🐌 ${cost}`}</span>
+                                            <span>{owned > 0 ? `Owned: ${owned}` : `🪙 ${cost}`}</span>
                                         </div>
                                         {owned > 0 ? (
                                             <div className="cost owned">Place</div>
@@ -723,11 +721,11 @@ export const StormTheFort = () => {
                                 { key: 'wireStrengthLevel',     icon: '〰️', label: 'Sharper Barbs' },
                                 { key: 'trapDamageLevel',       icon: '💥', label: 'Deadly Traps' },
                                 { key: 'trapDurabilityLevel',   icon: '🧱', label: 'Sturdy Traps' },
-                                { key: 'shmeckleWaveBonusLevel', icon: '🐌', label: 'Bounty Hunter' },
-                                { key: 'shmeckleKillBonusLevel', icon: '🪙', label: 'Scavenger' },
+                                { key: 'goldWaveBonusLevel',    icon: '🪙', label: 'Bounty Hunter' },
+                                { key: 'goldKillBonusLevel',    icon: '🪙', label: 'Scavenger' },
                             ] as const).map(({ key, icon, label }) => {
                                 const cost = getUpgradeCost(key);
-                                const canAfford = shmeckles >= cost;
+                                const canAfford = gold >= cost;
                                 return (
                                     <button
                                         key={key}
@@ -746,7 +744,7 @@ export const StormTheFort = () => {
                                             <h4>{label}</h4>
                                             <span>Lv. {upgrades[key]}</span>
                                         </div>
-                                        <div className="cost">🐌 {cost}</div>
+                                        <div className="cost">🪙 {cost}</div>
                                     </button>
                                 );
                             })}
@@ -766,7 +764,7 @@ export const StormTheFort = () => {
                             <span className="storm-modal-icon">{pendingPurchase.icon}</span>
                             <div>
                                 <h3>{pendingPurchase.name}</h3>
-                                <span className="storm-modal-cost">🐌 {pendingPurchase.cost}</span>
+                                <span className="storm-modal-cost">🪙 {pendingPurchase.cost}</span>
                             </div>
                         </div>
 
@@ -797,7 +795,7 @@ export const StormTheFort = () => {
                         {pendingPurchase.category === 'upgrade' && (
                             <div className="storm-modal-stats">
                                 <div className="stat-row"><span>Type</span><span>Permanent Upgrade</span></div>
-                                <div className="stat-row"><span>Cost</span><span>🐌 {pendingPurchase.cost}</span></div>
+                                <div className="stat-row"><span>Cost</span><span>🪙 {pendingPurchase.cost}</span></div>
                             </div>
                         )}
 

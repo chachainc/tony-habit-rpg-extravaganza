@@ -14,12 +14,12 @@ export interface ConquestNodeData {
 
 export const CONQUEST_NODE_PREVIEW: Record<ConquestNodeType, { risk: string; reward: string }> = {
     start:          { risk: 'None',    reward: 'The journey begins' },
-    battle:         { risk: 'Low',     reward: 'Gold, Sigils' },
-    elite:          { risk: 'High',    reward: 'More Gold, Sigils, Item drop' },
-    treasure:       { risk: 'None',    reward: 'Gold, Sigils, chance of Item' },
+    battle:         { risk: 'Low',     reward: 'Gold' },
+    elite:          { risk: 'High',    reward: 'More Gold, Item drop' },
+    treasure:       { risk: 'None',    reward: 'Gold, chance of Item' },
     event:          { risk: 'Varies',  reward: 'Unknown outcome' },
-    minigame:       { risk: 'None',    reward: 'Gold, Sigils based on skill' },
-    shop:           { risk: 'None',    reward: 'Buy items with Gold/Sigils' },
+    minigame:       { risk: 'None',    reward: 'Gold based on skill' },
+    shop:           { risk: 'None',    reward: 'Buy items with Gold' },
     campfire:       { risk: 'None',    reward: 'Heal 30% HP or +5% ATK' },
     shrine:         { risk: 'None',    reward: 'Random blessing: ATK, DEF, or MaxHP +10%' },
     cursed:         { risk: 'High',    reward: 'Great power at a price' },
@@ -27,7 +27,7 @@ export const CONQUEST_NODE_PREVIEW: Record<ConquestNodeType, { risk: string; rew
     mystery:        { risk: 'Unknown', reward: 'Trap, Treasure, or Strange NPC' },
     treasure_vault: { risk: 'Very High', reward: '+3 Gems or +100 Gold (hard combat)' },
     artifact:       { risk: 'None',    reward: 'Passive run-long effect' },
-    resource:       { risk: 'None',    reward: 'Sigils, Balloons, Shmeckles' },
+    resource:       { risk: 'None',    reward: 'Gold' },
 };
 
 // ─── MAP NODES (8 tiers, 24 nodes) ─────────────────────────────────────────
@@ -56,7 +56,7 @@ export const CONQUEST_MAP_NODES: ConquestNodeData[] = [
 
     // Tier 5
     { id: 'n5_a', type: 'elite',        label: 'Shadow Assassin', description: 'A deadly figure strikes from the shadows.', connections: ['n6_a', 'n6_b'], tier: 5 },
-    { id: 'n5_b', type: 'resource',     label: 'Resource Cache',  description: 'Sigils, Balloons, and Shmeckles lie gathered.', connections: ['n6_b'], tier: 5 },
+    { id: 'n5_b', type: 'resource',     label: 'Resource Cache',  description: 'Gold lies gathered.', connections: ['n6_b'], tier: 5 },
     { id: 'n5_c', type: 'campfire',     label: 'Abandoned Camp',  description: 'Old embers still burn here.',  connections: ['n6_b', 'n6_c'], tier: 5 },
 
     // Tier 6
@@ -100,9 +100,9 @@ export const CONQUEST_ENEMIES: ConquestEnemyDef[] = [
         atkMod: 1.1, defMod: 0.7, hpMod: 0.75, element: 'fire', special: 'attacks_twice',
     },
     {
-        id: 'sigil_leech', name: 'Sigil Leech', icon: '🩸', tiers: [2, 3],
-        description: 'Steals one random resource when attacking. If defeated quickly, stolen resources are returned.',
-        atkMod: 0.9, defMod: 0.85, hpMod: 0.9, element: 'shadow', special: 'steals_sigils',
+        id: 'gold_leech', name: 'Gold Leech', icon: '🩸', tiers: [2, 3],
+        description: 'Steals resources.',
+        atkMod: 0.9, defMod: 0.85, hpMod: 0.9, element: 'shadow', special: 'steals_gold',
     },
     {
         id: 'iron_husk', name: 'Iron Husk', icon: '🛡️', tiers: [1, 2, 3],
@@ -110,9 +110,9 @@ export const CONQUEST_ENEMIES: ConquestEnemyDef[] = [
         atkMod: 0.7, defMod: 1.5, hpMod: 1.2, element: 'neutral', special: 'very_high_def',
     },
     {
-        id: 'balloon_goblin', name: 'Balloon Goblin', icon: '🎈', tiers: [3, 4],
-        description: 'Fast attacker that has a chance to drop extra Balloons.',
-        atkMod: 1.0, defMod: 0.8, hpMod: 0.85, element: 'nature', special: 'drops_balloons',
+        id: 'gold_goblin', name: 'Gold Goblin', icon: '🎈', tiers: [3, 4],
+        description: 'Fast attacker that has a chance to drop extra Gold.',
+        atkMod: 1.0, defMod: 0.8, hpMod: 0.85, element: 'nature', special: 'drops_gold',
     },
     {
         id: 'gem_cultist', name: 'Gem Cultist', icon: '💎', tiers: [4, 5],
@@ -173,7 +173,7 @@ export interface ConquestArtifactDef {
 export const CONQUEST_ARTIFACTS: ConquestArtifactDef[] = [
     { id: 'art_gem_kill',       name: 'Shard of Fortune',    icon: '💎', description: '+1 Gem from your next combat victory.',          effect: 'gem_on_next_kill'    },
     { id: 'art_gold_bonus',     name: 'Merchant\'s Coin',    icon: '🪙', description: '+10% Gold from all rewards this run.',           effect: 'gold_bonus_10pct'    },
-    { id: 'art_double_res',     name: 'Amplifier Sigil',     icon: '✨', description: '+5% chance to receive double resources this run.', effect: 'double_resource_5pct' },
+    { id: 'art_double_res',     name: 'Amplifier Charm',     icon: '✨', description: '+5% chance to receive double Gold this run.', effect: 'double_resource_5pct' },
 ];
 
 // ─── RELICS (sold by Strange NPC in Mystery Tile) ────────────────────────────
@@ -194,11 +194,11 @@ export const CONQUEST_RELICS: ConquestRelicDef[] = [
     { id: 'relic_def_1', name: 'Defense Relic I',  icon: '🛡️',  cost: 25, description: '+20% Defense for this run.',  buffType: 'defense',  buffAmount: 20 },
     { id: 'relic_atk_2', name: 'Attack Relic II',  icon: '🗡️',  cost: 50, description: '+40% Attack for this run.',   buffType: 'strength', buffAmount: 40 },
     { id: 'relic_def_2', name: 'Defense Relic II', icon: '🔰',  cost: 50, description: '+40% Defense for this run.',  buffType: 'defense',  buffAmount: 40 },
-    { id: 'relic_amplify', name: 'Reward Amplifier', icon: '💫', cost: 50, description: 'All future rewards grant +1 extra unit (Gems, Sigils, etc.).', buffType: 'wealth', buffAmount: 0, isRewardAmplifier: true },
+    { id: 'relic_amplify', name: 'Reward Amplifier', icon: '💫', cost: 50, description: 'All future rewards grant +1 extra unit (Gems, Gold, etc.).', buffType: 'wealth', buffAmount: 0, isRewardAmplifier: true },
 ];
 
 // ─── RESOURCE TILE REWARDS ───────────────────────────────────────────────────
-export type ResourceType = 'sigil' | 'balloon' | 'shmeckle';
+export type ResourceType = 'gold';
 
 export interface ResourceReward {
     type: ResourceType;
@@ -217,29 +217,26 @@ export interface ResourceTileData {
 }
 
 export const RESOURCE_TILE_REWARDS: ResourceTileData[] = [
-    // Single resource
-    { label: '+3 Sigils',    rewards: [{ type: 'sigil', amount: 3 }] },
-    { label: '+3 Balloons',  rewards: [{ type: 'balloon', amount: 3 }] },
-    { label: '+3 Shmeckles', rewards: [{ type: 'shmeckle', amount: 3 }] },
-    // Dual resource
-    { label: '+1 Sigil +1 Balloon',   rewards: [{ type: 'sigil', amount: 1 }, { type: 'balloon', amount: 1 }] },
-    { label: '+1 Sigil +1 Shmeckle',  rewards: [{ type: 'sigil', amount: 1 }, { type: 'shmeckle', amount: 1 }] },
-    { label: '+1 Balloon +1 Shmeckle',rewards: [{ type: 'balloon', amount: 1 }, { type: 'shmeckle', amount: 1 }] },
-    // Triple (high value)
-    { label: '+2 of each resource', rewards: [{ type: 'sigil', amount: 2 }, { type: 'balloon', amount: 2 }, { type: 'shmeckle', amount: 2 }] },
-    { label: '+3 of each resource', rewards: [{ type: 'sigil', amount: 3 }, { type: 'balloon', amount: 3 }, { type: 'shmeckle', amount: 3 }] },
+    // Small rewards
+    { label: '+15 Gold',  rewards: [{ type: 'gold', amount: 15 }] },
+    { label: '+20 Gold',  rewards: [{ type: 'gold', amount: 20 }] },
+    { label: '+30 Gold',  rewards: [{ type: 'gold', amount: 30 }] },
+    // Medium rewards
+    { label: '+50 Gold',  rewards: [{ type: 'gold', amount: 50 }] },
+    { label: '+60 Gold',  rewards: [{ type: 'gold', amount: 60 }] },
+    // Large rewards
+    { label: '+75 Gold',  rewards: [{ type: 'gold', amount: 75 }] },
+    { label: '+100 Gold', rewards: [{ type: 'gold', amount: 100 }] },
     // Choice tiles
-    { label: 'Choose: +1 Sigil, +1 Balloon, or +1 Shmeckle', rewards: [{ type: 'sigil', amount: 1 }, { type: 'balloon', amount: 1 }, { type: 'shmeckle', amount: 1 }], isChoice: true },
-    { label: 'Choose: +2 of one resource', rewards: [{ type: 'sigil', amount: 2 }, { type: 'balloon', amount: 2 }, { type: 'shmeckle', amount: 2 }], isChoice: true },
-    // Gold option choice
-    { label: 'Choose: resource or +25 Gold', rewards: [{ type: 'sigil', amount: 1 }, { type: 'balloon', amount: 1 }, { type: 'shmeckle', amount: 1 }], isChoice: true, goldChoice: 25 },
+    { label: 'Choose: +50 Gold or +25 Gold', rewards: [{ type: 'gold', amount: 50 }], isChoice: true, goldChoice: 25 },
+    { label: 'Choose: +75 Gold or +40 Gold', rewards: [{ type: 'gold', amount: 75 }], isChoice: true, goldChoice: 40 },
     // Heal/Gold node
     { label: 'Heal 50% or gain 25 Gold', rewards: [], isChoice: true, goldChoice: 25, healChoice: 50 },
 ];
 
 // ─── EVENTS ──────────────────────────────────────────────────────────────────
 export type EventEffect =
-    | { type: 'hp_and_sigils'; hp: number; sigils: number }
+    | { type: 'hp_and_gold'; hp: number; gold: number }
     | { type: 'gold'; gold: number }
     | { type: 'heal'; hp: number }
     | { type: 'damage'; hp: number }
@@ -252,14 +249,14 @@ export const CONQUEST_EVENT_TABLE: Record<string, EventData> = {
     'Strange Tracks': {
         text: 'You find strange, glowing footprints leading away from the main path.',
         options: [
-            { label: 'Follow them (-10 HP, +15 Sigils)', effect: { type: 'hp_and_sigils', hp: -10, sigils: 15 } },
+            { label: 'Follow them (-10 HP, +150 Gold)', effect: { type: 'hp_and_gold', hp: -10, gold: 150 } },
             { label: 'Stay on the path',                 effect: { type: 'none' } },
         ]
     },
     'Ruined Hamlet': {
         text: 'You come across a destroyed village. Among the rubble, you spot something glittering.',
         options: [
-            { label: 'Search rubble (-15 HP, +50 Gold)', effect: { type: 'hp_and_sigils', hp: -15, sigils: 0 } },
+            { label: 'Search rubble (-15 HP, +50 Gold)', effect: { type: 'hp_and_gold', hp: -15, gold: 0 } },
             { label: 'Move on',                          effect: { type: 'none' } },
         ]
     },
@@ -273,15 +270,15 @@ export const CONQUEST_EVENT_TABLE: Record<string, EventData> = {
     'Strange Statue': {
         text: 'The statue\'s eyes glow with a dim purple light. It seems to demand a sacrifice.',
         options: [
-            { label: 'Offer blood (-10 HP, +3 Sigils)', effect: { type: 'hp_and_sigils', hp: -10, sigils: 3 } },
+            { label: 'Offer blood (-10 HP, +30 Gold)', effect: { type: 'hp_and_gold', hp: -10, gold: 30 } },
             { label: 'Ignore it',                        effect: { type: 'none' } },
         ]
     }
 } as const;
 
 export const MINIGAME_REWARDS = {
-    'Fae Mischief':      { sigils: 5,  gold: 30 },
-    "Goongie Challenge": { sigils: 10, gold: 60 },
+    'Fae Mischief':      { gold: 80 },
+    "Goongie Challenge": { gold: 160 },
 };
 
 export const DICE_SYSTEM = {
